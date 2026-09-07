@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>План набора массы</title>
+
+<style>
+:root{
+  --display:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --steel:#23272E;
+  --steel-2:#333942;
+  --chalk:#E9EAE7;
+  --chalk-2:#DCDDD8;
+  --white:#FFFFFF;
+  --muted:#6E747E;
+
+  /* цвета олимпийских дисков */
+  --p-red:#BE2F2A;     /* 25 кг — руки, главный день */
+  --p-blue:#255A9E;    /* 20 кг — спина */
+  --p-yellow:#D79A17;  /* 15 кг — грудь и плечи */
+  --p-green:#2C7A4E;   /* 10 кг — ноги */
+  --rest:#8A9099;
+
+  --r:3px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--chalk);color:var(--steel);
+  font-family:var(--body);
+  font-size:15px;line-height:1.55;
+  padding-bottom:48px;
+}
+.wrap{max-width:680px;margin:0 auto;padding:0 16px}
+
+/* ---------- шапка и цель ---------- */
+header{background:var(--steel);color:var(--chalk);padding:22px 0 26px}
+h1{
+  font-family:var(--display);font-weight:700;
+  font-size:clamp(26px,7vw,38px);line-height:1.05;
+  letter-spacing:.01em;margin:0 0 4px;
+}
+.sub{color:#A9AFB8;font-size:13.5px;margin:0}
+
+.goal{margin-top:22px}
+.goal-nums{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.goal-nums b{font-family:var(--display);font-weight:600;font-size:30px;line-height:1}
+.goal-nums span{font-size:12.5px;color:#A9AFB8;display:block;font-weight:400;
+  font-family:var(--body);letter-spacing:.02em}
+.goal-nums .to{text-align:right}
+.bar{position:relative;height:14px;background:var(--steel-2);border-radius:7px}
+.bar i{position:absolute;inset:0 auto 0 0;width:0%;background:var(--p-red);border-radius:7px}
+.bar em{position:absolute;top:-5px;width:6px;height:24px;background:var(--chalk);border-radius:2px}
+.goal-note{font-size:12.5px;color:#A9AFB8;margin:9px 0 0}
+
+/* ---------- переключатель дней ---------- */
+.days{
+  position:sticky;top:0;z-index:5;background:var(--chalk);
+  border-bottom:1px solid var(--chalk-2);
+  padding:9px 0;margin-bottom:22px;
+}
+.days-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 16px;max-width:680px;margin:0 auto}
+.days-row::-webkit-scrollbar{display:none}
+.chip{
+  flex:1 0 auto;min-width:42px;border:1px solid var(--chalk-2);background:var(--white);
+  border-radius:var(--r);padding:7px 4px 8px;cursor:pointer;text-align:center;
+  font-family:var(--body);color:var(--steel);
+}
+.chip .d{font-family:var(--display);font-weight:500;font-size:14px;display:block;letter-spacing:.03em}
+.chip .dot{display:block;width:16px;height:3px;border-radius:2px;margin:5px auto 0;background:var(--rest)}
+.chip[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:var(--chalk)}
+.chip:focus-visible{outline:2px solid var(--p-red);outline-offset:2px}
+
+/* ---------- блоки дня ---------- */
+.daytitle{display:flex;align-items:center;gap:11px;margin:0 0 18px}
+.daytitle .tag{width:5px;align-self:stretch;border-radius:3px;background:var(--rest)}
+.daytitle h2{font-family:var(--display);font-weight:600;font-size:25px;margin:0;line-height:1.1}
+.daytitle p{margin:1px 0 0;font-size:13px;color:var(--muted)}
+
+section{margin-bottom:26px}
+.sec-h{
+  display:flex;align-items:baseline;justify-content:space-between;
+  border-bottom:2px solid var(--steel);padding-bottom:5px;margin-bottom:12px;
+}
+.sec-h h3{font-family:var(--display);font-weight:500;font-size:17px;margin:0;letter-spacing:.02em}
+.sec-h .meta{font-size:12.5px;color:var(--muted)}
+
+/* упражнения */
+.ex{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--chalk-2)}
+.ex:last-child{border-bottom:0}
+.ex .name{flex:1;font-weight:500}
+.ex .name small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.ex .sets{font-family:var(--display);font-weight:500;font-size:16px;white-space:nowrap;padding-top:1px}
+.ex .kg{
+  font-family:var(--display);font-size:13px;white-space:nowrap;align-self:flex-start;
+  background:var(--white);border:1px solid var(--chalk-2);border-radius:var(--r);padding:2px 7px;margin-top:2px;
+}
+
+/* добавки */
+.supp{list-style:none;margin:0;padding:0}
+.supp li{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--chalk-2);align-items:flex-start}
+.supp li:last-child{border-bottom:0}
+.supp .when{
+  font-family:var(--display);font-size:12.5px;color:var(--white);background:var(--steel-2);
+  border-radius:var(--r);padding:2px 7px;white-space:nowrap;min-width:76px;text-align:center;margin-top:1px;
+}
+.supp .what{flex:1}
+.supp .what b{font-weight:600}
+.supp .what small{display:block;color:var(--muted);font-size:12.5px}
+.supp input{width:21px;height:21px;accent-color:var(--p-red);margin:2px 0 0;flex:0 0 auto}
+
+/* еда */
+.kcal{display:flex;gap:8px;margin-bottom:12px}
+.kcal div{flex:1;background:var(--white);border:1px solid var(--chalk-2);border-radius:var(--r);padding:9px 11px}
+.kcal b{font-family:var(--display);font-size:22px;display:block;line-height:1.1}
+.kcal span{font-size:12px;color:var(--muted)}
+.meal{padding:9px 0;border-bottom:1px solid var(--chalk-2)}
+.meal:last-child{border-bottom:0}
+.meal b{display:block;font-weight:600}
+.meal p{margin:1px 0 0;font-size:14px}
+.meal em{font-style:normal;color:var(--muted);font-size:12.5px}
+
+/* веса */
+details{background:var(--white);border:1px solid var(--chalk-2);border-radius:var(--r);padding:0}
+summary{
+  font-family:var(--display);font-weight:500;font-size:16px;padding:13px 15px;cursor:pointer;
+  list-style:none;display:flex;justify-content:space-between;align-items:center;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';font-size:20px;color:var(--muted)}
+details[open] summary::after{content:'–'}
+summary:focus-visible{outline:2px solid var(--p-red);outline-offset:-2px}
+.tblwrap{padding:0 15px 15px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{
+  text-align:left;font-family:var(--display);font-weight:500;font-size:12.5px;
+  color:var(--muted);border-bottom:1px solid var(--chalk-2);padding:6px 4px;
+}
+td{padding:7px 4px;border-bottom:1px solid var(--chalk-2)}
+td:first-child{font-weight:500}
+td.num{font-family:var(--display);white-space:nowrap}
+input.log{
+  width:56px;font:inherit;font-family:var(--display);text-align:center;
+  border:1px solid var(--chalk-2);border-radius:var(--r);padding:3px;background:#FFFDF2;
+}
+input.log:focus{outline:2px solid var(--p-red);outline-offset:0}
+
+/* правила */
+.rules{list-style:none;margin:0;padding:0}
+.rules li{padding:9px 0 9px 17px;border-bottom:1px solid var(--chalk-2);position:relative;font-size:14px}
+.rules li:last-child{border-bottom:0}
+.rules li::before{content:'';position:absolute;left:0;top:16px;width:7px;height:7px;background:var(--p-red);border-radius:1px}
+.rules b{font-weight:600}
+
+.reset{
+  font:inherit;font-family:var(--display);font-size:13px;color:var(--muted);
+  background:var(--white);border:1px solid var(--chalk-2);border-radius:var(--r);
+  padding:8px 14px;cursor:pointer;
+}
+.reset:focus-visible{outline:2px solid var(--p-red);outline-offset:2px}
+.saved{color:var(--p-green);font-weight:600}
+footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--chalk-2);font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){
+  .bar i{transition:width .6s ease}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>План набора массы</h1>
+    <p class="sub">Четыре тренировки в неделю, акцент на руки и спину</p>
+
+    <div class="goal">
+      <div class="goal-nums">
+        <b>70 кг<span>сейчас</span></b>
+        <b class="to">85–90 кг<span>цель</span></b>
+      </div>
+      <div class="bar"><i id="fill"></i><em id="mark"></em></div>
+      <p class="goal-note">Темп 0,3–0,5 кг в неделю — это примерно полтора года. Быстрее набирается жир, а не мышцы.</p>
+    </div>
+  </div>
+</header>
+
+<nav class="days" aria-label="Дни недели"><div class="days-row" id="chips"></div></nav>
+
+<main class="wrap">
+  <div class="daytitle">
+    <span class="tag" id="tag"></span>
+    <div><h2 id="dayName">—</h2><p id="daySub">—</p></div>
+  </div>
+
+  <section id="trainSec">
+    <div class="sec-h"><h3>Тренировка</h3><span class="meta" id="trainMeta"></span></div>
+    <div id="train"></div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h3>Добавки</h3><span class="meta">отметь по ходу дня</span></div>
+    <ul class="supp" id="supp"></ul>
+  </section>
+
+  <section>
+    <div class="sec-h"><h3>Еда</h3><span class="meta">шаблон, а не догма</span></div>
+    <div class="kcal">
+      <div><b id="kcalV">—</b><span>ккал за день</span></div>
+      <div><b id="protV">—</b><span>белка</span></div>
+    </div>
+    <div id="meals"></div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Все рабочие веса</summary>
+      <div class="tblwrap">
+        <table>
+          <thead><tr><th>Упражнение</th><th>Старт</th><th>2–3 мес</th><th>Мой</th></tr></thead>
+          <tbody id="wTable"></tbody>
+        </table>
+        <p style="font-size:12.5px;color:var(--muted);margin:11px 0 0">
+          Веса гантелей — за одну, не за пару. Записывай свой вес после каждой тренировки:
+          без дневника прогрессии не будет.
+        </p>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <div class="sec-h"><h3>Правила</h3></div>
+    <ul class="rules">
+      <li><b>Первые 3 недели — 60–70% от максимума, без отказов.</b> Мышцы вспоминают силу за месяц, связки — за три-четыре. Этот разрыв и ломает тех, кто возвращается после перерыва.</li>
+      <li><b>Прогрессия.</b> Сделал верхнюю границу повторов во всех подходах — в следующий раз +2,5 кг на верх тела, +5 кг на низ.</li>
+      <li><b>Подход заканчивай с запасом 2–3 повтора.</b> Отказ не нужен и мешает восстановлению.</li>
+      <li><b>Взвешивайся раз в неделю, утром натощак.</b> Вес стоит две-три недели подряд — добавляй 300 ккал в день.</li>
+      <li><b>Цинк и магний не вместе:</b> цинк днём с едой, магний за час до сна.</li>
+      <li><b>Сон 7–9 часов.</b> Без сна не работают ни добавки, ни тренировки.</li>
+      <li><b>Не покупай</b> BCAA, глютамин, L-карнитин, трибулус, тестобустеры и гейнер. Это деньги на ветер.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p id="saveNote" style="margin:0 0 10px">Веса и галочки сохраняются на этом устройстве. Галочки обнуляются каждое утро.</p>
+    <button id="reset" class="reset">Стереть все записи</button>
+  </footer>
+</main>
+
+<script>
+const C={back:'var(--p-blue)',chest:'var(--p-yellow)',legs:'var(--p-green)',arms:'var(--p-red)',rest:'var(--rest)'};
+
+const SUPP_BASE=[
+ ['Утро','Креатин 5 г','5–7 капсул, запить 300 мл воды'],
+ ['Утро','Витамин D3 2000 МЕ','вместе с жирной едой'],
+ ['Обед','Омега-3','1000–2000 мг EPA+DHA, с едой'],
+ ['Обед','Цинк 15–25 мг','не натощак'],
+];
+const SUPP_TRAIN=[
+ ['До зала','Цитруллина малат 6–8 г','за 40–60 мин, натощак'],
+ ['До зала','Кофеин 200 мг','по желанию, не позже 16:00'],
+ ['После зала','Протеин 30 г','+ банан'],
+];
+const SUPP_NIGHT=[['Перед сном','Магний цитрат 300–400 мг','']];
+const SUPP_REST_EXTRA=[['День','Протеин 30 г','если не добираешь белок едой']];
+
+const FOOD_T=[
+ ['Завтрак','Овсянка 100 г на молоке, банан, 2 яйца, арахисовая паста 20 г','750 ккал · 35 г белка'],
+ ['Перекус','Творог 200 г, мёд, орехи 30 г','500 ккал · 35 г белка'],
+ ['Обед','Рис 100 г сухого, курица 200 г, овощи, ложка масла','800 ккал · 50 г белка'],
+ ['После зала','Протеин и банан','350 ккал · 30 г белка'],
+ ['Ужин','Гречка 80 г, говядина или рыба 200 г, салат','700 ккал · 45 г белка'],
+];
+const FOOD_R=[
+ ['Завтрак','3 яйца, 2 куска хлеба, сыр, овсянка 60 г','650 ккал · 35 г белка'],
+ ['Обед','Макароны 100 г сухих, индейка 200 г, овощи','750 ккал · 55 г белка'],
+ ['Перекус','Творог 200 г и фрукт','350 ккал · 35 г белка'],
+ ['Ужин','Картофель или рис, рыба 200 г, салат','700 ккал · 45 г белка'],
+ ['Перед сном','Кефир 300 мл, орехи 30 г','350 ккал · 15 г белка'],
+];
+
+const DAYS=[
+ {k:'Пн',name:'Понедельник',type:'rest',sub:'Отдых. Мышцы растут именно сегодня'},
+ {k:'Вт',name:'Вторник',type:'back',sub:'Спина — приоритет номер два',ex:[
+   ['Подтягивания','','4×8-10','свой вес'],
+   ['Тяга штанги в наклоне','спина ровная, без рывков','4×8-10','40–45 кг'],
+   ['Тяга гантели одной рукой','полная амплитуда внизу','3×10-12','20–24 кг'],
+   ['Тяга горизонтального блока','свести лопатки в конце','3×10-12','40–45 кг'],
+   ['Подъём штанги на бицепс','локти прижаты к корпусу','4×8-10','20–25 кг'],
+   ['Пресс','','3×12-15',''],
+ ]},
+ {k:'Ср',name:'Среда',type:'rest',sub:'Отдых'},
+ {k:'Чт',name:'Четверг',type:'chest',sub:'Грудь и плечи',ex:[
+   ['Жим гантелей на наклонной','наклон 30°, верх груди','4×8-10','18–20 кг'],
+   ['Жим лёжа','лопатки сведены','3×6-8','50–55 кг'],
+   ['Разводка гантелей','растяжение важнее веса','3×12-15','8–10 кг'],
+   ['Жим гантелей сидя','','3×8-10','12–14 кг'],
+   ['Махи в стороны','лёгкий вес, без раскачки','4×12-15','6–8 кг'],
+   ['Французский жим','','3×10-12','20–25 кг'],
+ ]},
+ {k:'Пт',name:'Пятница',type:'legs',sub:'Ноги — короткая, 45 минут',ex:[
+   ['Присед со штангой','до параллели','3×6-8','40–50 кг'],
+   ['Румынская тяга','чувствовать заднюю поверхность','3×8-10','50–60 кг'],
+   ['Жим ногами','','3×12','80–100 кг'],
+   ['Подъёмы на носки','','3×15',''],
+   ['Пресс','','3×12-15',''],
+ ]},
+ {k:'Сб',name:'Суббота',type:'arms',sub:'Руки — главный день недели',ex:[
+   ['Отжимания на брусьях','корпус вертикально, трицепс','4×8-10','свой вес'],
+   ['Подъём штанги на бицепс','строго, без раскачки','4×8-10','20–25 кг'],
+   ['Французский жим','','3×10-12','20–25 кг'],
+   ['Сгибания на скамье Скотта','','3×10-12','15–20 кг'],
+   ['Разгибания на блоке','развести канат в конце','3×12-15','20–25 кг'],
+   ['Молотки','плечевая мышца и предплечье','3×12','10–12 кг'],
+   ['Обратные сгибания','предплечья','3×15','15–20 кг'],
+ ]},
+ {k:'Вс',name:'Воскресенье',type:'rest',sub:'Отдых'},
+];
+
+const WEIGHTS=[
+ ['Жим лёжа','50–55','75–85'],['Жим гантелей на наклонной','18–20','26–30'],
+ ['Жим гантелей сидя','12–14','20–22'],['Разводка гантелей','8–10','14–16'],
+ ['Махи в стороны','6–8','10–12'],['Тяга штанги в наклоне','40–45','60–70'],
+ ['Тяга гантели одной рукой','20–24','32–36'],['Тяга горизонт. блока','40–45','60–70'],
+ ['Подтягивания','свой вес','+10–15'],['Присед','40–50','80–90'],
+ ['Румынская тяга','50–60','90–100'],['Жим ногами','80–100','160–180'],
+ ['Бицепс со штангой','20–25','35–40'],['Бицепс гантелями','10–12','16–18'],
+ ['Молотки','10–12','16–18'],['Скамья Скотта','15–20','25–30'],
+ ['Французский жим','20–25','35–40'],['Брусья','свой вес','+15–20'],
+ ['Разгибания на блоке','20–25','35–45'],['Обратные сгибания','15–20','22–28'],
+];
+
+const $=id=>document.getElementById(id);
+
+/* ---------- сохранение на устройстве ---------- */
+const KEY='gym-plan-v1';
+let mem={weights:{},checks:{},day:''};
+let canSave=true;
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw) mem=Object.assign(mem,JSON.parse(raw));
+    // галочки живут один день
+    const today=new Date().toISOString().slice(0,10);
+    if(mem.day!==today){ mem.checks={}; mem.day=today; }
+  }catch(e){ canSave=false; }
+}
+function save(){
+  if(!canSave) return;
+  try{ localStorage.setItem(KEY,JSON.stringify(mem)); }
+  catch(e){ canSave=false; note(); }
+}
+function note(){
+  const el=$('saveNote');
+  if(!el) return;
+  el.textContent = canSave
+    ? 'Веса и галочки сохраняются на этом устройстве. Галочки обнуляются каждое утро.'
+    : 'Сохранение недоступно в этом просмотрщике. Скачай файл и открой его в браузере — тогда записи будут сохраняться.';
+}
+load();
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('chips').innerHTML=DAYS.map((d,i)=>
+ `<button class="chip" data-i="${i}" aria-pressed="false">
+    <span class="d">${d.k}</span><span class="dot" style="background:${C[d.type]}"></span>
+  </button>`).join('');
+
+$('wTable').innerHTML=WEIGHTS.map(([n,s,g])=>
+ `<tr><td>${esc(n)}</td><td class="num">${s}</td><td class="num">${g}</td>
+  <td><input class="log" type="text" inputmode="decimal" data-ex="${esc(n)}"
+       value="${esc(mem.weights[n]||'')}" aria-label="Мой вес: ${esc(n)}"></td></tr>`).join('');
+
+$('wTable').addEventListener('input',e=>{
+  const i=e.target.closest('.log'); if(!i) return;
+  const k=i.dataset.ex;
+  if(i.value.trim()) mem.weights[k]=i.value.trim(); else delete mem.weights[k];
+  save();
+});
+
+let cur=0;
+function render(i){
+  cur=i;
+  const d=DAYS[i], train=d.type!=='rest';
+  document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.i==i));
+  $('tag').style.background=C[d.type];
+  $('dayName').textContent=d.name;
+  $('daySub').textContent=d.sub;
+
+  if(train){
+    $('trainSec').style.display='';
+    $('trainMeta').textContent=d.ex.length+' упражнений';
+    $('train').innerHTML=d.ex.map(([n,note,sets,kg])=>
+      `<div class="ex">
+         <span class="name">${esc(n)}${note?`<small>${esc(note)}</small>`:''}</span>
+         <span class="sets">${sets}</span>
+         ${kg?`<span class="kg">${kg}</span>`:''}
+       </div>`).join('');
+  } else {
+    $('trainSec').style.display='none';
+  }
+
+  const list=[...SUPP_BASE,...(train?SUPP_TRAIN:SUPP_REST_EXTRA),...SUPP_NIGHT];
+  $('supp').innerHTML=list.map((s,n)=>
+    `<li><input type="checkbox" id="s${n}" data-k="${esc(s[1])}"${mem.checks[s[1]]?' checked':''}>
+       <span class="when">${esc(s[0])}</span>
+       <label class="what" for="s${n}"><b>${esc(s[1])}</b>${s[2]?`<small>${esc(s[2])}</small>`:''}</label>
+     </li>`).join('');
+
+  $('kcalV').textContent=train?'3100':'2800';
+  $('protV').textContent=train?'195 г':'165 г';
+  $('meals').innerHTML=(train?FOOD_T:FOOD_R).map(([w,t,k])=>
+    `<div class="meal"><b>${esc(w)}</b><p>${esc(t)}</p><em>${esc(k)}</em></div>`).join('');
+}
+
+$('supp').addEventListener('change',e=>{
+  const c=e.target.closest('input[type=checkbox]'); if(!c) return;
+  if(c.checked) mem.checks[c.dataset.k]=1; else delete mem.checks[c.dataset.k];
+  save();
+});
+
+$('reset').addEventListener('click',()=>{
+  if(!confirm('Стереть все записанные веса и галочки?')) return;
+  mem={weights:{},checks:{},day:new Date().toISOString().slice(0,10)};
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  document.querySelectorAll('.log').forEach(i=>i.value='');
+  render(cur);
+});
+
+$('chips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(b) render(+b.dataset.i);
+});
+
+// прогресс к цели: 70 из диапазона 63 → 87,5
+const pct=Math.max(0,Math.min(100,(70-63)/(87.5-63)*100));
+$('mark').style.left='calc('+pct+'% - 3px)';
+requestAnimationFrame(()=>{$('fill').style.width=pct+'%';});
+
+const today=(new Date().getDay()+6)%7;
+render(today);
+note();
+</script>
+</body>
+</html>
