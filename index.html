@@ -284,6 +284,54 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   background:var(--panel2);letter-spacing:.05em}
 .bkb button.hi{border-color:var(--cy);color:var(--cy2)}
 .bkst{font-size:10px;color:var(--mut);margin-top:9px;letter-spacing:.03em}
+
+/* ===== ПИТАНИЕ: подсчёт ===== */
+.tot{padding:12px 14px;margin-bottom:10px}
+.tl{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px}
+.tl b{font-size:19px;font-weight:800}
+.tl b i{font-style:normal;font-size:12px;color:var(--mut);font-weight:500}
+.tl span{font-size:9.5px;letter-spacing:.14em;color:var(--mut)}
+.tbar{height:5px;background:rgba(96,165,250,.14);overflow:hidden;margin-bottom:11px}
+.tbar i{display:block;height:100%;width:0;transition:width .4s}
+.tot .mini{display:flex;gap:14px;font-size:10.5px;color:var(--mut);margin-top:2px}
+
+.ml{padding:11px 12px;margin-bottom:8px}
+.mlh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mlh input{flex:1;background:none;border:0;color:var(--tx);font:inherit;font-weight:700;
+  font-size:14px;padding:0;min-width:0}
+.mlh input:focus{outline:none;border-bottom:1px dashed var(--mut)}
+.mlh em{font-style:normal;font-size:11px;color:var(--cy2);white-space:nowrap;font-weight:700}
+.it{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--edge2)}
+.it .nm{flex:1;min-width:0;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it input{width:56px;background:rgba(96,165,250,.09);border:1px solid var(--edge2);color:var(--tx);
+  padding:5px 3px;text-align:center;font-size:13px;font-weight:700;border-radius:2px}
+.it .u{font-size:10px;color:var(--mut)}
+.it .kk{width:74px;text-align:right;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+.it .rm{color:var(--mut);font-size:15px;padding:0 2px}
+.mladd{width:100%;margin-top:8px;border:1px dashed var(--edge2);color:var(--mut);padding:8px;
+  font-size:11px;letter-spacing:.05em;border-radius:2px}
+
+/* поиск продукта */
+.fp{position:fixed;inset:0;z-index:140;background:rgba(4,6,13,.97);backdrop-filter:blur(6px);display:none}
+.fp.on{display:flex;flex-direction:column}
+.fph{max-width:660px;width:100%;margin:0 auto;padding:14px 14px 8px;display:flex;gap:8px;align-items:center}
+.fph input{flex:1;background:var(--panel2);border:1px solid var(--edge);color:var(--tx);
+  padding:11px 12px;font-size:15px;border-radius:2px}
+.fph input:focus{outline:none;border-color:var(--cy)}
+.fph button{border:1px solid var(--edge2);width:38px;height:42px;color:var(--mut);font-size:16px;border-radius:2px}
+.fpl{flex:1;overflow-y:auto;max-width:660px;width:100%;margin:0 auto;padding:0 14px 24px}
+.fpi{width:100%;text-align:left;display:flex;justify-content:space-between;align-items:baseline;
+  gap:10px;padding:11px 12px;border:1px solid var(--edge2);margin-bottom:6px;border-radius:2px;
+  background:var(--panel2)}
+.fpi b{font-weight:600;font-size:13.5px}
+.fpi span{font-size:10.5px;color:var(--mut);white-space:nowrap}
+.fpn{padding:12px;border:1px dashed var(--edge2);border-radius:2px;margin-bottom:10px}
+.fpn p{margin:0 0 9px;font-size:11px;color:var(--mut)}
+.fpn .r{display:flex;gap:6px}
+.fpn .r input{flex:1;min-width:0;background:rgba(96,165,250,.09);border:1px solid var(--edge2);
+  color:var(--tx);padding:8px 6px;font-size:12px;border-radius:2px;text-align:center}
+.fpn button{width:100%;margin-top:8px;border:1px solid var(--cy);color:var(--cy2);padding:9px;
+  font-size:11.5px;border-radius:2px;letter-spacing:.06em}
 </style>
 </head>
 <body>
@@ -392,9 +440,16 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   <button class="add" id="addSp">+ ДОБАВКА</button>
 
   <h2 class="sec">ПИТАНИЕ</h2>
+  <div class="win tot">
+    <div class="tl"><b id="tKc">0<i> / 3100 ккал</i></b><span>КАЛОРИИ</span></div>
+    <div class="tbar"><i id="bKc" style="background:linear-gradient(90deg,#2A7FB8,var(--cy2))"></i></div>
+    <div class="tl"><b id="tPr">0<i> / 195 г</i></b><span>БЕЛОК</span></div>
+    <div class="tbar"><i id="bPr" style="background:linear-gradient(90deg,#2E7A55,var(--legs))"></i></div>
+    <div class="mini"><span id="tFa">жиры 0 г</span><span id="tCa">углеводы 0 г</span></div>
+  </div>
   <div class="mac">
-    <div class="win"><input id="kc" inputmode="numeric"><span>ККАЛ</span></div>
-    <div class="win"><input id="pr" inputmode="numeric"><span>БЕЛОК, Г</span></div>
+    <div class="win"><input id="kc" inputmode="numeric"><span>ЦЕЛЬ ККАЛ</span></div>
+    <div class="win"><input id="pr" inputmode="numeric"><span>ЦЕЛЬ БЕЛКА</span></div>
   </div>
   <div id="mll"></div>
   <button class="add" id="addMl">+ ПРИЁМ ПИЩИ</button>
@@ -421,6 +476,11 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 </main>
 
 <div id="full"><button id="fullX">×</button><img id="fullImg" alt="Фото"></div>
+<div class="fp" id="fp">
+  <div class="fph"><input id="fq" placeholder="Поиск продукта" autocomplete="off"><button id="fpX">×</button></div>
+  <div class="fpl" id="fpl"></div>
+</div>
+
 <div class="ov" id="ov"><div class="ovin">
   <div class="ovh"><b>СРАВНЕНИЕ</b><button id="ovX">×</button></div>
   <div class="pick" id="quick"></div>
@@ -639,12 +699,7 @@ function render(){
 
   $('kc').value=d.kc;$('pr').value=d.pr;
   if(window.PHREADY)paintPhoto();
-  $('mll').innerHTML=d.ml.map((m,j)=>
-    `<div class="win row" data-ml="${j}">
-      <span class="t"><input value="${esc(m.n)}" data-mf="n">
-        <input class="s" value="${esc(m.d)}" data-mf="d" placeholder="что именно">
-        <input class="s" value="${esc(m.k)}" data-mf="k" placeholder="ккал / белок"></span>
-      <button class="x" data-mld="${j}">×</button></div>`).join('');
+  if(window.FOODREADY)paintFood();
   paint();
 }
 
@@ -695,15 +750,12 @@ $('spl').addEventListener('input',e=>{const i=e.target.closest('input');if(!i)re
 $('addSp').addEventListener('click',()=>{
   S.days[dayIdx(sel)].sp.push({w:'',n:'Новая добавка',h:''});save();render()});
 
-$('mll').addEventListener('input',e=>{const i=e.target.closest('input');if(!i)return;
-  S.days[dayIdx(sel)].ml[+i.closest('[data-ml]').dataset.ml][i.dataset.mf]=i.value;save()});
-$('mll').addEventListener('click',e=>{const d=e.target.closest('[data-mld]');if(!d)return;
-  if(!confirm('Убрать приём пищи?'))return;
-  S.days[dayIdx(sel)].ml.splice(+d.dataset.mld,1);save();render()});
+
+
 $('addMl').addEventListener('click',()=>{
-  S.days[dayIdx(sel)].ml.push({n:'Приём пищи',d:'',k:''});save();render()});
-$('kc').addEventListener('input',e=>{S.days[dayIdx(sel)].kc=e.target.value;save()});
-$('pr').addEventListener('input',e=>{S.days[dayIdx(sel)].pr=e.target.value;save()});
+  S.days[dayIdx(sel)].ml.push({n:'Приём пищи',note:'',items:[]});save();paintFood()});
+$('kc').addEventListener('input',e=>{S.days[dayIdx(sel)].kc=e.target.value;save();paintFoodTotals()});
+$('pr').addEventListener('input',e=>{S.days[dayIdx(sel)].pr=e.target.value;save();paintFoodTotals()});
 
 $('bw').addEventListener('input',e=>{S.bw=e.target.value;save();paint()});
 $('rd').addEventListener('click',()=>{
@@ -723,6 +775,258 @@ requestAnimationFrame(()=>{
   setTimeout(()=>{b.classList.add('off');setTimeout(()=>b.remove(),400)},260);
 });
 
+
+
+/* ================= ПИТАНИЕ: база и подсчёт ================= */
+const FOOD=[
+["Овсяные хлопья сухие",366,11.9,7.2,59],
+["Овсянка на воде готовая",88,3.0,1.7,15],
+["Гречка сухая",343,12.6,3.3,62],
+["Гречка отварная",110,4.2,1.1,21],
+["Рис белый сухой",344,6.7,0.7,78],
+["Рис белый отварной",116,2.2,0.5,25],
+["Рис бурый сухой",337,7.4,2.8,72],
+["Макароны сухие",344,10.4,1.1,71],
+["Макароны отварные",112,3.5,0.4,23],
+["Булгур сухой",342,12.3,1.3,63],
+["Киноа сухая",368,14.1,6.1,57],
+["Перловка сухая",315,9.3,1.1,66],
+["Кускус сухой",376,12.8,0.6,72],
+["Картофель отварной",82,2.0,0.4,17],
+["Картофель запечённый",93,2.5,0.1,20],
+["Картофельное пюре с молоком",106,2.1,3.3,16],
+["Хлеб белый",265,8.0,3.2,49],
+["Хлеб ржаной",210,6.6,1.2,41],
+["Хлеб цельнозерновой",230,9.0,3.0,38],
+["Лаваш тонкий",275,9.1,1.2,54],
+["Хлебцы цельнозерновые",300,10.0,3.0,57],
+["Куриная грудка сырая",113,23.6,1.9,0],
+["Куриная грудка отварная",137,29.8,1.8,0],
+["Куриная грудка жареная",165,31.0,3.6,0],
+["Куриное бедро без кожи",185,21.0,11.0,0],
+["Куриное филе на гриле",150,30.0,3.0,0],
+["Индейка филе сырое",104,21.6,1.7,0],
+["Индейка филе готовое",135,28.0,2.5,0],
+["Говядина постная сырая",158,20.0,8.5,0],
+["Говядина отварная",220,26.0,13.0,0],
+["Свинина нежирная",259,16.0,21.0,0],
+["Фарш говяжий",254,17.0,20.0,0],
+["Фарш куриный",143,17.4,8.0,0],
+["Печень говяжья",127,17.9,3.7,5.3],
+["Лосось сырой",208,20.0,13.0,0],
+["Лосось запечённый",230,23.0,14.0,0],
+["Горбуша",147,21.0,7.0,0],
+["Треска",82,18.0,0.7,0],
+["Минтай",72,16.0,0.9,0],
+["Скумбрия",191,18.0,13.2,0],
+["Сельдь",161,16.0,10.7,0],
+["Тунец консервированный в воде",96,22.0,0.8,0],
+["Креветки",99,20.0,1.7,0],
+["Сосиски",266,10.0,24.0,2],
+["Колбаса варёная",257,12.0,22.0,2],
+["Яйцо куриное (1 шт ≈ 55 г)",157,12.7,11.5,0.7],
+["Яичный белок",48,11.1,0,0.7],
+["Творог 0%",71,16.5,0,1.3],
+["Творог 5%",121,17.2,5.0,1.8],
+["Творог 9%",159,16.7,9.0,2.0],
+["Молоко 2,5%",52,2.9,2.5,4.7],
+["Молоко 3,2%",60,2.9,3.2,4.7],
+["Кефир 2,5%",50,2.9,2.5,4.0],
+["Йогурт греческий 2%",73,9.0,2.0,3.6],
+["Йогурт натуральный",60,4.1,3.2,3.5],
+["Сметана 15%",158,2.6,15.0,3.0],
+["Сыр твёрдый 45%",364,23.0,30.0,0],
+["Сыр моцарелла",280,22.0,21.0,2.2],
+["Сыр плавленый",280,12.0,24.0,4],
+["Масло сливочное",748,0.5,82.5,0.8],
+["Чечевица сухая",352,24.6,1.1,60],
+["Чечевица отварная",116,9.0,0.4,20],
+["Фасоль отварная",127,8.7,0.5,22],
+["Нут сухой",364,19.3,6.0,61],
+["Горох сухой",298,20.5,2.0,49],
+["Арахисовая паста",588,25.0,50.0,20],
+["Арахис",567,26.0,49.0,16],
+["Грецкий орех",654,15.2,65.2,7],
+["Миндаль",579,21.2,49.9,22],
+["Кешью",553,18.2,43.8,30],
+["Фундук",628,15.0,61.0,17],
+["Семена подсолнечника",584,20.8,51.5,20],
+["Масло оливковое",884,0,100,0],
+["Масло подсолнечное",899,0,99.9,0],
+["Банан",89,1.1,0.3,23],
+["Яблоко",52,0.3,0.2,14],
+["Апельсин",47,0.9,0.1,12],
+["Груша",57,0.4,0.1,15],
+["Виноград",69,0.7,0.2,18],
+["Киви",61,1.1,0.5,15],
+["Клубника",33,0.7,0.3,8],
+["Черника",57,0.7,0.3,14],
+["Авокадо",160,2.0,15.0,9],
+["Огурец",15,0.7,0.1,3.6],
+["Помидор",18,0.9,0.2,3.9],
+["Капуста белокочанная",25,1.3,0.1,5.8],
+["Брокколи",34,2.8,0.4,7],
+["Морковь",41,0.9,0.2,10],
+["Перец болгарский",27,1.0,0.3,6],
+["Салат листовой",15,1.4,0.2,2.9],
+["Лук репчатый",40,1.1,0.1,9],
+["Свёкла отварная",44,1.7,0.2,10],
+["Кабачок",17,1.2,0.2,3.5],
+["Шампиньоны",22,3.1,0.3,3.3],
+["Кукуруза консервированная",58,2.2,0.6,11],
+["Горошек зелёный",81,5.4,0.4,14],
+["Мёд",304,0.3,0,82],
+["Сахар",387,0,0,100],
+["Шоколад тёмный 70%",546,7.8,31.0,61],
+["Шоколад молочный",535,7.6,30.0,59],
+["Финики",282,2.5,0.4,75],
+["Изюм",299,3.1,0.5,79],
+["Курага",241,3.4,0.5,63],
+["Печенье овсяное",437,6.5,15.0,68],
+["Мороженое пломбир",227,3.7,15.0,20],
+["Протеин сывороточный (порошок)",400,75.0,6.0,10],
+["Гейнер (порошок)",380,20.0,4.0,65],
+["Кофе чёрный без сахара",2,0.2,0,0],
+["Чай без сахара",1,0,0,0],
+["Сок апельсиновый",45,0.7,0.2,10],
+["Кола",42,0,0,10.6],
+["Пиво светлое",43,0.5,0,3.6]
+];
+
+function allFood(){return FOOD.concat((S.myFood||[]).map(f=>[f.n,f.k,f.p,f.f,f.c]))}
+function findFood(name){return allFood().find(f=>f[0]===name)||null}
+
+/* перевод старых приёмов пищи в новый формат */
+function migrate(){
+  let ch=0;
+  S.days.forEach(d=>{d.ml=(d.ml||[]).map(m=>{
+    if(m.items)return m;
+    ch=1; return {n:m.n||'Приём пищи', note:m.d||'', items:[]};
+  })});
+  if(ch)save();
+}
+migrate();
+
+function mealSum(m){
+  let k=0,p=0,f=0,c=0;
+  (m.items||[]).forEach(it=>{
+    const fd=findFood(it.p); if(!fd)return;
+    const g=num(it.g)/100;
+    k+=fd[1]*g; p+=fd[2]*g; f+=fd[3]*g; c+=fd[4]*g;
+  });
+  return {k,p,f,c};
+}
+function daySum(){
+  const d=S.days[dayIdx(sel)];
+  let k=0,p=0,f=0,c=0;
+  (d.ml||[]).forEach(m=>{const s=mealSum(m);k+=s.k;p+=s.p;f+=s.f;c+=s.c});
+  return {k,p,f,c};
+}
+const rnd=v=>Math.round(v);
+
+function paintFood(){
+  const d=S.days[dayIdx(sel)], t=daySum();
+  const gk=num(d.kc)||1, gp=num(d.pr)||1;
+  $('tKc').innerHTML=rnd(t.k)+'<i> / '+d.kc+' ккал</i>';
+  $('tPr').innerHTML=rnd(t.p)+'<i> / '+d.pr+' г</i>';
+  $('bKc').style.width=Math.min(100,t.k/gk*100)+'%';
+  $('bPr').style.width=Math.min(100,t.p/gp*100)+'%';
+  $('tFa').textContent='жиры '+rnd(t.f)+' г';
+  $('tCa').textContent='углеводы '+rnd(t.c)+' г';
+
+  $('mll').innerHTML=(d.ml||[]).map((m,j)=>{
+    const s=mealSum(m);
+    const rows=(m.items||[]).map((it,q)=>{
+      const fd=findFood(it.p), g=num(it.g)/100;
+      return `<div class="it">
+        <span class="nm">${esc(it.p)}</span>
+        <input inputmode="numeric" data-g="${q}" value="${esc(it.g)}"><span class="u">г</span>
+        <span class="kk">${fd?rnd(fd[1]*g)+' / '+rnd(fd[2]*g)+' б':'—'}</span>
+        <button class="rm" data-rm="${q}">×</button></div>`}).join('');
+    return `<div class="win ml" data-ml="${j}">
+      <div class="mlh"><input value="${esc(m.n)}" data-mf="n">
+        <em>${rnd(s.k)} ккал · ${rnd(s.p)} г</em>
+        <button class="x" data-mld="${j}">×</button></div>
+      ${rows}
+      <button class="mladd" data-pick="${j}">+ ПРОДУКТ</button></div>`;
+  }).join('');
+}
+
+/* ---- поиск и добавление продукта ---- */
+let pickMeal=null;
+function openPick(j){
+  pickMeal=j; $('fq').value=''; drawPick('');
+  $('fp').classList.add('on'); document.body.style.overflow='hidden';
+  setTimeout(()=>$('fq').focus(),80);
+}
+function drawPick(q){
+  q=q.trim().toLowerCase();
+  const list=allFood().filter(f=>!q||f[0].toLowerCase().includes(q)).slice(0,60);
+  let h=list.map(f=>`<button class="fpi" data-add="${esc(f[0])}">
+      <b>${esc(f[0])}</b><span>${f[1]} ккал · ${f[2]} б / 100 г</span></button>`).join('');
+  if(q&&!list.some(f=>f[0].toLowerCase()===q)){
+    h=`<div class="fpn"><p>Нет в базе? Добавь свой продукт — значения на 100 г.</p>
+      <div class="r"><input id="nfN" placeholder="название" value="${esc(q)}">
+        <input id="nfK" inputmode="numeric" placeholder="ккал">
+        <input id="nfP" inputmode="decimal" placeholder="белок">
+        <input id="nfF" inputmode="decimal" placeholder="жир">
+        <input id="nfC" inputmode="decimal" placeholder="угл"></div>
+      <button id="nfSave">СОХРАНИТЬ В БАЗУ</button></div>`+h;
+  }
+  $('fpl').innerHTML=h||'<p style="color:var(--mut);font-size:12px">Ничего не найдено</p>';
+}
+$('fq').addEventListener('input',e=>drawPick(e.target.value));
+$('fpX').addEventListener('click',()=>{$('fp').classList.remove('on');document.body.style.overflow=''});
+$('fpl').addEventListener('click',e=>{
+  const a=e.target.closest('[data-add]');
+  if(a){
+    S.days[dayIdx(sel)].ml[pickMeal].items.push({p:a.dataset.add,g:100});
+    save(); $('fp').classList.remove('on'); document.body.style.overflow='';
+    paintFood(); return;
+  }
+  if(e.target.id==='nfSave'){
+    const n=$('nfN').value.trim(); if(!n)return;
+    S.myFood=S.myFood||[];
+    S.myFood.push({n,k:num($('nfK').value),p:num($('nfP').value),
+      f:num($('nfF').value),c:num($('nfC').value)});
+    save(); note('Продукт добавлен в базу'); drawPick(n);
+  }
+});
+$('mll').addEventListener('click',e=>{
+  const p=e.target.closest('[data-pick]'); if(p){openPick(+p.dataset.pick);return}
+  const r=e.target.closest('[data-rm]');
+  if(r){const j=+r.closest('[data-ml]').dataset.ml;
+    S.days[dayIdx(sel)].ml[j].items.splice(+r.dataset.rm,1);save();paintFood();return}
+  const d=e.target.closest('[data-mld]');
+  if(d){if(!confirm('Убрать приём пищи?'))return;
+    S.days[dayIdx(sel)].ml.splice(+d.dataset.mld,1);save();paintFood()}
+});
+$('mll').addEventListener('input',e=>{
+  const i=e.target.closest('input'); if(!i)return;
+  const j=+i.closest('[data-ml]').dataset.ml, m=S.days[dayIdx(sel)].ml[j];
+  if(i.dataset.mf==='n'){m.n=i.value;save();return}
+  if(i.dataset.g!==undefined){m.items[+i.dataset.g].g=i.value;save();paintFoodTotals()}
+});
+function paintFoodTotals(){
+  const d=S.days[dayIdx(sel)], t=daySum();
+  $('tKc').innerHTML=rnd(t.k)+'<i> / '+d.kc+' ккал</i>';
+  $('tPr').innerHTML=rnd(t.p)+'<i> / '+d.pr+' г</i>';
+  $('bKc').style.width=Math.min(100,t.k/(num(d.kc)||1)*100)+'%';
+  $('bPr').style.width=Math.min(100,t.p/(num(d.pr)||1)*100)+'%';
+  $('tFa').textContent='жиры '+rnd(t.f)+' г';
+  $('tCa').textContent='углеводы '+rnd(t.c)+' г';
+  document.querySelectorAll('[data-ml]').forEach(el=>{
+    const s=mealSum(S.days[dayIdx(sel)].ml[+el.dataset.ml]);
+    el.querySelector('em').textContent=rnd(s.k)+' ккал · '+rnd(s.p)+' г';
+    el.querySelectorAll('.it').forEach((row,q)=>{
+      const it=S.days[dayIdx(sel)].ml[+el.dataset.ml].items[q], fd=findFood(it.p);
+      if(fd)row.querySelector('.kk').textContent=
+        rnd(fd[1]*num(it.g)/100)+' / '+rnd(fd[2]*num(it.g)/100)+' б';
+    });
+  });
+}
+window.FOODREADY=1;
+paintFood();
 
 /* ================= ФОТО: хранилище ================= */
 const DB='sysgym-ph';
