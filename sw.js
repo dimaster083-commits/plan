@@ -1,4 +1,4 @@
-const CACHE = 'sys-gym-1';
+const CACHE = "sys-gym-2";
 const FILES = [
   './',
   './index.html',

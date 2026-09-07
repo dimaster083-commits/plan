@@ -188,6 +188,29 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .note span{font-size:13.5px;font-weight:700}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+
+/* фото дня */
+.ph{padding:12px}
+.phbox{display:flex;gap:10px;align-items:center}
+.phthumb{width:74px;height:96px;flex:0 0 auto;border:1px solid var(--edge2);border-radius:2px;
+  background:rgba(96,165,250,.06);object-fit:cover;display:block}
+.phempty{width:74px;height:96px;flex:0 0 auto;border:1px dashed var(--edge2);border-radius:2px;
+  display:grid;place-items:center;color:var(--mut);font-size:22px}
+.phinfo{flex:1;min-width:0}
+.phinfo p{margin:0 0 8px;font-size:11.5px;color:var(--mut)}
+.phbtns{display:flex;gap:6px;flex-wrap:wrap}
+.phbtns button{border:1px solid var(--edge2);color:var(--cy2);padding:8px 12px;font-size:11.5px;
+  letter-spacing:.06em;border-radius:2px;background:var(--panel2)}
+.phbtns button.dl{color:var(--mut)}
+#full{position:fixed;inset:0;z-index:150;background:rgba(3,5,12,.96);display:none;
+  place-items:center;padding:16px}
+#full.on{display:grid}
+#full img{max-width:100%;max-height:82vh;border:1px solid var(--edge)}
+#full button{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:16px;
+  border:1px solid var(--edge);color:var(--cy2);width:40px;height:40px;border-radius:2px;font-size:18px}
+.cd .pm{position:absolute;top:3px;right:3px;width:4px;height:4px;border-radius:50%;background:var(--cy)}
+.bk{font-size:10.5px;color:var(--mut);margin-top:10px;line-height:1.45}
+
 /* стартовый экран */
 #boot{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;
   background-image:radial-gradient(700px 400px at 50% 40%,rgba(60,130,220,.22),transparent 70%);
@@ -199,6 +222,68 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 #boot b{display:block;font-size:11px;letter-spacing:.34em;color:var(--cy);font-weight:600}
 @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){#boot polygon{animation:none;opacity:.8}}
+
+/* ===== ФОТО ===== */
+.ph{padding:12px;margin-bottom:8px}
+.phbox{display:flex;gap:11px;align-items:flex-start}
+.phthumb{width:88px;height:118px;flex:0 0 auto;border:1px solid var(--edge2);border-radius:2px;
+  background:rgba(96,165,250,.05);display:grid;place-items:center;overflow:hidden;position:relative}
+.phthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.phthumb span{font-size:26px;color:var(--mut)}
+.phside{flex:1;min-width:0}
+.phside p{margin:0 0 9px;font-size:11.5px;color:var(--mut);line-height:1.45}
+.phbtns{display:flex;gap:6px;flex-wrap:wrap}
+.phbtns button{border:1px solid var(--edge2);padding:7px 11px;font-size:11.5px;border-radius:2px;
+  background:var(--panel2);letter-spacing:.04em}
+.phbtns button.cmp{border-color:var(--cy);color:var(--cy2)}
+.phw{display:flex;align-items:center;gap:7px;margin-top:10px}
+.phw label{font-size:10px;letter-spacing:.1em;color:var(--mut)}
+.phw input{width:62px;background:rgba(96,165,250,.09);border:1px solid var(--edge2);color:var(--tx);
+  padding:5px;text-align:center;font-size:14px;font-weight:700;border-radius:2px}
+
+/* ===== СРАВНЕНИЕ ===== */
+.ov{position:fixed;inset:0;z-index:120;background:rgba(4,6,13,.97);backdrop-filter:blur(6px);
+  overflow-y:auto;display:none}
+.ov.on{display:block}
+.ovin{max-width:660px;margin:0 auto;padding:14px 14px 34px}
+.ovh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ovh b{font-size:11px;letter-spacing:.24em;color:var(--cy)}
+.ovh button{border:1px solid var(--edge2);width:34px;height:30px;border-radius:2px;color:var(--mut);font-size:15px}
+.pair{display:flex;gap:8px}
+.pane{flex:1;min-width:0}
+.pane .pic{width:100%;aspect-ratio:3/4;border:1px solid var(--edge2);background:rgba(96,165,250,.05);
+  display:grid;place-items:center;overflow:hidden;border-radius:2px}
+.pane .pic img{width:100%;height:100%;object-fit:cover}
+.pane .pic span{font-size:11px;color:var(--mut);padding:10px;text-align:center}
+.pane .meta{display:flex;justify-content:space-between;align-items:baseline;margin-top:7px;gap:6px}
+.pane .meta i{font-style:normal;font-size:11px;color:var(--mut)}
+.pane .meta b{font-size:16px;font-weight:800;color:var(--cy2)}
+.pane select{width:100%;margin-top:7px;background:var(--panel2);border:1px solid var(--edge2);
+  color:var(--tx);padding:8px;font-size:12px;border-radius:2px;font-family:var(--f)}
+.delta{margin-top:14px;padding:12px 14px;text-align:center}
+.delta b{display:block;font-size:26px;font-weight:800;color:var(--cy2);line-height:1.1}
+.delta span{font-size:10px;letter-spacing:.16em;color:var(--mut)}
+.strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:16px;padding-bottom:4px}
+.strip::-webkit-scrollbar{display:none}
+.strip button{flex:0 0 auto;width:58px;border:1px solid var(--edge2);padding:0;border-radius:2px;
+  overflow:hidden;background:none}
+.strip img{width:58px;height:78px;object-fit:cover;display:block}
+.strip em{display:block;font-size:8.5px;color:var(--mut);font-style:normal;padding:3px 0}
+.striph{font-size:9.5px;letter-spacing:.18em;color:var(--mut);margin:18px 0 6px}
+.pick{display:flex;gap:6px;margin-top:6px}
+.pick button{flex:1;border:1px solid var(--edge2);padding:7px;font-size:10.5px;border-radius:2px;
+  color:var(--mut);background:var(--panel2)}
+.pick button.on{border-color:var(--cy);color:var(--cy2)}
+
+/* ===== АРХИВ ===== */
+.bk{margin-top:12px;padding:12px 13px}
+.bk h4{margin:0 0 6px;font-size:10px;letter-spacing:.2em;color:var(--cy);font-weight:600}
+.bk p{margin:0 0 10px;font-size:11px;color:var(--mut);line-height:1.5}
+.bkb{display:flex;gap:7px;flex-wrap:wrap}
+.bkb button{border:1px solid var(--edge2);padding:9px 13px;font-size:11.5px;border-radius:2px;
+  background:var(--panel2);letter-spacing:.05em}
+.bkb button.hi{border-color:var(--cy);color:var(--cy2)}
+.bkst{font-size:10px;color:var(--mut);margin-top:9px;letter-spacing:.03em}
 </style>
 </head>
 <body>
@@ -268,6 +353,40 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
     <button class="fin" id="fin">ЗАВЕРШИТЬ ТРЕНИРОВКУ</button>
   </div>
 
+  <h2 class="sec">ФОТО ДНЯ</h2>
+  <div class="win ph">
+    <div class="phbox">
+      <img class="phthumb" id="phImg" alt="Фото дня" style="display:none">
+      <div class="phempty" id="phNone">+</div>
+      <div class="phinfo">
+        <p id="phTxt">Снимай раз в неделю при одном свете и в одной позе — так прогресс видно честнее весов.</p>
+        <div class="phbtns">
+          <button id="phAdd">ЗАГРУЗИТЬ</button>
+          <button id="phDel" style="display:none">УДАЛИТЬ</button>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="phFile" accept="image/*" style="display:none">
+  </div>
+
+  <h2 class="sec">ФОТО ДНЯ</h2>
+  <div class="win ph">
+    <div class="phbox">
+      <div class="phthumb" id="phT"><span>+</span></div>
+      <div class="phside">
+        <p id="phTxt">Снимай в одном месте, при одном свете, в одной позе. Раз в неделю достаточно.</p>
+        <div class="phbtns">
+          <button id="phAdd">ЗАГРУЗИТЬ</button>
+          <button id="phDel" style="display:none">УДАЛИТЬ</button>
+          <button id="phCmp" class="cmp">СРАВНИТЬ ФОТО</button>
+        </div>
+        <div class="phw"><label>ВЕС В ЭТОТ ДЕНЬ</label>
+          <input id="phW" inputmode="decimal" placeholder="—"><span style="font-size:11px;color:var(--mut)">кг</span></div>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="phFile" accept="image/*" style="display:none">
+
   <h2 class="sec">ДОБАВКИ<em id="spCnt"></em></h2>
   <div id="spl"></div>
   <button class="add" id="addSp">+ ДОБАВКА</button>
@@ -280,9 +399,43 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   <div id="mll"></div>
   <button class="add" id="addMl">+ ПРИЁМ ПИЩИ</button>
 
+  <h2 class="sec">АРХИВ</h2>
+  <div class="win bk">
+    <h4>РЕЗЕРВНАЯ КОПИЯ</h4>
+    <p>iOS может очистить хранилище, если не заходить месяцами. Раз в пару месяцев сохраняй копию —
+       в ней весь журнал, веса и фотографии. Файл клади в «Файлы» или iCloud.</p>
+    <div class="bkb">
+      <button id="exp" class="hi">СОХРАНИТЬ КОПИЮ</button>
+      <button id="imp">ВОССТАНОВИТЬ</button>
+    </div>
+    <div class="bkst" id="bkst"></div>
+  </div>
+  <input type="file" id="impFile" accept="application/json,.json" style="display:none">
+
   <div class="foot"><p id="nt">Прогресс сохраняется на этом устройстве</p>
-    <button class="gh" id="rd">СБРОС ДНЯ</button><button class="gh" id="ra">СБРОС ВСЕГО</button></div>
+    <button class="gh" id="bkOut">СКАЧАТЬ КОПИЮ</button>
+    <button class="gh" id="bkIn">ЗАГРУЗИТЬ КОПИЮ</button>
+    <button class="gh" id="rd">СБРОС ДНЯ</button><button class="gh" id="ra">СБРОС ВСЕГО</button>
+    <input type="file" id="bkFile" accept="application/json,.json" style="display:none">
+    <p class="bk" id="bkNote"></p></div>
 </main>
+
+<div id="full"><button id="fullX">×</button><img id="fullImg" alt="Фото"></div>
+<div class="ov" id="ov"><div class="ovin">
+  <div class="ovh"><b>СРАВНЕНИЕ</b><button id="ovX">×</button></div>
+  <div class="pick" id="quick"></div>
+  <div class="pair" style="margin-top:10px">
+    <div class="pane"><div class="pic" id="picA"><span>нет фото</span></div>
+      <div class="meta"><i id="dtA">—</i><b id="wA">—</b></div>
+      <select id="selA"></select></div>
+    <div class="pane"><div class="pic" id="picB"><span>нет фото</span></div>
+      <div class="meta"><i id="dtB">—</i><b id="wB">—</b></div>
+      <select id="selB"></select></div>
+  </div>
+  <div class="win delta"><b id="dlt">—</b><span id="dltS">РАЗНИЦА</span></div>
+  <div class="striph">ВСЕ СНИМКИ</div>
+  <div class="strip" id="strip"></div>
+</div></div>
 
 <div class="note" id="note"><b>СИСТЕМА</b><span id="noteT"></span></div>
 
@@ -485,6 +638,7 @@ function render(){
       <button class="x" data-spd="${j}">×</button></div>`).join('');
 
   $('kc').value=d.kc;$('pr').value=d.pr;
+  if(window.PHREADY)paintPhoto();
   $('mll').innerHTML=d.ml.map((m,j)=>
     `<div class="win row" data-ml="${j}">
       <span class="t"><input value="${esc(m.n)}" data-mf="n">
@@ -568,6 +722,182 @@ requestAnimationFrame(()=>{
   const b=$('boot');
   setTimeout(()=>{b.classList.add('off');setTimeout(()=>b.remove(),400)},260);
 });
+
+
+/* ================= ФОТО: хранилище ================= */
+const DB='sysgym-ph';
+function idb(){return new Promise((res,rej)=>{
+  const r=indexedDB.open(DB,1);
+  r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('ph'))r.result.createObjectStore('ph')};
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);})}
+function tx(mode,fn){return idb().then(d=>new Promise((res,rej)=>{
+  const t=d.transaction('ph',mode),st=t.objectStore('ph'),out=fn(st);
+  t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);
+  t.onerror=()=>rej(t.error);}))}
+const phPut=(k,v)=>tx('readwrite',st=>st.put(v,k));
+const phDel=k=>tx('readwrite',st=>st.delete(k));
+const phGet=k=>tx('readonly',st=>st.get(k));
+const phKeys=()=>tx('readonly',st=>st.getAllKeys());
+const phAll=()=>tx('readonly',st=>st.getAll());
+
+let PH=[];               // список дат со снимками
+const PHCACHE={};
+async function phSync(){
+  try{PH=(await phKeys()||[]).map(String).sort();}catch(e){PH=[]}
+}
+async function phLoad(d){
+  if(PHCACHE[d]!==undefined)return PHCACHE[d];
+  try{PHCACHE[d]=await phGet(d)||null}catch(e){PHCACHE[d]=null}
+  return PHCACHE[d];
+}
+
+function compress(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>rej();
+    fr.onload=()=>{
+      const im=new Image();
+      im.onerror=()=>rej();
+      im.onload=()=>{
+        const M=1100; let w=im.width,h=im.height;
+        const k=Math.min(1,M/Math.max(w,h)); w=Math.round(w*k); h=Math.round(h*k);
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(im,0,0,w,h);
+        res(c.toDataURL('image/jpeg',0.72));
+      };
+      im.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+async function paintPhoto(){
+  const d=await phLoad(sel), t=$('phT'), r=rec(sel);
+  t.innerHTML = d?`<img src="${d}" alt="Фото ${sel}">`:'<span>+</span>';
+  $('phDel').style.display=d?'':'none';
+  $('phTxt').textContent = d
+    ? 'Снимок сохранён. Нажми «Сравнить фото», чтобы поставить его рядом с любым другим днём.'
+    : 'Снимай в одном месте, при одном свете, в одной позе. Раз в неделю достаточно.';
+  $('phW').value = r.bw||'';
+  $('bkst').textContent = PH.length ? ('снимков в архиве: '+PH.length) : 'снимков пока нет';
+}
+
+$('phT').addEventListener('click',()=>$('phFile').click());
+$('phAdd').addEventListener('click',()=>$('phFile').click());
+$('phFile').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0]; e.target.value='';
+  if(!f)return;
+  try{
+    const dat=await compress(f);
+    await phPut(sel,dat); PHCACHE[sel]=dat; await phSync();
+    if(!rec(sel).bw){rec(sel).bw=S.bw;save()}
+    note('Снимок сохранён'); paintPhoto();
+  }catch(err){note('Не удалось сохранить фото')}
+});
+$('phDel').addEventListener('click',async()=>{
+  if(!confirm('Удалить фото за '+sel+'?'))return;
+  await phDel(sel); PHCACHE[sel]=null; await phSync(); paintPhoto();
+});
+$('phW').addEventListener('input',e=>{rec(sel).bw=e.target.value;save()});
+
+/* ================= СРАВНЕНИЕ ================= */
+let A=null,B=null;
+async function openCmp(){
+  await phSync();
+  if(!PH.length){note('Сначала загрузи хотя бы одно фото');return}
+  A=PH[0]; B=PH[PH.length-1];
+  if(PH.includes(sel))B=sel;
+  const opts=d=>PH.map(p=>`<option value="${p}" ${p===d?'selected':''}>${fmt(p)}</option>`).join('');
+  $('selA').innerHTML=opts(A); $('selB').innerHTML=opts(B);
+  $('quick').innerHTML=[['first','ПЕРВОЕ И ПОСЛЕДНЕЕ'],['month','МЕСЯЦ НАЗАД'],['sel','ЭТОТ ДЕНЬ']]
+    .map(([k,l])=>`<button data-q="${k}">${l}</button>`).join('');
+  $('strip').innerHTML=PH.map(p=>
+    `<button data-s="${p}"><img data-lazy="${p}" alt=""><em>${fmt(p,1)}</em></button>`).join('');
+  for(const im of $('strip').querySelectorAll('[data-lazy]')){
+    im.src=await phLoad(im.dataset.lazy)||'';
+  }
+  $('ov').classList.add('on');
+  document.body.style.overflow='hidden';
+  paintCmp();
+}
+function fmt(d,short){
+  const x=new Date(d+'T12:00:00');
+  return x.getDate()+' '+MON[x.getMonth()].slice(0,3).toLowerCase()+(short?'':' '+x.getFullYear());
+}
+async function paintCmp(){
+  const a=await phLoad(A), b=await phLoad(B);
+  $('picA').innerHTML=a?`<img src="${a}" alt="">`:'<span>нет фото</span>';
+  $('picB').innerHTML=b?`<img src="${b}" alt="">`:'<span>нет фото</span>';
+  $('dtA').textContent=fmt(A); $('dtB').textContent=fmt(B);
+  const wa=num((S.rec[A]||{}).bw), wb=num((S.rec[B]||{}).bw);
+  $('wA').textContent=wa?wa.toString().replace('.',',')+' кг':'—';
+  $('wB').textContent=wb?wb.toString().replace('.',',')+' кг':'—';
+  const days=Math.round((new Date(B)-new Date(A))/864e5);
+  if(wa&&wb){const d=wb-wa;
+    $('dlt').textContent=(d>0?'+':'')+d.toFixed(1).replace('.',',')+' кг';
+    $('dlt').style.color=d>0?'var(--legs)':(d<0?'var(--arms)':'var(--cy2)');
+    $('dltS').textContent='ЗА '+Math.abs(days)+' ДН.';
+  }else{$('dlt').textContent='—';$('dlt').style.color='var(--cy2)';
+    $('dltS').textContent='ВПИШИ ВЕС В ЭТИ ДНИ';}
+  $('selA').value=A; $('selB').value=B;
+}
+$('selA').addEventListener('change',e=>{A=e.target.value;paintCmp()});
+$('selB').addEventListener('change',e=>{B=e.target.value;paintCmp()});
+$('strip').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(!b)return;
+  B=b.dataset.s;paintCmp()});
+$('quick').addEventListener('click',e=>{
+  const b=e.target.closest('[data-q]');if(!b)return;
+  const q=b.dataset.q;
+  if(q==='first'){A=PH[0];B=PH[PH.length-1]}
+  if(q==='sel'){B=PH.includes(sel)?sel:PH[PH.length-1]}
+  if(q==='month'){const t=new Date(B); t.setMonth(t.getMonth()-1);
+    const goal=iso(t); A=PH.reduce((best,p)=>
+      Math.abs(new Date(p)-new Date(goal))<Math.abs(new Date(best)-new Date(goal))?p:best,PH[0]);}
+  paintCmp();
+});
+$('phCmp').addEventListener('click',openCmp);
+$('ovX').addEventListener('click',()=>{$('ov').classList.remove('on');document.body.style.overflow=''});
+
+/* ================= АРХИВ ================= */
+$('exp').addEventListener('click',async()=>{
+  try{
+    const keys=await phKeys()||[], vals=await phAll()||[];
+    const photos={}; keys.forEach((k,i)=>photos[k]=vals[i]);
+    const blob=new Blob([JSON.stringify({v:3,saved:new Date().toISOString(),state:S,photos})],
+      {type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='sistema-'+today()+'.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+    note('Копия готова — сохрани в «Файлы»');
+  }catch(e){note('Не удалось создать копию')}
+});
+$('imp').addEventListener('click',()=>$('impFile').click());
+$('impFile').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0]; e.target.value='';
+  if(!f)return;
+  const fr=new FileReader();
+  fr.onload=async()=>{
+    try{
+      const o=JSON.parse(fr.result);
+      if(!o.state)throw 0;
+      if(!confirm('Заменить текущий прогресс данными из копии? Всё нынешнее будет стёрто.'))return;
+      S=o.state; save();
+      for(const k of Object.keys(o.photos||{})){await phPut(k,o.photos[k]);PHCACHE[k]=o.photos[k]}
+      await phSync();
+      sel=today(); mo=sel.slice(0,7); $('bw').value=S.bw;
+      render(); note('Прогресс восстановлен');
+    }catch(err){note('Файл не подошёл')}
+  };
+  fr.readAsText(f);
+});
+
+/* просим систему не чистить хранилище */
+if(navigator.storage&&navigator.storage.persist){
+  navigator.storage.persisted().then(p=>{if(!p)navigator.storage.persist()}).catch(()=>{});
+}
+phSync().then(()=>{window.PHREADY=1;paintPhoto()});
 
 // офлайн-режим
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
