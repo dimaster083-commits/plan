@@ -64,7 +64,12 @@ input,select{font-size:16px}
 /* заголовок экрана */
 .shead{padding:calc(var(--st) + 16px) 0 2px}
 .shead h2{margin:0;font-size:12px;letter-spacing:.26em;color:var(--cy2);font-weight:700;
-  text-shadow:0 0 14px rgba(165,120,255,.6)}
+  text-shadow:0 0 14px rgba(165,120,255,.6);display:flex;align-items:center;gap:8px}
+.shead h2::before{content:'⟨';color:var(--cy);font-size:15px;line-height:1}
+.shead h2::after{content:'⟩';color:var(--cy);font-size:15px;line-height:1;margin-left:-2px}
+.shead h2 span{flex:0 0 auto}
+.shead h2 i{flex:1;height:1px;background:linear-gradient(90deg,var(--edge),transparent);
+  font-style:normal}
 .shead p{margin:3px 0 0;font-size:10.5px;color:var(--mut);letter-spacing:.04em}
 
 /* ===== ПАНЕЛЬ ===== */
@@ -309,6 +314,43 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .row .t input.s{font-weight:400;font-size:11.5px;color:var(--mut);margin-top:3px}
 .row.on .t input:first-child{color:var(--mut);text-decoration:line-through}
 
+/* ===== КВЕСТ ДНЯ ===== */
+.qbox{padding:12px 13px;margin-bottom:11px;position:relative}
+/* угловые засечки, как на окнах системы */
+.qbox::after{content:'';position:absolute;inset:5px;pointer-events:none;
+  background:
+    linear-gradient(var(--cy),var(--cy)) left 0 top 0/12px 1px no-repeat,
+    linear-gradient(var(--cy),var(--cy)) left 0 top 0/1px 12px no-repeat,
+    linear-gradient(var(--cy),var(--cy)) right 0 bottom 0/12px 1px no-repeat,
+    linear-gradient(var(--cy),var(--cy)) right 0 bottom 0/1px 12px no-repeat;
+  opacity:.65;box-shadow:none;height:auto;width:auto;top:5px;left:5px}
+.qhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:9px}
+.qhead b{font-size:11px;letter-spacing:.24em;color:#fff;text-shadow:0 0 14px var(--cy)}
+.qhead i{font-style:normal;font-size:9.5px;letter-spacing:.1em;color:var(--mut);text-align:right}
+.qprog{height:7px;background:rgba(167,120,255,.16);overflow:hidden}
+.qprog i{display:block;height:100%;width:0;transition:width .45s;
+  background:linear-gradient(90deg,#6A3FD0,var(--cy),#EBDCFF);
+  box-shadow:0 0 12px var(--cy)}
+.qmeta{display:flex;justify-content:space-between;gap:10px;margin-top:7px;font-size:10.5px;
+  color:var(--mut);letter-spacing:.04em}
+.qmeta b{color:var(--cy2);font-weight:700}
+.qpen{margin-top:8px;padding-top:7px;border-top:1px dashed var(--edge2);font-size:10px;
+  letter-spacing:.08em;color:var(--chest)}
+.qpen.done{color:var(--legs)}
+
+/* ===== ПОВЫШЕНИЕ УРОВНЯ ===== */
+@keyframes lvIn{0%{opacity:0;transform:scale(.82)}18%{opacity:1;transform:scale(1.04)}
+  30%{transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+.lvup{position:fixed;inset:0;z-index:220;display:none;place-items:center;pointer-events:none;
+  background:radial-gradient(420px 320px at 50% 50%,rgba(140,80,255,.35),transparent 72%)}
+.lvup.on{display:grid;animation:lvIn 2.2s ease forwards}
+.lvup div{text-align:center}
+.lvup b{display:block;font-size:12px;letter-spacing:.4em;color:var(--cy2);
+  text-shadow:0 0 18px var(--cy);margin-bottom:10px}
+.lvup span{display:block;font-size:74px;font-weight:800;color:#fff;line-height:1;
+  text-shadow:0 0 10px #fff,0 0 34px var(--cy),0 0 70px rgba(165,120,255,.9)}
+.lvup em{display:block;font-style:normal;font-size:10px;letter-spacing:.3em;color:var(--mut);margin-top:12px}
+
 .tools{display:flex;gap:6px;margin-bottom:10px}
 .tools button{flex:1;border:1px solid var(--edge2);padding:9px 6px;font-size:10.5px;
   letter-spacing:.04em;border-radius:2px;background:var(--panel2);color:var(--mut)}
@@ -470,6 +512,53 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   background:var(--panel2);letter-spacing:.05em}
 .bkb button.hi{border-color:var(--cy);color:var(--cy2)}
 .bkst{font-size:10px;color:var(--mut);margin-top:9px;letter-spacing:.03em}
+
+/* ===== РАЗБОР НЕДЕЛИ ===== */
+.anb{width:100%;margin-top:10px;border:1px solid var(--cy);color:var(--cy2);padding:13px;
+  font-size:12px;letter-spacing:.14em;border-radius:2px;background:var(--panel2);font-weight:700}
+/* шапка уведомления системы */
+.sysbar{display:flex;align-items:center;gap:11px;padding:12px 13px;margin-bottom:9px;
+  border:1px solid var(--cy);background:linear-gradient(180deg,rgba(46,26,86,.9),rgba(22,12,44,.9));
+  clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px);
+  box-shadow:0 0 28px rgba(165,120,255,.4),inset 0 0 22px rgba(165,120,255,.12)}
+.syshex{width:34px;height:34px;flex:0 0 auto;filter:drop-shadow(0 0 8px var(--cy));
+  animation:lvlPulse 3s ease-in-out infinite}
+.sysbar-t{flex:1;min-width:0}
+.sysbar-t b{display:block;font-size:11px;letter-spacing:.26em;color:#fff;
+  text-shadow:0 0 14px var(--cy)}
+.sysbar-t span{display:block;font-size:9.5px;color:var(--mut);letter-spacing:.08em;margin-top:3px}
+.sysbar-lv{font-size:9px;letter-spacing:.12em;color:var(--cy2);text-align:right;line-height:1.5;
+  flex:0 0 auto}
+.sysverdict{font-size:10px;letter-spacing:.2em;padding:8px 12px;margin-bottom:11px;border:1px dashed;
+  text-align:center}
+.sysverdict.ok{color:var(--legs);border-color:rgba(63,174,119,.5)}
+.sysverdict.warn{color:var(--chest);border-color:rgba(224,163,58,.5)}
+.sysverdict b{font-weight:800}
+
+/* карточка-уведомление */
+@keyframes sysIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.sysmsg{position:relative;padding:11px 13px 11px 14px;margin-bottom:8px;
+  background:rgba(32,20,60,.6);border:1px solid var(--edge2);border-left:2px solid var(--mut);
+  animation:sysIn .3s ease both}
+.sysmsg.ok{border-left-color:var(--legs)}
+.sysmsg.warn{border-left-color:var(--chest)}
+.sysmsg.bad{border-left-color:var(--arms);background:rgba(54,20,26,.45)}
+.sysmsg-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.sysmsg-h b{font-size:10.5px;letter-spacing:.16em;color:var(--cy2);font-weight:700}
+.systag{font-size:8.5px;letter-spacing:.12em;padding:2px 6px;font-weight:800;flex:0 0 auto}
+.systag.ok{color:var(--legs);border:1px solid rgba(63,174,119,.45);background:rgba(63,174,119,.12)}
+.systag.warn{color:var(--chest);border:1px solid rgba(224,163,58,.45);background:rgba(224,163,58,.12)}
+.systag.bad{color:#FF9A92;border:1px solid rgba(226,86,76,.5);background:rgba(226,86,76,.14)}
+.sysmsg p{margin:0;font-size:12px;line-height:1.5;color:var(--tx)}
+.sysmsg p b{color:var(--cy2);font-weight:700}
+.sysmsg.warn p b{color:var(--chest)}
+.sysmsg.bad p b{color:#FF9A92}
+.sysmsg.ok p b{color:var(--legs)}
+.systask{margin-top:8px;padding-top:7px;border-top:1px dashed var(--edge2);font-size:11px;
+  color:var(--cy2);display:flex;gap:8px;align-items:baseline}
+.systask i{font-style:normal;font-size:8.5px;letter-spacing:.16em;color:var(--mut);flex:0 0 auto}
+.copyb{width:100%;margin-top:6px;border:1px solid var(--edge);color:var(--tx);padding:12px;
+  font-size:11.5px;letter-spacing:.08em;border-radius:2px;background:var(--panel2)}
 
 /* ===== ПЛАН ===== */
 .pln{padding:13px 14px;margin-bottom:9px}
@@ -665,7 +754,12 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 <!-- ================= ЗАЛ ================= -->
 <section class="scr" id="scr-wo">
   <div id="tw">
-    <h2 class="sec">УПРАЖНЕНИЯ<em id="exCnt"></em></h2>
+    <div class="win qbox">
+      <div class="qhead"><b>ЕЖЕДНЕВНЫЙ КВЕСТ</b><i id="qType">—</i></div>
+      <div class="qprog"><i id="qpf"></i></div>
+      <div class="qmeta"><span id="qCnt">—</span><span id="qRew">—</span></div>
+      <div class="qpen" id="qPen">ШТРАФ ЗА НЕВЫПОЛНЕНИЕ: серия недель обнуляется</div>
+    </div>
     <div class="tools">
       <button id="cpTr">СКОПИРОВАТЬ ДЕНЬ</button>
       <button id="prAll">РЕКОРДЫ</button>
@@ -704,7 +798,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 
 <!-- ================= ПРОГРЕСС ================= -->
 <section class="scr" id="scr-prog">
-  <div class="shead"><h2>СТАТУС ИГРОКА</h2><p>уровень, цель и весь журнал</p></div>
+  <div class="shead"><h2><span>СТАТУС ИГРОКА</span><i></i></h2><p>уровень, цель и весь журнал</p></div>
 
   <div class="win" style="margin-top:10px">
     <div class="wtitle">СТАТУС</div>
@@ -722,6 +816,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
         <div class="xpb"><i id="xpf"></i></div><small id="xpt">0 / 500 XP</small></div>
     </div>
   </div>
+
+  <button class="anb" id="anBtn">▣ АНАЛИЗ ИГРОКА</button>
 
   <div class="win quest">
     <div class="qrow"><label>ГЛАВНЫЙ КВЕСТ — МАССА ТЕЛА</label>
@@ -787,7 +883,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 
 <!-- ================= ФОТО ================= -->
 <section class="scr" id="scr-photo">
-  <div class="shead"><h2>ФОТО</h2><p id="phDate">снимок за выбранный день</p></div>
+  <div class="shead"><h2><span>ФОТО</span><i></i></h2><p id="phDate">снимок за выбранный день</p></div>
   <div class="win ph" style="margin-top:10px">
     <div class="phbox">
       <div class="phthumb" id="phT"><span>+</span></div>
@@ -812,7 +908,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 
 <!-- ================= ПЛАН ================= -->
 <section class="scr" id="scr-plan">
-  <div class="shead"><h2>ПЛАН НАБОРА МАССЫ</h2><p>четыре тренировки в неделю, восьминедельный цикл</p></div>
+  <div class="shead"><h2><span>ПЛАН НАБОРА МАССЫ</span><i></i></h2><p>четыре тренировки в неделю, восьминедельный цикл</p></div>
   <div class="win pln" style="margin-top:10px">
     <h4>ЦЕЛЬ И ТЕМП</h4>
     <p>Коридор набора — <b>0,3–0,5 кг в неделю</b>. От 70 до 90 кг это примерно полтора года.
@@ -841,6 +937,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
     <p style="margin-top:10px;font-size:10.5px;color:var(--mut)">Веса гантелей — за одну, не за пару.
        Столбец «Мой» подтягивается из твоих рекордов.</p>
     <button class="add" id="recalc" style="margin-top:12px">ПЕРЕСЧИТАТЬ ВЕСА</button>
+    <button class="add" id="sndBtn" style="margin-top:7px">ЗВУК СИСТЕМЫ: ВКЛ</button>
   </div>
 </section>
 
@@ -899,10 +996,16 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   <p>Впиши свои рабочие веса — те, с которыми реально делаешь подходы.
      Остальные 19 упражнений программа посчитает от них.</p>
   <div id="setupRows"></div>
+  <div class="srow" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--edge2)">
+    <span>Рост</span><input id="anH" inputmode="numeric" value="177" aria-label="Рост"><i>см</i></div>
   <label class="schk"><input type="checkbox" id="setRet"> возвращаюсь после перерыва</label>
   <p style="margin:0 0 12px">Первые две недели пойдут на 80 и 90 % — сила возвращается
      быстрее, чем связки.</p>
   <div class="b"><button id="setSkip">ПОЗЖЕ</button><button id="setOk" class="hi">ПОСЧИТАТЬ</button></div>
+</div></div>
+
+<div class="lvup" id="lvup"><div>
+  <b>УРОВЕНЬ ПОВЫШЕН</b><span id="lvupN">2</span><em id="lvupR">РАНГ E</em>
 </div></div>
 
 <div class="note" id="note"><b>СИСТЕМА</b><span id="noteT"></span></div>
@@ -1174,6 +1277,7 @@ function migrate() {
       });
     }
     if (!S.goal || num(S.goal) === 100) S.goal = '95';
+    if (!S.height) S.height = 177;
     S.days.forEach(d => {
       if (d.kc === '3300' || d.kc === '3100') d.kc = '2900';
       else if (d.kc === '3000' || d.kc === '2800') d.kc = '2700';
@@ -1228,13 +1332,48 @@ const levelOf = () => Math.floor(S.xp / PER) + 1;
 function rankOf(l) { for (const [m, r] of RANKS) if (l >= m) return r; return 'E'; }
 const prOf = n => num((S.pr || {})[n]);
 
+/* ---------- звук системы ---------- */
+// Короткий синтезированный сигнал: звуковых файлов нет, всё считает сам браузер.
+let actx = null;
+function ding(freq, len, vol) {
+  if (S.sound === 0) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, actx.currentTime);
+    g.gain.linearRampToValueAtTime(vol || 0.12, actx.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + (len || 0.18));
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + (len || 0.18) + 0.02);
+  } catch (e) { /* звук не критичен */ }
+}
+const dingSet = () => ding(880, 0.14, 0.09);
+const dingPR = () => { ding(1046, 0.16, 0.12); setTimeout(() => ding(1568, 0.22, 0.12), 110); };
+const dingLevel = () => [784, 1046, 1318].forEach((f2, i) => setTimeout(() => ding(f2, 0.3, 0.13), i * 130));
+
 /* ---------- опыт ---------- */
 function addXp(n, msg) {
   const a = Math.floor(S.xp / PER);
   S.xp = Math.max(0, S.xp + n);
   const b = Math.floor(S.xp / PER);
-  if (b > a) note('Уровень повышен: ' + (b + 1));
+  if (b > a) levelUp(b + 1);
   else if (msg && n > 0) note(msg + '  +' + n + ' XP');
+}
+
+// полноэкранное уведомление, как при повышении уровня в системе
+function levelUp(lv) {
+  const el = $('lvup');
+  $('lvupN').textContent = lv;
+  $('lvupR').textContent = 'РАНГ ' + rankOf(lv);
+  el.classList.remove('on');
+  void el.offsetWidth;              // перезапуск анимации
+  el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 2300);
+  dingLevel();
+  if (navigator.vibrate) navigator.vibrate([60, 60, 120]);
 }
 
 /* ---------- уведомление ---------- */
@@ -1407,7 +1546,16 @@ function paintWorkout() {
   $('tw').hidden = !tr;
 
   if (tr) {
-    $('exCnt').textContent = d.ex.length + ' шт';
+    // квест дня: сколько закрыто, что за награда, что будет при пропуске
+    const doneCnt = d.ex.filter((_, j) => (r.log[j] || {}).done).length;
+    const pr2 = d.ex.length ? doneCnt / d.ex.length : 0;
+    $('qType').textContent = d.s.toUpperCase();
+    $('qpf').style.width = (pr2 * 100) + '%';
+    $('qCnt').innerHTML = '<b>' + doneCnt + '</b> из ' + d.ex.length + ' упражнений';
+    $('qRew').innerHTML = r.wo ? 'награда получена' : 'награда <b>+' + XP_WO + ' XP</b> за квест';
+    const pen = $('qPen');
+    if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'КВЕСТ ВЫПОЛНЕН'; }
+    else { pen.className = 'qpen'; pen.textContent = 'ШТРАФ ЗА НЕВЫПОЛНЕНИЕ: серия недель обнуляется'; }
     const IN = intOf(sel, d.t);
     $('exl').innerHTML = d.ex.map((e, j) => {
       const g = r.log[j] || {};
@@ -1438,7 +1586,7 @@ function paintWorkout() {
     const all = d.ex.length > 0 && d.ex.every((_, j) => (r.log[j] || {}).done);
     const f = $('fin');
     f.classList.toggle('done', !!r.wo);
-    f.textContent = r.wo ? 'ТРЕНИРОВКА ЗАСЧИТАНА' : 'ЗАВЕРШИТЬ ТРЕНИРОВКУ';
+    f.textContent = r.wo ? 'КВЕСТ ВЫПОЛНЕН' : 'ЗАВЕРШИТЬ КВЕСТ';
     f.disabled = !all || !!r.wo;
   }
 
@@ -1532,8 +1680,12 @@ function toggleSet(j) {
   const old = num(S.pr[p.n]);
   if (w > 0 && w > old) { l.prevPr = old; S.pr[p.n] = w; }
 
-  if (w > 0 && w > old && old > 0) { l.xp = XP_PR; addXp(XP_PR); note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + w + ' кг'); }
-  else { l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); }
+  if (w > 0 && w > old && old > 0) {
+    l.xp = XP_PR; addXp(XP_PR); dingPR();
+    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + kg(w) + ' кг');
+  } else {
+    l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); dingSet();
+  }
 
   if (!r.t0) r.t0 = Date.now();          // засечка начала тренировки
   save(); render();
@@ -2131,6 +2283,7 @@ $('impFile').addEventListener('change', e => {
    ВКЛАДКА «ПЛАН»
    ========================================================================= */
 function paintPlan() {
+  $('sndBtn').textContent = 'ЗВУК СИСТЕМЫ: ' + (S.sound === 0 ? 'ВЫКЛ' : 'ВКЛ');
   $('wtab').innerHTML = WEIGHTS.map(([n, a, b]) => {
     const my = prOf(n);
     return `<tr><td>${esc(n)}</td><td class="s">${a}</td><td class="s">${b}</td>
@@ -2146,6 +2299,7 @@ function openSetup() {
   $('setupRows').innerHTML = ANCHORS.map(([k, label, def]) =>
     `<div class="srow"><span>${label}</span>
       <input id="an-${k}" inputmode="decimal" value="${esc(a[k] ?? def)}" aria-label="${label}"><i>кг</i></div>`).join('');
+  $('anH').value = S.height || 177;
   $('setRet').checked = !!S.returning;
   $('setup').classList.add('on');
 }
@@ -2156,6 +2310,7 @@ $('setOk').addEventListener('click', () => {
   ANCHORS.forEach(([k]) => { a[k] = num($('an-' + k).value); });
   if (!a.b && !a.s && !a.d) { note('Впиши хотя бы один вес'); return; }
   S.anchors = a;
+  S.height = num($('anH').value) || 177;
   S.returning = $('setRet').checked ? 1 : 0;
   S.setup = 1;
   deriveWeights();
@@ -2164,6 +2319,11 @@ $('setOk').addEventListener('click', () => {
 });
 $('setSkip').addEventListener('click', () => { S.setup = 1; save(); closeSetup(); });
 $('recalc').addEventListener('click', openSetup);
+$('sndBtn').addEventListener('click', () => {
+  S.sound = S.sound === 0 ? 1 : 0;
+  save(); paintPlan();
+  if (S.sound) dingSet();
+});
 
 /* =========================================================================
    ЭКРАН НЕ ГАСНЕТ ВО ВРЕМЯ ТРЕНИРОВКИ
@@ -3136,9 +3296,9 @@ function mealSum(m) {
   });
   return { k: k, p: p, f: f, c: c };
 }
-function daySum() {
+function daySum(day) {
   let k = 0, p = 0, f = 0, c = 0;
-  (dayOf(sel).ml || []).forEach(m => { const s = mealSum(m); k += s.k; p += s.p; f += s.f; c += s.c; });
+  ((day || dayOf(sel)).ml || []).forEach(m => { const s = mealSum(m); k += s.k; p += s.p; f += s.f; c += s.c; });
   return { k: k, p: p, f: f, c: c };
 }
 
@@ -3530,6 +3690,310 @@ $('quick').addEventListener('click', e => {
 });
 $('phCmp').addEventListener('click', openCmp);
 $('ovX').addEventListener('click', () => { $('ov').classList.remove('on'); document.body.style.overflow = ''; });
+
+
+/* =========================================================================
+   СИСТЕМА · АНАЛИЗ ИГРОКА
+   Никакой нейросети: это арифметика по журналу, который уже есть.
+   Каждое уведомление опирается на конкретные числа и показывает их,
+   чтобы можно было проверить, а не верить на слово.
+   ========================================================================= */
+
+// максимальный вес по датам для упражнения: [[дата, вес], ...]
+function bestByDate(name) {
+  const m = {};
+  exHistory(name).forEach(([ds, w]) => { m[ds] = Math.max(m[ds] || 0, w); });
+  return Object.keys(m).sort().map(ds => [ds, m[ds]]);
+}
+
+// сколько тренировок запланировано и сделано за последние N дней
+function attendance(days) {
+  let planned = 0, done = 0;
+  const from = new Date(); from.setDate(from.getDate() - (days - 1));
+  for (let i = 0; i < days; i++) {
+    const d = new Date(from); d.setDate(from.getDate() + i);
+    const ds = iso(d);
+    if (ds > today()) break;
+    if (dayOf(ds).t !== 'rest') planned++;
+    if (recOf(ds).wo) done++;
+  }
+  return { planned, done };
+}
+
+// подходы по группам за последние 7 дней
+function vol7() {
+  const acc = {};
+  GROUPS.forEach(([n]) => { acc[n] = 0; });
+  const from = new Date(); from.setDate(from.getDate() - 6);
+  const f7 = iso(from);
+  Object.keys(S.rec).forEach(ds => {
+    if (ds < f7 || ds > today()) return;
+    const day = dayOf(ds), lg = S.rec[ds].log || {};
+    Object.keys(lg).forEach(j => {
+      if (!lg[j].done) return;
+      const p = day.ex[j] || {};
+      const g = lg[j].g || p.g;
+      if (g && acc[g] !== undefined) acc[g] += num(lg[j].s ?? p.s) || 0;
+    });
+  });
+  return acc;
+}
+
+function analyze() {
+  const f = [];
+  // lvl: bad | warn | ok; task — что именно сделать, языком системы
+  const add = (lvl, title, text, task) => f.push({ lvl, title, text, task });
+
+  /* --- вес и темп --- */
+  const pts = wlog();
+  if (!pts.length) {
+    add('bad', 'МАССА ТЕЛА', 'Показатель не снят ни разу. Главный квест не отслеживается: ' +
+      'без веса не работают ни график, ни контроль темпа.',
+      'Взвесься утром натощак и впиши цифру');
+  } else {
+    const last = pts[pts.length - 1];
+    const stale = daysBetween(last[0], today());
+    if (stale >= 7) {
+      add('warn', 'МАССА ТЕЛА', 'Последнее измерение <b>' + stale + ' дн. назад</b>: ' + kg(last[1]) +
+        ' кг. Анализ ведётся по устаревшему показателю.',
+        'Обнови вес');
+    }
+    const cut = at(last[0]); cut.setDate(cut.getDate() - 21);
+    const win = pts.filter(p => at(p[0]) >= cut);
+    if (win.length > 1) {
+      const dd = daysBetween(win[0][0], last[0]) || 1;
+      const per = (last[1] - win[0][1]) / dd * 7;
+      const goal = num(S.goal) || 95;
+      const left = goal - last[1];
+      if (per < 0.1) {
+        add('warn', 'ТЕМП РОСТА', 'Прирост <b>' + dec(per, 2) + ' кг/нед</b> за ' + dd + ' дн. ' +
+          'Показатель заморожен.', 'Добавь 300 ккал в день, проверка через 14 дней');
+      } else if (per > 0.7) {
+        add('warn', 'ТЕМП РОСТА', 'Прирост <b>+' + dec(per, 2) + ' кг/нед</b> — выше коридора 0,3–0,5. ' +
+          'Избыток уходит в жировую массу.', 'Убери 200–300 ккал в день');
+      } else {
+        const weeks = Math.round(left / per);
+        add('ok', 'ТЕМП РОСТА', 'Прирост <b>+' + dec(per, 2) + ' кг/нед</b> — в границах нормы. ' +
+          'До цели ' + goal + ' кг остаётся ' + dec(left) + ' кг, расчётный срок <b>' + weeks + ' нед</b>.',
+          'Удерживай текущий режим');
+      }
+    }
+  }
+
+  /* --- посещаемость --- */
+  const a7 = attendance(7), a14 = attendance(14);
+  if (a14.planned) {
+    if (a7.done === 0 && a7.planned > 0) {
+      add('bad', 'ШТРАФ ЗА ПРОСТОЙ', 'За 7 дней закрыто <b>0 из ' + a7.planned + '</b> тренировок. ' +
+        'При простое свыше 14 дней рабочие веса снижаются.', 'Закрой ближайшую тренировку');
+    } else if (a14.done < a14.planned * 0.7) {
+      add('warn', 'ПОСЕЩАЕМОСТЬ', 'За 14 дней закрыто <b>' + a14.done + ' из ' + a14.planned +
+        '</b>. Норма протокола — четыре в неделю.', 'Не пропускай следующую');
+    } else {
+      const st = streak();
+      add('ok', 'ПОСЕЩАЕМОСТЬ', 'За 14 дней закрыто <b>' + a14.done + ' из ' + a14.planned + '</b>' +
+        (st > 1 ? '. Серия: <b>' + st + ' нед</b> подряд' : '') + '.',
+        st > 1 ? 'Серия активна — не разрывай' : 'Держи четыре в неделю');
+    }
+  }
+
+  /* --- объём по группам --- */
+  const acc = vol7();
+  const low = [], high = [];
+  GROUPS.forEach(([n]) => {
+    const tg = VOL_TARGET[n];
+    if (acc[n] < tg * 0.6) low.push(n + ' ' + acc[n] + '/' + tg);
+    else if (acc[n] > tg * 1.4) high.push(n + ' ' + acc[n] + '/' + tg);
+  });
+  if (Object.values(acc).some(v => v > 0)) {
+    if (low.length) {
+      add('warn', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Недобор подходов: <b>' + low.join(', ') + '</b>. ' +
+        (high.length ? 'Перебор: ' + high.join(', ') + '. ' : '') +
+        'Характеристика, которая недобирает, прекращает рост первой.',
+        'Добавь подходы на отстающие группы');
+    } else {
+      add('ok', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Все характеристики в норме: ' +
+        GROUPS.map(([n]) => n.toLowerCase() + ' ' + acc[n]).join(', ') + ' подходов.',
+        'Продолжай в том же объёме');
+    }
+  }
+
+  /* --- застой --- */
+  const stuck = [];
+  const seen = {};
+  S.days.forEach(d => d.ex.forEach(e => {
+    if (seen[e.n] || !num(e.w)) return;
+    seen[e.n] = 1;
+    const h = bestByDate(e.n);
+    if (h.length < 3) return;
+    const tail = h.slice(-3);
+    if (tail[0][1] >= tail[2][1] && daysBetween(tail[0][0], today()) <= 35) {
+      stuck.push(e.n + ' — ' + kg(tail[2][1]) + ' кг');
+    }
+  }));
+  if (stuck.length) {
+    add('warn', 'ЗАСТОЙ ПАРАМЕТРА', 'Вес не растёт три тренировки подряд: <b>' +
+      stuck.slice(0, 4).join('; ') + '</b>' + (stuck.length > 4 ? ' и ещё ' + (stuck.length - 4) : '') + '.',
+      'Закрой верхнюю границу повторов во всех подходах — прибавку система предложит сама');
+  }
+
+  /* --- питание --- */
+  let kcSum = 0, prSum = 0, filled = 0;
+  S.days.forEach(d => {
+    const s2 = daySum(d);
+    if (s2.k > 0) { kcSum += s2.k; prSum += s2.p; filled++; }
+  });
+  if (filled) {
+    const goalK = S.days.reduce((x, d) => x + num(d.kc), 0) / S.days.length;
+    const goalP = S.days.reduce((x, d) => x + num(d.pr), 0) / S.days.length;
+    const avgK = kcSum / filled, avgP = prSum / filled;
+    if (avgP < goalP * 0.9) {
+      add('warn', 'РЕСУРС: БЕЛОК', 'Рацион даёт <b>' + rnd(avgP) + ' г</b> при норме ' + rnd(goalP) +
+        ' г. Без материала рост массы идёт за счёт жира.',
+        'Добавь ' + rnd(goalP - avgP) + ' г белка в день');
+    } else if (avgK < goalK * 0.9) {
+      add('warn', 'РЕСУРС: КАЛОРИИ', 'Рацион даёт <b>' + rnd(avgK) + ' ккал</b> при норме ' + rnd(goalK) +
+        '. Для набора нужен запас.', 'Добавь ' + rnd(goalK - avgK) + ' ккал в день');
+    } else {
+      add('ok', 'РЕСУРС', 'Рацион закрывает <b>' + rnd(avgK) + ' ккал</b> и <b>' + rnd(avgP) +
+        ' г белка</b>. Норма покрыта.', 'Режим питания подтверждён');
+    }
+  } else {
+    add('warn', 'РЕСУРС', 'Рацион не заполнен. Расход и поступление не сходятся — ' +
+      'система не видит, хватает ли материала.', 'Заполни приёмы пищи на вкладке «Еда»');
+  }
+
+  /* --- цикл --- */
+  if (started()) {
+    const c = cycOf(today()), w = planWeek();
+    if (c.ph === 'РАЗГРУЗКА') {
+      add('ok', 'ФАЗА: РАЗГРУЗКА', 'Неделя <b>' + w + '</b>. Веса минус 40%, подходов меньше. ' +
+        'Именно на разгрузке организм догоняет нагрузку.', 'Не пропускай разгрузку');
+    } else {
+      add('ok', 'ФАЗА: ' + c.ph, 'Неделя <b>' + w + '</b> цикла. ' + c.t, 'Следуй протоколу недели');
+    }
+    if (rampOf(today()) < 1) {
+      add('ok', 'РЕЖИМ ВОЗВРАЩЕНИЯ', 'Веса снижены до <b>' + Math.round(rampOf(today()) * 100) +
+        '%</b> от рабочих. Сила восстанавливается быстрее связок.', 'Не превышай расчётный вес');
+    }
+  } else {
+    add('warn', 'ЦИКЛ НЕ ЗАПУЩЕН', 'Старт плана назначен на ' + fmt(planStart()) +
+      '. До этой даты недели цикла не считаются.', 'Поставь дату старта на «Прогрессе»');
+  }
+
+  /* --- фото --- */
+  if (!PH.length) {
+    add('warn', 'ФИКСАЦИЯ ФОРМЫ', 'Снимков нет. Весы показывают массу, но не форму.',
+      'Сделай снимок раз в неделю, в одном свете');
+  } else {
+    const stale = daysBetween(PH[PH.length - 1], today());
+    if (stale > 14) {
+      add('warn', 'ФИКСАЦИЯ ФОРМЫ', 'Последний снимок <b>' + stale + ' дн. назад</b>.', 'Сделай новый снимок');
+    }
+  }
+
+  return f;
+}
+
+const TAG = { bad: '✕ КРИТИЧНО', warn: '⚠ ВНИМАНИЕ', ok: '✓ НОРМА' };
+
+function openAnalysis() {
+  const f = analyze();
+  const order = { bad: 0, warn: 1, ok: 2 };
+  f.sort((x, y) => order[x.lvl] - order[y.lvl]);
+  const bad = f.filter(x => x.lvl !== 'ok').length;
+  const lv = levelOf();
+
+  let html = `<div class="sysbar">
+    <svg viewBox="0 0 40 40" class="syshex"><polygon points="20,2 36,11 36,29 20,38 4,29 4,11"
+      fill="none" stroke="#A578FF" stroke-width="2"/></svg>
+    <div class="sysbar-t">
+      <b>УВЕДОМЛЕНИЕ СИСТЕМЫ</b>
+      <span>анализ игрока завершён · ${fmt(today())}</span>
+    </div>
+    <span class="sysbar-lv">ур. ${lv}<br>ранг ${rankOf(lv)}</span>
+  </div>
+  <div class="sysverdict ${bad ? 'warn' : 'ok'}">
+    ${bad ? 'ОБНАРУЖЕНО ОТКЛОНЕНИЙ: <b>' + bad + '</b>' : 'ОТКЛОНЕНИЙ НЕ ОБНАРУЖЕНО'}
+  </div>`;
+
+  html += f.map((x, i) => `<div class="sysmsg ${x.lvl}" style="animation-delay:${i * 55}ms">
+      <div class="sysmsg-h"><span class="systag ${x.lvl}">${TAG[x.lvl]}</span><b>${x.title}</b></div>
+      <p>${x.text}</p>
+      ${x.task ? `<div class="systask"><i>ЗАДАЧА</i>${esc(x.task)}</div>` : ''}
+    </div>`).join('');
+
+  html += `<button class="copyb" id="anCopy">▣ ВЫГРУЗИТЬ ДАННЫЕ ИГРОКА</button>
+    <p class="bkst">Выгрузка — обычный текст с твоими числами. Вставь его в чат с Claude
+       и спроси что угодно: разбор программы, замену упражнения, что делать с застоем.</p>`;
+
+  sheet('АНАЛИЗ', html);
+  $('anCopy').addEventListener('click', copySummary);
+}
+
+/* Текстовая выгрузка: всё, что нужно постороннему, чтобы дать совет по делу. */
+function buildSummary() {
+  const pts = wlog();
+  const a14 = attendance(14);
+  const L = [];
+  L.push('СВОДКА ИЗ ДНЕВНИКА ТРЕНИРОВОК, ' + fmt(today()));
+  L.push('Рост ' + (S.height || 177) + ' см, вес ' + kg(S.bw) + ' кг, цель ' + (S.goal || 95) + ' кг.');
+  if (pts.length > 1) {
+    const first = pts[0], last = pts[pts.length - 1];
+    L.push('Вес: ' + kg(first[1]) + ' кг (' + fmt(first[0]) + ') → ' + kg(last[1]) + ' кг (' + fmt(last[0]) + ').');
+  }
+  L.push('План: 4 тренировки в неделю, верх/низ дважды, восьминедельный цикл. ' +
+    (started() ? 'Сейчас неделя ' + planWeek() + ', фаза ' + cycOf(today()).ph + '.' : 'План ещё не начался.'));
+  L.push('За две недели закрыто ' + a14.done + ' из ' + a14.planned + ' тренировок.');
+  L.push('');
+  L.push('РАБОЧИЕ ВЕСА И РЕКОРДЫ:');
+  const seen = {};
+  S.days.forEach(d => {
+    if (d.t === 'rest' || !d.ex.length) return;
+    d.ex.forEach(e => {
+      if (seen[e.n]) return;
+      seen[e.n] = 1;
+      const pr = prOf(e.n);
+      L.push('- ' + e.n + ': рабочий ' + kg(e.w) + ' кг, ' + e.s + '×' + e.r +
+        (pr ? ', рекорд ' + kg(pr) + ' кг' : '') + (e.g ? ' (' + e.g + ')' : ''));
+    });
+  });
+  L.push('');
+  L.push('ОБЪЁМ ЗА 7 ДНЕЙ (подходов / норма):');
+  const vol = vol7();
+  GROUPS.forEach(([n]) => L.push('- ' + n + ': ' + vol[n] + ' / ' + VOL_TARGET[n]));
+  L.push('');
+  L.push('ПИТАНИЕ (рацион по дням недели):');
+  S.days.forEach(d => {
+    const s2 = daySum(d);
+    if (s2.k > 0) L.push('- ' + d.n + ': ' + rnd(s2.k) + ' ккал, белок ' + rnd(s2.p) +
+      ' г при цели ' + d.kc + ' / ' + d.pr);
+  });
+  L.push('');
+  L.push('ЧТО ВИДИТ ПРИЛОЖЕНИЕ:');
+  analyze().forEach(x => L.push('- ' + x.title + ': ' + x.text.replace(/<[^>]+>/g, '') +
+    (x.task ? ' Задача: ' + x.task + '.' : '')));
+  return L.join('\n');
+}
+
+async function copySummary() {
+  const text = buildSummary();
+  try {
+    await navigator.clipboard.writeText(text);
+    note('Данные выгружены');
+  } catch (e) {
+    // Safari иногда отказывает буферу обмена — показываем текст, чтобы выделить руками
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'width:100%;height:240px;background:rgba(167,120,255,.07);color:var(--tx);' +
+      'border:1px solid var(--edge2);border-radius:2px;padding:9px;font-size:12px;margin-top:8px';
+    $('shB').appendChild(ta);
+    ta.select();
+    note('Выдели и скопируй вручную');
+  }
+}
+
+$('anBtn').addEventListener('click', openAnalysis);
 
 /* =========================================================================
    ЗАПУСК
