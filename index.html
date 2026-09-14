@@ -23,6 +23,8 @@
   --f:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
   --st:env(safe-area-inset-top,0px);
   --sb:env(safe-area-inset-bottom,0px);
+  --sl:env(safe-area-inset-left,0px);
+  --sr:env(safe-area-inset-right,0px);
   --tabh:54px;
   color-scheme:dark;
 }
@@ -694,6 +696,15 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 @keyframes lvlPulse{0%,100%{filter:drop-shadow(0 0 10px rgba(165,120,255,.75))}
   50%{filter:drop-shadow(0 0 20px rgba(165,120,255,1))}}
 .rank svg{animation:lvlPulse 3.4s ease-in-out infinite}
+
+/* Боковые вырезы: в горизонтальной ориентации чёлка уходит вбок,
+   и фиксированных 14 px не хватает — контент заезжает под неё. */
+.wrap,.drow,.fph,.fpl,.ovin,.shin,.tmr{
+  padding-left:max(14px,var(--sl));
+  padding-right:max(14px,var(--sr))}
+.tabbar .in,.fpbar>div{
+  padding-left:var(--sl);
+  padding-right:var(--sr)}
 
 @media (max-width:360px){
   body{font-size:14px}
