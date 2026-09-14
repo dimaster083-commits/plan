@@ -1,4 +1,4 @@
-const CACHE = "sys-gym-23";
+const CACHE = "sys-gym-40";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
