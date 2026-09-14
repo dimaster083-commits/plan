@@ -1099,7 +1099,7 @@ function shiftMonth(ym, n) { const [y, m] = ym.split('-').map(Number); return is
 
 // Страховка: даже если дальше что-то упадёт, заставка снимется и будет видно приложение,
 // а не бесконечный логотип.
-setTimeout(() => { const b = $('boot'); if (b) b.classList.add('off'); }, 4000);
+setTimeout(() => { const b = $('boot'); if (b) { b.classList.add('off'); b.remove(); } }, 4000);
 
 /* =========================================================================
    СОСТОЯНИЕ
@@ -3559,10 +3559,14 @@ document.addEventListener('visibilitychange', () => {
   if (today() !== lastDay) { lastDay = today(); sel = today(); mo = sel.slice(0, 7); render(); }
 });
 
-requestAnimationFrame(() => {
+// Снимаем заставку по таймеру, а не по кадру отрисовки: если приложение открыли
+// в фоновой вкладке, кадр не рисуется и логотип висит, пока туда не переключишься.
+setTimeout(() => {
   const b = $('boot');
-  setTimeout(() => { b.classList.add('off'); setTimeout(() => b.remove(), 400); }, 220);
-});
+  if (!b) return;
+  b.classList.add('off');
+  setTimeout(() => { if (b.parentNode) b.remove(); }, 400);
+}, 220);
 
 // офлайн-режим
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
