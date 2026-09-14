@@ -1326,6 +1326,7 @@ function render() {
   if (tab === 'photo') paintPhotoScreen();
   if (tab === 'plan') paintPlan();
   paintBadge();
+  if (typeof syncWake === 'function') syncWake();
 }
 
 // точка на вкладке «Зал», пока сегодняшняя тренировка не закрыта
@@ -1377,11 +1378,16 @@ $('dnm').addEventListener('input', e => { dayOf(sel).n = e.target.value; save();
 $('types').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
   const d = dayOf(sel), nt = b.dataset.t, was = d.t;
+  if (nt === was) return;
   d.t = nt;
-  if (nt !== 'rest' && was === 'rest' && !d.ex.length) {
-    const src = TPL.find(x => x.t === nt);
+  // подпись дня идёт следом за типом, иначе «Низ тела» висит над жимом лёжа
+  const src = TPL.find(x => x.t === nt);
+  d.s = nt === 'rest' ? 'Отдых' : (nt === 'other' ? 'Своё' : (src ? src.s : d.s));
+  if (nt !== 'rest' && !d.ex.length && src && src.e) {
     // группу мышц переносим вместе с упражнением, иначе подходы не попадут в объём
-    if (src && src.e) d.ex = src.e.map(e2 => ({ n: e2[0], s: e2[1], r: e2[2], w: e2[3], g: e2[4] || null }));
+    d.ex = src.e.map(e2 => ({ n: e2[0], s: e2[1], r: e2[2], w: e2[3], g: e2[4] || null }));
+  } else if (nt !== 'rest' && d.ex.length) {
+    note('Упражнения оставлены прежними');
   }
   save(); render();
 });
@@ -1529,7 +1535,14 @@ function toggleSet(j) {
   if (w > 0 && w > old && old > 0) { l.xp = XP_PR; addXp(XP_PR); note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + w + ' кг'); }
   else { l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); }
 
+  if (!r.t0) r.t0 = Date.now();          // засечка начала тренировки
   save(); render();
+  syncWake();
+
+  // отдых включается сам: в зале лишнее нажатие мокрыми руками ни к чему
+  const allDone = d.ex.length > 0 && d.ex.every((_, k) => (r.log[k] || {}).done);
+  if (!allDone) tStart(90);
+
   maybeProgress(l, p, w, num(l.r));
 }
 
@@ -1573,8 +1586,47 @@ $('addEx').addEventListener('click', () => {
 $('fin').addEventListener('click', () => {
   const r = recRW(sel);
   if (r.wo) return;
-  r.wo = 1; addXp(XP_WO, 'Тренировка закрыта'); save(); render();
+  r.wo = 1;
+  r.t1 = Date.now();
+  addXp(XP_WO, 'Тренировка закрыта');
+  save(); render();
+  keepAwake(false);
+  clearInterval(tInt); $('tmr').classList.remove('on');
+  workoutSummary(sel);
 });
+
+/* Итоги сразу после тренировки: сколько поднято, сколько заняло, что за рекорды.
+   Считается по тому же журналу, что и статистика, — отдельных чисел не заводим. */
+function workoutSummary(ds) {
+  const d = dayOf(ds), r = recOf(ds);
+  let sets = 0, ton = 0;
+  const records = [];
+  d.ex.forEach((e, j) => {
+    const l = r.log[j];
+    if (!l || !l.done) return;
+    const st = num(l.s ?? e.s), rp = firstRep(l.r ?? e.r), w = num(l.w ?? e.w);
+    sets += st;
+    ton += st * rp * w;
+    if (l.prevPr !== undefined && l.prevPr > 0) records.push([l.n || e.n, w, l.prevPr]);
+  });
+  const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
+  const st = streak();
+  let h = `<div class="sum">
+    <div class="win"><b>${d.ex.length}</b><span>УПРАЖНЕНИЙ</span></div>
+    <div class="win"><b>${sets}</b><span>ПОДХОДОВ</span></div>
+    <div class="win"><b>${ton >= 1000 ? dec(ton / 1000) + ' т' : rnd(ton) + ' кг'}</b><span>ПОДНЯТО</span></div>
+    <div class="win"><b>${mins ? mins + ' мин' : '—'}</b><span>ДЛИТЕЛЬНОСТЬ</span></div>
+  </div>`;
+  if (records.length) {
+    h += '<div class="cph">НОВЫЕ РЕКОРДЫ</div>' + records.map(([n, w, old]) =>
+      `<div class="win prl"><b>${esc(n)}</b><span>${kg(w)} кг <i style="font-style:normal;
+        font-size:11px;color:var(--mut)">было ${kg(old)}</i></span></div>`).join('');
+  }
+  h += `<div class="win pln" style="margin-top:10px"><p style="margin:0">
+    ${st > 1 ? 'Серия: <b>' + st + '</b> недель подряд по четыре тренировки. Не рви её.'
+      : 'Четыре тренировки за неделю складываются в серию — она видна в статусе игрока.'}</p></div>`;
+  sheet('ТРЕНИРОВКА ЗАКРЫТА', h);
+}
 
 /* ---------- добавки ---------- */
 $('spl').addEventListener('click', e => {
@@ -1671,6 +1723,18 @@ function openHistory(name) {
     const df = h[h.length - 1][1] - h[0][1];
     html += `<div class="s" style="margin-top:8px">с ${fmt(h[0][0])}:
       <b style="color:${df >= 0 ? 'var(--legs)' : 'var(--arms)'}">${df > 0 ? '+' : ''}${dec(df)} кг</b></div>`;
+  }
+  // расчётный разовый максимум по формуле Эпли: вес × (1 + повторы / 30)
+  if (h.length) {
+    const best = h.reduce((a, x) => {
+      const e1 = x[1] * (1 + firstRep(x[3]) / 30);
+      return e1 > a[0] ? [e1, x] : a;
+    }, [0, null]);
+    if (best[1]) {
+      html += `<div class="s" style="margin-top:8px">разовый максимум по расчёту:
+        <b style="color:var(--gold)">${Math.round(best[0])} кг</b>
+        <span style="color:var(--mut)"> — из ${kg(best[1][1])} кг на ${best[1][3]}</span></div>`;
+    }
   }
   html += '</div>';
   const rows = h.slice().reverse().slice(0, 25).map(x =>
@@ -2100,6 +2164,31 @@ $('setOk').addEventListener('click', () => {
 });
 $('setSkip').addEventListener('click', () => { S.setup = 1; save(); closeSetup(); });
 $('recalc').addEventListener('click', openSetup);
+
+/* =========================================================================
+   ЭКРАН НЕ ГАСНЕТ ВО ВРЕМЯ ТРЕНИРОВКИ
+   Пока идёт незакрытая тренировка, телефон не уходит в сон: иначе между
+   подходами экран тухнет и приходится каждый раз его будить мокрыми руками.
+   ========================================================================= */
+let wake = null;
+async function keepAwake(on) {
+  try {
+    if (!('wakeLock' in navigator)) return;
+    if (on && !wake) {
+      wake = await navigator.wakeLock.request('screen');
+      wake.addEventListener('release', () => { wake = null; });
+    } else if (!on && wake) {
+      const w = wake; wake = null; await w.release();
+    }
+  } catch (e) { wake = null; }
+}
+// тренировка считается идущей, если хоть один подход закрыт, а сама она ещё не завершена
+function workoutRunning() {
+  const r = recOf(today());
+  return !r.wo && Object.values(r.log || {}).some(l => l.done);
+}
+function syncWake() { keepAwake(tab === 'wo' && sel === today() && workoutRunning()); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncWake(); });
 
 /* =========================================================================
    ТАЙМЕР ОТДЫХА
@@ -3171,8 +3260,9 @@ function closePick() {
   document.body.style.overflow = '';
 }
 
-function drawPick(q) {
-  q = q.trim().toLowerCase();
+function drawPick(raw) {
+  const q = String(raw ?? '').trim().toLowerCase();
+  const typed = String(raw ?? '').trim();     // как человек написал, с заглавными
   let base = allFood();
   if (chainFilter) base = base.filter(f => f[0].startsWith(chainFilter));
   const list = base.filter(f => !q || f[0].toLowerCase().includes(q)).slice(0, 80);
@@ -3188,7 +3278,7 @@ function drawPick(q) {
 
   if (q && !list.some(f => f[0].toLowerCase() === q)) {
     h = `<div class="fpn"><p>Нет в базе? Добавь свой продукт — значения на 100 г.</p>
-      <div class="r"><input id="nfN" placeholder="название" value="${esc(q)}" aria-label="Название">
+      <div class="r"><input id="nfN" placeholder="название" value="${esc(typed)}" aria-label="Название">
         <input id="nfK" inputmode="numeric" placeholder="ккал" aria-label="Калории">
         <input id="nfP" inputmode="decimal" placeholder="белок" aria-label="Белок">
         <input id="nfF" inputmode="decimal" placeholder="жир" aria-label="Жир">
