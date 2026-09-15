@@ -1363,6 +1363,7 @@ function migrate() {
    счётчиком. Поэтому случайное нажатие, отменённый подход или удалённый день
    автоматически приводят цифры в порядок — расходиться им больше негде. */
 function recomputeStats() {
+  wkCache = null;
   const vol = { 'Спина': 0, 'Грудь': 0, 'Ноги': 0, 'Руки': 0 };
   let xp = 0;
   Object.keys(S.rec).forEach(ds => {
@@ -1394,6 +1395,7 @@ function load() {
 
 let saveTimer = null;
 function save() {
+  wkCache = null;
   if (!canSave) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(flush, 150);      // пачкой: за одно нажатие состояние меняется не раз
@@ -1418,8 +1420,35 @@ const recRW = ds => S.rec[ds] || (S.rec[ds] = { log: {}, sp: {}, wo: 0 });
 
 const planStart = () => S.start || START_DEFAULT;
 const weekOfDate = ds => Math.floor((at(ds) - at(mondayOf(planStart()))) / 6048e5) + 1;
-const planWeek = ds => Math.max(1, weekOfDate(ds || today()));
 const started = ds => weekOfDate(ds || today()) >= 1;
+
+/* Неделя плана считается по закрытым тренировкам, а не по календарю.
+   Пропустил неделю — план не убегает вперёд на «Пик», а повторяет текущую
+   и ждёт. Для перехода достаточно WEEK_MIN тренировок из четырёх:
+   человек не станок, одна пропущенная неделю не обнуляет. */
+const WEEK_MIN = 3;
+let wkCache = null;
+function weekCounts() {
+  if (wkCache) return wkCache;
+  const m = {};
+  Object.keys(S.rec).forEach(ds => { if (S.rec[ds].wo) m[mondayOf(ds)] = (m[mondayOf(ds)] || 0) + 1; });
+  wkCache = m;
+  return m;
+}
+function planWeek(ds) {
+  const target = mondayOf(ds || today()), start = mondayOf(planStart());
+  if (target <= start) return 1;
+  const cnt = weekCounts();
+  const c = at(start);
+  let w = 1;
+  while (iso(c) < target) {
+    if ((cnt[iso(c)] || 0) >= WEEK_MIN) w++;      // неделя засчитана — идём дальше
+    c.setDate(c.getDate() + 7);
+  }
+  return w;
+}
+// сколько тренировок закрыто на неделе, в которую попадает дата
+const doneThisWeek = ds => weekCounts()[mondayOf(ds || today())] || 0;
 const cycIdx = ds => (planWeek(ds) - 1) % CYCLE.length;
 const cycOf = ds => CYCLE[cycIdx(ds)];
 // интенсивность считается для показанной даты, а не для сегодняшней
@@ -2213,7 +2242,14 @@ function paintCycle() {
   const i = cycIdx(), c = CYCLE[i], go = started();
   $('cycW').innerHTML = go ? 'Неделя ' + (i + 1) + '<i> из ' + CYCLE.length + '</i>' : 'План ещё не начался';
   $('cycPh').textContent = go ? c.ph : 'ОЖИДАНИЕ';
-  $('cycNote').textContent = go ? c.t : 'Старт ' + fmt(planStart()) + '. До него — свободные тренировки.';
+  const done = doneThisWeek();
+  $('cycNote').innerHTML = go
+    ? esc(c.t) + '<br><span style="color:var(--cy2)">Закрыто на этой неделе: <b>' + done + ' из 4</b>. ' +
+      (done >= WEEK_MIN
+        ? 'Неделя засчитана — со следующего понедельника идём дальше.'
+        : 'Для перехода на следующую неделю нужно ' + WEEK_MIN + '. Пропустишь — план не убежит вперёд, а повторит эту неделю.') +
+      '</span>'
+    : 'Старт ' + fmt(planStart()) + '. До него — свободные тренировки.';
   $('startIn').value = planStart();
   $('cycBar').innerHTML = CYCLE.map((w, k) =>
     `<div class="${go && k === i ? 'now' : (w.ph === 'РАЗГРУЗКА' ? 'dl' : (go && k < i ? 'done' : ''))}"></div>`).join('');
@@ -2362,7 +2398,7 @@ function cal() {
     const anyDate = (row.find(c => c.ds) || {}).ds;
     let lab = '';
     if (anyDate) {
-      const w = weekOfDate(anyDate);
+      const w = weekOfDate(anyDate) >= 1 ? planWeek(anyDate) : 0;
       if (w >= 1) {
         const ci = (w - 1) % CYCLE.length;
         lab = 'Н' + w + ' · Ц' + (Math.floor((w - 1) / CYCLE.length) + 1) + '·' + (ci + 1) +
