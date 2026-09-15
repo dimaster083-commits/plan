@@ -1551,6 +1551,7 @@ $('tabs').addEventListener('click', e => {
 });
 
 function render() {
+  recomputeStats();          // цифры всегда равны тому, что лежит в журнале
   document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === 'scr-' + tab));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
   const dayScreen = tab === 'wo' || tab === 'food';
@@ -1725,7 +1726,8 @@ $('exl').addEventListener('click', e => {
   const x = e.target.closest('[data-del]');
   if (x) {
     const j = +x.dataset.del, d = dayOf(sel);
-    ask('Убрать упражнение «' + (d.ex[j] || {}).n + '»?').then(ok => {
+    const name = (d.ex[j] || {}).n;
+    ask('Убрать упражнение «' + name + '»?').then(async ok => {
       if (!ok) return;
       const r = recRW(sel), l = r.log[j];
       // снимаем вклад закрытого подхода, иначе объём и опыт останутся висеть
@@ -1739,9 +1741,28 @@ $('exl').addEventListener('click', e => {
       });
       r.log = log;
       save(); render();
+
+      // прошлые тренировки с этим упражнением остаются в тоннаже и опыте —
+      // спрашиваем, убирать ли и их
+      const past = exHistory(name).length;
+      if (past && await ask('В журнале ещё ' + past + ' ' + plural(past, 'запись', 'записи', 'записей') +
+          ' по «' + name + '». Стереть их из тоннажа и опыта?', 'СТЕРЕТЬ')) {
+        const n = purgeExercise(name);
+        save(); render();
+        note('Стёрто записей: ' + n);
+      }
     });
   }
 });
+
+// «одна запись / две записи / пять записей»
+function plural(n, one, few, many) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5) return few;
+  if (b === 1) return one;
+  return many;
+}
 
 // Возврат всего, что начислил закрытый подход: объём, опыт и рекорд.
 // Рекорд тоже откатываем — иначе случайное нажатие навсегда впишет чужую цифру.
@@ -1753,6 +1774,26 @@ function rollback(l) {
   }
   l.vol = 0; l.xp = 0; l.prog = 0;
   delete l.prevPr;
+}
+
+/* Стирает все записи по упражнению из журнала — точечно, без сброса всего.
+   Нужно, когда упражнение убрали из программы: иначе его тонны и опыт
+   остались бы в статистике от прошлых тренировок. */
+function purgeExercise(name) {
+  let n = 0;
+  Object.keys(S.rec).forEach(ds => {
+    const day = S.days[dayIdx(ds)], lg = S.rec[ds].log || {};
+    Object.keys(lg).forEach(j => {
+      const p = (day && day.ex[j]) || {};
+      if ((lg[j].n || p.n) === name) { delete lg[j]; n++; }
+    });
+    // день без единой отметки и без отметки о тренировке больше не нужен
+    const r = S.rec[ds];
+    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw) delete S.rec[ds];
+  });
+  delete S.pr[name];
+  recomputeStats();
+  return n;
 }
 
 /* ---------- закрытие подхода ---------- */
@@ -2020,7 +2061,11 @@ function openHistory(name) {
   html += '</div>';
   const rows = h.slice().reverse().slice(0, 25).map(x =>
     `<div class="win prl"><b>${fmt(x[0])}</b><span style="color:var(--cy2)">${x[2]}×${x[3]} · ${kg(x[1])} кг</span></div>`).join('');
-  sheet('ИСТОРИЯ', html + (rows || '<p class="s" style="color:var(--mut);font-size:12px">Записей пока нет.</p>'));
+  const wipeBtn = h.length
+    ? `<button class="add" data-purge="${esc(name)}" style="margin-top:10px;border-color:var(--arms);color:var(--arms)">
+         СТЕРЕТЬ ЭТИ ЗАПИСИ ИЗ ЖУРНАЛА</button>`
+    : '';
+  sheet('ИСТОРИЯ', html + (rows || '<p class="s" style="color:var(--mut);font-size:12px">Записей пока нет.</p>') + wipeBtn);
 }
 
 /* ---------- рекорды и копирование дня ---------- */
@@ -2054,6 +2099,19 @@ $('shB').addEventListener('click', e => {
     const n = ax.dataset.addex;
     dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: EXDB[n][1] });
     save(); sheetClose(); render(); note('Добавлено: ' + n);
+    return;
+  }
+
+  const pg = e.target.closest('[data-purge]');
+  if (pg) {
+    const name = pg.dataset.purge;
+    ask('Стереть все записи по «' + name + '» из журнала? Тоннаж, опыт и рекорд по нему уйдут.', 'СТЕРЕТЬ')
+      .then(ok => {
+        if (!ok) return;
+        const n = purgeExercise(name);
+        save(); sheetClose(); render();
+        note('Стёрто записей: ' + n);
+      });
     return;
   }
 
