@@ -241,6 +241,9 @@ input,select{font-size:16px}
 .types{display:flex;gap:6px;flex-wrap:wrap}
 .types button{padding:7px 11px;border:1px solid var(--edge2);font-size:12px;border-radius:2px;
   background:var(--panel2)}
+.mvbtn{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:52px;line-height:1.1}
+.mvbtn b{font-size:12px;font-weight:700}
+.mvbtn i{font-style:normal;font-size:8.5px;letter-spacing:.04em}
 .types button.on{border-color:var(--cy);color:#fff;
   background:linear-gradient(180deg,rgba(165,120,255,.3),rgba(60,35,110,.4));
   box-shadow:0 0 14px rgba(165,120,255,.35)}
@@ -576,6 +579,19 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .copyb{width:100%;margin-top:6px;border:1px solid var(--edge);color:var(--tx);padding:12px;
   font-size:11.5px;letter-spacing:.08em;border-radius:2px;background:var(--panel2)}
 
+/* заметка к дню */
+.dnote{margin-top:12px;padding:11px 13px}
+.dnote label{display:block;font-size:10px;letter-spacing:.14em;color:var(--mut);margin-bottom:7px}
+.dnote textarea{width:100%;background:rgba(167,120,255,.07);border:1px solid var(--edge2);
+  color:var(--tx);border-radius:2px;padding:9px;font-family:var(--f);font-size:13px;
+  line-height:1.45;resize:vertical}
+.dnote textarea:focus{outline:none;border-color:var(--cy)}
+
+/* таблица прогрессии */
+.up{color:var(--legs)}
+.down{color:var(--arms)}
+.flat{color:var(--mut)}
+
 /* ===== ПЛАН ===== */
 .pln{padding:13px 14px;margin-bottom:9px}
 .pln h4{margin:0 0 8px;font-size:10px;letter-spacing:.2em;color:var(--cy);font-weight:600}
@@ -763,13 +779,13 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
       <button class="gear" id="gear" aria-label="Настроить день">⚙</button></div>
     <div class="dateline"><span id="dt"></span><button id="toToday" hidden>вернуться к сегодня</button></div>
     <div class="win dedit" id="dedit" hidden>
-      <label>ТИП ДНЯ — МЕНЯЕТ ВСЕ ТАКИЕ ДНИ НЕДЕЛИ</label>
-      <div class="types" id="types"></div>
-      <div class="dsplit"></div>
-      <label>ПЕРЕНЕСТИ ТРЕНИРОВКУ НА ЭТУ ДАТУ</label>
+      <label>ТОЛЬКО ЭТА ДАТА — ЧТО ДЕЛАЕМ СЕГОДНЯ</label>
       <div class="types" id="moveTo"></div>
       <div class="moved" id="movedRow" hidden>
         <span id="movedTxt"></span><button id="movedX">ВЕРНУТЬ</button></div>
+      <div class="dsplit"></div>
+      <label>РАСПИСАНИЕ ВСЕГО ПЛАНА — МЕНЯЕТ ЭТОТ ДЕНЬ НЕДЕЛИ ВО ВСЕХ НЕДЕЛЯХ</label>
+      <div class="types" id="types"></div>
     </div>
   </div>
 </div>
@@ -793,6 +809,11 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
     <div id="exl"></div>
     <button class="add" id="addEx">+ УПРАЖНЕНИЕ</button>
     <button class="fin" id="fin">ЗАВЕРШИТЬ ТРЕНИРОВКУ</button>
+  </div>
+
+  <div class="win dnote">
+    <label>ЗАМЕТКА К ДНЮ</label>
+    <textarea id="dayNote" rows="2" placeholder="самочувствие, сон, боль, что получилось"></textarea>
   </div>
 
   <h2 class="sec">ДОБАВКИ<em id="spCnt"></em></h2>
@@ -843,6 +864,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   </div>
 
   <button class="anb" id="anBtn">▣ АНАЛИЗ ИГРОКА</button>
+  <button class="anb" id="progBtn" style="margin-top:7px">▤ ПРОГРЕССИЯ ПО УПРАЖНЕНИЯМ</button>
 
   <div class="win quest">
     <div class="qrow"><label>ГЛАВНЫЙ КВЕСТ — МАССА ТЕЛА</label>
@@ -904,6 +926,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
     <div class="bkb">
       <button id="exp" class="hi">СОХРАНИТЬ КОПИЮ</button>
       <button id="imp">ВОССТАНОВИТЬ</button>
+      <button id="csv">ВЫГРУЗИТЬ CSV ДЛЯ EXCEL</button>
       <button id="wipe" style="border-color:var(--arms);color:var(--arms)">НАЧАТЬ ЗАНОВО</button>
     </div>
     <div class="bkst" id="bkst"></div>
@@ -1374,6 +1397,24 @@ function migrate() {
     });
     S.mig7 = 1;
   }
+
+  /* Перенос показателей из старой версии. Раньше тонны и опыт копились отдельным
+     счётчиком; теперь считаются из журнала. Если в старых записях не хватает
+     деталей подхода, пересчёт дал бы меньше — разницу сохраняем как базу,
+     чтобы уже заработанное не пропало. */
+  if (!S.mig8) {
+    const storedVol = Object.assign({}, S.vol), storedXp = num(S.xp);
+    S.volBase = null; S.xpBase = 0;
+    recomputeStats();
+    const base = {};
+    GROUPS.forEach(([n]) => {
+      const d = (num(storedVol[n]) || 0) - (S.vol[n] || 0);
+      base[n] = d > 0 ? d : 0;
+    });
+    S.volBase = base;
+    S.xpBase = Math.max(0, storedXp - S.xp);
+    S.mig8 = 1;
+  }
 }
 
 /* Тонны и опыт пересчитываются из журнала при каждом запуске, а не копятся отдельным
@@ -1398,8 +1439,11 @@ function recomputeStats() {
     xp += Object.keys(r.sp || {}).length * XP_SP;
     if (r.wo) xp += XP_WO;
   });
+  // прибавляем то, что было накоплено до перехода на пересчёт
+  const vb = S.volBase || {};
+  GROUPS.forEach(([n]) => { vol[n] += num(vb[n]); });
   S.vol = vol;
-  S.xp = xp;
+  S.xp = xp + num(S.xpBase);
 }
 
 function load() {
@@ -1641,11 +1685,16 @@ function paintDay() {
   $('gear').classList.toggle('on', edit);
   $('dedit').hidden = !edit;
   if (edit) {
+    const base = S.days[wdOf(sel)];        // шаблон настоящего дня недели этой даты
     $('types').innerHTML = TYPES.map(([t, l]) =>
-      `<button data-t="${t}" class="${d.t === t ? 'on' : ''}">${l}</button>`).join('');
+      `<button data-t="${t}" class="${base.t === t ? 'on' : ''}">${l}</button>`).join('');
     const wd = wdOf(sel), mv = S.map[sel];
-    $('moveTo').innerHTML = S.days.map((x, k) =>
-      `<button data-mv="${k}" class="${(mv === undefined ? wd : mv) === k ? 'on' : ''}">${x.k}</button>`).join('');
+    $('moveTo').innerHTML = S.days.map((x, k) => {
+      const lbl = x.t === 'rest' ? 'отдых'
+        : ((TYPES.find(t => t[0] === x.t) || [, ''])[1] || '').toLowerCase();
+      return `<button class="mvbtn${(mv === undefined ? wd : mv) === k ? ' on' : ''}" data-mv="${k}">
+        <b>${esc(x.k)}</b><i style="color:${COL[x.t]}">${esc(lbl)}</i></button>`;
+    }).join('');
     $('movedRow').hidden = mv === undefined;
     if (mv !== undefined) $('movedTxt').textContent = 'Здесь тренировка за ' + S.days[mv].n;
   }
@@ -1658,10 +1707,16 @@ $('chips').addEventListener('click', e => {
 $('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 7); render(); });
 $('gear').addEventListener('click', () => { edit = !edit; paintDay(); });
 $('dnm').addEventListener('input', e => { dayOf(sel).n = e.target.value; save(); });
-$('types').addEventListener('click', e => {
+$('types').addEventListener('click', async e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
-  const d = dayOf(sel), nt = b.dataset.t, was = d.t;
+  const d = S.days[wdOf(sel)], nt = b.dataset.t, was = d.t;
   if (nt === was) return;
+  // Раньше эта кнопка молча меняла день недели во всех неделях сразу.
+  // Разовая замена делается строкой выше, поэтому здесь спрашиваем.
+  const wdName = d.k;
+  const ok = await ask('Поменять ' + wdName + ' во всех неделях плана? ' +
+    'Если нужно только на этой дате — отмени и выбери тренировку в строке «Только эта дата».', 'ПОМЕНЯТЬ');
+  if (!ok) return;
   d.t = nt;
   // подпись дня идёт следом за типом, иначе «Низ тела» висит над жимом лёжа
   const src = TPL.find(x => x.t === nt);
@@ -1736,6 +1791,7 @@ function paintWorkout() {
     f.disabled = !all || !!r.wo;
   }
 
+  $('dayNote').value = r.note || '';
   $('spCnt').textContent = Object.keys(r.sp).length + ' / ' + d.sp.length;
   $('spl').innerHTML = d.sp.map((x, j) =>
     `<div class="win row${r.sp[j] ? ' on' : ''}" data-sp="${j}">
@@ -2061,6 +2117,7 @@ $('spl').addEventListener('input', e => {
   dayOf(sel).sp[+i.closest('[data-sp]').dataset.sp][i.dataset.sf] = i.value;
   save();
 });
+$('dayNote').addEventListener('input', e => { recRW(sel).note = e.target.value; save(); });
 $('addSp').addEventListener('click', () => {
   dayOf(sel).sp.push({ w: '', n: 'Новая добавка', h: '' }); save(); render();
 });
@@ -2720,6 +2777,145 @@ function openHow(name) {
       <p>${text}</p>
     </div>`);
 }
+
+/* =========================================================================
+   СВОЙ РАЗБОР ПРОГРЕССИИ
+   Тренер даёт выводы, здесь — голые числа: что растёт, что стоит,
+   когда делал последний раз. И выгрузка всего журнала в таблицу.
+   ========================================================================= */
+
+// все упражнения: и те, что сейчас в программе, и те, что остались в журнале
+function allExerciseNames() {
+  const set = {};
+  S.days.forEach(d => d.ex.forEach(e => { set[e.n] = 1; }));
+  Object.keys(S.rec).forEach(ds => {
+    const day = S.days[dayIdx(ds)], lg = S.rec[ds].log || {};
+    Object.keys(lg).forEach(j => {
+      const n = lg[j].n || ((day && day.ex[j]) || {}).n;
+      if (n) set[n] = 1;
+    });
+  });
+  return Object.keys(set).sort();
+}
+
+// подходы по упражнению за N дней
+function setsOfExercise(name, days) {
+  const from = new Date(); from.setDate(from.getDate() - days + 1);
+  const f = iso(from);
+  let sets = 0;
+  Object.keys(S.rec).forEach(ds => {
+    if (ds < f || ds > today()) return;
+    const day = S.days[dayIdx(ds)], lg = S.rec[ds].log || {};
+    Object.keys(lg).forEach(j => {
+      const e = (day && day.ex[j]) || {};
+      if (!lg[j].done || (lg[j].n || e.n) !== name) return;
+      sets += num(lg[j].s ?? e.s) || 0;
+    });
+  });
+  return sets;
+}
+
+function progressionRows() {
+  const inPlan = {};
+  S.days.forEach(d => d.ex.forEach(e => { inPlan[e.n] = e; }));
+  return allExerciseNames().map(n => {
+    const h = bestByDate(n);
+    const sh = strengthShift(n, 30);
+    const e = inPlan[n];
+    return {
+      n: n,
+      plan: !!e,
+      work: e ? num(e.w) : 0,
+      best: h.length ? Math.max(...h.map(x => x[1])) : 0,
+      first: h.length ? h[0][1] : 0,
+      diff: sh ? sh.diff : null,
+      total: h.length ? h[h.length - 1][1] - h[0][1] : null,
+      last: h.length ? h[h.length - 1][0] : null,
+      sessions: h.length,
+      sets30: setsOfExercise(n, 30)
+    };
+  }).sort((a, b) => (b.sessions - a.sessions) || a.n.localeCompare(b.n));
+}
+
+function openProgression() {
+  const rows = progressionRows();
+  if (!rows.length) {
+    sheet('ПРОГРЕССИЯ', '<div class="win howb"><p>Журнал пуст. Закрой первую тренировку — ' +
+      'и здесь появится таблица по каждому упражнению.</p></div>');
+    return;
+  }
+  const cls = v => v === null || v === 0 ? 'flat' : (v > 0 ? 'up' : 'down');
+  const sign = v => v === null ? '—' : (v > 0 ? '+' : '') + kg(v);
+  const html = `<div class="win pln">
+      <p style="margin:0 0 10px;font-size:11px;color:var(--mut)">Числа без выводов: смотри сам.
+        «За месяц» — насколько вырос лучший вес за 30 дней, «всего» — с первой записи.
+        Строки без пометки уже не в программе, но остались в журнале.</p>
+      <table class="wtab"><thead><tr>
+        <th>Упражнение</th><th>Рабочий</th><th>Лучший</th><th>За месяц</th><th>Всего</th><th>Раз</th>
+      </tr></thead><tbody>
+      ${rows.map(r => `<tr>
+        <td class="${EXDB[r.n] ? 'lnk' : ''}" data-how="${esc(r.n)}">${esc(r.n)}${r.plan ? '' :
+          ' <i style="font-style:normal;color:var(--mut);font-size:9px">не в плане</i>'}</td>
+        <td class="s">${r.work ? kg(r.work) : '—'}</td>
+        <td class="s">${r.best ? kg(r.best) : '—'}</td>
+        <td class="${cls(r.diff)}">${sign(r.diff)}</td>
+        <td class="${cls(r.total)}">${sign(r.total)}</td>
+        <td class="s">${r.sessions || '—'}</td>
+      </tr>`).join('')}
+      </tbody></table>
+      <p style="margin-top:10px;font-size:10.5px;color:var(--mut)">Нажми на название — откроется
+        график и вся история подходов по этому упражнению.</p>
+    </div>
+    <button class="copyb" id="csvSheet">▤ ВЫГРУЗИТЬ ВЕСЬ ЖУРНАЛ В ТАБЛИЦУ</button>`;
+  sheet('ПРОГРЕССИЯ', html);
+  $('csvSheet').addEventListener('click', exportCsv);
+}
+$('progBtn').addEventListener('click', openProgression);
+
+/* Выгрузка журнала в CSV: точка с запятой и метка BOM, чтобы Excel открыл
+   кириллицу и разложил по столбцам без мастера импорта. */
+function buildCsv() {
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const out = [['Дата', 'День', 'Тренировка закрыта', 'Упражнение', 'Группа', 'Подходы',
+    'Повторы', 'Вес, кг', 'Тоннаж, кг', 'Вес тела, кг', 'Заметка'].join(';')];
+  Object.keys(S.rec).sort().forEach(ds => {
+    const r = S.rec[ds], day = S.days[dayIdx(ds)], lg = r.log || {};
+    const base = [ds, day ? day.k : '', r.wo ? 'да' : 'нет'];
+    const tailBw = String(num(r.bw) || '').replace('.', ',');
+    const keys = Object.keys(lg).filter(j => lg[j].done);
+    if (!keys.length) {
+      out.push(base.concat(['', '', '', '', '', '', tailBw, q(r.note || '')]).join(';'));
+      return;
+    }
+    keys.forEach(j => {
+      const l = lg[j], e = (day && day.ex[j]) || {};
+      const sets = num(l.s ?? e.s), reps = l.r ?? e.r, w = num(l.w ?? e.w);
+      out.push(base.concat([
+        q(l.n || e.n || ''), q(l.g || e.g || ''),
+        sets, q(reps), String(w).replace('.', ','),
+        String(num(l.vol) || sets * firstRep(reps) * w).replace('.', ','),
+        tailBw, q(r.note || '')
+      ]).join(';'));
+    });
+  });
+  return out.join('\r\n');
+}
+
+function exportCsv() {
+  const text = buildCsv();
+  try {
+    const blob = new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sistema-journal-' + today() + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    note('Таблица сохранена');
+  } catch (e) {
+    note('Не удалось сохранить файл');
+  }
+}
+$('csv').addEventListener('click', exportCsv);
 
 /* =========================================================================
    ТАЙМЕР ОТДЫХА
