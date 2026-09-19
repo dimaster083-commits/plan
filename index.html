@@ -1037,8 +1037,8 @@ input,textarea,select{color:var(--ink)}
 </div></div>
 
 <!-- выбранный день: показывается на вкладках «Зал» и «Еда» -->
+<nav class="days" id="daysbar"><div class="drow" id="chips"></div></nav>
 <div id="dayctx">
-  <nav class="days"><div class="drow" id="chips"></div></nav>
   <div class="wrap">
     <div class="dh"><span class="ln" id="dln"></span>
       <span class="txt"><h3><input id="dnm" aria-label="Название дня"></h3><p id="dsb"></p></span>
@@ -1769,6 +1769,21 @@ function migrate() {
     S.mig9 = 1;
   }
 
+  /* Тренировки переносятся с пн/ср/пт/сб на вт/чт/сб/вс: весь недельный
+     набор сдвигается на день вперёд вместе с упражнениями, весами, едой
+     и добавками. Трогаем только нетронутое расписание по умолчанию —
+     если человек уже переставил дни сам, его порядок остаётся. */
+  if (!S.mig10) {
+    const was = S.days.map(d => d.t).join(',');
+    if (was === 'up1,rest,lo1,rest,up2,lo2,rest') {
+      const names = S.days.map(d => d.k);
+      const moved = S.days.map((_, i) => S.days[(i + 6) % 7]);
+      moved.forEach((d, i) => { d.k = names[i]; });
+      S.days = moved;
+    }
+    S.mig10 = 1;
+  }
+
   if (!S.mig8) {
     const storedVol = Object.assign({}, S.vol), storedXp = num(S.xp);
     S.volBase = null; S.xpBase = 0;
@@ -2023,6 +2038,7 @@ function render() {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
   const dayScreen = tab === 'wo' || tab === 'food';
   $('dayctx').hidden = !dayScreen;
+  $('daysbar').hidden = !dayScreen;      // полоса дней живёт отдельно и прячется вместе с блоком
   if (dayScreen) paintDay();
   if (tab === 'wo') paintWorkout();
   if (tab === 'food') paintFood();
