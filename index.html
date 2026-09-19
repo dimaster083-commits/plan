@@ -1784,6 +1784,40 @@ function migrate() {
     S.mig10 = 1;
   }
 
+  /* Тренировки ставятся на вторник, четверг, субботу и воскресенье независимо
+     от того, как дни стояли раньше. Двигаем день целиком — вместе с упражнениями,
+     весами, едой и добавками, — а название дня недели остаётся за своим слотом. */
+  if (!S.mig11) {
+    const names = S.days.map(d => d.k), titles = S.days.map(d => d.n);
+    const want = ['rest', 'up1', 'rest', 'lo1', 'rest', 'up2', 'lo2'];
+    const pool = S.days.slice();
+    const out = new Array(7).fill(null);
+
+    // сначала тренировочные дни встают по своему типу
+    want.forEach((t, i) => {
+      if (t === 'rest') return;
+      const j = pool.findIndex(d => d && d.t === t);
+      if (j >= 0) { out[i] = pool[j]; pool[j] = null; }
+    });
+    // затем оставшиеся дни занимают свободные слоты и становятся отдыхом
+    const left = pool.filter(Boolean);
+    want.forEach((t, i) => {
+      if (out[i]) return;
+      out[i] = left.shift() || S.days[i];
+      out[i].t = 'rest';
+    });
+
+    // Название дня принадлежит слоту, а не тренировке: иначе на вторнике
+    // оказывается подпись «Среда». Свой, вписанный руками заголовок не трогаем.
+    const WD = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+    out.forEach((d, i) => {
+      d.k = names[i];
+      if (WD.indexOf(d.n) >= 0 || WD.indexOf(titles[i]) >= 0) d.n = WD[i];
+    });
+    S.days = out;
+    S.mig11 = 1;
+  }
+
   if (!S.mig8) {
     const storedVol = Object.assign({}, S.vol), storedXp = num(S.xp);
     S.volBase = null; S.xpBase = 0;
