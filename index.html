@@ -1150,7 +1150,9 @@ function milesOf() {
   let step = 5;
   while (Math.abs(diff) / step > 6) step += 5;
   const out = [];
-  for (let v = a + dir * step; dir > 0 ? v < g - 0.4 : v > g + 0.4; v += dir * step) out.push(Math.round(v));
+  // отметки круглые: 75, 80, 85 читаются лучше, чем 77, 82, 87 от дробного веса
+  let v = dir > 0 ? Math.ceil((a + 0.5) / step) * step : Math.floor((a - 0.5) / step) * step;
+  for (; dir > 0 ? v < g - 0.4 : v > g + 0.4; v += dir * step) out.push(v);
   // веха ближе 2 кг к цели не нужна: 86 и 85 рядом выглядят как ошибка
   while (out.length && Math.abs(g - out[out.length - 1]) < 2) out.pop();
   out.push(Math.round(g * 10) / 10);
@@ -1428,6 +1430,10 @@ function build() {
 }
 
 function migrate() {
+  // Состояние без списка дней приходит из обрезанной резервной копии и роняет
+  // всё приложение на первой же перерисовке. Восстанавливаем расписание,
+  // остальное — журнал, веса, рацион — остаётся как было.
+  if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
   S.rec = S.rec || {}; S.map = S.map || {}; S.pr = S.pr || {};
   // Запись дня без log или sp обрушивала перерисовку целиком. Такие приходят
   // из старых версий и из восстановленной копии, поэтому чиним при каждой загрузке.
@@ -1565,7 +1571,11 @@ function recomputeStats() {
 function load() {
   try { const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : build(); }
   catch (e) { canSave = false; S = build(); }
-  if (!S || !S.days || !S.days.length) S = build();
+  // Раньше здесь стояло S = build(): состояние без расписания стиралось целиком,
+  // вместе с журналом, весами и накопленным тоннажем. Теперь восстанавливаем
+  // только расписание, а всё заработанное остаётся на месте.
+  if (!S || typeof S !== 'object') S = build();
+  if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
   migrate();
   recomputeStats();
 }
