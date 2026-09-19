@@ -833,17 +833,18 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 
   --ink:#11111A;           /* основной текст */
   --ink2:#48484F;          /* вторичный */
-  --ink3:#8A8A90;          /* подписи */
+  --ink3:#66666E;          /* подписи: светлее нельзя, иначе не читаются */
 
   --acc:#007AFF;           /* единственный акцент */
   --acc-2:#0062D1;         /* он же под нажатием */
+  --acc-fill:#0071E8;      /* заливка кнопки: белый текст поверх должен читаться */
   --acc-soft:#E3F0FF;      /* заливка выбранного состояния */
   --acc-ink:#0060C8;       /* текст поверх мягкой заливки */
   --onacc:#FFFFFF;         /* текст поверх сплошного акцента */
 
-  --ok:#1F8A3B;   --ok-soft:#E3F5E9;   --ok-ln:#BFE3C9;
+  --ok:#1A7A33;   --ok-soft:#E3F5E9;   --ok-ln:#BFE3C9;
   --warn:#9A6200; --warn-soft:#FBEFD8;
-  --bad:#CC3B34;  --bad-soft:#FCE6E4;
+  --bad:#C0302A;  --bad-soft:#FCE6E4;
 
   --glass:rgba(242,242,247,.86);   /* полосы и шторки поверх контента */
   --glass2:rgba(255,255,255,.88);  /* нижние вкладки */
@@ -873,10 +874,10 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
     --s0:#000000; --s1:#1C1C1E; --s2:#2C2C2E; --s3:#3A3A3C;
     --ln:#38383C; --ln2:#48484C;
     --ink:#FFFFFF; --ink2:#C6C6CE; --ink3:#9A9AA2;
-    --acc:#0A84FF; --acc-2:#3D9BFF; --acc-soft:#10294A; --acc-ink:#6FB6FF; --onacc:#FFFFFF;
+    --acc:#0A84FF; --acc-2:#3D9BFF; --acc-fill:#0A6FD9; --acc-soft:#10294A; --acc-ink:#6FB6FF; --onacc:#FFFFFF;
     --ok:#32D158; --ok-soft:#10301B; --ok-ln:#2B5637;
     --warn:#FF9F0A; --warn-soft:#3A2A0A;
-    --bad:#FF564A; --bad-soft:#3C1B18;
+    --bad:#FF6B60; --bad-soft:#3C1B18;
     --glass:rgba(0,0,0,.8); --glass2:rgba(28,28,30,.9);
     --scrim:rgba(0,0,0,.6); --glow:rgba(10,132,255,.14);
     --sh1:0 1px 2px rgba(0,0,0,.5);
@@ -891,10 +892,10 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --s0:#000000; --s1:#1C1C1E; --s2:#2C2C2E; --s3:#3A3A3C;
   --ln:#38383C; --ln2:#48484C;
   --ink:#FFFFFF; --ink2:#C6C6CE; --ink3:#9A9AA2;
-  --acc:#0A84FF; --acc-2:#3D9BFF; --acc-soft:#10294A; --acc-ink:#6FB6FF; --onacc:#FFFFFF;
+  --acc:#0A84FF; --acc-2:#3D9BFF; --acc-fill:#0A6FD9; --acc-soft:#10294A; --acc-ink:#6FB6FF; --onacc:#FFFFFF;
   --ok:#32D158; --ok-soft:#10301B; --ok-ln:#2B5637;
   --warn:#FF9F0A; --warn-soft:#3A2A0A;
-  --bad:#FF564A; --bad-soft:#3C1B18;
+  --bad:#FF6B60; --bad-soft:#3C1B18;
   --glass:rgba(0,0,0,.8); --glass2:rgba(28,28,30,.9);
   --scrim:rgba(0,0,0,.6); --glow:rgba(10,132,255,.14);
   --sh1:0 1px 2px rgba(0,0,0,.5);
@@ -961,7 +962,7 @@ input,textarea,select{color:var(--ink)}
 .dnote textarea{background:var(--s2)}
 
 /* ---------- кнопки ---------- */
-.fin{background:var(--acc);color:var(--onacc);border-radius:var(--r-m);clip-path:none;
+.fin{background:var(--acc-fill);color:var(--onacc);border-radius:var(--r-m);clip-path:none;
   padding:17px;font-size:15px;font-weight:700;letter-spacing:.01em;
   box-shadow:var(--shacc);text-shadow:none}
 .fin:active{background:var(--acc-2)}
@@ -976,7 +977,7 @@ input,textarea,select{color:var(--ink)}
 .ask{background:var(--scrim)}
 .askw{background:var(--s1);box-shadow:var(--sh3)}
 .askw button{border:1px solid var(--ln);border-radius:var(--r-s);color:var(--ink2)}
-.askw button.yes{background:var(--acc);color:var(--onacc);border-color:transparent}
+.askw button.yes{background:var(--acc-fill);color:var(--onacc);border-color:transparent}
 .sheet{background:var(--s0)}
 .add{border:1px dashed var(--ln2);color:var(--ink2);border-radius:var(--r-m);padding:14px;
   font-size:14px;letter-spacing:0}
@@ -984,14 +985,15 @@ input,textarea,select{color:var(--ink)}
   background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);color:var(--ink2)}
 .anb,.cpb,.copyb{padding:14px;font-size:14px;font-weight:600;letter-spacing:0;color:var(--ink)}
 .anb:active,.cpb:active,.copyb:active{background:var(--s3)}
-.fpbar button{background:var(--acc);color:var(--onacc);border-radius:var(--r-m);font-weight:700;
+.fpbar button{background:var(--acc-fill);color:var(--onacc);border-radius:var(--r-m);font-weight:700;
   box-shadow:none}
 .go,.rest{height:48px;border-radius:var(--r-s);background:var(--s2);border:1px solid transparent;
   box-shadow:none}
+.rest{width:52px;font-size:20px;color:var(--ink2)}
 .go{width:56px;font-size:18px;color:var(--ink2)}
 .ex.done .go{background:var(--ok);border-color:var(--ok);color:var(--onacc);box-shadow:none}
 .gear{width:44px;height:44px;border-radius:var(--r-s)}
-.gear.on{background:var(--acc-soft);color:var(--acc)}
+.gear.on{background:var(--acc-soft);color:var(--acc-ink)}
 .x{color:var(--ink3)}
 
 /* ---------- таблетки ---------- */
@@ -1010,10 +1012,10 @@ input,textarea,select{color:var(--ink)}
 .prb.lock{background:var(--ok-soft);color:var(--ok)}
 .miles div{padding:8px 2px;font-size:12px;color:var(--ink3)}
 .miles div.hit{background:var(--ok-soft);color:var(--ok)}
-.miles div.now{background:var(--acc-soft);color:var(--acc)}
+.miles div.now{background:var(--acc-soft);color:var(--acc-ink)}
 .types button{padding:9px 14px;font-size:13px}
-.types button.on{background:var(--acc);color:var(--onacc);box-shadow:none}
-.rkchip{padding:4px 12px;font-size:11px;background:var(--acc-soft);color:var(--acc);
+.types button.on{background:var(--acc-fill);color:var(--onacc);box-shadow:none}
+.rkchip{padding:4px 12px;font-size:11px;background:var(--acc-soft);color:var(--acc-ink);
   text-shadow:none;border:0}
 
 /* ---------- дни недели ---------- */
@@ -1051,7 +1053,7 @@ input,textarea,select{color:var(--ink)}
 .setr .sh span{font-size:11px;letter-spacing:.02em;text-transform:uppercase;font-weight:600}
 .setr .fillall{background:var(--s3);border:0;color:var(--ink);border-radius:999px;
   padding:7px 13px;font-size:11px;font-weight:600;letter-spacing:.01em}
-.setr .fillall:active{background:var(--acc);color:var(--onacc)}
+.setr .fillall:active{background:var(--acc-fill);color:var(--onacc)}
 .setr .rb{gap:8px}
 .setr .rbx i{font-size:11px;color:var(--ink3);font-weight:500}
 .setr .rbx input{background:var(--s1);border:1px solid var(--ln);padding:12px 0;font-size:19px}
@@ -1064,7 +1066,7 @@ input,textarea,select{color:var(--ink)}
 .tabbar{background:var(--glass2);border-top:1px solid var(--ln)}
 .tab{font-size:10.5px;letter-spacing:0;gap:4px;font-weight:500}
 .tab svg{width:23px;height:23px}
-.tab.on{color:var(--acc)}
+.tab.on{color:var(--acc-ink)}
 .tab.on svg{filter:none}
 .tab.on::before{content:none}
 
@@ -1095,7 +1097,7 @@ input,textarea,select{color:var(--ink)}
 .cd.wo{font-weight:700;color:var(--ink)}
 .cd.today{outline:2px solid var(--acc);outline-offset:-2px}
 .cd.sel{border-color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc)}
-.cd .ok{color:var(--ok)}
+.cd .ok{color:var(--ink);font-weight:700;font-size:9px}
 .cd .mv,.cd .pm{color:var(--acc);background:var(--acc)}
 .cd .pm{width:4px;height:4px;border-radius:50%}
 .cwk{border:1px solid var(--ln);border-radius:var(--r-m);background:transparent}
@@ -1106,7 +1108,7 @@ input,textarea,select{color:var(--ink)}
 .cleg{color:var(--ink3);font-size:11px}
 
 /* отметки и переключатели: тёмный текст на акцентной заливке не читался */
-.row.on .box,.fpi.sel .mk{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+.row.on .box,.fpi.sel .mk{background:var(--acc-fill);border-color:var(--acc-fill);color:var(--onacc)}
 
 /* таймер отдыха висел тёмной панелью поверх светлого экрана */
 .tmr{background:var(--glass2);backdrop-filter:blur(12px);border-top:1px solid var(--ln);
@@ -1153,7 +1155,7 @@ input,textarea,select{color:var(--ink)}
 .bk p{font-size:12.5px;color:var(--ink3)}
 .bkb button{background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);
   font-size:13px;letter-spacing:0;padding:12px 14px;color:var(--ink2)}
-.bkb button.hi{background:var(--acc);color:var(--onacc);border-color:transparent}
+.bkb button.hi{background:var(--acc-fill);color:var(--onacc);border-color:transparent}
 .bkst{font-size:12px;color:var(--ink3);letter-spacing:0}
 .anb{border:0;background:var(--s2);color:var(--ink);font-weight:600}
 .striph{font-size:12px;letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
@@ -1191,7 +1193,7 @@ input,textarea,select{color:var(--ink)}
 /* ---------- таблицы ---------- */
 .wtab td,.wtab th{padding:11px 8px;font-size:13px}
 .wtab th{color:var(--ink3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
-.wtab td.lnk{color:var(--acc);text-decoration:none}
+.wtab td.lnk{color:var(--acc-ink);text-decoration:none}
 
 /* ---------- картинки ---------- */
 .howimg img,.pane .pic{border-radius:var(--r-m);border-color:var(--ln)}
@@ -2392,7 +2394,10 @@ function paintWorkout() {
           <button class="go" data-go="${j}" aria-label="${g.done ? 'Отменить подход' : 'Закрыть подход'}">${g.done ? '✓' : '○'}</button></div>
         <div class="setr">${repBoxes(e, g, g.s ?? sets, lastDone(e.n, sel))}</div>
         <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
-          : (num(e.w) ? 'рабочий вес ' + kg(e.w) + ' кг' : 'без отягощения')}</div>
+          : (num(e.w) ? 'рабочий вес ' + kg(e.w) + ' кг' : 'без отягощения')}${
+          num(e.w) && sug && sug !== num(e.w)
+            ? ' · на этой неделе ' + kg(sug) + ' кг' + (sug < num(e.w) ? ', полегче' : '')
+            : ''}</div>
         <div class="exft">
           ${pr ? `<span class="prb">рекорд <b>${kg(pr)} кг</b></span>` : ''}
           ${g.done ? holdBadge(e, g) : ''}
@@ -2611,7 +2616,12 @@ function repBoxes(e, g, sets, prev, keep) {
    растёт вес. Требовать 12 с первого раза значит гнать в компенсацию. */
 function nextGoal(rs, top, sets) {
   const a = (rs || []).slice(0, sets).map(v => num(v));
-  while (a.length < sets) a.push(0);
+  /* Подходов может стать больше, чем было в прошлый раз: цикл добавляет
+     подход на базе. Раньше недостающие дописывались нулями, и новому подходу
+     выставлялась цель в один повтор — из 8/8/8 выходило «цель 8/8/8/1».
+     Дописываем последним результатом: сделал 3×8 — цель 4×8. */
+  const pad = Math.min(top || Infinity, a.length ? a[a.length - 1] : (top || 0));
+  while (a.length < sets) a.push(pad);
   if (!a.length || !top || a.every(v => v >= top)) return null;
   const i = a.findIndex(v => v < top);
   a[i] = Math.min(top, a[i] + 1);
