@@ -1379,7 +1379,11 @@ function migrate() {
   // Рабочие веса переписываем, только если ни одного подхода ещё не закрыто, —
   // иначе затёрли бы то, что человек уже поднял.
   if (!S.mig7) {
-    const trained = Object.values(S.rec).some(r => Object.values(r.log || {}).some(l => l.done));
+    // Тренировкой считается и закрытый подход, и накопленный тоннаж: в старых
+    // данных журнал мог не сохраниться, а поднятое — остаться только в счётчике.
+    const lifted = Object.values(S.vol || {}).some(v => num(v) > 0);
+    const trained = lifted ||
+      Object.values(S.rec).some(r => Object.values(r.log || {}).some(l => l.done));
     if (!trained) {
       TPL.forEach((t, i) => {
         const d = S.days[i];
