@@ -6,13 +6,13 @@
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0B0F17">
+<meta name="theme-color" content="#EBECF4">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="СИСТЕМА">
+<meta name="apple-mobile-web-app-title" content="GYM">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" href="./icon-192.png">
-<title>СИСТЕМА</title>
+<title>GYM</title>
 <style>
 :root{
   /* Один базовый оттенок на всё оформление. Раньше синий/фиолетовый был вписан
@@ -582,6 +582,13 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .copyb{width:100%;margin-top:6px;border:1px solid var(--edge);color:var(--tx);padding:12px;
   font-size:11.5px;letter-spacing:.08em;border-radius:2px;background:var(--panel2)}
 
+/* шапка «Прогресса»: три числа вместо уровня и ранга */
+.sumr{display:flex;gap:8px;width:100%;padding:2px}
+.sumr>div{flex:1;text-align:center;background:var(--s2);border-radius:var(--r-m);padding:14px 6px}
+.sumr b{display:block;font-size:22px;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--ink)}
+.sumr span{display:block;font-size:10.5px;color:var(--ink3);margin-top:3px;line-height:1.3}
+
 /* индекс массы тела под весом */
 .bmi{display:flex;align-items:center;gap:8px;width:100%;margin-top:10px;padding:10px 12px;
   background:var(--s2);border:0;border-radius:var(--r-s);text-align:left}
@@ -827,39 +834,41 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
    наоборот: спокойные поверхности, один акцент, воздух и типографика.
    ========================================================================= */
 :root{
-  /* поверхности: три уровня вместо полупрозрачных рамок */
-  --s0:#0B0F17;            /* фон */
-  --s1:#131A26;            /* карточка */
-  --s2:#1B2434;            /* поле, вложенный блок */
-  --s3:#232E42;            /* наведение, активное */
-  --ln:rgba(255,255,255,.07);
-  --ln2:rgba(255,255,255,.12);
+  /* поверхности: три уровня, фон тонирован — чистый белый режет глаза */
+  --s0:#EBECF4;            /* фон */
+  --s1:#FFFFFF;            /* карточка */
+  --s2:#F0F0F8;            /* поле, вложенный блок */
+  --s3:#E3E3F0;            /* наведение, активное */
+  --ln:#DEDFEB;
+  --ln2:#CFD0E2;
 
-  --ink:#E9EDF5;           /* основной текст */
-  --ink2:#A7B2C5;          /* вторичный */
-  --ink3:#7A8699;          /* подписи */
+  --ink:#1A1930;           /* основной текст */
+  --ink2:#4C4B66;          /* вторичный */
+  --ink3:#807F9A;          /* подписи */
 
-  --acc:#4C8DFF;           /* единственный акцент */
-  --acc-soft:rgba(76,141,255,.14);
-  --ok:#34C77B; --warn:#E4A93C; --bad:#F2645A;
+  --acc:#5B4BD6;           /* единственный акцент */
+  --acc-soft:#E7E4FF;
+  --ok:#2E7D57; --warn:#B57A14; --bad:#CC3B34;
 
   --r-s:10px; --r-m:14px; --r-l:18px;
-  --sh1:0 1px 2px rgba(0,0,0,.45);
-  --sh2:0 6px 20px -8px rgba(0,0,0,.6);
-  --sh3:0 20px 48px -20px rgba(0,0,0,.85);
+  --sh1:0 1px 2px rgba(26,25,48,.06);
+  --sh2:0 4px 14px -6px rgba(26,25,48,.14);
+  --sh3:0 16px 36px -18px rgba(26,25,48,.22);
 
   /* старые имена оставлены: на них завязаны десятки правил ниже по файлу */
   --bg:var(--s0); --panel:var(--s1); --panel2:var(--s2);
   --edge:var(--ln2); --edge2:var(--ln);
-  --cy:var(--acc); --cy2:#CBDAF5; --tx:var(--ink); --mut:var(--ink3);
-  --legs:var(--ok); --chest:var(--warn); --arms:var(--bad); --back:#3FB6C9; --other:#8C7BF0;
+  --cy:var(--acc); --cy2:#3A2CA8; --tx:var(--ink); --mut:var(--ink3);
+  --legs:var(--ok); --chest:var(--warn); --arms:var(--bad); --back:#1F8FA6; --other:#7A5BD6;
+  --rest:#A9AAC0;
   --tabh:58px;
+  color-scheme:light;
 }
 
 /* ---------- основа ---------- */
 body{
   background:var(--s0);
-  background-image:radial-gradient(1100px 560px at 50% -320px,rgba(76,141,255,.13),transparent 70%);
+  background-image:radial-gradient(1100px 560px at 50% -300px,rgba(91,75,214,.10),transparent 72%);
   background-attachment:fixed;
   letter-spacing:0;
   font-size:15px;
@@ -885,6 +894,7 @@ h2.sec{font-size:12px;letter-spacing:.04em;color:var(--ink3);text-transform:uppe
 .win{
   background:var(--s1);
   border:1px solid var(--ln);
+  color:var(--ink);
   border-radius:var(--r-l);
   clip-path:none;
   box-shadow:var(--sh1);
@@ -911,25 +921,35 @@ input,textarea,select{color:var(--ink)}
 .dnote textarea{background:var(--s2)}
 
 /* ---------- кнопки ---------- */
-.fin{background:var(--acc);color:#06162E;border-radius:var(--r-m);clip-path:none;
+.fin{background:var(--acc);color:#fff;border-radius:var(--r-m);clip-path:none;
   padding:17px;font-size:15px;font-weight:700;letter-spacing:.01em;
-  box-shadow:0 8px 22px -12px rgba(76,141,255,.9);text-shadow:none}
-.fin:active{background:#3F7EEA}
-.fin.done{background:rgba(52,199,123,.14);color:var(--ok);border:1px solid rgba(52,199,123,.3);
-  box-shadow:none}
+  box-shadow:0 8px 20px -12px rgba(91,75,214,.9);text-shadow:none}
+.fin:active{background:#4C3DC0}
+.fin.done{background:#E4F0E9;color:var(--ok);border:1px solid #BFDCC9;box-shadow:none}
 .fin:disabled{background:var(--s2);color:var(--ink3);box-shadow:none;opacity:1}
+/* всплывающее сообщение и заставка тоже светлые */
+.note{background:var(--ink);border:0;color:#fff;clip-path:none;border-radius:999px;
+  box-shadow:var(--sh3);padding:12px 20px}
+.note span{color:#fff}
+#boot{background:var(--s0)}
+#boot b{color:var(--acc);letter-spacing:.3em;font-size:19px}
+.ask{background:rgba(26,25,48,.45)}
+.askw{background:var(--s1);box-shadow:var(--sh3)}
+.askw button{border:1px solid var(--ln);border-radius:var(--r-s);color:var(--ink2)}
+.askw button.yes{background:var(--acc);color:#fff;border-color:transparent}
+.sheet{background:rgba(235,236,244,.98)}
 .add{border:1px dashed var(--ln2);color:var(--ink2);border-radius:var(--r-m);padding:14px;
   font-size:14px;letter-spacing:0}
 .anb,.cpb,.copyb,.kcsrc button,.moved button,.ovh button,.gear{
   background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);color:var(--ink2)}
 .anb,.cpb,.copyb{padding:14px;font-size:14px;font-weight:600;letter-spacing:0;color:var(--ink)}
 .anb:active,.cpb:active,.copyb:active{background:var(--s3)}
-.fpbar button{background:var(--acc);color:#06162E;border-radius:var(--r-m);font-weight:700;
+.fpbar button{background:var(--acc);color:#fff;border-radius:var(--r-m);font-weight:700;
   box-shadow:none}
 .go,.rest{height:48px;border-radius:var(--r-s);background:var(--s2);border:1px solid transparent;
   box-shadow:none}
 .go{width:56px;font-size:18px;color:var(--ink2)}
-.ex.done .go{background:var(--ok);border-color:var(--ok);color:#052A18;box-shadow:none}
+.ex.done .go{background:var(--ok);border-color:var(--ok);color:#fff;box-shadow:none}
 .gear{width:44px;height:44px;border-radius:var(--r-s)}
 .gear.on{background:var(--acc-soft);color:var(--acc)}
 .x{color:var(--ink3)}
@@ -939,27 +959,28 @@ input,textarea,select{color:var(--ink)}
   border-radius:999px;clip-path:none;border:1px solid transparent;background:var(--s2);
   color:var(--ink2);font-weight:600;letter-spacing:.01em}
 .intg{padding:5px 12px;font-size:11px}
-.intg.h{background:rgba(242,100,90,.15);color:#FF9A92}
-.intg.m{background:var(--acc-soft);color:#9DC2FF}
-.intg.l{background:rgba(52,199,123,.15);color:#7FE0BC}
-.intg.d{background:rgba(228,169,60,.15);color:var(--warn)}
+.intg.h{background:#FCE6E4;color:var(--bad)}
+.intg.m{background:var(--acc-soft);color:var(--acc)}
+.intg.l{background:#E1F1E7;color:var(--ok)}
+.intg.d{background:#FAEFD8;color:var(--warn)}
 .grp,.grpsel button{padding:6px 12px;font-size:11px}
-.grp.none{background:rgba(228,169,60,.15);color:var(--warn)}
+.grp.none{background:#FAEFD8;color:var(--warn)}
 .prb{padding:5px 12px;font-size:11px;color:var(--ink2)}
-.prb.hold{background:rgba(242,100,90,.13);color:#FF9A92}
-.prb.lock{background:rgba(52,199,123,.15);color:#7FE0BC}
+.prb.hold{background:#FCE6E4;color:var(--bad)}
+.prb.lock{background:#E1F1E7;color:var(--ok)}
 .miles div{padding:8px 2px;font-size:12px;color:var(--ink3)}
-.miles div.hit{background:rgba(52,199,123,.15);color:var(--ok)}
-.miles div.now{background:var(--acc-soft);color:#9DC2FF}
+.miles div.hit{background:#E1F1E7;color:var(--ok)}
+.miles div.now{background:var(--acc-soft);color:var(--acc)}
 .types button{padding:9px 14px;font-size:13px}
-.types button.on{background:var(--acc);color:#06162E;box-shadow:none}
-.rkchip{padding:4px 12px;font-size:11px;background:var(--acc-soft);color:#9DC2FF;
+.types button.on{background:var(--acc);color:#fff;box-shadow:none}
+.rkchip{padding:4px 12px;font-size:11px;background:var(--acc-soft);color:var(--acc);
   text-shadow:none;border:0}
 
 /* ---------- дни недели ---------- */
-.days{background:rgba(11,15,23,.86);border-bottom:1px solid var(--ln)}
-.chip{background:var(--s1);border:1px solid transparent;border-radius:var(--r-s);padding:9px 4px}
-.chip.on{background:var(--acc-soft);border-color:rgba(76,141,255,.45);box-shadow:none}
+.days{background:rgba(235,236,244,.92);border-bottom:1px solid var(--ln)}
+.chip{background:var(--s1);border:1px solid var(--ln);border-radius:var(--r-s);padding:9px 4px;
+  color:var(--ink3)}
+.chip.on{background:var(--acc-soft);border-color:#C9C2FF;color:var(--acc);box-shadow:none}
 .chip b{font-size:13px;font-weight:600}
 
 /* ---------- шкалы ---------- */
@@ -969,7 +990,7 @@ input,textarea,select{color:var(--ink)}
 .qb i{background:linear-gradient(90deg,var(--acc),#7FB4FF)}
 .qprog i{background:var(--acc)}
 .cycBar div.now{background:var(--acc)}
-.cycBar div.done{background:rgba(76,141,255,.45)}
+.cycBar div.done{background:#B9B1F0}
 .cycBar div.dl{background:var(--warn)}
 
 /* ---------- ранг ---------- */
@@ -978,7 +999,7 @@ input,textarea,select{color:var(--ink)}
 
 /* ---------- упражнение ---------- */
 .ex{padding:16px;margin-bottom:10px;border-radius:var(--r-l)}
-.ex.done{background:rgba(52,199,123,.07);border-color:rgba(52,199,123,.24)}
+.ex.done{background:#F1F8F3;border-color:#CFE6D8}
 .exname{border:0;font-size:17px;font-weight:650;letter-spacing:-.01em;gap:7px}
 .exname::after{opacity:.5;border-color:var(--ink3)}
 .flds{gap:8px;margin-top:14px}
@@ -993,14 +1014,14 @@ input,textarea,select{color:var(--ink)}
 .setr .fillall:active{background:var(--acc);color:#06162E}
 .setr .rb{gap:8px}
 .setr .rbx i{font-size:11px;color:var(--ink3);font-weight:500}
-.setr .rbx input{background:var(--s0);border:1px solid var(--ln);padding:12px 0;font-size:19px}
-.setr .rbx.hit input{background:rgba(52,199,123,.13);border-color:rgba(52,199,123,.4);color:#9FE9C4}
+.setr .rbx input{background:var(--s1);border:1px solid var(--ln);padding:12px 0;font-size:19px}
+.setr .rbx.hit input{background:#E4F0E9;border-color:#BFDCC9;color:var(--ok)}
 .setr .sg{margin-top:11px;font-size:12.5px;color:var(--ink2);line-height:1.5}
 .setr .sg b{color:var(--ink)}
 .setr .sg u{color:var(--ink2)}
 
 /* ---------- нижние вкладки ---------- */
-.tabbar{background:rgba(11,15,23,.9);border-top:1px solid var(--ln)}
+.tabbar{background:rgba(255,255,255,.94);border-top:1px solid var(--ln)}
 .tab{font-size:10.5px;letter-spacing:0;gap:4px;font-weight:500}
 .tab svg{width:23px;height:23px}
 .tab.on{color:var(--acc)}
@@ -1008,7 +1029,7 @@ input,textarea,select{color:var(--ink)}
 .tab.on::before{content:none}
 
 /* ---------- шторки и наложения ---------- */
-.ov,.fp{background:rgba(11,15,23,.96)}
+.ov,.fp{background:rgba(235,236,244,.98)}
 .ovh b{font-size:17px;letter-spacing:-.01em;color:var(--ink);font-weight:700;text-transform:none}
 .ovh button{width:38px;height:38px;border-radius:999px;background:var(--s2);color:var(--ink2)}
 .askw{border-radius:var(--r-l)}
@@ -1051,11 +1072,7 @@ input,textarea,select{color:var(--ink)}
 </style>
 </head>
 <body>
-<div id="boot"><div>
-  <svg viewBox="0 0 70 70"><polygon points="35,3 65,20 65,50 35,67 5,50 5,20" fill="none"
-    stroke="#A578FF" stroke-width="2.5" stroke-linejoin="round"/></svg>
-  <b>СИСТЕМА</b>
-</div></div>
+<div id="boot"><div><b>GYM</b></div></div>
 
 <!-- выбранный день: показывается на вкладках «Зал» и «Еда» -->
 <nav class="days" id="daysbar"><div class="drow" id="chips"></div></nav>
@@ -1083,10 +1100,10 @@ input,textarea,select{color:var(--ink)}
 <section class="scr" id="scr-wo">
   <div id="tw">
     <div class="win qbox">
-      <div class="qhead"><b>ЕЖЕДНЕВНЫЙ КВЕСТ</b><i id="qType">—</i></div>
+      <div class="qhead"><b>ТРЕНИРОВКА ДНЯ</b><i id="qType">—</i></div>
       <div class="qprog"><i id="qpf"></i></div>
       <div class="qmeta"><span id="qCnt">—</span><span id="qRew">—</span></div>
-      <div class="qpen" id="qPen">ШТРАФ ЗА НЕВЫПОЛНЕНИЕ: серия недель обнуляется</div>
+      <div class="qpen" id="qPen">Пропуск сбрасывает серию недель</div>
     </div>
     <div class="tools">
       <button id="cpTr">Скопировать день</button>
@@ -1132,30 +1149,24 @@ input,textarea,select{color:var(--ink)}
 
 <!-- ================= ПРОГРЕСС ================= -->
 <section class="scr" id="scr-prog">
-  <div class="shead"><h2><span>Статус игрока</span><i></i></h2><p>уровень, цель и весь журнал</p></div>
+  <div class="shead"><h2><span>Сводка</span><i></i></h2><p>вес, цель и весь журнал</p></div>
 
   <div class="win" style="margin-top:10px">
-    <div class="wtitle">СТАТУС</div>
+    <div class="wtitle">ИТОГИ</div>
     <div class="top">
-      <div class="rank">
-        <svg viewBox="0 0 76 76">
-          <polygon points="38,3 70,21 70,55 38,73 6,55 6,21" fill="none" stroke="rgba(167,120,255,.22)" stroke-width="1.5"/>
-          <polygon id="rp" points="38,3 70,21 70,55 38,73 6,55 6,21" fill="none" stroke="#A578FF"
-            stroke-width="2.5" stroke-dasharray="222" stroke-dashoffset="222" stroke-linejoin="round"/>
-        </svg><b id="lv">1</b>
+      <div class="sumr">
+        <div><b id="sumStreak">0</b><span>недель подряд</span></div>
+        <div><b id="sumWo">0</b><span>тренировок</span></div>
+        <div><b id="sumTon">0,0</b><span>тонн поднято</span></div>
       </div>
-      <div class="who">
-        <h1>ИГРОК <span class="rkchip" id="rk">E</span></h1>
-        <p class="lv">УРОВЕНЬ</p>
-        <div class="xpb"><i id="xpf"></i></div><small id="xpt">0 / 500 XP</small></div>
     </div>
   </div>
 
-  <button class="anb" id="anBtn">Анализ игрока</button>
-  <button class="anb" id="progBtn" style="margin-top:7px">Прогрессия по упражнениям</button>
+  <button class="anb" id="anBtn">Разбор</button>
+  <button class="anb" id="progBtn" style="margin-top:7px">Прогресс по упражнениям</button>
 
   <div class="win quest">
-    <div class="qrow"><label>ГЛАВНЫЙ КВЕСТ — МАССА ТЕЛА</label>
+    <div class="qrow"><label>ЦЕЛЬ ПО ВЕСУ</label>
       <div class="qnum"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес тела"><span>кг</span></div></div>
     <button class="bmi" id="bmiRow" aria-label="Индекс массы тела">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
@@ -1372,12 +1383,12 @@ input,textarea,select{color:var(--ink)}
   <b>УРОВЕНЬ ПОВЫШЕН</b><span id="lvupN">2</span><em id="lvupR">РАНГ E</em>
 </div></div>
 
-<div class="note" id="note"><b>СИСТЕМА</b><span id="noteT"></span></div>
+<div class="note" id="note"><span id="noteT"></span></div>
 
 <script>
 'use strict';
 /* =========================================================================
-   СИСТЕМА — дневник тренировок, питания и веса.
+   GYM — дневник тренировок, питания и веса.
    Один файл, без сборки: правится прямо на github.com и сразу уезжает на сайт.
    Данные лежат только на устройстве: localStorage — журнал, IndexedDB — фотографии.
    ========================================================================= */
@@ -1999,11 +2010,12 @@ function addXp(n, msg) {
   S.xp = Math.max(0, S.xp + n);
   const b = Math.floor(S.xp / PER);
   if (b > a) levelUp(b + 1);
-  else if (msg && n > 0) note(msg + '  +' + n + ' XP');
+  else if (msg && n > 0) note(msg);
 }
 
 // полноэкранное уведомление, как при повышении уровня в системе
 function levelUp(lv) {
+  return;                                  // уровней больше нет, окно не показываем
   const el = $('lvup');
   $('lvupN').textContent = lv;
   $('lvupR').textContent = 'РАНГ ' + rankOf(lv);
@@ -2204,10 +2216,10 @@ function paintWorkout() {
     $('qType').textContent = d.s.toUpperCase();
     $('qpf').style.width = (pr2 * 100) + '%';
     $('qCnt').innerHTML = '<b>' + doneCnt + '</b> из ' + d.ex.length + ' упражнений';
-    $('qRew').innerHTML = r.wo ? 'награда получена' : 'награда <b>+' + XP_WO + ' XP</b> за квест';
+    $('qRew').innerHTML = r.wo ? 'закрыта' : '';
     const pen = $('qPen');
-    if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'КВЕСТ ВЫПОЛНЕН'; }
-    else { pen.className = 'qpen'; pen.textContent = 'ШТРАФ ЗА НЕВЫПОЛНЕНИЕ: серия недель обнуляется'; }
+    if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'Тренировка закрыта'; }
+    else { pen.className = 'qpen'; pen.textContent = 'Пропуск сбрасывает серию недель'; }
     const IN = intOf(sel, d.t);
     $('exl').innerHTML = d.ex.map((e, j) => {
       const g = r.log[j] || {};
@@ -2242,7 +2254,7 @@ function paintWorkout() {
     const all = d.ex.length > 0 && d.ex.every((_, j) => (r.log[j] || {}).done);
     const f = $('fin');
     f.classList.toggle('done', !!r.wo);
-    f.textContent = r.wo ? 'Квест выполнен' : 'Завершить квест';
+    f.textContent = r.wo ? 'Тренировка закрыта' : 'Завершить тренировку';
     f.disabled = !all || !!r.wo;
   }
 
@@ -2881,12 +2893,10 @@ $('shB').addEventListener('click', e => {
    ВКЛАДКА «ПРОГРЕСС»
    ========================================================================= */
 function paintProgress() {
-  const l = levelOf(), i = S.xp % PER, p = i / PER;
-  $('lv').textContent = l;
-  $('rk').textContent = 'РАНГ ' + rankOf(l);
-  $('xpt').textContent = i + ' / ' + PER + ' XP' + (streak() ? ' · серия ' + streak() + ' нед' : '');
-  $('xpf').style.width = (p * 100) + '%';
-  $('rp').style.strokeDashoffset = 222 - 222 * p;
+  // Вместо уровня и ранга — числа, за которыми есть смысл.
+  $('sumStreak').textContent = streak();
+  $('sumWo').textContent = Object.values(S.rec).filter(r => r.wo).length;
+  $('sumTon').textContent = dec(GROUPS.reduce((n, [g]) => n + num(S.vol[g]), 0) / 1000);
 
   paintGoal();
   paintCycle();
@@ -2988,7 +2998,7 @@ function paintGoal() {
   const ms = milesOf();
   const next = ms.find(m => up ? m > b : m < b);
   const hit = m => up ? b >= m : b <= m;
-  $('qleft').textContent = (up ? b >= g : b <= g) ? 'КВЕСТ ВЫПОЛНЕН'
+  $('qleft').textContent = (up ? b >= g : b <= g) ? 'ЦЕЛЬ ДОСТИГНУТА'
     : (next ? 'до ' + next + ' кг: ' + dec(Math.abs(next - b)) : 'осталось ' + dec(Math.abs(g - b)));
   $('miles').innerHTML = ms.map(m =>
     `<div class="${hit(m) ? 'hit' : (m === next ? 'now' : '')}">${m}</div>`).join('');
@@ -5004,7 +5014,7 @@ $('ovX').addEventListener('click', () => { $('ov').classList.remove('on'); docum
 
 
 /* =========================================================================
-   СИСТЕМА · АНАЛИЗ ИГРОКА
+   РАЗБОР
    Никакой нейросети: это арифметика по журналу, который уже есть.
    Каждое уведомление опирается на конкретные числа и показывает их,
    чтобы можно было проверить, а не верить на слово.
@@ -5114,7 +5124,7 @@ function analyze() {
   /* --- вес и темп --- */
   const pts = wlog();
   if (!pts.length) {
-    add('bad', 'МАССА ТЕЛА', 'Показатель не снят ни разу. Главный квест не отслеживается: ' +
+    add('bad', 'МАССА ТЕЛА', 'Показатель не снят ни разу. Цель по весу не отслеживается: ' +
       'без веса не работают ни график, ни контроль темпа.',
       'Взвесься утром натощак и впиши цифру');
   } else {
@@ -5373,16 +5383,13 @@ function openAnalysis() {
   const lv = levelOf();
 
   let html = `<div class="sysbar">
-    <svg viewBox="0 0 40 40" class="syshex"><polygon points="20,2 36,11 36,29 20,38 4,29 4,11"
-      fill="none" stroke="#A578FF" stroke-width="2"/></svg>
     <div class="sysbar-t">
-      <b>УВЕДОМЛЕНИЕ СИСТЕМЫ</b>
-      <span>анализ игрока завершён · ${fmt(today())}</span>
+      <b>РАЗБОР</b>
+      <span>по данным на ${fmt(today())}</span>
     </div>
-    <span class="sysbar-lv">ур. ${lv}<br>ранг ${rankOf(lv)}</span>
   </div>
   <div class="sysverdict ${bad ? 'warn' : 'ok'}">
-    ${bad ? 'ОБНАРУЖЕНО ОТКЛОНЕНИЙ: <b>' + bad + '</b>' : 'ОТКЛОНЕНИЙ НЕ ОБНАРУЖЕНО'}
+    ${bad ? 'Замечаний: <b>' + bad + '</b>' : 'Замечаний нет'}
   </div>`;
 
   html += f.map((x, i) => `<div class="sysmsg ${x.lvl}" style="animation-delay:${i * 55}ms">
@@ -5391,7 +5398,7 @@ function openAnalysis() {
       ${x.task ? `<div class="systask"><i>ЗАДАЧА</i>${esc(x.task)}</div>` : ''}
     </div>`).join('');
 
-  html += `<button class="copyb" id="anCopy">▣ ВЫГРУЗИТЬ ДАННЫЕ ИГРОКА</button>
+  html += `<button class="copyb" id="anCopy">Выгрузить данные</button>
     <p class="bkst">Выгрузка — обычный текст с твоими числами. Вставь его в чат с Claude
        и спроси что угодно: разбор программы, замену упражнения, что делать с застоем.</p>`;
 
