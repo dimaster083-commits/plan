@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#EBECF4">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F2F2F7">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GYM">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -15,34 +15,21 @@
 <title>GYM</title>
 <style>
 :root{
-  /* Один базовый оттенок на всё оформление. Раньше синий/фиолетовый был вписан
-     числом в тридцати местах, и поменять его целиком было нельзя. */
-  --tint:96,150,240;
-  --bg:#050912; --panel:rgba(14,26,48,.78); --panel2:rgba(20,36,64,.66);
-  --edge:rgba(var(--tint),.34); --edge2:rgba(var(--tint),.15);
-  --cy:#5C9DFF; --cy2:#CFE2FF; --gold:#F0C24A;
-  --tx:#DDE8F8; --mut:#7E90B2;
-  --back:#35B3C9; --chest:#E0A33A; --legs:#3FAE77; --arms:#E2564C; --rest:#45566F; --other:#6D8BF0;
-  --f:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  /* Метрики и шрифт. Цвета живут ниже, в блоке оформления: там их два набора —
+     светлый и тёмный, — и переключаются они одной строкой на <html>. */
+  --tint:10,122,255;
+  --f:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Arial,sans-serif;
   --st:env(safe-area-inset-top,0px);
   --sb:env(safe-area-inset-bottom,0px);
   --sl:env(safe-area-inset-left,0px);
   --sr:env(safe-area-inset-right,0px);
-  --tabh:54px;
-  color-scheme:dark;
+  --tabh:58px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 button{-webkit-user-select:none;user-select:none;touch-action:manipulation}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--f);font-size:15px;
-  line-height:1.5;padding-bottom:calc(var(--tabh) + var(--sb) + 18px);
-  background-image:
-    radial-gradient(1000px 520px at 50% -180px,rgba(70,130,240,.26),transparent 72%),
-    radial-gradient(700px 400px at 100% 12%,rgba(40,90,190,.14),transparent 70%),
-    linear-gradient(rgba(var(--tint),.045) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(var(--tint),.045) 1px,transparent 1px);
-  background-size:auto,auto,52px 52px,52px 52px;
-  background-attachment:fixed}
+  line-height:1.5;padding-bottom:calc(var(--tabh) + var(--sb) + 18px)}
 .wrap{max-width:660px;margin:0 auto;padding:0 14px}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 input,select{font-family:var(--f)}
@@ -834,41 +821,94 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
    наоборот: спокойные поверхности, один акцент, воздух и типографика.
    ========================================================================= */
 :root{
-  /* поверхности: три уровня, фон тонирован — чистый белый режет глаза */
-  --s0:#EBECF4;            /* фон */
+  /* Светлая тема — она же тема по умолчанию. Палитра системная: те же
+     поверхности и тот же синий, что в iOS, чтобы приложение не выглядело
+     чужим рядом с остальными на экране. */
+  --s0:#F2F2F7;            /* фон */
   --s1:#FFFFFF;            /* карточка */
-  --s2:#F0F0F8;            /* поле, вложенный блок */
-  --s3:#E3E3F0;            /* наведение, активное */
-  --ln:#DEDFEB;
-  --ln2:#CFD0E2;
+  --s2:#EFEFF4;            /* поле, вложенный блок */
+  --s3:#E4E4EC;            /* нажатие */
+  --ln:#E4E4E9;            /* разделитель */
+  --ln2:#D3D3D8;
 
-  --ink:#1A1930;           /* основной текст */
-  --ink2:#4C4B66;          /* вторичный */
-  --ink3:#807F9A;          /* подписи */
+  --ink:#11111A;           /* основной текст */
+  --ink2:#48484F;          /* вторичный */
+  --ink3:#8A8A90;          /* подписи */
 
-  --acc:#5B4BD6;           /* единственный акцент */
-  --acc-soft:#E7E4FF;
-  --ok:#2E7D57; --warn:#B57A14; --bad:#CC3B34;
+  --acc:#007AFF;           /* единственный акцент */
+  --acc-2:#0062D1;         /* он же под нажатием */
+  --acc-soft:#E3F0FF;      /* заливка выбранного состояния */
+  --acc-ink:#0060C8;       /* текст поверх мягкой заливки */
+  --onacc:#FFFFFF;         /* текст поверх сплошного акцента */
+
+  --ok:#1F8A3B;   --ok-soft:#E3F5E9;   --ok-ln:#BFE3C9;
+  --warn:#9A6200; --warn-soft:#FBEFD8;
+  --bad:#CC3B34;  --bad-soft:#FCE6E4;
+
+  --glass:rgba(242,242,247,.86);   /* полосы и шторки поверх контента */
+  --glass2:rgba(255,255,255,.88);  /* нижние вкладки */
+  --scrim:rgba(17,17,26,.4);       /* затемнение под диалогом */
+  --glow:rgba(0,122,255,.08);      /* мягкий свет у верхнего края */
 
   --r-s:10px; --r-m:14px; --r-l:18px;
-  --sh1:0 1px 2px rgba(26,25,48,.06);
-  --sh2:0 4px 14px -6px rgba(26,25,48,.14);
-  --sh3:0 16px 36px -18px rgba(26,25,48,.22);
+  --sh1:0 1px 2px rgba(17,17,26,.05);
+  --sh2:0 4px 14px -6px rgba(17,17,26,.13);
+  --sh3:0 16px 36px -18px rgba(17,17,26,.22);
+  --shacc:0 8px 20px -12px rgba(0,122,255,.85);
 
   /* старые имена оставлены: на них завязаны десятки правил ниже по файлу */
   --bg:var(--s0); --panel:var(--s1); --panel2:var(--s2);
   --edge:var(--ln2); --edge2:var(--ln);
-  --cy:var(--acc); --cy2:#3A2CA8; --tx:var(--ink); --mut:var(--ink3);
-  --legs:var(--ok); --chest:var(--warn); --arms:var(--bad); --back:#1F8FA6; --other:#7A5BD6;
-  --rest:#A9AAC0;
-  --tabh:58px;
+  --cy:var(--acc); --cy2:var(--acc-ink); --tx:var(--ink); --mut:var(--ink3);
+  --legs:var(--ok); --chest:var(--warn); --arms:var(--bad); --back:#1F7F9A; --other:#6C6C74;
+  --rest:#A9AAB0;
   color-scheme:light;
+}
+
+/* Тёмная тема. Меняются только значения токенов — ни одного правила ниже
+   дублировать не нужно. Системная настройка учитывается, но ручной выбор
+   на <html data-theme> всегда главнее. */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --s0:#000000; --s1:#1C1C1E; --s2:#2C2C2E; --s3:#3A3A3C;
+    --ln:#38383C; --ln2:#48484C;
+    --ink:#FFFFFF; --ink2:#C6C6CE; --ink3:#9A9AA2;
+    --acc:#0A84FF; --acc-2:#3D9BFF; --acc-soft:#10294A; --acc-ink:#6FB6FF; --onacc:#FFFFFF;
+    --ok:#32D158; --ok-soft:#10301B; --ok-ln:#2B5637;
+    --warn:#FF9F0A; --warn-soft:#3A2A0A;
+    --bad:#FF564A; --bad-soft:#3C1B18;
+    --glass:rgba(0,0,0,.8); --glass2:rgba(28,28,30,.9);
+    --scrim:rgba(0,0,0,.6); --glow:rgba(10,132,255,.14);
+    --sh1:0 1px 2px rgba(0,0,0,.5);
+    --sh2:0 4px 14px -6px rgba(0,0,0,.6);
+    --sh3:0 16px 36px -18px rgba(0,0,0,.8);
+    --shacc:0 8px 20px -12px rgba(10,132,255,.7);
+    --back:#3FB5D4; --other:#98989F; --rest:#5A5A62;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --s0:#000000; --s1:#1C1C1E; --s2:#2C2C2E; --s3:#3A3A3C;
+  --ln:#38383C; --ln2:#48484C;
+  --ink:#FFFFFF; --ink2:#C6C6CE; --ink3:#9A9AA2;
+  --acc:#0A84FF; --acc-2:#3D9BFF; --acc-soft:#10294A; --acc-ink:#6FB6FF; --onacc:#FFFFFF;
+  --ok:#32D158; --ok-soft:#10301B; --ok-ln:#2B5637;
+  --warn:#FF9F0A; --warn-soft:#3A2A0A;
+  --bad:#FF564A; --bad-soft:#3C1B18;
+  --glass:rgba(0,0,0,.8); --glass2:rgba(28,28,30,.9);
+  --scrim:rgba(0,0,0,.6); --glow:rgba(10,132,255,.14);
+  --sh1:0 1px 2px rgba(0,0,0,.5);
+  --sh2:0 4px 14px -6px rgba(0,0,0,.6);
+  --sh3:0 16px 36px -18px rgba(0,0,0,.8);
+  --shacc:0 8px 20px -12px rgba(10,132,255,.7);
+  --back:#3FB5D4; --other:#98989F; --rest:#5A5A62;
+  color-scheme:dark;
 }
 
 /* ---------- основа ---------- */
 body{
   background:var(--s0);
-  background-image:radial-gradient(1100px 560px at 50% -300px,rgba(91,75,214,.10),transparent 72%);
+  background-image:radial-gradient(1100px 560px at 50% -300px,var(--glow),transparent 72%);
   background-attachment:fixed;
   letter-spacing:0;
   font-size:15px;
@@ -921,35 +961,35 @@ input,textarea,select{color:var(--ink)}
 .dnote textarea{background:var(--s2)}
 
 /* ---------- кнопки ---------- */
-.fin{background:var(--acc);color:#fff;border-radius:var(--r-m);clip-path:none;
+.fin{background:var(--acc);color:var(--onacc);border-radius:var(--r-m);clip-path:none;
   padding:17px;font-size:15px;font-weight:700;letter-spacing:.01em;
-  box-shadow:0 8px 20px -12px rgba(91,75,214,.9);text-shadow:none}
-.fin:active{background:#4C3DC0}
-.fin.done{background:#E4F0E9;color:var(--ok);border:1px solid #BFDCC9;box-shadow:none}
+  box-shadow:var(--shacc);text-shadow:none}
+.fin:active{background:var(--acc-2)}
+.fin.done{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok-ln);box-shadow:none}
 .fin:disabled{background:var(--s2);color:var(--ink3);box-shadow:none;opacity:1}
 /* всплывающее сообщение и заставка тоже светлые */
-.note{background:var(--ink);border:0;color:#fff;clip-path:none;border-radius:999px;
+.note{background:var(--ink);border:0;color:var(--s1);clip-path:none;border-radius:999px;
   box-shadow:var(--sh3);padding:12px 20px}
-.note span{color:#fff}
+.note span{color:var(--s1)}
 #boot{background:var(--s0)}
 #boot b{color:var(--acc);letter-spacing:.3em;font-size:19px}
-.ask{background:rgba(26,25,48,.45)}
+.ask{background:var(--scrim)}
 .askw{background:var(--s1);box-shadow:var(--sh3)}
 .askw button{border:1px solid var(--ln);border-radius:var(--r-s);color:var(--ink2)}
-.askw button.yes{background:var(--acc);color:#fff;border-color:transparent}
-.sheet{background:rgba(235,236,244,.98)}
+.askw button.yes{background:var(--acc);color:var(--onacc);border-color:transparent}
+.sheet{background:var(--s0)}
 .add{border:1px dashed var(--ln2);color:var(--ink2);border-radius:var(--r-m);padding:14px;
   font-size:14px;letter-spacing:0}
 .anb,.cpb,.copyb,.kcsrc button,.moved button,.ovh button,.gear{
   background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);color:var(--ink2)}
 .anb,.cpb,.copyb{padding:14px;font-size:14px;font-weight:600;letter-spacing:0;color:var(--ink)}
 .anb:active,.cpb:active,.copyb:active{background:var(--s3)}
-.fpbar button{background:var(--acc);color:#fff;border-radius:var(--r-m);font-weight:700;
+.fpbar button{background:var(--acc);color:var(--onacc);border-radius:var(--r-m);font-weight:700;
   box-shadow:none}
 .go,.rest{height:48px;border-radius:var(--r-s);background:var(--s2);border:1px solid transparent;
   box-shadow:none}
 .go{width:56px;font-size:18px;color:var(--ink2)}
-.ex.done .go{background:var(--ok);border-color:var(--ok);color:#fff;box-shadow:none}
+.ex.done .go{background:var(--ok);border-color:var(--ok);color:var(--onacc);box-shadow:none}
 .gear{width:44px;height:44px;border-radius:var(--r-s)}
 .gear.on{background:var(--acc-soft);color:var(--acc)}
 .x{color:var(--ink3)}
@@ -959,38 +999,38 @@ input,textarea,select{color:var(--ink)}
   border-radius:999px;clip-path:none;border:1px solid transparent;background:var(--s2);
   color:var(--ink2);font-weight:600;letter-spacing:.01em}
 .intg{padding:5px 12px;font-size:11px}
-.intg.h{background:#FCE6E4;color:var(--bad)}
+.intg.h{background:var(--bad-soft);color:var(--bad)}
 .intg.m{background:var(--acc-soft);color:var(--acc)}
-.intg.l{background:#E1F1E7;color:var(--ok)}
-.intg.d{background:#FAEFD8;color:var(--warn)}
+.intg.l{background:var(--ok-soft);color:var(--ok)}
+.intg.d{background:var(--warn-soft);color:var(--warn)}
 .grp,.grpsel button{padding:6px 12px;font-size:11px}
-.grp.none{background:#FAEFD8;color:var(--warn)}
+.grp.none{background:var(--warn-soft);color:var(--warn)}
 .prb{padding:5px 12px;font-size:11px;color:var(--ink2)}
-.prb.hold{background:#FCE6E4;color:var(--bad)}
-.prb.lock{background:#E1F1E7;color:var(--ok)}
+.prb.hold{background:var(--bad-soft);color:var(--bad)}
+.prb.lock{background:var(--ok-soft);color:var(--ok)}
 .miles div{padding:8px 2px;font-size:12px;color:var(--ink3)}
-.miles div.hit{background:#E1F1E7;color:var(--ok)}
+.miles div.hit{background:var(--ok-soft);color:var(--ok)}
 .miles div.now{background:var(--acc-soft);color:var(--acc)}
 .types button{padding:9px 14px;font-size:13px}
-.types button.on{background:var(--acc);color:#fff;box-shadow:none}
+.types button.on{background:var(--acc);color:var(--onacc);box-shadow:none}
 .rkchip{padding:4px 12px;font-size:11px;background:var(--acc-soft);color:var(--acc);
   text-shadow:none;border:0}
 
 /* ---------- дни недели ---------- */
-.days{background:rgba(235,236,244,.92);border-bottom:1px solid var(--ln)}
+.days{background:var(--glass);border-bottom:1px solid var(--ln)}
 .chip{background:var(--s1);border:1px solid var(--ln);border-radius:var(--r-s);padding:9px 4px;
   color:var(--ink3)}
-.chip.on{background:var(--acc-soft);border-color:#C9C2FF;color:var(--acc);box-shadow:none}
+.chip.on{background:var(--acc-soft);border-color:transparent;color:var(--acc-ink);box-shadow:none}
 .chip b{font-size:13px;font-weight:600}
 
 /* ---------- шкалы ---------- */
 .xpb,.qb,.qprog,.tbar,.st .tk,.vol .r .b,.cycBar div{background:var(--s2);border-radius:999px}
 .xpb i,.qb i,.qprog i,.tbar i,.st .tk i,.vol .r .b i{border-radius:999px;box-shadow:none}
 .xpb i{background:var(--acc)}
-.qb i{background:linear-gradient(90deg,var(--acc),#7FB4FF)}
+.qb i{background:var(--acc)}
 .qprog i{background:var(--acc)}
 .cycBar div.now{background:var(--acc)}
-.cycBar div.done{background:#B9B1F0}
+.cycBar div.done{background:var(--acc-soft)}
 .cycBar div.dl{background:var(--warn)}
 
 /* ---------- ранг ---------- */
@@ -999,7 +1039,7 @@ input,textarea,select{color:var(--ink)}
 
 /* ---------- упражнение ---------- */
 .ex{padding:16px;margin-bottom:10px;border-radius:var(--r-l)}
-.ex.done{background:#F1F8F3;border-color:#CFE6D8}
+.ex.done{background:var(--ok-soft);border-color:var(--ok-ln)}
 .exname{border:0;font-size:17px;font-weight:650;letter-spacing:-.01em;gap:7px}
 .exname::after{opacity:.5;border-color:var(--ink3)}
 .flds{gap:8px;margin-top:14px}
@@ -1011,17 +1051,17 @@ input,textarea,select{color:var(--ink)}
 .setr .sh span{font-size:11px;letter-spacing:.02em;text-transform:uppercase;font-weight:600}
 .setr .fillall{background:var(--s3);border:0;color:var(--ink);border-radius:999px;
   padding:7px 13px;font-size:11px;font-weight:600;letter-spacing:.01em}
-.setr .fillall:active{background:var(--acc);color:#06162E}
+.setr .fillall:active{background:var(--acc);color:var(--onacc)}
 .setr .rb{gap:8px}
 .setr .rbx i{font-size:11px;color:var(--ink3);font-weight:500}
 .setr .rbx input{background:var(--s1);border:1px solid var(--ln);padding:12px 0;font-size:19px}
-.setr .rbx.hit input{background:#E4F0E9;border-color:#BFDCC9;color:var(--ok)}
+.setr .rbx.hit input{background:var(--ok-soft);border-color:var(--ok-ln);color:var(--ok)}
 .setr .sg{margin-top:11px;font-size:12.5px;color:var(--ink2);line-height:1.5}
 .setr .sg b{color:var(--ink)}
 .setr .sg u{color:var(--ink2)}
 
 /* ---------- нижние вкладки ---------- */
-.tabbar{background:rgba(255,255,255,.94);border-top:1px solid var(--ln)}
+.tabbar{background:var(--glass2);border-top:1px solid var(--ln)}
 .tab{font-size:10.5px;letter-spacing:0;gap:4px;font-weight:500}
 .tab svg{width:23px;height:23px}
 .tab.on{color:var(--acc)}
@@ -1029,10 +1069,114 @@ input,textarea,select{color:var(--ink)}
 .tab.on::before{content:none}
 
 /* ---------- шторки и наложения ---------- */
-.ov,.fp{background:rgba(235,236,244,.98)}
+.ov,.fp{background:var(--s0)}
 .ovh b{font-size:17px;letter-spacing:-.01em;color:var(--ink);font-weight:700;text-transform:none}
 .ovh button{width:38px;height:38px;border-radius:999px;background:var(--s2);color:var(--ink2)}
 .askw{border-radius:var(--r-l)}
+
+/* ---------- остатки прежнего, игрового оформления ----------
+   Эти правила пережили переход на спокойный вид и в светлой теме давали
+   белый текст по белому, тёмные панели посреди светлого экрана и свечение.
+   Здесь они приводятся к токенам — и работают в обеих темах. */
+
+/* «ТРЕНИРОВКА ДНЯ» было белым по белой карточке, а вокруг неё горели
+   неоновые уголки. Ни того, ни другого больше нет. */
+.qbox::after{content:none}
+.qhead b{color:var(--ink);font-size:12px;letter-spacing:.04em;font-weight:700;text-shadow:none}
+.qhead i{font-size:11.5px;letter-spacing:0;color:var(--ink3)}
+.qmeta{font-size:12.5px;letter-spacing:0;color:var(--ink3)}
+.qmeta b{color:var(--ink)}
+.qpen{border-top:1px solid var(--ln);font-size:11.5px;letter-spacing:0;color:var(--warn)}
+.qpen.done{color:var(--ok)}
+
+/* календарь: день с тренировкой был белым по светлой заливке — не читался */
+.cd{border-radius:var(--r-s);font-size:12.5px;color:var(--ink3)}
+.cd.in{color:var(--ink)}
+.cd.wo{font-weight:700;color:var(--ink)}
+.cd.today{outline:2px solid var(--acc);outline-offset:-2px}
+.cd.sel{border-color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc)}
+.cd .ok{color:var(--ok)}
+.cd .mv,.cd .pm{color:var(--acc);background:var(--acc)}
+.cd .pm{width:4px;height:4px;border-radius:50%}
+.cwk{border:1px solid var(--ln);border-radius:var(--r-m);background:transparent}
+.cwk.cur{border-color:var(--acc);background:var(--acc-soft);box-shadow:none}
+.cwk .wn{color:var(--ink3);background:var(--s1)}
+.cwk.cur .wn{color:var(--acc-ink);background:var(--s1)}
+.cnav button{border:1px solid var(--ln);border-radius:var(--r-s);color:var(--ink2);width:34px;height:30px}
+.cleg{color:var(--ink3);font-size:11px}
+
+/* отметки и переключатели: тёмный текст на акцентной заливке не читался */
+.row.on .box,.fpi.sel .mk{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+
+/* таймер отдыха висел тёмной панелью поверх светлого экрана */
+.tmr{background:var(--glass2);backdrop-filter:blur(12px);border-top:1px solid var(--ln);
+  box-shadow:0 -6px 26px -14px rgba(0,0,0,.3)}
+.tmr b{color:var(--ink);font-weight:700}
+.tmr .p button,.tmr .stop{background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);
+  color:var(--ink2);padding:9px}
+.tmr .stop{color:var(--bad);padding:9px 14px}
+
+/* нижняя панель выбора продукта — то же самое */
+.fpbar{background:var(--glass2);backdrop-filter:blur(12px);border-top:1px solid var(--ln)}
+.fph{background:var(--s0);border-bottom:1px solid var(--ln)}
+
+/* экран разбора: шапка и сообщения были тёмными панелями */
+.sysbar{border:1px solid var(--ln);background:var(--s1);border-radius:var(--r-l);
+  clip-path:none;box-shadow:var(--sh1)}
+.syshex{filter:none;animation:none}
+.sysbar-t b{color:var(--ink);font-size:14px;letter-spacing:0;font-weight:700;text-shadow:none}
+.sysbar-t span,.sysbar-lv{color:var(--ink3);letter-spacing:0;font-size:11.5px}
+.sysverdict{border:1px solid var(--ln);border-radius:var(--r-m);font-size:12px;letter-spacing:.02em;
+  color:var(--ink2);padding:10px 12px}
+.sysverdict.ok{color:var(--ok);border-color:var(--ok-ln);background:var(--ok-soft)}
+.sysverdict.warn{color:var(--warn);border-color:transparent;background:var(--warn-soft)}
+.sysmsg{background:var(--s1);border:1px solid var(--ln);border-left:3px solid var(--ln2);
+  border-radius:var(--r-m);clip-path:none}
+.sysmsg.bad{border-left-color:var(--bad);background:var(--bad-soft)}
+.sysmsg.warn{border-left-color:var(--warn)}
+.sysmsg.ok{border-left-color:var(--ok)}
+.sysmsg p b,.sysmsg.bad p b{color:var(--ink)}
+.systag{border-radius:999px;padding:4px 11px;font-size:11px;letter-spacing:0;font-weight:600}
+.systag.ok{color:var(--ok);border:1px solid transparent;background:var(--ok-soft)}
+.systag.warn{color:var(--warn);border:1px solid transparent;background:var(--warn-soft)}
+.systag.bad{color:var(--bad);border:1px solid transparent;background:var(--bad-soft)}
+
+/* заставка и повышение уровня */
+#boot polygon{filter:none}
+.lvup{background:radial-gradient(420px 320px at 50% 50%,var(--glow),transparent 72%)}
+.lvup b{color:var(--acc);text-shadow:none}
+.lvup span{color:var(--ink);text-shadow:none}
+.lvup em{color:var(--ink3)}
+
+/* резервная копия и кнопка разбора */
+.bk h4{color:var(--ink3);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.bk p{font-size:12.5px;color:var(--ink3)}
+.bkb button{background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);
+  font-size:13px;letter-spacing:0;padding:12px 14px;color:var(--ink2)}
+.bkb button.hi{background:var(--acc);color:var(--onacc);border-color:transparent}
+.bkst{font-size:12px;color:var(--ink3);letter-spacing:0}
+.anb{border:0;background:var(--s2);color:var(--ink);font-weight:600}
+.striph{font-size:12px;letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
+
+/* ---------- история дня ---------- */
+.lsplit{height:1px;background:var(--ln);margin:16px 0 14px}
+.dayrh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.dayrh b{font-size:17px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.dayrh i{font-style:normal;font-size:12.5px;font-weight:600}
+.jrow{display:block;width:100%;text-align:left;padding:13px 15px;margin-bottom:8px;
+  border-radius:var(--r-m)}
+.jrow b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
+.jrow span{display:block;font-size:13.5px;color:var(--ink2);margin-top:3px}
+.jrow i{display:block;font-style:normal;font-size:12px;color:var(--ink3);margin-top:3px}
+.jrow em.ok{font-style:normal;color:var(--ok)}
+.hrow:active{background:var(--s2)}
+.ld{display:flex;align-items:center;gap:10px;padding:7px 0}
+.ld .n{width:64px;flex:0 0 auto;font-size:13px;color:var(--ink2)}
+.ld .b{flex:1;height:7px;background:var(--s2);border-radius:999px;overflow:hidden}
+.ld .b i{display:block;height:100%;width:0;border-radius:999px;transition:width .45s}
+.ld .v{width:96px;text-align:right;font-variant-numeric:tabular-nums}
+.ld .v b{font-size:13px;font-weight:600;color:var(--ink)}
+.ld .v em{font-style:normal;font-size:11.5px;color:var(--ink3);margin-left:5px}
 
 /* ---------- текстовые блоки плана ---------- */
 .pln{padding:16px;border-radius:var(--r-l);margin-bottom:10px}
@@ -1071,6 +1215,17 @@ input,textarea,select{color:var(--ink)}
 
 </style>
 </head>
+<script>
+/* Тема ставится до разбора остального кода: иначе при тёмной теме экран
+   успевает моргнуть белым. Значение лежит отдельным ключом — оно нужно
+   раньше, чем читается журнал. */
+(function () {
+  try {
+    var t = localStorage.getItem('sys-gym-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+  } catch (e) { /* приватный режим: остаётся системная тема */ }
+})();
+</script>
 <body>
 <div id="boot"><div><b>GYM</b></div></div>
 
@@ -1105,19 +1260,10 @@ input,textarea,select{color:var(--ink)}
       <div class="qmeta"><span id="qCnt">—</span><span id="qRew">—</span></div>
       <div class="qpen" id="qPen">Пропуск сбрасывает серию недель</div>
     </div>
-    <div class="tools">
-      <button id="cpTr">Скопировать день</button>
-      <button id="prAll">Рекорды</button>
-      <button id="plates" class="hi">Сборка штанги</button>
-    </div>
     <div id="exl"></div>
     <button class="add" id="addEx">+ Упражнение</button>
     <button class="fin" id="fin">Завершить тренировку</button>
-  </div>
-
-  <div class="win dnote">
-    <label>ЗАМЕТКА К ДНЮ</label>
-    <textarea id="dayNote" rows="2" placeholder="самочувствие, сон, боль, что получилось"></textarea>
+    <button class="add" id="editPast" hidden>Править этот день</button>
   </div>
 
   <h2 class="sec">ДОБАВКИ<em id="spCnt"></em></h2>
@@ -1181,45 +1327,52 @@ input,textarea,select{color:var(--ink)}
   </div>
 
   <div class="win cyc">
-    <div class="cycTop"><b id="cycW">Неделя 1<i> из 8</i></b><span id="cycPh">НАКОПЛЕНИЕ</span></div>
+    <div class="cycTop"><b id="cycW">Неделя 1<i> из 8</i></b><span id="cycPh">ЦИКЛ 1</span></div>
     <div class="cycBar" id="cycBar"></div>
     <div class="cycNote" id="cycNote"></div>
     <div class="cycStart">старт плана
       <input id="startIn" type="date" aria-label="Дата старта плана"></div>
   </div>
 
-  <div class="tri">
-    <div class="win"><b id="tWo">0</b><span>ТРЕНИРОВОК</span></div>
-    <div class="win"><b id="tTon">0</b><span>ТОНН</span></div>
-    <div class="win"><b id="tWk">1</b><span>НЕДЕЛЯ ПЛАНА</span></div>
-  </div>
-
-  <div class="win stats"><div id="stl"></div></div>
   <div class="win rem" id="rem"><p id="remT"></p></div>
 
   <div class="win chart">
-    <div class="wtitle" style="padding:0 0 8px">ДИНАМИКА ВЕСА</div>
+    <div class="wtitle" style="padding:0 0 8px">ВЕС И НАГРУЗКА</div>
     <svg id="wchart" viewBox="0 0 300 120" preserveAspectRatio="none"></svg>
     <div class="hint" id="whint">Отметь вес несколько раз, и здесь появится кривая.</div>
+    <div class="lsplit"></div>
+    <div class="wtitle" style="padding:0 0 9px">ЗА ВСЁ ВРЕМЯ</div>
+    <div id="loadList"></div>
+    <p style="margin:11px 0 0;font-size:11.5px;color:var(--ink3);line-height:1.5">
+      Счёт идёт по группам: плечи считаются отдельно от груди, в «Ноги» входят
+      квадрицепс, бицепс бедра, икры и пресс. Подходы и тоннаж — за весь журнал.</p>
   </div>
 
-  <div class="win vol">
-    <div class="wtitle" style="padding:0 0 9px">ОБЪЁМ ЗА 7 ДНЕЙ</div>
-    <div id="volList"></div>
-    <p style="margin:9px 0 0;font-size:10px;color:var(--mut);line-height:1.5">
-      Счёт идёт по группам, а не по отдельным мышцам: «Грудь» включает плечи,
-      «Ноги» — квадрицепс, бицепс бедра, икры и пресс. Норма на мышцу — 12–20 подходов
-      в неделю, отсюда и цифры.</p>
-  </div>
+  <h2 class="sec">ИСТОРИЯ</h2>
+  <div id="hist"></div>
+  <button class="add" id="histMore" hidden>Показать ещё</button>
 
   <div class="win cal">
-    <div class="wtitle" style="padding:0 0 9px">ЖУРНАЛ</div>
+    <div class="wtitle" style="padding:0 0 9px">КАЛЕНДАРЬ</div>
     <div class="cnav"><button id="pm" aria-label="Предыдущий месяц">‹</button><b id="cmo"></b>
       <button id="nm" aria-label="Следующий месяц">›</button></div>
     <div class="chead" id="chead"></div>
     <div id="cgrid"></div>
     <div class="cleg" id="cleg"></div>
     <button class="add" id="moBtn" style="margin-top:11px">Итоги месяца</button>
+  </div>
+
+  <h2 class="sec">ПРОГРАММА</h2>
+  <div class="win pln">
+    <h4>РАБОЧИЕ ВЕСА</h4>
+    <table class="wtab"><thead><tr><th>Упражнение</th><th>День</th><th>Рабочий</th><th>Эта неделя</th><th>Рекорд</th></tr></thead>
+      <tbody id="wtab"></tbody></table>
+    <p style="margin-top:10px;font-size:11.5px;color:var(--ink3)">«Рабочий» — вес, от которого считается
+       программа: он поднимается сам, как только поднимешь больше. «Эта неделя» — что стоит
+       в карточке сегодня. Веса гантелей — за одну, не за пару.</p>
+    <button class="add" id="recalc" style="margin-top:12px">Пересчитать веса</button>
+    <button class="add" id="sndBtn" style="margin-top:7px">Звук системы: вкл</button>
+    <button class="add" id="thBtn" style="margin-top:7px">Тема: светлая</button>
   </div>
 
   <h2 class="sec">АРХИВ</h2>
@@ -1258,55 +1411,10 @@ input,textarea,select{color:var(--ink)}
     </div>
   </div>
   <input type="file" id="phFile" accept="image/*" hidden>
-  <div class="striph">ВЕСЬ АРХИВ</div>
-  <div class="strip" id="stripAll"></div>
-  <p class="bkst" id="phHint">Нажми на снимок, чтобы открыть тот день.</p>
+  <button class="anb" id="phHist" style="margin-top:10px">История</button>
+  <p class="bkst" id="phHint">Все снимки по дням — в истории.</p>
 </section>
 
-<!-- ================= ПЛАН ================= -->
-<section class="scr" id="scr-plan">
-  <div class="shead"><h2><span>План набора массы</span><i></i></h2><p>четыре тренировки в неделю, шестинедельный цикл</p></div>
-  <div class="win pln" style="margin-top:10px">
-    <h4>ЦЕЛЬ И ТЕМП</h4>
-    <p id="planPace">Коридор набора — <b>0,3–0,5 кг в неделю</b>.</p>
-    <p>Вес стоит две-три недели подряд — добавляй <b>300 ккал</b> в день. Растёт быстрее 0,7 кг
-       в неделю — убирай 200–300 ккал.</p>
-  </div>
-  <div class="win pln">
-    <h4>ПРАВИЛА</h4>
-    <ol class="rules">
-      <li>После перерыва первые две недели — 80 и 90 % от рабочих весов, без отказов.
-          Приложение считает их само. Сила возвращается за недели, связки и суставы — за месяцы;
-          этот разрыв и ломает тех, кто сразу берёт прежний вес.</li>
-      <li>Прогрессия идёт по закреплению, а не по одному удачному подходу.
-          Вписывай повторы <b>по каждому подходу отдельно</b>. Верх диапазона не требуется
-          с первого раза: из 10/10/10 приложение поставит целью 11/10/10, потом 11/11/10
-          и так далее. Пока стоит 10/12/12/12 при цели 12 — вес остаётся, первый подход
-          не добран. Когда все подходы пойдут по верхней границе, приложение спросит,
-          оставался ли запас сил: добил в ноль — вес остаётся и закрепляется ещё раз,
-          оставался запас — прибавка.</li>
-      <li>Размер прибавки считается долей от рабочего веса (около 3 % на верх тела
-          и 5 % на низ), а не фиксированной цифрой: +2,5 кг к жиму 70 это нормальный шаг,
-          а к махам 7,5 кг — плюс треть за раз.</li>
-      <li>Подход заканчивай с запасом 2–3 повтора. Отказ не нужен и мешает восстановлению.</li>
-      <li>Взвешивайся раз в неделю, утром натощак, до еды и воды. Ориентир набора —
-          0,25–0,5% массы тела в неделю; при 70 кг это 0,18–0,35 кг.</li>
-      <li>Цинк и магний не вместе: цинк днём с едой, магний за час до сна.</li>
-      <li>Сон 7–9 часов. Без сна не работают ни добавки, ни тренировки.</li>
-      <li>Не покупай BCAA, глютамин, L-карнитин, трибулус, тестобустеры и гейнер. Это деньги на ветер.</li>
-    </ol>
-  </div>
-  <div class="win pln">
-    <h4>РАБОЧИЕ ВЕСА ПРОГРАММЫ</h4>
-    <table class="wtab"><thead><tr><th>Упражнение</th><th>День</th><th>Рабочий</th><th>Эта неделя</th><th>Рекорд</th></tr></thead>
-      <tbody id="wtab"></tbody></table>
-    <p style="margin-top:10px;font-size:10.5px;color:var(--mut)">«Рабочий» — вес, от которого считается
-       программа, его поднимает двойная прогрессия. «Эта неделя» — что стоит в карточке сегодня:
-       рабочий вес с поправкой на интенсивность недели и вкатывание. Веса гантелей — за одну, не за пару.</p>
-    <button class="add" id="recalc" style="margin-top:12px">Пересчитать веса</button>
-    <button class="add" id="sndBtn" style="margin-top:7px">Звук системы: вкл</button>
-  </div>
-</section>
 
 </div>
 
@@ -1362,7 +1470,7 @@ input,textarea,select{color:var(--ink)}
   <h5>ПЕРВИЧНАЯ НАСТРОЙКА</h5>
   <p>Цифры уже проставлены под тебя — если согласен, просто нажми «Посчитать»,
      остальные упражнения программа посчитает сама. Поменять вес можно в любой момент
-     на вкладке «План».</p>
+     в «Прогрессе», в таблице рабочих весов.</p>
   <div id="setupRows"></div>
   <div class="srow" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--edge2)">
     <span>Рост</span><input id="anH" inputmode="numeric" value="177" aria-label="Рост"><i>см</i></div>
@@ -1406,9 +1514,14 @@ const kg = v => String(v).replace('.', ',');   // 12.5 → 12,5, как прин
 const TYPES = [['rest', 'Отдых'], ['up1', 'Верх · сила'], ['lo1', 'Низ · сила'],
   ['up2', 'Верх · объём'], ['lo2', 'Низ · объём'], ['other', 'Своё']];
 const COL = { rest: '#463A66', up1: '#7B8CFF', lo1: '#3FBE96', up2: '#C77BFF', lo2: '#F0A93A', other: '#8B8F9E',
-  back: '#4C86DC', chest: '#E0A33A', legs: '#3FAE77', arms: '#E2564C' };
-const GROUPS = [['Спина', 'back'], ['Грудь', 'chest'], ['Ноги', 'legs'], ['Руки', 'arms']];
+  back: '#4C86DC', chest: '#E0A33A', legs: '#3FAE77', arms: '#E2564C', delts: '#B25FD8' };
+/* Плечи вынесены в отдельную группу. Раньше махи в стороны и жим сидя считались
+   грудью, и объём на грудь выходил завышенным, а средняя дельта — невидимой.
+   Передняя дельта догружается жимами, задняя — тягами; отдельно считаем то,
+   что делается на плечи напрямую. */
+const GROUPS = [['Спина', 'back'], ['Грудь', 'chest'], ['Плечи', 'delts'], ['Ноги', 'legs'], ['Руки', 'arms']];
 const RANKS = [[40, 'S'], [26, 'A'], [17, 'B'], [10, 'C'], [5, 'D'], [1, 'E']];
+const zeroVol = () => GROUPS.reduce((a, [n]) => (a[n] = 0, a), {});
 const XP_EX = 12, XP_WO = 60, XP_SP = 4, XP_PR = 30, PER = 500;
 const MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август',
   'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
@@ -1469,7 +1582,9 @@ function applyNutri() {
   return ch;
 }
 const START_DEFAULT = '2026-09-14';
-const VOL_TARGET = { 'Спина': 15, 'Грудь': 21, 'Ноги': 36, 'Руки': 13 };
+// Норма 12–20 рабочих подходов на мышцу в неделю. Грудь была 21, потому что
+// в неё входили плечи; после разделения грудь 14, плечи 12.
+const VOL_TARGET = { 'Спина': 15, 'Грудь': 14, 'Плечи': 12, 'Ноги': 36, 'Руки': 13 };
 
 const SP_BASE = [
   ['утро', 'Креатин моногидрат 5 г', 'каждый день без пропусков, 300 мл воды, с едой'],
@@ -1496,7 +1611,7 @@ const TPL = [
  { k: 'Пн', n: 'Понедельник', t: 'up1', s: 'Верх тела · силовой', e: [
    ['Жим лёжа', 4, '4-6', 30, 'Грудь'], ['Тяга штанги в наклоне', 4, '4-6', 30, 'Спина'],
    ['Жим гантелей на наклонной', 3, '6-8', 12, 'Грудь'], ['Тяга верхнего блока', 3, '6-8', 30, 'Спина'],
-   ['Жим гантелей сидя', 3, '6-8', 8, 'Грудь'], ['Подъём штанги на бицепс', 3, '6-8', 15, 'Руки'],
+   ['Жим гантелей сидя', 3, '6-8', 8, 'Плечи'], ['Подъём штанги на бицепс', 3, '6-8', 15, 'Руки'],
    ['Французский жим', 3, '6-8', 15, 'Руки']] },
  { k: 'Вт', n: 'Вторник', t: 'rest', s: 'Отдых' },
  { k: 'Ср', n: 'Среда', t: 'lo1', s: 'Низ тела · силовой', e: [
@@ -1507,7 +1622,7 @@ const TPL = [
  { k: 'Пт', n: 'Пятница', t: 'up2', s: 'Верх тела · объёмный', e: [
    ['Жим гантелей на наклонной', 4, '6-8', 12, 'Грудь'], ['Разводка гантелей', 3, '8-10', 6, 'Грудь'],
    ['Тяга горизонтального блока', 4, '6-8', 30, 'Спина'], ['Тяга гантели одной рукой', 3, '8-10', 16, 'Спина'],
-   ['Махи в стороны', 4, '8-10', 5, 'Грудь'], ['Сгибания на скамье Скотта', 3, '8-10', 12, 'Руки'],
+   ['Махи в стороны', 4, '8-10', 5, 'Плечи'], ['Сгибания на скамье Скотта', 3, '8-10', 12, 'Руки'],
    ['Разгибания на блоке', 3, '8-10', 15, 'Руки']] },
  { k: 'Сб', n: 'Суббота', t: 'lo2', s: 'Низ тела · объёмный', e: [
    ['Фронтальный присед', 4, '6-8', 20, 'Ноги'], ['Румынская тяга', 3, '6-8', 30, 'Ноги'],
@@ -1558,13 +1673,13 @@ const EXDB = {
   'Жим в тренажёре': ['chestpress', 'Грудь', 'b', 0.9, 'Рукояти на уровне середины груди, спина прижата, в конце локти не выпрямляются в замок. Ошибка — высокое сиденье, тогда жим идёт вверх и грузит плечи.', 120],
   'Отжимания на брусьях (грудь)': ['dipschest', 'Грудь', null, 0, 'Корпус наклонён вперёд, локти разведены, опускаешься до растяжения груди. Ошибка — проваливаться слишком глубоко, это травмоопасно для плеча.', 180],
   'Отжимания от пола': ['pushup', 'Грудь', null, 0, 'Тело прямой линией, локти под 45°, грудь почти касается пола. Ошибка — провисать в пояснице и опускать голову.', 120],
-  'Жим гантелей сидя': ['ohp', 'Грудь', 'b', 0.17, 'Спина прижата к спинке, гантели идут от уровня ушей вверх, вверху не стукаешь их друг о друга. Ошибка — прогиб в пояснице и выжимание веса корпусом.', 120],
-  'Жим штанги стоя': ['militarypress', 'Грудь', 'b', 0.6, 'Ноги на ширине плеч, пресс и ягодицы напряжены, гриф идёт по прямой мимо лица. Ошибка — отклоняться назад, превращая жим в наклонный.', 180],
-  'Махи в стороны': ['lateral', 'Грудь', 'b', 0.1, 'Локти чуть согнуты, поднимаешь до уровня плеч, не выше. Вес умеренный. Ошибка — закидывать тяжёлые гантели рывком корпуса.', 90],
-  'Махи в наклоне': ['reardelt', 'Спина', 'b', 0.08, 'Корпус наклонён почти параллельно полу, разводишь гантели в стороны, сводя лопатки. Ошибка — тянуть локти назад, превращая в тягу.', 90],
-  'Подъёмы перед собой': ['frontraise', 'Грудь', 'b', 0.12, 'Поднимаешь гантель до уровня глаз, корпус неподвижен. Ошибка — раскачиваться и помогать поясницей.', 90],
-  'Тяга штанги к подбородку': ['upright', 'Спина', 'b', 0.45, 'Хват чуть шире плеч, локти ведут движение и поднимаются до уровня плеч. Ошибка — узкий хват и подъём выше плеч: зажимает плечевой сустав.', 120],
-  'Тяга каната к лицу': ['facepull', 'Спина', 'b', 0.3, 'Канат на уровне лица, тянешь к переносице, разводя кисти и сводя лопатки. Лучшее упражнение для здоровья плеч. Ошибка — тянуть весом вниз к груди.', 90],
+  'Жим гантелей сидя': ['ohp', 'Плечи', 'b', 0.17, 'Спина прижата к спинке, гантели идут от уровня ушей вверх, вверху не стукаешь их друг о друга. Ошибка — прогиб в пояснице и выжимание веса корпусом.', 120],
+  'Жим штанги стоя': ['militarypress', 'Плечи', 'b', 0.6, 'Ноги на ширине плеч, пресс и ягодицы напряжены, гриф идёт по прямой мимо лица. Ошибка — отклоняться назад, превращая жим в наклонный.', 180],
+  'Махи в стороны': ['lateral', 'Плечи', 'b', 0.1, 'Локти чуть согнуты, поднимаешь до уровня плеч, не выше. Вес умеренный. Ошибка — закидывать тяжёлые гантели рывком корпуса.', 90],
+  'Махи в наклоне': ['reardelt', 'Плечи', 'b', 0.08, 'Корпус наклонён почти параллельно полу, разводишь гантели в стороны, сводя лопатки. Ошибка — тянуть локти назад, превращая в тягу.', 90],
+  'Подъёмы перед собой': ['frontraise', 'Плечи', 'b', 0.12, 'Поднимаешь гантель до уровня глаз, корпус неподвижен. Ошибка — раскачиваться и помогать поясницей.', 90],
+  'Тяга штанги к подбородку': ['upright', 'Плечи', 'b', 0.45, 'Хват чуть шире плеч, локти ведут движение и поднимаются до уровня плеч. Ошибка — узкий хват и подъём выше плеч: зажимает плечевой сустав.', 120],
+  'Тяга каната к лицу': ['facepull', 'Плечи', 'b', 0.3, 'Канат на уровне лица, тянешь к переносице, разводя кисти и сводя лопатки. Лучшее упражнение для здоровья плеч. Ошибка — тянуть весом вниз к груди.', 90],
   'Тяга штанги в наклоне': ['row', 'Спина', 'b', 0.7, 'Корпус наклонён около 45°, спина прямая, тянешь к низу живота и сводишь лопатки в конце. Ошибка — рывок круглой спиной и подъём корпуса вместе с весом.', 180],
   'Тяга гантели одной рукой': ['dbrow', 'Спина', 'b', 0.35, 'Упор коленом и рукой в скамью, спина параллельна полу, тянешь гантель к поясу вдоль корпуса. Ошибка — разворачивать корпус и тянуть бицепсом.', 120],
   'Тяга верхнего блока': ['pulldown', 'Спина', 'b', 0.72, 'Хват шире плеч, грудь подана вперёд, тянешь рукоять к верху груди, лопатки вниз. Ошибка — тянуть за голову и раскачиваться корпусом.', 120],
@@ -1667,8 +1782,6 @@ const CYCLE = [
    t: 'Веса минус 40%, подходов меньше. Не пропускай: именно сейчас тело догоняет нагрузку.' }
 ];
 
-const PLATES = [[25, '#BE2F2A', 34], [20, '#255A9E', 32], [15, '#D79A17', 29], [10, '#2C7A4E', 26],
-  [5, '#DCE8F8', 20], [2.5, '#8B7BF7', 16], [1.25, '#6C7FA6', 13]];
 
 
 /* ---------- даты ---------- */
@@ -1699,7 +1812,7 @@ let S = null, canSave = true;
 function build() {
   return {
     xp: 0, wo: 0, bw: '70',
-    vol: { 'Спина': 0, 'Грудь': 0, 'Ноги': 0, 'Руки': 0 },
+    vol: zeroVol(),
     days: TPL.map(d => ({
       k: d.k, n: d.n, t: d.t, s: d.s,
       ex: (d.e || []).map(e => ({ n: e[0], s: e[1], r: e[2], w: e[3], g: e[4] || null })),
@@ -1725,7 +1838,8 @@ function migrate() {
     r.log = r.log || {}; r.sp = r.sp || {};
   });
   S.myFood = S.myFood || []; S.tpl = S.tpl || [];
-  S.vol = S.vol || { 'Спина': 0, 'Грудь': 0, 'Ноги': 0, 'Руки': 0 };
+  S.vol = S.vol || zeroVol();
+  GROUPS.forEach(([n]) => { if (S.vol[n] === undefined) S.vol[n] = 0; });
 
   // Программа переезжала пять раз; теперь это один блок с прежним флагом.
   if (!S.mig5) {
@@ -1855,6 +1969,40 @@ function migrate() {
     S.mig11 = 1;
   }
 
+  /* Плечи стали отдельной группой, а съеденное переехало с шаблона дня недели
+     на конкретную дату. И то и другое чиним один раз, на месте. */
+  if (!S.mig12) {
+    // группы приводим к каталогу: махи в стороны и жим сидя были «Грудью»
+    const cat = {};
+    Object.keys(EXDB).forEach(n => { cat[n] = EXDB[n][1]; });
+    S.days.forEach(d => (d.ex || []).forEach(e => { if (cat[e.n]) e.g = cat[e.n]; }));
+    Object.keys(S.rec).forEach(ds => {
+      const lg = (S.rec[ds] || {}).log || {};
+      Object.keys(lg).forEach(j => { const n = lg[j].n; if (n && cat[n]) lg[j].g = cat[n]; });
+    });
+
+    /* Рацион лежал в шаблоне дня недели — один список на все четверги сразу.
+       Отдаём его последней дате этого дня недели: именно тогда он и вносился.
+       Дальше каждая дата ведёт свою еду. */
+    const lastOf = {};
+    for (let k = 0; k < 28; k++) {
+      const z = at(today()); z.setDate(z.getDate() - k);
+      const ds = iso(z), i = dayIdx(ds);
+      if (lastOf[i] === undefined) lastOf[i] = ds;
+    }
+    S.days.forEach((d, i) => {
+      const eaten = (d.ml || []).filter(m => (m.items || []).length);
+      if (!eaten.length) return;
+      const ds = lastOf[i];
+      if (ds) {
+        const r = recRW(ds);
+        if (!Array.isArray(r.ml)) r.ml = JSON.parse(JSON.stringify(d.ml));
+      }
+      d.ml = (d.ml || []).map(m => ({ n: m.n, note: m.note || '', items: [] }));
+    });
+    S.mig12 = 1;
+  }
+
   if (!S.mig8) {
     const storedVol = Object.assign({}, S.vol), storedXp = num(S.xp);
     S.volBase = null; S.xpBase = 0;
@@ -1875,7 +2023,7 @@ function migrate() {
    автоматически приводят цифры в порядок — расходиться им больше негде. */
 function recomputeStats() {
   wkCache = null;
-  const vol = { 'Спина': 0, 'Грудь': 0, 'Ноги': 0, 'Руки': 0 };
+  const vol = zeroVol();
   let xp = 0;
   Object.keys(S.rec).forEach(ds => {
     const day = S.days[dayIdx(ds)], r = S.rec[ds] || {};
@@ -2080,15 +2228,15 @@ $('shX').addEventListener('click', sheetClose);
    НАВИГАЦИЯ: нижние вкладки и общий выбранный день
    ========================================================================= */
 const SCREENS = [
-  ['wo', 'ЗАЛ', 'M4 7h2v10H4zM18 7h2v10h-2zM7 11h10v2H7z'],
-  ['food', 'ЕДА', 'M7 3v8a3 3 0 0 0 6 0V3h-2v6H9V3H7zm9 0c-1.7 0-3 2.7-3 6v3h2v9h2V3h-1z'],
-  ['prog', 'ПРОГРЕСС', 'M4 19h16v2H4zM6 10h3v7H6zm4.5-5h3v12h-3zM15 13h3v4h-3z'],
-  ['photo', 'ФОТО', 'M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9-3h-4l-2-2H9L7 6H3v14h18V6z'],
-  ['plan', 'ПЛАН', 'M5 3h11l3 3v15H5zm2 5h10v2H7zm0 4h10v2H7zm0 4h7v2H7z']
+  ['wo', 'Зал', 'M4 7h2v10H4zM18 7h2v10h-2zM7 11h10v2H7z'],
+  ['prog', 'Прогресс', 'M4 19h16v2H4zM6 10h3v7H6zm4.5-5h3v12h-3zM15 13h3v4h-3z'],
+  ['food', 'Еда', 'M7 3v8a3 3 0 0 0 6 0V3h-2v6H9V3H7zm9 0c-1.7 0-3 2.7-3 6v3h2v9h2V3h-1z'],
+  ['photo', 'Фото', 'M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9-3h-4l-2-2H9L7 6H3v14h18V6z']
 ];
 
 let tab = 'wo';
 let sel = today();
+let editPast = false;      // прошедший день открыт на правку, а не как история
 let mo = sel.slice(0, 7);
 let edit = false;
 
@@ -2116,7 +2264,6 @@ function render() {
   if (tab === 'food') paintFood();
   if (tab === 'prog') paintProgress();
   if (tab === 'photo') paintPhotoScreen();
-  if (tab === 'plan') paintPlan();
   paintBadge();
   if (typeof syncWake === 'function') syncWake();
 }
@@ -2167,9 +2314,9 @@ function paintDay() {
 
 $('chips').addEventListener('click', e => {
   const b = e.target.closest('[data-d]'); if (!b) return;
-  sel = b.dataset.d; mo = sel.slice(0, 7); edit = false; render();
+  sel = b.dataset.d; mo = sel.slice(0, 7); edit = false; editPast = false; render();
 });
-$('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 7); render(); });
+$('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 7); editPast = false; render(); });
 $('gear').addEventListener('click', () => { edit = !edit; paintDay(); });
 $('dnm').addEventListener('input', e => { dayOf(sel).n = e.target.value; save(); });
 $('types').addEventListener('click', async e => {
@@ -2207,9 +2354,16 @@ $('movedX').addEventListener('click', () => { delete S.map[sel]; save(); render(
    ========================================================================= */
 function paintWorkout() {
   const d = dayOf(sel), r = recOf(sel), tr = d.t !== 'rest';
-  $('tw').hidden = !tr;
+  // Прошедший день показываем как историю: что реально сделано, без полей ввода.
+  // Кнопка «Править» возвращает обычные карточки, если нужно что-то исправить.
+  const jr = sel < today() && !editPast && dayEntries(sel).length > 0;
+  $('tw').hidden = !tr && !jr;
+  $('addEx').hidden = jr;
+  $('fin').hidden = jr;
+  $('editPast').hidden = !jr;
 
-  if (tr) {
+  if (jr) { paintJournal(); }
+  else if (tr) {
     // квест дня: сколько закрыто, что за награда, что будет при пропуске
     const doneCnt = d.ex.filter((_, j) => (r.log[j] || {}).done).length;
     const pr2 = d.ex.length ? doneCnt / d.ex.length : 0;
@@ -2229,7 +2383,6 @@ function paintWorkout() {
       const pr = prOf(e.n);
       return `<div class="win ex${g.done ? ' done' : ''}" data-j="${j}">
         <div class="exTop"><span class="exN"><button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button></span>
-          <button class="x" data-hist="${esc(e.n)}" style="font-size:13px" aria-label="История">↗</button>
           <button class="x" data-del="${j}" aria-label="Убрать">×</button></div>
         <div class="flds">
           <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(g.s ?? sets)}" aria-label="Подходы"></span>
@@ -2241,11 +2394,6 @@ function paintWorkout() {
         <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
           : (num(e.w) ? 'рабочий вес ' + kg(e.w) + ' кг' : 'без отягощения')}</div>
         <div class="exft">
-          ${IN ? `<span class="intg ${IN[2]}">${IN[1]}${num(e.w) ? ' · ' + kg(sug) + ' кг' : ''}</span>` : ''}
-          ${rampOf(sel) < 1 ? `<span class="intg d">ВКАТЫВАНИЕ ${Math.round(rampOf(sel) * 100)}%</span>` : ''}
-          <button class="grp${e.g ? '' : ' none'}" data-grp="${j}">${e.g ? esc(e.g).toUpperCase() : 'ГРУППА?'}</button>
-          ${num(e.w) ? `<button class="grp" data-warm="${j}">РАЗМИНКА</button>` : ''}
-          ${EXDB[e.n] ? `<button class="grp" data-how="${esc(e.n)}">ТЕХНИКА</button>` : ''}
           ${pr ? `<span class="prb">рекорд <b>${kg(pr)} кг</b></span>` : ''}
           ${g.done ? holdBadge(e, g) : ''}
         </div></div>`;
@@ -2258,7 +2406,6 @@ function paintWorkout() {
     f.disabled = !all || !!r.wo;
   }
 
-  $('dayNote').value = r.note || '';
   $('spCnt').textContent = Object.keys(r.sp).length + ' / ' + d.sp.length;
   $('spl').innerHTML = d.sp.map((x, j) =>
     `<div class="win row${r.sp[j] ? ' on' : ''}" data-sp="${j}">
@@ -2267,6 +2414,31 @@ function paintWorkout() {
         <input class="s" value="${esc(x.h)}" data-sf="h" placeholder="как принимать" aria-label="Как принимать"></span>
       <button class="x" data-spd="${j}" aria-label="Убрать">×</button></div>`).join('');
 }
+
+
+/* Прошедший день на вкладке «Зал»: журнал вместо полей ввода. */
+function paintJournal() {
+  const ent = dayEntries(sel), r = recOf(sel), d = dayOf(sel);
+  const ton = dayTon(sel), st = daySets(sel);
+  const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
+
+  $('qType').textContent = (d.s || '').toUpperCase();
+  $('qpf').style.width = '100%';
+  $('qCnt').innerHTML = '<b>' + st + '</b> ' + plural(st, 'подход', 'подхода', 'подходов') +
+    ' · ' + (ton >= 1000 ? dec(ton / 1000) + ' т' : rnd(ton) + ' кг');
+  $('qRew').textContent = mins ? mins + ' мин' : '';
+  const pen = $('qPen');
+  pen.className = r.wo ? 'qpen done' : 'qpen';
+  pen.textContent = r.wo ? 'Тренировка закрыта' : 'Тренировка не была закрыта';
+
+  $('exl').innerHTML = ent.map(e => `<div class="win jrow">
+    <b>${esc(e.n)}</b>
+    <span>${esc(entryLine(e))}</span>
+    <i>${e.g ? esc(e.g) : ''}${e.vol ? ' · ' + rnd(e.vol) + ' кг' : ''}${e.pr ? ' · рекорд' : ''}</i>
+  </div>`).join('');
+}
+
+$('editPast').addEventListener('click', () => { editPast = true; render(); });
 
 /* ---------- ввод в карточке упражнения ---------- */
 $('exl').addEventListener('input', e => {
@@ -2278,20 +2450,11 @@ $('exl').addEventListener('input', e => {
 });
 
 $('exl').addEventListener('click', e => {
-  const h = e.target.closest('[data-hist]');
-  if (h) { openHistory(h.dataset.hist); return; }
-
   const t = e.target.closest('[data-rest]');
   if (t) { tStart(+t.dataset.rest); return; }
 
-  const wm = e.target.closest('[data-warm]');
-  if (wm) { openWarmup(+wm.dataset.warm); return; }
-
   const hw = e.target.closest('[data-how]');
   if (hw) { openHow(hw.dataset.how); return; }
-
-  const gp = e.target.closest('[data-grp]');
-  if (gp) { pickGroup(+gp.dataset.grp, gp); return; }
 
   const go = e.target.closest('[data-go]');
   if (go) { toggleSet(+go.dataset.go); return; }
@@ -2340,6 +2503,8 @@ function plural(n, one, few, many) {
 // Возврат всего, что начислил закрытый подход: объём, опыт и рекорд.
 // Рекорд тоже откатываем — иначе случайное нажатие навсегда впишет чужую цифру.
 function rollback(l) {
+  unbumpWorking(l);
+  delete l.prog;
   if (l.vol && l.g && S.vol[l.g] !== undefined) S.vol[l.g] = Math.max(0, S.vol[l.g] - l.vol);
   if (l.xp) addXp(-l.xp);
   if (l.prevPr !== undefined && l.n) {
@@ -2374,34 +2539,6 @@ function purgeExercise(name) {
 function restFor(name) {
   const r = EXDB[name];
   return (r && r[5]) || 90;
-}
-
-/* Разминочная раскладка от рабочего веса: подвести суставы к рабочему,
-   не съев силы. Для изоляции хватает одного лёгкого подхода. */
-function openWarmup(j) {
-  const e = dayOf(sel).ex[j];
-  const IN = intOf(sel, dayOf(sel).t);
-  const work = weightFor(e, IN);
-  if (!work) { note('Упражнение без веса — разминка не нужна'); return; }
-  const heavy = restFor(e.n) >= 120;
-  const rows = heavy
-    ? [[20, 10, 'пустой гриф или лёгкий вес'], [r25(work * 0.5), 5, '50%'],
-       [r25(work * 0.7), 3, '70%'], [r25(work * 0.85), 2, '85%']]
-        .filter(x => x[0] > 0 && x[0] < work)
-    : [[r25(work * 0.5), 10, '50%']].filter(x => x[0] > 0 && x[0] < work);
-  sheet('РАЗМИНКА', `<div class="win howb">
-      <h5>${esc(e.n)}</h5>
-      <p style="margin-bottom:10px">Рабочий подход сегодня — <b style="color:var(--cy2)">${kg(work)} кг</b>.
-        ${heavy ? 'Движение тяжёлое, подводим постепенно: между разминочными отдыхай 30–60 секунд, до отказа не доводи.'
-                : 'Изоляция, длинная разминка не нужна — хватит одного лёгкого подхода.'}</p>
-      ${rows.map(([w, reps, note2]) =>
-        `<div class="win prl" style="margin-bottom:6px"><b>${kg(w)} кг × ${reps}</b>
-          <span style="color:var(--mut);font-size:11px">${note2}</span></div>`).join('')}
-      <div class="win prl" style="border-color:var(--cy)"><b>${kg(work)} кг × ${esc(e.r)}</b>
-        <span style="color:var(--cy2);font-size:11px">рабочие подходы</span></div>
-      <p style="margin-top:10px;font-size:10.5px;color:var(--mut)">Отдых между рабочими подходами
-        для этого упражнения — ${restFor(e.n) / 60} мин.</p>
-    </div>`);
 }
 
 // одно нажатие проставляет все подходы по верхней границе: в зале это
@@ -2499,6 +2636,32 @@ function holdBadge(e, g) {
 }
 
 /* ---------- закрытие подхода ---------- */
+/* Рабочий вес принадлежит программе, а не одному дню. Поднял больше, чем стояло —
+   цифра подтягивается во всех днях, где есть это упражнение, и держится дальше.
+   Прежние значения кладём в журнал: снятая отметка должна возвращать всё назад. */
+function bumpWorking(name, w, log) {
+  if (!name || !(w > 0)) return 0;
+  const undo = [];
+  S.days.forEach((d, di) => (d.ex || []).forEach((e, ei) => {
+    if (e.n !== name || num(e.w) >= w) return;
+    undo.push([di, ei, e.w, e.fixed || 0]);
+    e.w = w;
+    e.fixed = 1;                 // дальше пересчёт от опорных весов его не трогает
+  }));
+  if (!undo.length) return 0;
+  if (log) log.bump = (log.bump || []).concat(undo);
+  return undo.length;
+}
+function unbumpWorking(log) {
+  (log.bump || []).slice().reverse().forEach(([di, ei, w, fx]) => {
+    const e = ((S.days[di] || {}).ex || [])[ei];
+    if (!e) return;
+    e.w = w;
+    if (fx) e.fixed = 1; else delete e.fixed;
+  });
+  delete log.bump;
+}
+
 function toggleSet(j) {
   const d = dayOf(sel), r = recRW(sel), p = d.ex[j] || {};
   const l = r.log[j] = r.log[j] || {};
@@ -2533,6 +2696,10 @@ function toggleSet(j) {
   l.vol = g ? (rsOk ? l.rs.reduce((a, b) => a + num(b), 0) : sets * reps) * w : 0;
   if (g && S.vol[g] !== undefined) S.vol[g] += l.vol;
 
+  // поднял больше, чем стоит в программе — программа запоминает это сама,
+  // во всех следующих днях, без единого нажатия
+  const raised = bumpWorking(p.n, w, l);
+
   const old = num(S.pr[p.n]);
   if (w > 0 && w > old) { l.prevPr = old; S.pr[p.n] = w; }
 
@@ -2542,6 +2709,8 @@ function toggleSet(j) {
   } else {
     l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); dingSet();
   }
+
+  if (raised) note('Рабочий вес: ' + p.n + ' → ' + kg(w) + ' кг');
 
   if (!r.t0) r.t0 = Date.now();          // засечка начала тренировки
   save(); render();
@@ -2570,30 +2739,11 @@ function maybeProgress(l, p, w) {
   // прибавка от старого числа отбросила бы человека назад
   const from = Math.max(num(p.w), w);
   const next = from + stepFor({ g: p.g, w: from });
-  ask((sets === 1 ? 'Подход закрыт' : 'Все ' + sets + ' ' + plural(sets, 'подход', 'подхода', 'подходов') +
-        ' закрыты') + ' по ' + top + ' на ' + kg(w) + ' кг — результат закреплён. ' +
-      'Если в последнем подходе ещё оставался запас, поднимаем до ' + kg(next) + ' кг. ' +
-      'Если добил в ноль — оставь вес и закрепи его ещё раз.', 'ПОДНЯТЬ')
-    .then(ok => {
-      if (!ok) { save(); return; }
-      p.w = next;
-      p.fixed = 1;                        // дальше пересчёт от опорных весов его не трогает
-      save(); render();
-      note('Рабочий вес: ' + p.n + ' → ' + kg(next) + ' кг');
-    });
-}
-
-// выбор группы мышц прямо в карточке
-function pickGroup(j, btn) {
-  const box = document.createElement('span');
-  box.className = 'grpsel';
-  box.innerHTML = GROUPS.map(([g, c]) =>
-    `<button data-g="${g}" style="color:${COL[c]};border-color:${COL[c]}">${g}</button>`).join('');
-  box.addEventListener('click', ev => {
-    const b = ev.target.closest('[data-g]'); if (!b) return;
-    dayOf(sel).ex[j].g = b.dataset.g; save(); render();
-  });
-  btn.replaceWith(box);
+  // раньше здесь стоял вопрос «поднимать?» — лишнее нажатие в зале мокрыми руками.
+  // Закрепил верх диапазона во всех подходах — вес растёт сам.
+  bumpWorking(p.n, next, l);
+  save(); render();
+  note('Закреплено по ' + top + ' — рабочий вес ' + p.n + ' поднят до ' + kg(next) + ' кг');
 }
 
 /* Добавление идёт выбором из каталога: пустая безымянная строка толку не давала,
@@ -2673,6 +2823,97 @@ function workoutSummary(ds) {
   sheet('ТРЕНИРОВКА ЗАКРЫТА', h);
 }
 
+
+/* =========================================================================
+   ИСТОРИЯ: что и как прошло в конкретный день
+   Читаем из журнала, а не из расписания. В записи подхода лежит снимок —
+   название, группа, подходы, повторы и вес, — поэтому перестановка дней
+   недели или правка программы больше не уносят прошедшие тренировки.
+   ========================================================================= */
+function dayEntries(ds) {
+  const r = recOf(ds), day = dayOf(ds) || {}, ex = day.ex || [], out = [];
+  Object.keys(r.log).map(Number).filter(j => !isNaN(j)).sort((a, b) => a - b).forEach(j => {
+    const l = r.log[j];
+    if (!l || !l.done) return;
+    const p = ex[j] || {};
+    const sets = num(l.s ?? p.s), reps = String(l.r ?? p.r ?? ''), w = num(l.w ?? p.w);
+    const rs = (l.rs && l.rs.length && l.rs.some(v => num(v) > 0)) ? l.rs.map(num) : null;
+    const vol = (l.vol !== undefined) ? num(l.vol)
+      : (rs ? rs.reduce((a, b) => a + b, 0) : sets * firstRep(reps)) * w;
+    out.push({ n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs,
+      vol: vol, g: l.g || p.g || null, pr: l.prevPr !== undefined && l.prevPr > 0 });
+  });
+  return out;
+}
+const dayTon = ds => dayEntries(ds).reduce((a, e) => a + e.vol, 0);
+const daySets = ds => dayEntries(ds).reduce((a, e) => a + (e.rs ? e.rs.length : e.s), 0);
+
+// строка «4×8 · 30 кг» или «10/10/9/8 · 30 кг», если повторы записаны по подходам
+function entryLine(e) {
+  const reps = e.rs ? e.rs.join('/') : (e.s + '×' + e.r);
+  return reps + (e.w ? ' · ' + kg(e.w) + ' кг' : ' · без отягощения');
+}
+
+// все дни с записями: тренировки, еда, вес, фото
+function historyDays() {
+  return Object.keys(S.rec).filter(ds => {
+    const r = S.rec[ds];
+    return dayEntries(ds).length || r.wo || num(r.bw) || sumMeals(mealsOf(ds)).k > 0;
+  }).sort().reverse();
+}
+
+async function openDayReport(ds) {
+  const r = recOf(ds), d = dayOf(ds), ent = dayEntries(ds);
+  const ton = dayTon(ds), st = daySets(ds), food = sumMeals(mealsOf(ds));
+  const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
+
+  let h = `<div class="dayrh"><b>${fmt(ds)}</b>
+    <i style="color:${COL[d.t]}">${esc(d.t === 'rest' ? 'Отдых' : d.s)}</i></div>`;
+
+  if (ent.length) {
+    h += `<div class="sum">
+      <div class="win"><b>${ent.length}</b><span>УПРАЖНЕНИЙ</span></div>
+      <div class="win"><b>${st}</b><span>ПОДХОДОВ</span></div>
+      <div class="win"><b>${ton >= 1000 ? dec(ton / 1000) + ' т' : rnd(ton) + ' кг'}</b><span>ПОДНЯТО</span></div>
+      <div class="win"><b>${mins ? mins + ' мин' : '—'}</b><span>ДЛИТЕЛЬНОСТЬ</span></div>
+    </div>`;
+    h += '<div class="cph">ЧТО СДЕЛАНО</div>';
+    h += ent.map(e => `<div class="win jrow">
+      <b>${esc(e.n)}</b>
+      <span>${esc(entryLine(e))}</span>
+      <i>${e.g ? esc(e.g) : ''}${e.vol ? ' · ' + rnd(e.vol) + ' кг' : ''}${e.pr ? ' · рекорд' : ''}</i>
+    </div>`).join('');
+  } else {
+    h += `<p class="s" style="color:var(--mut);font-size:12.5px">${d.t === 'rest'
+      ? 'День отдыха — тренировки не было.' : 'Тренировка в этот день не отмечена.'}</p>`;
+  }
+
+  const meals = mealsOf(ds).filter(m => (m.items || []).length);
+  if (meals.length) {
+    h += `<div class="cph">ЕДА · ${rnd(food.k)} ккал, белок ${rnd(food.p)} г</div>`;
+    h += meals.map(m => {
+      const ms = mealSum(m);
+      return `<div class="win jrow"><b>${esc(m.n)}</b>
+        <span>${m.items.map(it => esc(it.p) + ' ' + esc(it.g) + ' г').join(', ')}</span>
+        <i>${rnd(ms.k)} ккал · ${rnd(ms.p)} г белка</i></div>`;
+    }).join('');
+  }
+
+  const bw = num(r.bw);
+  if (bw) h += `<div class="cph">ВЕС</div><div class="win jrow"><b>${kg(bw)} кг</b></div>`;
+
+  h += `<button class="add" data-goday="${ds}" style="margin-top:12px">Открыть этот день</button>`;
+  sheet('ИСТОРИЯ ДНЯ', h);
+
+  const ph = await phLoad(ds);
+  if (ph && $('shB')) {
+    const box = document.createElement('div');
+    box.innerHTML = `<div class="cph">ФОТО</div>
+      <div class="win" style="padding:10px"><img src="${ph}" alt="" style="width:100%;border-radius:12px"></div>`;
+    $('shB').insertBefore(box, $('shB').querySelector('[data-goday]'));
+  }
+}
+
 /* ---------- добавки ---------- */
 $('spl').addEventListener('click', e => {
   const t = e.target.closest('[data-tog]');
@@ -2697,7 +2938,6 @@ $('spl').addEventListener('input', e => {
   dayOf(sel).sp[+i.closest('[data-sp]').dataset.sp][i.dataset.sf] = i.value;
   save();
 });
-$('dayNote').addEventListener('input', e => { recRW(sel).note = e.target.value; save(); });
 $('addSp').addEventListener('click', () => {
   dayOf(sel).sp.push({ w: '', n: 'Новая добавка', h: '' }); save(); render();
 });
@@ -2792,22 +3032,6 @@ function openHistory(name) {
   sheet('ИСТОРИЯ', html + (rows || '<p class="s" style="color:var(--mut);font-size:12px">Записей пока нет.</p>') + wipeBtn);
 }
 
-/* ---------- рекорды и копирование дня ---------- */
-$('prAll').addEventListener('click', () => {
-  const list = Object.keys(S.pr || {}).map(n => [n, num(S.pr[n])]).filter(x => x[1]).sort((a, b) => b[1] - a[1]);
-  if (!list.length) { sheet('РЕКОРДЫ', '<p style="color:var(--mut);font-size:12px">Закрой пару подходов с весом — рекорды появятся сами.</p>'); return; }
-  sheet('РЕКОРДЫ', list.map(([n, v]) =>
-    `<button class="win prl" data-hist="${esc(n)}"><b>${esc(n)}</b><span>${kg(v)} кг</span></button>`).join(''));
-});
-
-$('cpTr').addEventListener('click', () => {
-  const cur = dayIdx(sel);
-  const h = S.days.map((d, i) => (i === cur || d.t === 'rest' || !(d.ex || []).length) ? '' :
-    `<button class="win prl" data-cpex="${i}"><b>${esc(d.n)}</b>
-      <span style="color:var(--cy2);font-size:11px">${d.ex.length} упр.</span></button>`).join('');
-  sheet('СКОПИРОВАТЬ ДЕНЬ', h || '<p style="color:var(--mut);font-size:12px">Больше нет дней с упражнениями.</p>');
-});
-
 // одна точка входа для всех кнопок внутри шторки
 $('shB').addEventListener('click', e => {
   const g = e.target.closest('[data-exg]');
@@ -2845,23 +3069,13 @@ $('shB').addEventListener('click', e => {
   const h = e.target.closest('[data-hist]');
   if (h) { openHistory(h.dataset.hist); return; }
 
-  const c = e.target.closest('[data-cpex]');
-  if (c) {
-    const from = +c.dataset.cpex;
-    ask('Заменить упражнения этого дня на «' + S.days[from].n + '»?', 'ЗАМЕНИТЬ').then(ok => {
-      if (!ok) return;
-      const r = recRW(sel);
-      Object.values(r.log || {}).forEach(l => { if (l.done) rollback(l); });
-      r.log = {};
-      dayOf(sel).ex = JSON.parse(JSON.stringify(S.days[from].ex));
-      save(); sheetClose(); render(); note('Тренировка скопирована');
-    });
-    return;
-  }
+  const gd = e.target.closest('[data-goday]');
+  if (gd) { sel = gd.dataset.goday; mo = sel.slice(0, 7); tab = 'wo'; editPast = false;
+    sheetClose(); render(); window.scrollTo(0, 0); return; }
 
   const f = e.target.closest('[data-from]');
   if (f) {
-    dayOf(sel).ml = JSON.parse(JSON.stringify(S.days[+f.dataset.from].ml || []));
+    recRW(sel).ml = JSON.parse(JSON.stringify(mealsOf(f.dataset.from)));
     save(); sheetClose(); render(); note('Рацион скопирован');
     return;
   }
@@ -2875,7 +3089,7 @@ $('shB').addEventListener('click', e => {
 
   const t = e.target.closest('[data-tpl]');
   if (t) {
-    dayOf(sel).ml = JSON.parse(JSON.stringify(S.tpl[+t.dataset.tpl].ml));
+    recRW(sel).ml = JSON.parse(JSON.stringify(S.tpl[+t.dataset.tpl].ml));
     save(); sheetClose(); render(); note('Шаблон применён');
     return;
   }
@@ -2883,7 +3097,7 @@ $('shB').addEventListener('click', e => {
   if (e.target.closest('[data-save]')) {
     askText('Название шаблона', 'Обычный день').then(n => {
       if (!n) return;
-      S.tpl.push({ n: n, ml: JSON.parse(JSON.stringify(dayOf(sel).ml || [])) });
+      S.tpl.push({ n: n, ml: JSON.parse(JSON.stringify(mealsOf(sel))) });
       save(); openRation(); note('Шаблон сохранён');
     });
   }
@@ -2901,21 +3115,12 @@ function paintProgress() {
   paintGoal();
   paintCycle();
 
-  $('tWo').textContent = Object.values(S.rec).filter(r => r.wo).length;
-  $('tTon').textContent = dec(Object.values(S.vol).reduce((a, c) => a + c, 0) / 1000);
-  $('tWk').textContent = planWeek();
-
-  const mx = Math.max(3000, ...Object.values(S.vol));
-  $('stl').innerHTML = GROUPS.map(([n, t]) =>
-    `<div class="st"><span class="nm">${n.toUpperCase()}</span>
-      <span class="tk"><i style="width:${Math.round(S.vol[n] / mx * 100)}%;background:${COL[t]};
-        box-shadow:0 0 8px ${COL[t]}"></i></span>
-      <span class="vl">${dec(S.vol[n] / 1000)} т</span></div>`).join('');
-
   paintRem();
   paintChart();
   paintVol();
+  paintHistory();
   cal();
+  paintPlan();
 }
 
 /* Индекс массы тела: вес, делённый на квадрат роста. Границы — ВОЗ.
@@ -2982,19 +3187,6 @@ function paintGoal() {
   $('qStart').textContent = dec(a);
   paintBmi();
   $('qf').style.width = (p * 100) + '%';
-  // текст про темп и срок тоже считается от цели, а не записан числами
-  const [lo, hi] = paceRange();
-  const left = Math.abs(g - b);
-  const wk = left > 0.4 ? Math.round(left / ((lo + hi) / 2)) : 0;
-  // направление режима считается от ТЕКУЩЕГО веса, а не от точки отсчёта:
-  // человек мог перевалить цель или начать с другой стороны
-  const gain = goalDir() > 0;
-  const pp = $('planPace');
-  if (pp) pp.innerHTML = goalDir() === 0 ? 'Вес уже на цели — держим режим и работаем на силу.'
-    : 'Коридор ' + (gain ? 'набора' : 'снижения') + ' — <b>' + dec(lo, 2) + '–' + dec(hi, 2) +
-      ' кг в неделю</b> (0,25–0,5 % массы). От ' + dec(b) + ' до ' + dec(g) + ' кг это примерно <b>' +
-      wk + ' нед</b>. Быстрее — ' + (gain ? 'набирается жир, а не мышцы.' : 'вместе с жиром уходят мышцы.');
-
   const ms = milesOf();
   const next = ms.find(m => up ? m > b : m < b);
   const hit = m => up ? b >= m : b <= m;
@@ -3007,7 +3199,8 @@ function paintGoal() {
 function paintCycle() {
   const i = cycIdx(), c = CYCLE[i], go = started();
   $('cycW').innerHTML = go ? 'Неделя ' + (i + 1) + '<i> из ' + CYCLE.length + '</i>' : 'План ещё не начался';
-  $('cycPh').textContent = go ? c.ph : 'ОЖИДАНИЕ';
+  // раньше здесь стояло название фазы; номер цикла понятнее и не путается с неделей
+  $('cycPh').textContent = go ? ('ЦИКЛ ' + (Math.floor((planWeek() - 1) / CYCLE.length) + 1)) : 'ОЖИДАНИЕ';
   const done = doneThisWeek();
   $('cycNote').innerHTML = go
     ? esc(c.t) + '<br><span style="color:var(--cy2)">Закрыто на этой неделе: <b>' + done + ' из 4</b>. ' +
@@ -3137,29 +3330,58 @@ function pace(pts) {
 }
 
 /* ---------- объём за 7 дней ---------- */
+/* Раньше здесь висели три отдельные карточки: тоннаж по группам, объём
+   за последние семь дней и график веса. Семь дней ничего не говорят о работе
+   за год, поэтому счёт идёт за весь журнал и одним списком. */
 function paintVol() {
-  const from = new Date(); from.setDate(from.getDate() - 6);
-  const f = iso(from), t = today();
-  const acc = { 'Спина': 0, 'Грудь': 0, 'Ноги': 0, 'Руки': 0 };
-  Object.keys(S.rec).forEach(d => {
-    if (d < f || d > t) return;
-    const day = dayOf(d), lg = S.rec[d].log || {};
-    if (!day) return;
+  const sets = zeroVol();
+  Object.keys(S.rec).forEach(ds => {
+    const lg = (S.rec[ds] || {}).log || {}, ex = (dayOf(ds) || {}).ex || [];
     Object.keys(lg).forEach(j => {
-      if (!lg[j].done) return;
-      const p = day.ex[j] || {};
-      const g = lg[j].g || p.g;
-      if (g && acc[g] !== undefined) acc[g] += num(lg[j].s ?? p.s) || 0;
+      const l = lg[j];
+      if (!l || !l.done) return;
+      const p = ex[j] || {};
+      const g = l.g || p.g;
+      if (g && sets[g] !== undefined) sets[g] += (l.rs && l.rs.length ? l.rs.length : num(l.s ?? p.s)) || 0;
     });
   });
-  $('volList').innerHTML = GROUPS.map(([n, t2]) => {
-    const tg = VOL_TARGET[n], v = acc[n];
-    const st = v === 0 ? '' : (v < tg * 0.6 ? 'мало' : (v > tg * 1.4 ? 'много' : 'норма'));
-    return `<div class="r"><span class="n">${n.toUpperCase()}</span>
-      <span class="b"><i style="width:${Math.min(100, v / tg * 100)}%;background:${COL[t2]}"></i></span>
-      <span class="v"><b>${v}</b>/${tg} ${st}</span></div>`;
+  const mx = Math.max(1, ...GROUPS.map(([n]) => num(S.vol[n])));
+  $('loadList').innerHTML = GROUPS.map(([n, t]) =>
+    `<div class="ld"><span class="n">${n}</span>
+      <span class="b"><i style="width:${Math.round(num(S.vol[n]) / mx * 100)}%;background:${COL[t]}"></i></span>
+      <span class="v"><b>${dec(num(S.vol[n]) / 1000)} т</b><em>${sets[n]} подх.</em></span></div>`).join('');
+}
+
+/* Список прошедших дней: нажатие открывает, что и как прошло. */
+let histLimit = 12;
+function paintHistory() {
+  const days = historyDays();
+  const shown = days.slice(0, histLimit);
+  $('histMore').hidden = days.length <= histLimit;
+  if (!days.length) {
+    $('hist').innerHTML = '<div class="win jrow"><b>Записей пока нет</b>' +
+      '<span>Закрой первый подход — день появится в истории.</span></div>';
+    return;
+  }
+  $('hist').innerHTML = shown.map(ds => {
+    const ton = dayTon(ds), st = daySets(ds), d = dayOf(ds), r = recOf(ds);
+    const food = sumMeals(mealsOf(ds)).k;
+    const bits = [];
+    if (st) bits.push(st + ' ' + plural(st, 'подход', 'подхода', 'подходов'));
+    if (ton) bits.push(ton >= 1000 ? dec(ton / 1000) + ' т' : rnd(ton) + ' кг');
+    if (food) bits.push(rnd(food) + ' ккал');
+    if (num(r.bw)) bits.push(kg(num(r.bw)) + ' кг веса');
+    return `<button class="win jrow hrow" data-day="${ds}">
+      <b>${fmt(ds)}${r.wo ? ' <em class="ok">✓</em>' : ''}</b>
+      <span>${esc(st ? d.s : (d.t === 'rest' ? 'Отдых' : 'Тренировка не отмечена'))}</span>
+      <i>${bits.join(' · ') || '—'}</i></button>`;
   }).join('');
 }
+$('hist').addEventListener('click', e => {
+  const b = e.target.closest('[data-day]');
+  if (b) openDayReport(b.dataset.day);
+});
+$('histMore').addEventListener('click', () => { histLimit += 20; paintHistory(); });
 
 /* ---------- серия недель ---------- */
 function streak() {
@@ -3231,7 +3453,10 @@ $('pm').addEventListener('click', () => { mo = shiftMonth(mo, -1); cal(); });
 $('nm').addEventListener('click', () => { mo = shiftMonth(mo, 1); cal(); });
 $('cgrid').addEventListener('click', e => {
   const b = e.target.closest('[data-cd]'); if (!b) return;
-  sel = b.dataset.cd; edit = false; tab = 'wo'; render(); window.scrollTo(0, 0);
+  const ds = b.dataset.cd;
+  // прошедший день сначала показываем как историю: что и как прошло
+  if (ds < today() && (dayEntries(ds).length || sumMeals(mealsOf(ds)).k > 0)) { openDayReport(ds); return; }
+  sel = ds; edit = false; editPast = false; tab = 'wo'; render(); window.scrollTo(0, 0);
 });
 
 /* ---------- итоги месяца ---------- */
@@ -3339,6 +3564,7 @@ $('impFile').addEventListener('change', e => {
 // Раньше здесь лежали зашитые ориентиры из первой версии плана, и они врали.
 function paintPlan() {
   $('sndBtn').textContent = 'Звук системы: ' + (S.sound === 0 ? 'выкл' : 'вкл');
+  paintThemeBtn();
   const rows = [];
   const seen = {};
   const ramp = rampOf(today());
@@ -3405,6 +3631,56 @@ $('sndBtn').addEventListener('click', () => {
   save(); paintPlan();
   if (S.sound) dingSet();
 });
+
+
+/* =========================================================================
+   ТЕМА
+   Три положения по кругу: как в системе → светлая → тёмная. Цвет строки
+   состояния меняется вместе с фоном, иначе в iOS сверху остаётся полоса
+   от прежней темы.
+   ========================================================================= */
+const THEMES = [['auto', 'как в системе'], ['light', 'светлая'], ['dark', 'тёмная']];
+function themeNow() {
+  const t = document.documentElement.dataset.theme;
+  return (t === 'light' || t === 'dark') ? t : 'auto';
+}
+function themeIsDark() {
+  const t = themeNow();
+  if (t !== 'auto') return t === 'dark';
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+function applyTheme(t) {
+  if (t === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('sys-gym-theme', t); } catch (e) { /* приватный режим */ }
+  syncThemeColor();
+  paintThemeBtn();
+}
+// строка состояния и панель задач берут цвет отсюда
+function syncThemeColor() {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--s0').trim();
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', bg || '#F2F2F7'));
+  const sb = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (sb) sb.setAttribute('content', themeIsDark() ? 'black-translucent' : 'default');
+  const cs = document.querySelector('meta[name="color-scheme"]');
+  if (cs) cs.setAttribute('content', themeNow() === 'auto' ? 'light dark' : themeNow());
+}
+function paintThemeBtn() {
+  const b = $('thBtn');
+  if (b) b.textContent = 'Тема: ' + (THEMES.find(x => x[0] === themeNow()) || THEMES[0])[1];
+}
+$('thBtn').addEventListener('click', () => {
+  const i = THEMES.findIndex(x => x[0] === themeNow());
+  applyTheme(THEMES[(i + 1) % THEMES.length][0]);
+});
+// системная тема может смениться на ходу — в положении «как в системе» следим за ней
+if (window.matchMedia) {
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const onSys = () => { if (themeNow() === 'auto') syncThemeColor(); };
+  if (mq.addEventListener) mq.addEventListener('change', onSys);
+  else if (mq.addListener) mq.addListener(onSys);
+}
+syncThemeColor();
 
 /* =========================================================================
    ЭКРАН НЕ ГАСНЕТ ВО ВРЕМЯ ТРЕНИРОВКИ
@@ -3533,7 +3809,7 @@ function openProgression() {
         <th>Упражнение</th><th>Рабочий</th><th>Лучший</th><th>За месяц</th><th>Всего</th><th>Раз</th>
       </tr></thead><tbody>
       ${rows.map(r => `<tr>
-        <td class="${EXDB[r.n] ? 'lnk' : ''}" data-how="${esc(r.n)}">${esc(r.n)}${r.plan ? '' :
+        <td class="lnk" data-hist="${esc(r.n)}">${esc(r.n)}${r.plan ? '' :
           ' <i style="font-style:normal;color:var(--mut);font-size:9px">не в плане</i>'}</td>
         <td class="s">${r.work ? kg(r.work) : '—'}</td>
         <td class="s">${r.best ? kg(r.best) : '—'}</td>
@@ -3625,55 +3901,6 @@ function tStart(sec) {
 $('tmr').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) tStart(+b.dataset.t); });
 $('tmrX').addEventListener('click', () => { clearInterval(tInt); $('tmr').classList.remove('on'); });
 
-/* =========================================================================
-   КАЛЬКУЛЯТОР БЛИНОВ
-   ========================================================================= */
-let BARW = 20;
-function calcPlates(total) {
-  let side = (total - BARW) / 2;
-  if (side < 0) return { bad: 'меньше веса грифа', list: [] };
-  const list = [];
-  PLATES.forEach(([w]) => { while (side >= w - 0.001) { list.push(w); side = +(side - w).toFixed(3); } });
-  return { list: list, left: side };
-}
-function drawPlates() {
-  const r = calcPlates(num($('plIn').value));
-  const bar = $('plBar');
-  if (r.bad) { bar.innerHTML = `<span style="font-size:11px;color:var(--mut)">${r.bad}</span>`; $('plRes').innerHTML = ''; return; }
-  bar.innerHTML = r.list.map(w => {
-    const p = PLATES.find(x => x[0] === w);
-    return `<span class="plate" style="height:${p[2] * 2}px;background:${p[1]};
-      color:${w === 5 ? '#12071F' : '#fff'}">${String(w).replace('.', ',')}</span>`;
-  }).join('') || '<span style="font-size:11px;color:var(--mut)">только гриф</span>';
-  const cnt = {};
-  r.list.forEach(w => { cnt[w] = (cnt[w] || 0) + 1; });
-  const txt = Object.keys(cnt).sort((a, b) => b - a)
-    .map(w => `<b>${String(w).replace('.', ',')}</b>×${cnt[w]}`).join(' + ') || '—';
-  $('plRes').innerHTML = `С каждой стороны: ${txt}<br>Гриф <b>${BARW} кг</b>, итого
-    <b>${(BARW + r.list.reduce((a, b) => a + b, 0) * 2).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')} кг</b>` +
-    (r.left > 0.01 ? `<br><span class="warn">не набирается ровно, остаток ${dec(r.left, 2)} кг на сторону</span>` : '');
-}
-$('plates').addEventListener('click', () => {
-  sheet('Сборка штанги',
-    `<div class="win plc">
-      <div class="in"><input id="plIn" inputmode="decimal" value="60" aria-label="Общий вес">
-        <label>общий вес снаряда, кг</label></div>
-      <div class="bar" id="plBar"></div>
-      <div class="res" id="plRes"></div>
-      <div class="barsel" id="plBarSel">
-        <button data-b="20" class="on">гриф 20</button><button data-b="15">15</button>
-        <button data-b="10">10</button><button data-b="7">гнутый 7</button></div>
-    </div>`);
-  $('plIn').addEventListener('input', drawPlates);
-  $('plBarSel').addEventListener('click', e => {
-    const b = e.target.closest('[data-b]'); if (!b) return;
-    BARW = +b.dataset.b;
-    $('plBarSel').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-    drawPlates();
-  });
-  drawPlates();
-});
-/* ---------- база продуктов: [название, ккал, белок, жир, углеводы] на 100 г ---------- */
 const FOOD=[
 ["Овсяные хлопья сухие",366,11.9,7.2,59],
 ["Овсянка на воде готовая",88,3.0,1.7,15],
@@ -4603,11 +4830,26 @@ function mealSum(m) {
   });
   return { k: k, p: p, f: f, c: c };
 }
-function daySum(day) {
+/* Съеденное принадлежит дате, а не дню недели. Раньше список лежал в шаблоне
+   S.days[i].ml — один на все четверги сразу: вчерашний обед переписывал
+   позавчерашний, а перестановка расписания уносила еду вместе с днём.
+   Шаблон остался заготовкой названий приёмов, записи живут в S.rec[дата].ml. */
+const blankMeals = ds => (dayOf(ds).ml || []).map(m => ({ n: m.n, note: m.note || '', items: [] }));
+function mealsOf(ds) {
+  const r = S.rec[ds];
+  return (r && Array.isArray(r.ml)) ? r.ml : blankMeals(ds);
+}
+function mealsRW(ds) {
+  const r = recRW(ds);
+  if (!Array.isArray(r.ml)) r.ml = blankMeals(ds);
+  return r.ml;
+}
+function sumMeals(list) {
   let k = 0, p = 0, f = 0, c = 0;
-  ((day || dayOf(sel)).ml || []).forEach(m => { const s = mealSum(m); k += s.k; p += s.p; f += s.f; c += s.c; });
+  (list || []).forEach(m => { const s = mealSum(m); k += s.k; p += s.p; f += s.f; c += s.c; });
   return { k: k, p: p, f: f, c: c };
 }
+const daySum = ds => sumMeals(mealsOf(ds || sel));
 
 // строка под названием продукта — один формат и при отрисовке, и при правке граммов
 function itemLine(it) {
@@ -4622,7 +4864,7 @@ function paintFood() {
   $('kc').value = d.kc;
   $('pr').value = d.pr;
   paintKcSrc();
-  $('mll').innerHTML = (d.ml || []).map((m, j) => {
+  $('mll').innerHTML = mealsOf(sel).map((m, j) => {
     const s = mealSum(m);
     const rows = (m.items || []).map((it, q) =>
       `<div class="it">
@@ -4642,7 +4884,7 @@ function paintFood() {
 }
 
 function paintTotals() {
-  const d = dayOf(sel), t = daySum();
+  const d = dayOf(sel), t = daySum(sel);
   $('tKc').innerHTML = rnd(t.k) + '<i> / ' + esc(d.kc) + ' ккал</i>';
   $('tPr').innerHTML = rnd(t.p) + '<i> / ' + esc(d.pr) + ' г</i>';
   $('bKc').style.width = Math.min(100, t.k / (num(d.kc) || 1) * 100) + '%';
@@ -4651,7 +4893,7 @@ function paintTotals() {
   $('tCa').textContent = 'углеводы ' + rnd(t.c) + ' г';
   // пересчитываем подписи, не трогая поля ввода: иначе слетит фокус при наборе
   document.querySelectorAll('#mll [data-ml]').forEach(el => {
-    const m = dayOf(sel).ml[+el.dataset.ml];
+    const m = mealsOf(sel)[+el.dataset.ml];
     if (!m) return;
     const s = mealSum(m);
     el.querySelector('em').textContent = rnd(s.k) + ' ккал · ' + rnd(s.p) + ' г';
@@ -4677,7 +4919,7 @@ $('kcAuto').addEventListener('click', () => {
   note('Нормы пересчитаны от веса и цели');
 });
 $('addMl').addEventListener('click', () => {
-  dayOf(sel).ml.push({ n: 'Приём пищи', note: '', items: [] });
+  mealsRW(sel).push({ n: 'Приём пищи', note: '', items: [] });
   save(); paintFood();
 });
 $('mll').addEventListener('click', e => {
@@ -4686,33 +4928,37 @@ $('mll').addEventListener('click', e => {
   const r = e.target.closest('[data-rm]');
   if (r) {
     const j = +r.closest('[data-ml]').dataset.ml;
-    dayOf(sel).ml[j].items.splice(+r.dataset.rm, 1);
+    mealsRW(sel)[j].items.splice(+r.dataset.rm, 1);
     save(); paintFood(); return;
   }
   const d = e.target.closest('[data-mld]');
   if (d) {
     const j = +d.dataset.mld;
-    ask('Убрать «' + (dayOf(sel).ml[j] || {}).n + '»?').then(ok => {
+    ask('Убрать «' + (mealsOf(sel)[j] || {}).n + '»?').then(ok => {
       if (!ok) return;
-      dayOf(sel).ml.splice(j, 1); save(); paintFood();
+      mealsRW(sel).splice(j, 1); save(); paintFood();
     });
   }
 });
 $('mll').addEventListener('input', e => {
   const i = e.target.closest('input'); if (!i) return;
-  const j = +i.closest('[data-ml]').dataset.ml, m = dayOf(sel).ml[j];
+  const j = +i.closest('[data-ml]').dataset.ml, m = mealsRW(sel)[j];
   if (i.dataset.mf === 'n') { m.n = i.value; save(); return; }
   if (i.dataset.g !== undefined) { m.items[+i.dataset.g].g = i.value; save(); paintTotals(); }
 });
 
 /* ---------- копирование рациона ---------- */
 function openRation() {
-  const cur = dayIdx(sel);
-  let h = '<div class="cph">СКОПИРОВАТЬ ИЗ ДНЯ НЕДЕЛИ</div>';
-  h += S.days.map((d, i) => i === cur ? '' :
-    `<button class="cpi" data-from="${i}"><b>${esc(d.n)}</b>
-      <span>${(d.ml || []).length} приёмов · ${rnd((d.ml || []).reduce((a, m) => a + mealSum(m).k, 0))} ккал</span>
-     </button>`).join('');
+  // копируем из прошедших дат: рацион теперь принадлежит дню, а не дню недели
+  const src = Object.keys(S.rec).filter(ds => ds !== sel && sumMeals(mealsOf(ds)).k > 0)
+    .sort().reverse().slice(0, 14);
+  let h = '<div class="cph">СКОПИРОВАТЬ ИЗ ДНЯ</div>';
+  h += src.length ? src.map(ds => {
+    const t = sumMeals(mealsOf(ds));
+    return `<button class="cpi" data-from="${ds}"><b>${fmt(ds)}</b>
+      <span>${mealsOf(ds).length} приёмов · ${rnd(t.k)} ккал · ${rnd(t.p)} г белка</span>
+     </button>`;
+  }).join('') : '<p class="s" style="color:var(--mut);font-size:12px;margin:0 0 4px">Съеденных дней пока нет.</p>';
   h += '<div class="cph">МОИ ШАБЛОНЫ</div>';
   h += `<button class="cpi" data-save="1" style="border-color:var(--cy);color:var(--cy2)">
       <b>Сохранить текущий рацион</b><span>как шаблон</span></button>`;
@@ -4788,7 +5034,7 @@ $('fq').addEventListener('input', e => drawPick(e.target.value));
 $('fpX').addEventListener('click', closePick);
 $('fpAdd').addEventListener('click', () => {
   if (!picked.length) return;
-  const items = dayOf(sel).ml[pickMeal].items;
+  const items = mealsRW(sel)[pickMeal].items;
   picked.forEach(x => items.push({ p: x.p, g: x.g }));
   const cnt = picked.length;
   save(); closePick(); paintFood(); note('Добавлено позиций: ' + cnt);
@@ -4911,16 +5157,28 @@ async function paintPhotoScreen() {
     : 'Снимай в одном месте, при одном свете, в одной позе. Раз в неделю достаточно.';
   $('phW').value = r.bw || '';
   $('bkst').textContent = PH.length ? ('снимков в архиве: ' + PH.length) : 'снимков пока нет';
-  $('phHint').textContent = PH.length ? 'Нажми на снимок, чтобы открыть тот день.' : 'Архив пуст.';
-  $('stripAll').innerHTML = PH.slice().reverse().map(p =>
-    `<button data-open="${p}"><img data-lazy="${p}" alt=""><em>${fmt(p, 1)}</em></button>`).join('');
-  lazyStrip($('stripAll'));
+  $('phHint').textContent = PH.length
+    ? ('Снимков в истории: ' + PH.length + '. Нажми на снимок, чтобы открыть тот день.')
+    : 'Архив пуст — первый снимок появится здесь.';
 }
 
-$('stripAll').addEventListener('click', e => {
-  const b = e.target.closest('[data-open]'); if (!b) return;
-  sel = b.dataset.open; mo = sel.slice(0, 7); render();
-});
+/* Весь архив снимков по дням. Раньше лента висела прямо на экране и грузилась
+   вместе с ним; теперь открывается по кнопке и подтягивает миниатюры лениво. */
+function openPhotoHistory() {
+  if (!PH.length) { note('Снимков пока нет'); return; }
+  sheet('ИСТОРИЯ СНИМКОВ', '<div class="strip" id="stripAll"></div>');
+  const box = $('stripAll');
+  box.innerHTML = PH.slice().reverse().map(d => {
+    const bw = num(recOf(d).bw);
+    return `<button data-open="${d}"><img data-lazy="${d}" alt=""><em>${fmt(d, 1)}${bw ? ' · ' + kg(bw) + ' кг' : ''}</em></button>`;
+  }).join('');
+  lazyStrip(box);
+  box.addEventListener('click', e => {
+    const b = e.target.closest('[data-open]'); if (!b) return;
+    sel = b.dataset.open; mo = sel.slice(0, 7); sheetClose(); render();
+  });
+}
+$('phHist').addEventListener('click', openPhotoHistory);
 $('phT').addEventListener('click', () => $('phFile').click());
 $('phAdd').addEventListener('click', () => $('phFile').click());
 $('phFile').addEventListener('change', async e => {
@@ -5224,13 +5482,19 @@ function analyze() {
 
   /* --- питание --- */
   let kcSum = 0, prSum = 0, filled = 0;
-  S.days.forEach(d => {
-    const s2 = daySum(d);
-    if (s2.k > 0) { kcSum += s2.k; prSum += s2.p; filled++; }
+  let goalKs = 0, goalPs = 0;
+  // берём последние 14 дней журнала: это то, что человек действительно ел
+  const foodDays = Object.keys(S.rec).filter(ds => daysBetween(ds, today()) <= 14).sort();
+  foodDays.forEach(ds => {
+    const s2 = daySum(ds);
+    if (s2.k > 0) {
+      kcSum += s2.k; prSum += s2.p; filled++;
+      goalKs += num(dayOf(ds).kc); goalPs += num(dayOf(ds).pr);
+    }
   });
   if (filled) {
-    const goalK = S.days.reduce((x, d) => x + num(d.kc), 0) / S.days.length;
-    const goalP = S.days.reduce((x, d) => x + num(d.pr), 0) / S.days.length;
+    const goalK = goalKs / filled;
+    const goalP = goalPs / filled;
     const avgK = kcSum / filled, avgP = prSum / filled;
     if (avgP < goalP * 0.9) {
       add('warn', 'РЕСУРС: БЕЛОК', 'Рацион даёт <b>' + rnd(avgP) + ' г</b> при норме ' + rnd(goalP) +
@@ -5438,11 +5702,11 @@ function buildSummary() {
   const vol = vol7();
   GROUPS.forEach(([n]) => L.push('- ' + n + ': ' + vol[n] + ' / ' + VOL_TARGET[n]));
   L.push('');
-  L.push('ПИТАНИЕ (рацион по дням недели):');
-  S.days.forEach(d => {
-    const s2 = daySum(d);
-    if (s2.k > 0) L.push('- ' + d.n + ': ' + rnd(s2.k) + ' ккал, белок ' + rnd(s2.p) +
-      ' г при цели ' + d.kc + ' / ' + d.pr);
+  L.push('ПИТАНИЕ (последние 14 дней журнала):');
+  Object.keys(S.rec).filter(ds => daysBetween(ds, today()) <= 14).sort().forEach(ds => {
+    const s2 = daySum(ds);
+    if (s2.k > 0) L.push('- ' + fmt(ds) + ': ' + rnd(s2.k) + ' ккал, белок ' + rnd(s2.p) +
+      ' г при цели ' + dayOf(ds).kc + ' / ' + dayOf(ds).pr);
   });
   L.push('');
   L.push('ЧТО ВИДИТ ПРИЛОЖЕНИЕ:');
