@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#F2F2F7">
+<meta name="theme-color" content="#E8E8E6">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GYM">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1110,8 +1110,8 @@ input,textarea,select{color:var(--ink)}
 .cd.today{outline:2px solid var(--acc);outline-offset:-2px}
 .cd.sel{border-color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc)}
 .cd .ok{color:var(--ink);font-weight:700;font-size:9px}
-.cd .mv,.cd .pm{color:var(--acc);background:var(--acc)}
-.cd .pm{width:4px;height:4px;border-radius:50%}
+.cd .mv{color:var(--acc);background:none;font-size:9px}
+.cd .pm{background:var(--acc);width:4px;height:4px;border-radius:50%}
 .cwk{border:1px solid var(--ln);border-radius:var(--r-m);background:transparent}
 .cwk.cur{border-color:var(--acc);background:var(--acc-soft);box-shadow:none}
 .cwk .wn{color:var(--ink3);background:var(--s1)}
@@ -1474,9 +1474,9 @@ input,textarea,select{color:var(--ink)}
 
 <div class="ask" id="ask"><div class="win askw">
   <p id="askT">—</p>
-  <input id="askI" hidden style="width:100%;background:rgba(167,120,255,.09);
-    border:1px solid var(--edge2);color:var(--tx);padding:10px;
-    border-radius:2px;margin-bottom:13px;font-family:var(--f)">
+  <input id="askI" hidden style="width:100%;background:var(--s2);
+    border:1px solid var(--ln);color:var(--ink);padding:11px;
+    border-radius:var(--r-s);margin-bottom:13px;font-family:var(--f)">
   <div class="b"><button id="askN">ОТМЕНА</button><button id="askY" class="yes">УДАЛИТЬ</button></div>
 </div></div>
 
@@ -1533,6 +1533,13 @@ const COLKEYS = ['rest', 'up1', 'lo1', 'up2', 'lo2', 'other', 'back', 'chest', '
 // запасной набор: если стили почему-то не дошли, цвет всё равно будет
 const COL = { rest: '#8E8E8A', up1: '#1F6E8B', lo1: '#1A7A33', up2: '#8A5A00', lo2: '#A05030',
   other: '#5C6166', back: '#1F6E8B', chest: '#8A5A00', delts: '#2E7D7A', legs: '#1A7A33', arms: '#B8322B' };
+// значение переменной темы из CSS — чтобы цвета не задавались числом в коде
+function cssVar(name, fallback) {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  } catch (e) { return fallback; }
+}
 function syncCol() {
   try {
     const cs = getComputedStyle(document.documentElement);
@@ -3032,15 +3039,15 @@ function miniChart(pts, color) {
   return `<svg viewBox="0 0 300 110" preserveAspectRatio="none">
     <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
     ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" fill="${color}"/>`).join('')}
-    <text x="10" y="12" fill="#8B7DB0" font-size="9">${hi} кг</text>
-    <text x="10" y="108" fill="#8B7DB0" font-size="9">${lo} кг</text></svg>`;
+    <text x="10" y="12" fill="${cssVar('--ink3', '#61666B')}" font-size="9">${hi} кг</text>
+    <text x="10" y="108" fill="${cssVar('--ink3', '#61666B')}" font-size="9">${lo} кг</text></svg>`;
 }
 
 function openHistory(name) {
   const h = exHistory(name), pr = prOf(name);
   let html = `<div class="win shb"><h5>${esc(name)}</h5>
     <div class="s">${pr ? ('личный рекорд ' + kg(pr) + ' кг') : 'рекорда пока нет'}</div>
-    ${miniChart(h, '#A578FF')}`;
+    ${miniChart(h, cssVar('--acc', '#1F5F8B'))}`;
   if (h.length > 1) {
     const df = h[h.length - 1][1] - h[0][1];
     html += `<div class="s" style="margin-top:8px">с ${fmt(h[0][0])}:
@@ -3317,14 +3324,16 @@ function paintChart() {
   const X = d => 10 + ((at(d) - t0) / 864e5) / dt * 280;
   const Y = v => 110 - ((v - lo) / span) * 100;
   const line = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
+  // цвет графика берётся из темы: раньше он был сиреневым независимо от оформления
+  const acc = cssVar('--acc', '#1F5F8B'), dot = cssVar('--acc-ink', acc), mut = cssVar('--ink3', '#61666B');
   sv.innerHTML = `<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#A578FF" stop-opacity=".28"/>
-      <stop offset="1" stop-color="#A578FF" stop-opacity="0"/></linearGradient></defs>
+      <stop offset="0" stop-color="${acc}" stop-opacity=".28"/>
+      <stop offset="1" stop-color="${acc}" stop-opacity="0"/></linearGradient></defs>
     <path d="${line} L ${X(pts[pts.length - 1][0]).toFixed(1)} 115 L ${X(pts[0][0]).toFixed(1)} 115 Z" fill="url(#wg)"/>
-    <path d="${line}" fill="none" stroke="#A578FF" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" fill="#D9C2FF"/>`).join('')}
-    <text x="10" y="12" fill="#8B7DB0" font-size="9">${hi.toFixed(1)}</text>
-    <text x="10" y="118" fill="#8B7DB0" font-size="9">${lo.toFixed(1)}</text>`;
+    <path d="${line}" fill="none" stroke="${acc}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" fill="${dot}"/>`).join('')}
+    <text x="10" y="12" fill="${mut}" font-size="9">${hi.toFixed(1)}</text>
+    <text x="10" y="118" fill="${mut}" font-size="9">${lo.toFixed(1)}</text>`;
   pace(pts);
 }
 
@@ -3469,7 +3478,8 @@ function cal() {
       if (c.ds === today()) cls.push('today');
       if (c.ds === sel) cls.push('sel');
       if (r.wo) cls.push('wo');
-      const bg = t === 'rest' ? 'rgba(167,120,255,.05)' : (r.wo ? col + '55' : col + '1E');
+      // день отдыха был подсвечен сиреневым, зашитым числом; теперь нейтральный, из темы
+      const bg = t === 'rest' ? (COL.rest + '16') : (r.wo ? col + '55' : col + '1E');
       return `<button class="${cls.join(' ')}" style="background:${bg}" data-cd="${c.ds}">
         ${S.map[c.ds] !== undefined ? '<span class="mv">↔</span>' : ''}
         ${r.wo ? '<span class="ok">✓</span>' : ''}
@@ -3696,7 +3706,7 @@ function applyTheme(t) {
 // строка состояния и панель задач берут цвет отсюда
 function syncThemeColor() {
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--s0').trim();
-  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', bg || '#F2F2F7'));
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', bg || '#E8E8E6'));
   const sb = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
   if (sb) sb.setAttribute('content', themeIsDark() ? 'black-translucent' : 'default');
   const cs = document.querySelector('meta[name="color-scheme"]');
@@ -5761,8 +5771,8 @@ async function copySummary() {
     // Safari иногда отказывает буферу обмена — показываем текст, чтобы выделить руками
     const ta = document.createElement('textarea');
     ta.value = text;
-    ta.style.cssText = 'width:100%;height:240px;background:rgba(167,120,255,.07);color:var(--tx);' +
-      'border:1px solid var(--edge2);border-radius:2px;padding:9px;font-size:12px;margin-top:8px';
+    ta.style.cssText = 'width:100%;height:240px;background:var(--s2);color:var(--ink);' +
+      'border:1px solid var(--ln);border-radius:var(--r-s);padding:10px;font-size:12px;margin-top:8px';
     $('shB').appendChild(ta);
     ta.select();
     note('Выдели и скопируй вручную');
