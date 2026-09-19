@@ -1070,7 +1070,7 @@ input,textarea,select{color:var(--ink)}
     <div class="tools">
       <button id="cpTr">Скопировать день</button>
       <button id="prAll">Рекорды</button>
-      <button id="plates" class="hi">Блины</button>
+      <button id="plates" class="hi">Сборка штанги</button>
     </div>
     <div id="exl"></div>
     <button class="add" id="addEx">+ Упражнение</button>
@@ -3512,7 +3512,7 @@ function drawPlates() {
     (r.left > 0.01 ? `<br><span class="warn">не набирается ровно, остаток ${dec(r.left, 2)} кг на сторону</span>` : '');
 }
 $('plates').addEventListener('click', () => {
-  sheet('БЛИНЫ НА ШТАНГУ',
+  sheet('Сборка штанги',
     `<div class="win plc">
       <div class="in"><input id="plIn" inputmode="decimal" value="60" aria-label="Общий вес">
         <label>общий вес снаряда, кг</label></div>
