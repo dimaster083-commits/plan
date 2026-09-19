@@ -1,4 +1,4 @@
-const CACHE = "sys-gym-61";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-62";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
@@ -75,6 +75,25 @@ self.addEventListener('activate', e => {
 // Так обновления подхватываются сразу, а без интернета всё равно работает.
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  // Саму страницу запрашиваем мимо обычного кэша браузера. Иначе после
+  // выкладки приложение ещё минут десять показывает прошлую сборку:
+  // сам хостинг разрешает держать index.html в кэше без переспроса.
+  const url = new URL(e.request.url);
+  const shell = e.request.mode === 'navigate' ||
+    (url.origin === self.location.origin && /(^|\/)(index\.html)?$/.test(url.pathname));
+  if (shell) {
+    e.respondWith(
+      fetch(url.pathname + '?v=' + CACHE, { cache: 'no-store' })
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put('./index.html', copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match('./index.html').then(r => r || caches.match('./')))
+    );
+    return;
+  }
   e.respondWith(
     fetch(e.request)
       .then(res => {
