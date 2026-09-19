@@ -582,6 +582,27 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .copyb{width:100%;margin-top:6px;border:1px solid var(--edge);color:var(--tx);padding:12px;
   font-size:11.5px;letter-spacing:.08em;border-radius:2px;background:var(--panel2)}
 
+/* индекс массы тела под весом */
+.bmi{display:flex;align-items:center;gap:8px;width:100%;margin-top:10px;padding:10px 12px;
+  background:var(--s2);border:0;border-radius:var(--r-s);text-align:left}
+.bmi svg{width:17px;height:17px;fill:var(--ink3);flex:0 0 auto}
+.bmi .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.bmi .c{font-size:12px;color:var(--ink2)}
+.bmi .f{font-size:12px;color:var(--ink3);margin-left:auto}
+.bmi i{font-style:normal;color:var(--ink3);font-size:15px;line-height:1}
+.bmi.lo .v,.bmi.lo .c{color:var(--warn)}
+.bmi.ok .v,.bmi.ok .c{color:var(--ok)}
+.bmi.hi .v,.bmi.hi .c{color:var(--warn)}
+.bmi.vhi .v,.bmi.vhi .c{color:var(--bad)}
+.bmisheet .row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;
+  border-bottom:1px solid var(--ln);font-size:13.5px}
+.bmisheet .row:last-child{border-bottom:0}
+.bmisheet .row b{font-variant-numeric:tabular-nums}
+.bmisheet .age{display:flex;align-items:center;gap:10px;margin-top:12px}
+.bmisheet .age input{width:74px;text-align:center;font-size:17px;font-weight:600;padding:11px 0;
+  background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);color:var(--ink)}
+.bmisheet .age input:focus{outline:none;border-color:var(--acc)}
+
 /* откуда взялись нормы еды */
 .kcsrc{display:flex;align-items:center;justify-content:space-between;gap:8px;
   margin-top:6px;font-size:10px;color:var(--mut)}
@@ -1136,6 +1157,11 @@ input,textarea,select{color:var(--ink)}
   <div class="win quest">
     <div class="qrow"><label>ГЛАВНЫЙ КВЕСТ — МАССА ТЕЛА</label>
       <div class="qnum"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес тела"><span>кг</span></div></div>
+    <button class="bmi" id="bmiRow" aria-label="Индекс массы тела">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
+        <path d="M8 8h8a2 2 0 0 1 2 2v4h-2v7h-3v-5h-2v5H8v-7H6v-4a2 2 0 0 1 2-2z"/></svg>
+      <span class="v" id="bmiV">—</span><span class="c" id="bmiC"></span>
+      <span class="f" id="bmiF"></span><i>›</i></button>
     <div class="qb"><i id="qf"></i></div>
     <div class="qlg"><span id="qStart">70</span><span id="qleft"></span>
       <span><input id="goalIn" inputmode="decimal" aria-label="Цель по весу" style="width:44px;background:none;
@@ -2882,6 +2908,61 @@ function paintProgress() {
   cal();
 }
 
+/* Индекс массы тела: вес, делённый на квадрат роста. Границы — ВОЗ.
+   Оценка жира по формуле Deurenberg (1991): помимо роста и веса ей нужен
+   возраст, без него честнее не показывать ничего, чем показывать выдуманное. */
+function bmiOf() {
+  const h = num(S.height) / 100, w = num(S.bw);
+  if (!h || !w) return null;
+  const v = w / (h * h);
+  const cls = v < 18.5 ? 'lo' : v < 25 ? 'ok' : v < 30 ? 'hi' : 'vhi';
+  const name = v < 18.5 ? 'недостаток' : v < 25 ? 'норма' : v < 30 ? 'избыток' : 'ожирение';
+  const age = num(S.age);
+  const fat = age ? 1.20 * v + 0.23 * age - 10.8 - 5.4 : null;
+  return { v: v, cls: cls, name: name, fat: fat,
+    lo: 18.5 * h * h, hi: 24.9 * h * h, h: h, w: w, age: age };
+}
+
+function paintBmi() {
+  const b = bmiOf(), row = $('bmiRow');
+  row.className = 'bmi' + (b ? ' ' + b.cls : '');
+  $('bmiV').textContent = b ? dec(b.v) : '—';
+  $('bmiC').textContent = b ? 'ИМТ · ' + b.name : 'укажи рост и вес';
+  $('bmiF').textContent = b && b.fat !== null ? 'жир ~' + dec(b.fat) + ' %' : (b ? 'жир — нужен возраст' : '');
+}
+
+function openBmi() {
+  const b = bmiOf();
+  if (!b) { sheet('Индекс массы тела',
+    '<div class="win howb"><p>Нужны рост и вес — впиши их на этом экране и в первичной настройке.</p></div>');
+    return; }
+  const rows = [
+    ['Индекс массы тела', dec(b.v)],
+    ['Оценка', b.name],
+    ['Рост', dec(b.h * 100, 0) + ' см'],
+    ['Вес', dec(b.w) + ' кг'],
+    ['Здоровый диапазон', dec(b.lo) + '–' + dec(b.hi) + ' кг'],
+    ['Доля жира', b.fat !== null ? '~' + dec(b.fat) + ' %' : 'нужен возраст']
+  ];
+  sheet('Индекс массы тела',
+    '<div class="win howb bmisheet">' +
+    rows.map(r => '<div class="row"><span>' + r[0] + '</span><b>' + esc(r[1]) + '</b></div>').join('') +
+    '<div class="age"><span style="font-size:13px;color:var(--ink2)">Возраст</span>' +
+    '<input id="bmiAge" inputmode="numeric" value="' + (b.age || '') + '" placeholder="лет" aria-label="Возраст">' +
+    '</div>' +
+    '<p style="margin-top:12px;font-size:12px;color:var(--ink3);line-height:1.5">ИМТ не различает мышцы и жир: ' +
+    'у человека с большой мышечной массой он закономерно выше нормы. Доля жира считается по формуле ' +
+    'Deurenberg и даёт погрешность около 4 %, то есть годится для отслеживания изменений, а не как точное число. ' +
+    'Всё считается на устройстве, никуда не отправляется.</p></div>');
+  $('bmiAge').addEventListener('input', e => {
+    S.age = e.target.value; save(); paintBmi();
+    const b2 = bmiOf();
+    const cell = [...document.querySelectorAll('.bmisheet .row')].pop();
+    if (cell) cell.querySelector('b').textContent = b2 && b2.fat !== null ? '~' + dec(b2.fat) + ' %' : 'нужен возраст';
+  });
+}
+$('bmiRow').addEventListener('click', openBmi);
+
 function paintGoal() {
   const a = startW(), b = num(S.bw) || a, g = num(S.goal) || 95;
   const up = g >= a;
@@ -2889,6 +2970,7 @@ function paintGoal() {
   $('bw').value = S.bw;
   $('goalIn').value = S.goal || 95;
   $('qStart').textContent = dec(a);
+  paintBmi();
   $('qf').style.width = (p * 100) + '%';
   // текст про темп и срок тоже считается от цели, а не записан числами
   const [lo, hi] = paceRange();
