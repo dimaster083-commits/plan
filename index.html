@@ -1013,6 +1013,12 @@ input,textarea,select{color:var(--ink)}
 .howb h5{font-size:18px;letter-spacing:-.01em}
 .howb p{font-size:14px;line-height:1.6;color:var(--ink2)}
 
+/* ряд действий над карточками: выделение заливкой, как у остальных состояний */
+.tools button{background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);
+  color:var(--ink2);font-size:13px;letter-spacing:0;padding:12px 8px;line-height:1.3}
+.tools button.hi,.tools button.on{background:var(--acc-soft);color:#9DC2FF;border-color:transparent}
+.tools button:active{background:var(--s3)}
+
 /* ---------- сводка дня ---------- */
 .tri>div{background:var(--s2);border-radius:var(--r-m);padding:13px 8px}
 .tri b{font-size:20px}
@@ -1062,9 +1068,9 @@ input,textarea,select{color:var(--ink)}
       <div class="qpen" id="qPen">ШТРАФ ЗА НЕВЫПОЛНЕНИЕ: серия недель обнуляется</div>
     </div>
     <div class="tools">
-      <button id="cpTr">СКОПИРОВАТЬ ДЕНЬ</button>
-      <button id="prAll">РЕКОРДЫ</button>
-      <button id="plates" class="hi">БЛИНЫ</button>
+      <button id="cpTr">Скопировать день</button>
+      <button id="prAll">Рекорды</button>
+      <button id="plates" class="hi">Блины</button>
     </div>
     <div id="exl"></div>
     <button class="add" id="addEx">+ Упражнение</button>
