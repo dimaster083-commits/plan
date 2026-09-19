@@ -579,6 +579,27 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .copyb{width:100%;margin-top:6px;border:1px solid var(--edge);color:var(--tx);padding:12px;
   font-size:11.5px;letter-spacing:.08em;border-radius:2px;background:var(--panel2)}
 
+/* откуда взялись нормы еды */
+.kcsrc{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-top:6px;font-size:10px;color:var(--mut)}
+.kcsrc button{background:none;border:1px solid var(--edge2);color:var(--cy2);
+  border-radius:2px;padding:3px 7px;font-family:var(--f);font-size:9px;letter-spacing:.08em}
+.kcsrc button[hidden]{display:none}
+
+/* повторы по подходам */
+.setr{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.setr>label{font-size:9px;letter-spacing:.12em;color:var(--mut)}
+.setr .rb{display:flex;gap:4px}
+.setr .rb input{width:34px;text-align:center;background:rgba(167,120,255,.07);
+  border:1px solid var(--edge2);border-radius:2px;color:var(--tx);
+  font-family:var(--f);font-size:13px;padding:4px 0}
+.setr .rb input:focus{outline:none;border-color:var(--cy)}
+.setr .rb input::placeholder{color:var(--mut);opacity:.5}
+.setr .goal{font-size:9.5px;color:var(--mut);font-style:normal}
+.setr .was{font-size:9.5px;color:var(--cy2);font-style:normal}
+.prb.hold{color:var(--arms);border-color:var(--arms)}
+.prb.lock{color:var(--legs);border-color:var(--legs)}
+
 /* заметка к дню */
 .dnote{margin-top:12px;padding:11px 13px}
 .dnote label{display:block;font-size:10px;letter-spacing:.14em;color:var(--mut);margin-bottom:7px}
@@ -837,6 +858,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
     <div class="win"><input id="kc" inputmode="numeric" aria-label="Цель по калориям"><span>ЦЕЛЬ ККАЛ</span></div>
     <div class="win"><input id="pr" inputmode="numeric" aria-label="Цель по белку"><span>ЦЕЛЬ БЕЛКА</span></div>
   </div>
+  <div class="kcsrc" id="kcSrc"><span id="kcTxt"></span><button id="kcAuto">ВЕРНУТЬ РАСЧЁТ</button></div>
   <button class="cpb" id="cpBtn">СКОПИРОВАТЬ РАЦИОН</button>
   <div id="mll"></div>
   <button class="add" id="addMl">+ ПРИЁМ ПИЩИ</button>
@@ -870,7 +892,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
     <div class="qrow"><label>ГЛАВНЫЙ КВЕСТ — МАССА ТЕЛА</label>
       <div class="qnum"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес тела"><span>кг</span></div></div>
     <div class="qb"><i id="qf"></i></div>
-    <div class="qlg"><span>70</span><span id="qleft"></span>
+    <div class="qlg"><span id="qStart">70</span><span id="qleft"></span>
       <span><input id="goalIn" inputmode="decimal" aria-label="Цель по весу" style="width:44px;background:none;
         border:0;color:var(--mut);font:inherit;font-size:10.5px;text-align:right;padding:0" value="95"></span></div>
     <div class="miles" id="miles"></div>
@@ -964,8 +986,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   <div class="shead"><h2><span>ПЛАН НАБОРА МАССЫ</span><i></i></h2><p>четыре тренировки в неделю, шестинедельный цикл</p></div>
   <div class="win pln" style="margin-top:10px">
     <h4>ЦЕЛЬ И ТЕМП</h4>
-    <p>Коридор набора — <b>0,3–0,5 кг в неделю</b>. От 70 до 90 кг это примерно полтора года.
-       Быстрее набирается жир, а не мышцы.</p>
+    <p id="planPace">Коридор набора — <b>0,3–0,5 кг в неделю</b>.</p>
     <p>Вес стоит две-три недели подряд — добавляй <b>300 ккал</b> в день. Растёт быстрее 0,7 кг
        в неделю — убирай 200–300 ккал.</p>
   </div>
@@ -975,9 +996,15 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
       <li>После перерыва первые две недели — 80 и 90 % от рабочих весов, без отказов.
           Приложение считает их само. Сила возвращается за недели, связки и суставы — за месяцы;
           этот разрыв и ломает тех, кто сразу берёт прежний вес.</li>
-      <li>Прогрессия: закрыл верхнюю границу повторов во всех подходах — приложение
-          предложит прибавку. Она считается долей от рабочего веса (около 3% на верх тела
-          и 5% на низ), а не фиксированной цифрой: +2,5 кг к жиму 70 это нормальный шаг,
+      <li>Прогрессия идёт по закреплению, а не по одному удачному подходу.
+          Вписывай повторы <b>по каждому подходу отдельно</b>. Верх диапазона не требуется
+          с первого раза: из 10/10/10 приложение поставит целью 11/10/10, потом 11/11/10
+          и так далее. Пока стоит 10/12/12/12 при цели 12 — вес остаётся, первый подход
+          не добран. Когда все подходы пойдут по верхней границе, приложение спросит,
+          оставался ли запас сил: добил в ноль — вес остаётся и закрепляется ещё раз,
+          оставался запас — прибавка.</li>
+      <li>Размер прибавки считается долей от рабочего веса (около 3 % на верх тела
+          и 5 % на низ), а не фиксированной цифрой: +2,5 кг к жиму 70 это нормальный шаг,
           а к махам 7,5 кг — плюс треть за раз.</li>
       <li>Подход заканчивай с запасом 2–3 повтора. Отказ не нужен и мешает восстановлению.</li>
       <li>Взвешивайся раз в неделю, утром натощак, до еды и воды. Ориентир набора —
@@ -1057,6 +1084,13 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   <div id="setupRows"></div>
   <div class="srow" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--edge2)">
     <span>Рост</span><input id="anH" inputmode="numeric" value="177" aria-label="Рост"><i>см</i></div>
+  <div class="srow"><span>Вес сейчас</span>
+    <input id="anBw" inputmode="decimal" value="70" aria-label="Вес сейчас"><i>кг</i></div>
+  <div class="srow"><span>Цель по весу</span>
+    <input id="anGoal" inputmode="decimal" value="95" aria-label="Цель по весу"><i>кг</i></div>
+  <p style="margin:6px 0 10px;font-size:10.5px;color:var(--mut)">От веса и цели считаются
+     нормы калорий и белка, шкала квеста и прогноз срока. Цель может быть и ниже
+     текущего веса — тогда режим сменится на снижение.</p>
   <label class="schk"><input type="checkbox" id="setRet"> возвращаюсь после перерыва</label>
   <p style="margin:0 0 12px">Первые две недели пойдут на 80 и 90 % — сила возвращается
      быстрее, чем связки.</p>
@@ -1099,8 +1133,57 @@ const MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Ма
 // для строки «14 сентября», а не «14 сентябрь»
 const MONG = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа',
   'сентября', 'октября', 'ноября', 'декабря'];
-const START = 70;
-const MILES = [75, 80, 85, 90, 95];
+/* Раньше здесь стояли числа 70 и 75/80/85/90/95 — шкала одного человека.
+   Теперь точка отсчёта это первый записанный вес, а вехи строятся от неё
+   до цели и в нужную сторону: цель может быть и ниже текущего веса. */
+function startW() {
+  if (num(S.bw0)) return num(S.bw0);
+  const w = wlog();
+  if (w.length) return num(w[0][1]);
+  return num(S.bw) || 70;
+}
+
+function milesOf() {
+  const a = startW(), g = num(S.goal) || a, diff = g - a;
+  if (Math.abs(diff) < 1) return [];
+  const dir = diff > 0 ? 1 : -1;
+  let step = 5;
+  while (Math.abs(diff) / step > 6) step += 5;
+  const out = [];
+  for (let v = a + dir * step; dir > 0 ? v < g - 0.4 : v > g + 0.4; v += dir * step) out.push(Math.round(v));
+  // веха ближе 2 кг к цели не нужна: 86 и 85 рядом выглядят как ошибка
+  while (out.length && Math.abs(g - out[out.length - 1]) < 2) out.pop();
+  out.push(Math.round(g * 10) / 10);
+  return out;
+}
+
+/* Нормы еды тоже считаются, а не записаны. Поддержание — около 33 ккал на кг
+   при трёх-четырёх тренировках в неделю; набор +18 %, снижение −18 %.
+   Белок 1,9 г на кг при наборе и 2,2 при снижении: на дефиците его роль выше.
+   В день отдыха еды на 200 ккал меньше. */
+function goalDir() {
+  const bw = num(S.bw) || startW(), g = num(S.goal) || bw;
+  return g > bw + 0.5 ? 1 : (g < bw - 0.5 ? -1 : 0);
+}
+
+function nutriFor(t) {
+  const bw = num(S.bw) || startW() || 70, g = num(S.goal) || bw, dir = goalDir();
+  const maint = bw * 33;
+  const k = maint * (dir > 0 ? 1.18 : dir < 0 ? 0.82 : 1) - (t === 'rest' ? 200 : 0);
+  const pr = dir < 0 ? bw * 2.2 : Math.min(Math.max(g, bw), bw * 1.15) * 1.9;
+  return { kc: String(Math.round(k / 10) * 10), pr: String(Math.round(pr / 5) * 5) };
+}
+
+// пересчёт норм во всех днях; руками заданные значения не трогаем
+function applyNutri() {
+  if (S.kcManual) return false;
+  let ch = false;
+  S.days.forEach(d => {
+    const n = nutriFor(d.t);
+    if (d.kc !== n.kc || d.pr !== n.pr) { d.kc = n.kc; d.pr = n.pr; ch = true; }
+  });
+  return ch;
+}
 const START_DEFAULT = '2026-09-14';
 const VOL_TARGET = { 'Спина': 15, 'Грудь': 21, 'Ноги': 36, 'Руки': 13 };
 
@@ -1161,6 +1244,14 @@ function stepFor(ex) {
   return Math.max(gran, Math.round(raw / gran) * gran);
 }
 const topRep = r => { const p = String(r).split('-'); return num(p[p.length - 1]); };
+
+// склонение после числа: 1 подход, 2 подхода, 5 подходов
+function plural(n, one, few, many) {
+  const a = Math.abs(Math.round(n)) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5) return few;
+  return b === 1 ? one : many;
+}
 
 // Каталог упражнений: название → [ключ фото, группа, опорный вес, доля, описание].
 // Фотографии лежат в img и входят в офлайн-кэш. Источник снимков — free-exercise-db,
@@ -1338,6 +1429,13 @@ function build() {
 
 function migrate() {
   S.rec = S.rec || {}; S.map = S.map || {}; S.pr = S.pr || {};
+  // Запись дня без log или sp обрушивала перерисовку целиком. Такие приходят
+  // из старых версий и из восстановленной копии, поэтому чиним при каждой загрузке.
+  Object.keys(S.rec).forEach(ds => {
+    const r = S.rec[ds];
+    if (!r || typeof r !== 'object') { delete S.rec[ds]; return; }
+    r.log = r.log || {}; r.sp = r.sp || {};
+  });
   S.myFood = S.myFood || []; S.tpl = S.tpl || [];
   S.vol = S.vol || { 'Спина': 0, 'Грудь': 0, 'Ноги': 0, 'Руки': 0 };
 
@@ -1406,6 +1504,20 @@ function migrate() {
      счётчиком; теперь считаются из журнала. Если в старых записях не хватает
      деталей подхода, пересчёт дал бы меньше — разницу сохраняем как базу,
      чтобы уже заработанное не пропало. */
+  // Точка отсчёта квеста и расчётные нормы еды. До этого и то и другое
+  // было записано числами под одного человека.
+  if (!S.mig9) {
+    if (!num(S.bw0)) {
+      const w = wlog();
+      S.bw0 = String(w.length ? w[0][1] : (num(S.bw) || 70));
+    }
+    // прежние нормы 2900/2700 и 155/145 считаем расчётными, а не ручными
+    const old = ['2900', '2700', '3300', '3100', '3000', '2800'];
+    if (!S.kcManual && !S.days.every(d => old.indexOf(String(d.kc)) >= 0)) S.kcManual = 1;
+    applyNutri();
+    S.mig9 = 1;
+  }
+
   if (!S.mig8) {
     const storedVol = Object.assign({}, S.vol), storedXp = num(S.xp);
     S.volBase = null; S.xpBase = 0;
@@ -1480,7 +1592,13 @@ function dayIdx(ds) {
   return (i >= 0 && i < S.days.length) ? i : wdOf(ds);
 }
 const dayOf = ds => S.days[dayIdx(ds)];
-const recOf = ds => S.rec[ds] || EMPTY;                       // чтение — без создания пустышек
+const recOf = ds => {                                         // чтение — без создания пустышек
+  const r = S.rec[ds];
+  if (!r) return EMPTY;
+  if (!r.log) r.log = {};
+  if (!r.sp) r.sp = {};
+  return r;
+};
 const recRW = ds => S.rec[ds] || (S.rec[ds] = { log: {}, sp: {}, wo: 0 });
 
 const planStart = () => S.start || START_DEFAULT;
@@ -1776,6 +1894,7 @@ function paintWorkout() {
           <span class="fl"><label>КГ</label><input inputmode="decimal" data-f="w" value="${esc(kg(g.w ?? sug))}" aria-label="Вес"></span>
           <button class="rest" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
           <button class="go" data-go="${j}" aria-label="${g.done ? 'Отменить подход' : 'Закрыть подход'}">${g.done ? '✓' : '○'}</button></div>
+        <div class="setr">${repBoxes(e, g, g.s ?? sets, lastDone(e.n, sel))}</div>
         <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
           : (num(e.w) ? 'рабочий вес ' + kg(e.w) + ' кг' : 'без отягощения')}</div>
         <div class="exft">
@@ -1785,6 +1904,7 @@ function paintWorkout() {
           ${num(e.w) ? `<button class="grp" data-warm="${j}">РАЗМИНКА</button>` : ''}
           ${EXDB[e.n] ? `<button class="grp" data-how="${esc(e.n)}">ТЕХНИКА</button>` : ''}
           ${pr ? `<span class="prb">рекорд <b>${kg(pr)} кг</b></span>` : ''}
+          ${g.done ? holdBadge(e, g) : ''}
         </div></div>`;
     }).join('');
 
@@ -1941,6 +2061,68 @@ function openWarmup(j) {
     </div>`);
 }
 
+// число подходов меняется прямо в карточке — полей повторов должно стать столько же
+$('exl').addEventListener('input', ev => {
+  const f = ev.target.closest('[data-f="s"]'); if (!f) return;
+  const card = f.closest('.ex'); if (!card) return;
+  const j = num(card.dataset.j), box = card.querySelector('.setr');
+  const e = (dayOf(sel).ex || [])[j]; if (!box || !e) return;
+  const keep = [...box.querySelectorAll('[data-rs]')].map(x => x.value);
+  box.innerHTML = repBoxes(e, recOf(sel).log[j] || {}, f.value, lastDone(e.n, sel), keep);
+});
+
+/* Повторы по каждому подходу. Без них правило «закрепить 4x10» непроверяемо:
+   10/12/12/12 и 12/12/12/12 — это разные результаты, а одно общее число
+   их не различает и молча разрешает прибавку. */
+function repBoxes(e, g, sets, prev, keep) {
+  const top = topRep(e.r);
+  const n = Math.max(1, Math.min(12, num(sets) || 1));
+  const cur = keep || g.rs || null;
+  let out = '<label>ПО ПОДХОДАМ</label><span class="rb">';
+  for (let i = 0; i < n; i++) {
+    const v = cur && cur[i] !== undefined && cur[i] !== null ? cur[i] : '';
+    out += '<input inputmode="numeric" data-rs="' + i + '" value="' + esc(v) +
+      '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + '">';
+  }
+  out += '</span>';
+  const prs = prev && prev.rs && prev.rs.length ? prev.rs : null;
+  const ng = prs ? nextGoal(prs, top, n) : null;
+  if (ng) out += '<i class="goal">цель ' + ng.join('/') + ' · вес после ' + n + '×' + top + '</i>';
+  else if (top) out += '<i class="goal">закрепить ' + n + '×' + top + '</i>';
+  if (prs) out += '<i class="was">было ' + prs.join('/') + '</i>';
+  return out;
+}
+
+/* Следующая цель по повторам: прибавляем один повтор к первому подходу,
+   который ещё не дотянул до верха диапазона. Из 10/10/10 при цели 8–12
+   выходит 11/10/10, потом 11/11/10 и так до 12/12/12 — и только после этого
+   растёт вес. Требовать 12 с первого раза значит гнать в компенсацию. */
+function nextGoal(rs, top, sets) {
+  const a = (rs || []).slice(0, sets).map(v => num(v));
+  while (a.length < sets) a.push(0);
+  if (!a.length || !top || a.every(v => v >= top)) return null;
+  const i = a.findIndex(v => v < top);
+  a[i] = Math.min(top, a[i] + 1);
+  return a;
+}
+
+// закреплён ли вес: все подходы сделаны и каждый не ниже верхней границы
+function fixedAt(e, g) {
+  const top = topRep(e.r);
+  const sets = num(g.s ?? e.s);
+  const rs = g.rs || [];
+  if (!top || !sets || rs.length < sets) return false;
+  return rs.slice(0, sets).every(v => num(v) >= top);
+}
+
+function holdBadge(e, g) {
+  const top = topRep(e.r), sets = num(g.s ?? e.s), rs = g.rs || [];
+  if (!top || !rs.length) return '';
+  if (fixedAt(e, g)) return '<span class="prb lock">закреплено</span>';
+  const ng = nextGoal(rs, top, sets);
+  return '<span class="prb hold">' + rs.join('/') + (ng ? ' → цель ' + ng.join('/') : '') + '</span>';
+}
+
 /* ---------- закрытие подхода ---------- */
 function toggleSet(j) {
   const d = dayOf(sel), r = recRW(sel), p = d.ex[j] || {};
@@ -1960,8 +2142,20 @@ function toggleSet(j) {
   }
   const w = num(l.w ?? p.w), sets = num(l.s ?? p.s), reps = firstRep(l.r ?? p.r);
   const g = p.g || l.g || null;
+
+  // Повторы по подходам. Пустое поле — это не ноль: берём общее число из графы
+  // ПОВТ, если там стоит одно число, а не диапазон вида 6-10.
+  if (card) {
+    const rNum = /^\s*\d+\s*$/.test(String(l.r ?? '')) ? num(l.r) : 0;
+    const els = [...card.querySelectorAll('[data-rs]')];
+    if (els.length) l.rs = els.slice(0, sets || els.length).map(x => num(x.value) || rNum);
+  }
+
   l.done = 1; l.n = p.n; l.g = g;
-  l.vol = g ? sets * reps * w : 0;
+  // объём считаем по фактическим повторам, если они есть: 10/12/12/12 это 46,
+  // а не 4x10 и не 4x12
+  const rsOk = l.rs && l.rs.length && l.rs.every(v => num(v) > 0);
+  l.vol = g ? (rsOk ? l.rs.reduce((a, b) => a + num(b), 0) : sets * reps) * w : 0;
   if (g && S.vol[g] !== undefined) S.vol[g] += l.vol;
 
   const old = num(S.pr[p.n]);
@@ -1982,22 +2176,29 @@ function toggleSet(j) {
   const allDone = d.ex.length > 0 && d.ex.every((_, k) => (r.log[k] || {}).done);
   if (!allDone) tStart(restFor(p.n));      // база отдыхает дольше изоляции
 
-  maybeProgress(l, p, w, num(l.r));
+  maybeProgress(l, p, w);
 }
 
-/* Двойная прогрессия. Закрыл верхнюю границу повторов на рабочем весе —
-   приложение предлагает прибавку: +2,5 кг верх тела, +5 кг низ.
-   Раньше правило было записано только в тексте плана, а вес молча рос сам. */
-function maybeProgress(l, p, w, reps) {
-  if (l.prog || !w || !reps) return;
-  if (reps < topRep(p.r)) return;
+/* Двойная прогрессия. Вес растёт не за сам факт выхода на верхнюю границу,
+   а только когда результат закреплён: ВСЕ подходы сделаны по верхней границе.
+   10/12/12/12 при цели 12 — ещё не повод прибавлять, первый подход не добран.
+   И отдельно спрашиваем про запас сил: добил в ноль — вес остаётся. */
+function maybeProgress(l, p, w) {
+  if (l.prog || !w) return;
   if (w < num(p.w)) return;               // сделано на облегчённом весе — рабочий не трогаем
+  const top = topRep(p.r);
+  const sets = num(l.s ?? p.s);
+  if (!top || !sets) return;
+  if (!fixedAt(p, l)) return;             // результат ещё не закреплён
   l.prog = 1;
   // считаем от того, что реально поднято: если вес был выше рабочего,
   // прибавка от старого числа отбросила бы человека назад
   const from = Math.max(num(p.w), w);
   const next = from + stepFor({ g: p.g, w: from });
-  ask('Все ' + reps + ' повторов закрыты на ' + kg(w) + ' кг. Поднять рабочий вес до ' + kg(next) + ' кг?', 'ПОДНЯТЬ')
+  ask((sets === 1 ? 'Подход закрыт' : 'Все ' + sets + ' ' + plural(sets, 'подход', 'подхода', 'подходов') +
+        ' закрыты') + ' по ' + top + ' на ' + kg(w) + ' кг — результат закреплён. ' +
+      'Если в последнем подходе ещё оставался запас, поднимаем до ' + kg(next) + ' кг. ' +
+      'Если добил в ноль — оставь вес и закрепи его ещё раз.', 'ПОДНЯТЬ')
     .then(ok => {
       if (!ok) { save(); return; }
       p.w = next;
@@ -2345,16 +2546,33 @@ function paintProgress() {
 }
 
 function paintGoal() {
-  const b = num(S.bw) || START, g = num(S.goal) || 95;
-  const p = Math.max(0, Math.min(1, (b - START) / ((g - START) || 1)));
+  const a = startW(), b = num(S.bw) || a, g = num(S.goal) || 95;
+  const up = g >= a;
+  const p = Math.max(0, Math.min(1, (b - a) / ((g - a) || 1)));
   $('bw').value = S.bw;
   $('goalIn').value = S.goal || 95;
+  $('qStart').textContent = dec(a);
   $('qf').style.width = (p * 100) + '%';
-  const next = MILES.filter(m => m <= g).find(m => m > b);
-  $('qleft').textContent = b >= g ? 'КВЕСТ ВЫПОЛНЕН'
-    : (next ? 'до ' + next + ' кг: ' + dec(next - b) : 'осталось ' + dec(g - b));
-  $('miles').innerHTML = MILES.filter(m => m <= g).map(m =>
-    `<div class="${b >= m ? 'hit' : (m === next ? 'now' : '')}">${m}</div>`).join('');
+  // текст про темп и срок тоже считается от цели, а не записан числами
+  const [lo, hi] = paceRange();
+  const left = Math.abs(g - b);
+  const wk = left > 0.4 ? Math.round(left / ((lo + hi) / 2)) : 0;
+  // направление режима считается от ТЕКУЩЕГО веса, а не от точки отсчёта:
+  // человек мог перевалить цель или начать с другой стороны
+  const gain = goalDir() > 0;
+  const pp = $('planPace');
+  if (pp) pp.innerHTML = goalDir() === 0 ? 'Вес уже на цели — держим режим и работаем на силу.'
+    : 'Коридор ' + (gain ? 'набора' : 'снижения') + ' — <b>' + dec(lo, 2) + '–' + dec(hi, 2) +
+      ' кг в неделю</b> (0,25–0,5 % массы). От ' + dec(b) + ' до ' + dec(g) + ' кг это примерно <b>' +
+      wk + ' нед</b>. Быстрее — ' + (gain ? 'набирается жир, а не мышцы.' : 'вместе с жиром уходят мышцы.');
+
+  const ms = milesOf();
+  const next = ms.find(m => up ? m > b : m < b);
+  const hit = m => up ? b >= m : b <= m;
+  $('qleft').textContent = (up ? b >= g : b <= g) ? 'КВЕСТ ВЫПОЛНЕН'
+    : (next ? 'до ' + next + ' кг: ' + dec(Math.abs(next - b)) : 'осталось ' + dec(Math.abs(g - b)));
+  $('miles').innerHTML = ms.map(m =>
+    `<div class="${hit(m) ? 'hit' : (m === next ? 'now' : '')}">${m}</div>`).join('');
 }
 
 function paintCycle() {
@@ -2374,12 +2592,32 @@ function paintCycle() {
     `<div class="${go && k === i ? 'now' : (w.ph === 'РАЗГРУЗКА' ? 'dl' : (go && k < i ? 'done' : ''))}"></div>`).join('');
 }
 
-$('bw').addEventListener('input', e => {
-  S.bw = e.target.value;
-  if (num(e.target.value)) recRW(today()).bw = String(e.target.value);
-  save(); paintGoal(); paintChart(); paintRem();
-});
-$('goalIn').addEventListener('input', e => { S.goal = e.target.value; save(); paintGoal(); });
+/* Вес и цель сквозные: и в первичной настройке, и на вкладке «Прогресс»
+   это одно значение. Пишем его в одном месте, а поля синхронизируем между собой,
+   чтобы не разъезжались две копии одного числа. */
+function setBw(v) {
+  S.bw = v;
+  if (num(v)) recRW(today()).bw = String(v);
+  applyNutri(); save();
+  syncBwFields(); paintGoal(); paintChart(); paintRem(); paintTotals(); paintKcSrc();
+}
+function setGoal(v) {
+  S.goal = v;
+  applyNutri(); save();
+  syncBwFields(); paintGoal(); paintTotals(); paintKcSrc();
+}
+function syncBwFields() {
+  const pairs = [['bw', S.bw], ['anBw', S.bw], ['goalIn', S.goal], ['anGoal', S.goal]];
+  pairs.forEach(([id, v]) => {
+    const el = $(id);
+    if (el && document.activeElement !== el) el.value = v ?? '';
+  });
+}
+
+$('bw').addEventListener('input', e => setBw(e.target.value));
+$('goalIn').addEventListener('input', e => setGoal(e.target.value));
+$('anBw').addEventListener('input', e => setBw(e.target.value));
+$('anGoal').addEventListener('input', e => setGoal(e.target.value));
 $('startIn').addEventListener('change', e => {
   if (!e.target.value) return;
   S.start = e.target.value; save(); render(); note('Старт плана: ' + fmt(S.start));
@@ -2436,7 +2674,7 @@ function paintChart() {
    0,18–0,35 кг, а не фиксированные 0,3–0,5, которые для лёгкого человека
    уже верх коридора и тянут за собой жир. */
 function paceRange() {
-  const bw = num(S.bw) || START;
+  const bw = num(S.bw) || startW();
   return [bw * 0.0025, bw * 0.005];
 }
 
@@ -2697,6 +2935,7 @@ function paintPlan() {
    ПЕРВИЧНАЯ НАСТРОЙКА ВЕСОВ
    ========================================================================= */
 function openSetup() {
+  syncBwFields();
   const a = S.anchors || {};
   $('setupRows').innerHTML = ANCHORS.map(([k, label, def]) =>
     `<div class="srow"><span>${label}</span>
@@ -2708,16 +2947,23 @@ function openSetup() {
 function closeSetup() { $('setup').classList.remove('on'); }
 
 $('setOk').addEventListener('click', () => {
+  const first = !S.setup;          // первый запуск задаёт и точку отсчёта квеста
   const a = {};
   ANCHORS.forEach(([k]) => { a[k] = num($('an-' + k).value); });
   if (!a.b && !a.s && !a.d) { note('Впиши хотя бы один вес'); return; }
   S.anchors = a;
   S.height = num($('anH').value) || 177;
+  // вес и цель уже записаны сквозными полями; здесь остаётся только точка отсчёта
+  const bw = num($('anBw').value);
+  // На первом запуске вес из настройки и есть точка отсчёта. Позже её не трогаем:
+  // повторный пересчёт весов не должен обнулять пройденный путь квеста.
+  if (bw && (first || !num(S.bw0))) S.bw0 = String(bw);
+  applyNutri();                                  // нормы еды пересчитываются под нового человека
   S.returning = $('setRet').checked ? 1 : 0;
   S.setup = 1;
   deriveWeights();
   flush(); closeSetup(); render();
-  note('Веса пересчитаны');
+  note('Веса и нормы пересчитаны');
 });
 $('setSkip').addEventListener('click', () => { S.setup = 1; save(); closeSetup(); });
 $('wtab').addEventListener('click', e => {
@@ -2881,22 +3127,26 @@ $('progBtn').addEventListener('click', openProgression);
 function buildCsv() {
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const out = [['Дата', 'День', 'Тренировка закрыта', 'Упражнение', 'Группа', 'Подходы',
-    'Повторы', 'Вес, кг', 'Тоннаж, кг', 'Вес тела, кг', 'Заметка'].join(';')];
+    'Повторы', 'По подходам', 'Закреплено', 'Вес, кг', 'Тоннаж, кг', 'Вес тела, кг',
+    'Заметка'].join(';')];
   Object.keys(S.rec).sort().forEach(ds => {
     const r = S.rec[ds], day = S.days[dayIdx(ds)], lg = r.log || {};
     const base = [ds, day ? day.k : '', r.wo ? 'да' : 'нет'];
     const tailBw = String(num(r.bw) || '').replace('.', ',');
     const keys = Object.keys(lg).filter(j => lg[j].done);
     if (!keys.length) {
-      out.push(base.concat(['', '', '', '', '', '', tailBw, q(r.note || '')]).join(';'));
+      out.push(base.concat(['', '', '', '', '', '', '', '', tailBw, q(r.note || '')]).join(';'));
       return;
     }
     keys.forEach(j => {
       const l = lg[j], e = (day && day.ex[j]) || {};
       const sets = num(l.s ?? e.s), reps = l.r ?? e.r, w = num(l.w ?? e.w);
+      const rs = (l.rs || []).filter(v => num(v) > 0);
       out.push(base.concat([
         q(l.n || e.n || ''), q(l.g || e.g || ''),
-        sets, q(reps), String(w).replace('.', ','),
+        sets, q(reps), q(rs.join('/')),
+        q(rs.length ? (fixedAt({ r: e.r ?? l.r, s: sets }, l) ? 'да' : 'нет') : ''),
+        String(w).replace('.', ','),
         String(num(l.vol) || sets * firstRep(reps) * w).replace('.', ','),
         tailBw, q(r.note || '')
       ]).join(';'));
@@ -3942,6 +4192,7 @@ function paintFood() {
   const d = dayOf(sel);
   $('kc').value = d.kc;
   $('pr').value = d.pr;
+  paintKcSrc();
   $('mll').innerHTML = (d.ml || []).map((m, j) => {
     const s = mealSum(m);
     const rows = (m.items || []).map((it, q) =>
@@ -3981,8 +4232,21 @@ function paintTotals() {
   });
 }
 
-$('kc').addEventListener('input', e => { dayOf(sel).kc = e.target.value; save(); paintTotals(); });
-$('pr').addEventListener('input', e => { dayOf(sel).pr = e.target.value; save(); paintTotals(); });
+function paintKcSrc() {
+  const dir = goalDir();
+  $('kcTxt').textContent = S.kcManual ? 'нормы заданы вручную'
+    : 'расчёт от веса ' + kg(num(S.bw) || startW()) + ' кг · ' +
+      (dir > 0 ? 'набор' : dir < 0 ? 'снижение' : 'удержание');
+  $('kcAuto').hidden = !S.kcManual;
+}
+
+// вписал норму руками — расчёт от веса и цели больше её не перебивает
+$('kc').addEventListener('input', e => { dayOf(sel).kc = e.target.value; S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
+$('pr').addEventListener('input', e => { dayOf(sel).pr = e.target.value; S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
+$('kcAuto').addEventListener('click', () => {
+  S.kcManual = 0; applyNutri(); save(); render();
+  note('Нормы пересчитаны от веса и цели');
+});
 $('addMl').addEventListener('click', () => {
   dayOf(sel).ml.push({ n: 'Приём пищи', note: '', items: [] });
   save(); paintFood();
@@ -4447,19 +4711,27 @@ function analyze() {
     if (win.length > 1) {
       const dd = daysBetween(win[0][0], last[0]) || 1;
       const per = (last[1] - win[0][1]) / dd * 7;
+      // цель может быть и ниже текущего веса: тогда «правильное» направление
+      // это минус, и коридор темпа тот же, но с обратным знаком
       const goal = num(S.goal) || 95;
       const left = goal - last[1];
-      if (per < 0.1) {
-        add('warn', 'ТЕМП РОСТА', 'Прирост <b>' + dec(per, 2) + ' кг/нед</b> за ' + dd + ' дн. ' +
-          'Показатель заморожен.', 'Добавь 300 ккал в день, проверка через 14 дней');
-      } else if (per > 0.7) {
-        add('warn', 'ТЕМП РОСТА', 'Прирост <b>+' + dec(per, 2) + ' кг/нед</b> — выше коридора 0,3–0,5. ' +
-          'Избыток уходит в жировую массу.', 'Убери 200–300 ккал в день');
+      const dn = goalDir() < 0;
+      const toward = dn ? -per : per;              // движение в сторону цели
+      const word = dn ? 'Снижение' : 'Прирост';
+      const sh = v => (v > 0 ? '+' : '') + dec(v, 2);
+      if (toward < 0.1) {
+        add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> за ' + dd + ' дн. Показатель заморожен.',
+          dn ? 'Убери 300 ккал в день, проверка через 14 дней'
+             : 'Добавь 300 ккал в день, проверка через 14 дней');
+      } else if (toward > 0.7) {
+        add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> — быстрее коридора 0,3–0,5. ' +
+          (dn ? 'На такой скорости вместе с жиром уходят мышцы.' : 'Избыток уходит в жировую массу.'),
+          dn ? 'Добавь 200–300 ккал в день' : 'Убери 200–300 ккал в день');
       } else {
-        const weeks = Math.round(left / per);
-        add('ok', 'ТЕМП РОСТА', 'Прирост <b>+' + dec(per, 2) + ' кг/нед</b> — в границах нормы. ' +
-          'До цели ' + goal + ' кг остаётся ' + dec(left) + ' кг, расчётный срок <b>' + weeks + ' нед</b>.',
-          'Удерживай текущий режим');
+        const weeks = Math.round(Math.abs(left) / toward);
+        add('ok', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> — в границах нормы. ' +
+          'До цели ' + goal + ' кг остаётся ' + dec(Math.abs(left)) + ' кг, расчётный срок <b>' +
+          weeks + ' нед</b>.', 'Удерживай текущий режим');
       }
     }
   }
@@ -4537,7 +4809,8 @@ function analyze() {
         'Добавь ' + rnd(goalP - avgP) + ' г белка в день');
     } else if (avgK < goalK * 0.9) {
       add('warn', 'РЕСУРС: КАЛОРИИ', 'Рацион даёт <b>' + rnd(avgK) + ' ккал</b> при норме ' + rnd(goalK) +
-        '. Для набора нужен запас.', 'Добавь ' + rnd(goalK - avgK) + ' ккал в день');
+        (goalDir() < 0 ? '. Слишком глубокий дефицит бьёт по силе.' : '. Для набора нужен запас.'),
+        'Добавь ' + rnd(goalK - avgK) + ' ккал в день');
     } else {
       add('ok', 'РЕСУРС', 'Рацион закрывает <b>' + rnd(avgK) + ' ккал</b> и <b>' + rnd(avgP) +
         ' г белка</b>. Норма покрыта.', 'Режим питания подтверждён');
@@ -4651,7 +4924,8 @@ function analyze() {
 
   /* --- пора ли разгружаться --- */
   if (started() && stuck.length >= 2 && cycOf(today()).ph !== 'РАЗГРУЗКА' && planWeek() >= 3) {
-    add('warn', 'ПОРА РАЗГРУЖАТЬСЯ', 'Стоит <b>' + stuck.length + '</b> упражнения подряд, идёт неделя ' +
+    add('warn', 'ПОРА РАЗГРУЖАТЬСЯ', 'Стоит <b>' + stuck.length + '</b> ' +
+      plural(stuck.length, 'упражнение', 'упражнения', 'упражнений') + ' подряд, идёт неделя ' +
       planWeek() + ' цикла. Так выглядит накопленная усталость, а не слабость.',
       'Возьми неделю на 60% весов — после неё веса обычно идут вверх сами');
   }
