@@ -1495,8 +1495,7 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 
 /* раскрытое упражнение занимает экран целиком */
 body.exopen #daysbar,body.exopen #dayctx,body.exopen .qbox,
-body.exopen #scr-wo h2.sec,body.exopen #spl,body.exopen #addSp,
-body.exopen .foot,body.exopen #editPast{display:none}
+body.exopen #scr-wo h2.sec,body.exopen .foot,body.exopen #editPast{display:none}
 body.exopen{padding-bottom:calc(var(--tabh) + var(--sb))}
 body.exopen #scr-wo{padding-top:calc(var(--st) + 12px)}
 body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
@@ -1514,6 +1513,53 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
 .cd.t-lo1{--cd-c:var(--c-lo1)} .cd.t-up2{--cd-c:var(--c-up2)}
 .cd.t-lo2{--cd-c:var(--c-lo2)} .cd.t-other{--cd-c:var(--c-other)}
 .cd .dot{background:var(--cd-c)}
+
+/* ---------- добавки отдельной рамкой ---------- */
+.supp{margin-top:18px;padding:14px clamp(11px,3.6vw,15px)}
+.supph{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.supph b{font-family:var(--fd);font-size:15px;font-weight:var(--wtd);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink)}
+.supph em{font-style:normal;font-family:var(--fn);font-size:11px;color:var(--ink3);letter-spacing:.08em}
+.suppn{margin:5px 0 11px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+.supp .row{background:var(--s2);border:1px solid var(--ln);margin-bottom:7px}
+.supp .add{margin-top:4px;font-size:11.5px;padding:11px}
+
+/* ---------- журнал за год ---------- */
+.cal{padding:13px clamp(10px,3.4vw,14px)}
+.cnav b{font-family:var(--fd);font-size:clamp(13px,4vw,16px);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink)}
+.calback[hidden]{display:none}
+.calback{display:block;width:100%;text-align:left;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--acc-ink);border:1px solid var(--ln);
+  background:var(--s2);padding:8px 11px;margin-bottom:11px}
+#cyear[hidden]{display:none}
+#cyear{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(9px,3vw,13px) clamp(6px,2.4vw,10px)}
+.mob{display:block;width:100%;text-align:left;padding:0;background:none;border:0}
+.mob b{display:block;font-size:9.5px;font-weight:400;letter-spacing:.2em;color:var(--ink3);
+  margin-bottom:5px;text-transform:uppercase}
+.mob:active b{color:var(--acc-ink)}
+[hidden]{display:none!important}
+.mog{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.mc{display:block;aspect-ratio:1;background:var(--s2);position:relative;font-style:normal}
+.mc::after{content:'';position:absolute;inset:0;background:var(--cd-c,transparent);opacity:0}
+.mc.now{outline:1px solid var(--acc);outline-offset:-1px}
+.mc.t-rest{--cd-c:var(--c-rest)} .mc.t-up1{--cd-c:var(--c-up1)}
+.mc.t-lo1{--cd-c:var(--c-lo1)} .mc.t-up2{--cd-c:var(--c-up2)}
+.mc.t-lo2{--cd-c:var(--c-lo2)} .mc.t-other{--cd-c:var(--c-other)}
+/* насыщенность = сколько поднято в этот день относительно лучшего за год */
+.mc.l1::after,.cd.l1::after{opacity:.3}
+.mc.l2::after,.cd.l2::after{opacity:.5}
+.mc.l3::after,.cd.l3::after{opacity:.75}
+.mc.l4::after,.cd.l4::after{opacity:1}
+.cd.l0::after{opacity:.12}
+.cd.wo.l0::after{opacity:.3}
+.cleg .lg{display:inline-block;width:8px;height:8px;margin-right:4px;background:var(--cd-c,var(--s3))}
+.cleg .lg.t-up1{--cd-c:var(--c-up1)} .cleg .lg.t-lo1{--cd-c:var(--c-lo1)}
+.cleg .lg.t-up2{--cd-c:var(--c-up2)} .cleg .lg.t-lo2{--cd-c:var(--c-lo2)}
+.cleg .lg.l1{background:var(--acc);opacity:.3} .cleg .lg.l2{background:var(--acc);opacity:.5}
+.cleg .lg.l3{background:var(--acc);opacity:.75} .cleg .lg.l4{background:var(--acc)}
+.cleg .lgs{display:inline-flex;align-items:center;gap:3px}
+.cleg .lgs .lg{margin-right:0}
 
 /* ---------- подгон под любой телефон ----------
    Проверено на 320, 360, 375, 390, 414, 430 и 768 px. Жёстких ширин
@@ -1655,10 +1701,6 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
     <button class="add" id="editPast" hidden>Править этот день</button>
   </div>
 
-  <h2 class="sec">ДОБАВКИ<em id="spCnt"></em></h2>
-  <div id="spl"></div>
-  <button class="add" id="addSp">+ Добавка</button>
-
   <div class="foot"><p>Прогресс сохраняется на этом устройстве</p>
     <button class="gh" id="rd">СБРОС ДНЯ</button></div>
 </section>
@@ -1680,6 +1722,14 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
   <button class="cpb" id="cpBtn">Скопировать рацион</button>
   <div id="mll"></div>
   <button class="add" id="addMl">+ Приём пищи</button>
+
+  <!-- добавки: отдельная рамка, как системная подсказка, а не часть дня -->
+  <div class="win supp" id="suppBox">
+    <div class="supph"><b data-t="supp">Снаряжение</b><em id="spCnt"></em></div>
+    <p class="suppn" data-t="suppHint">Приём добавок за день</p>
+    <div id="spl"></div>
+    <button class="add" id="addSp">+ Добавка</button>
+  </div>
 </section>
 
 <!-- ================= ПРОГРЕСС ================= -->
@@ -1742,11 +1792,15 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
   <button class="add" id="histMore" hidden>Показать ещё</button>
 
   <div class="win cal">
-    <div class="wtitle" style="padding:0 0 9px">КАЛЕНДАРЬ</div>
-    <div class="cnav"><button id="pm" aria-label="Предыдущий месяц">‹</button><b id="cmo"></b>
-      <button id="nm" aria-label="Следующий месяц">›</button></div>
-    <div class="chead" id="chead"></div>
-    <div id="cgrid"></div>
+    <div class="cnav"><button id="pm" aria-label="Назад">‹</button>
+      <b id="cmo"></b>
+      <button id="nm" aria-label="Вперёд">›</button></div>
+    <button class="calback" id="calBack" hidden>‹ ко всему году</button>
+    <div id="cyear"></div>
+    <div id="cmonth" hidden>
+      <div class="chead" id="chead"></div>
+      <div id="cgrid"></div>
+    </div>
     <div class="cleg" id="cleg"></div>
     <button class="add" id="moBtn" style="margin-top:11px">Итоги месяца</button>
   </div>
@@ -2688,7 +2742,7 @@ function render() {
   $('daysbar').hidden = !dayScreen;      // полоса дней живёт отдельно и прячется вместе с блоком
   if (dayScreen) paintDay();
   if (tab === 'wo') paintWorkout();
-  if (tab === 'food') paintFood();
+  if (tab === 'food') { paintFood(); paintSupp(); }
   if (tab === 'prog') paintProgress();
   if (tab === 'photo') paintPhotoScreen();
   paintBadge();
@@ -2839,6 +2893,12 @@ function paintWorkout() {
     f.disabled = !all || !!r.wo;
   }
 
+}
+
+/* Добавки принадлежат дню, но не тренировке: в зале они только мешали,
+   поэтому живут отдельной рамкой в «Еде». Данные и отметки те же самые. */
+function paintSupp() {
+  const d = dayOf(sel), r = recOf(sel);
   $('spCnt').textContent = Object.keys(r.sp).length + ' / ' + d.sp.length;
   $('spl').innerHTML = d.sp.map((x, j) =>
     `<div class="win row${r.sp[j] ? ' on' : ''}" data-sp="${j}">
@@ -3465,7 +3525,7 @@ $('spl').addEventListener('click', e => {
   if (t) {
     const j = +t.dataset.tog, r = recRW(sel);
     if (r.sp[j]) { delete r.sp[j]; addXp(-XP_SP); } else { r.sp[j] = 1; addXp(XP_SP); }
-    save(); render(); return;
+    save(); paintSupp(); paintStatus(); return;
   }
   const del = e.target.closest('[data-spd]');
   if (del) {
@@ -3474,7 +3534,7 @@ $('spl').addEventListener('click', e => {
       if (!ok) return;
       const r = recRW(sel);
       d.sp.splice(j, 1); delete r.sp[j];
-      save(); render();
+      save(); paintSupp();
     });
   }
 });
@@ -3484,7 +3544,7 @@ $('spl').addEventListener('input', e => {
   save();
 });
 $('addSp').addEventListener('click', () => {
-  dayOf(sel).sp.push({ w: '', n: 'Новая добавка', h: '' }); save(); render();
+  dayOf(sel).sp.push({ w: '', n: 'Новая добавка', h: '' }); save(); paintSupp();
 });
 
 $('rd').addEventListener('click', () => {
@@ -3943,63 +4003,119 @@ function streak() {
 }
 
 /* ---------- календарь ---------- */
-function cal() {
-  const [y, m] = mo.split('-').map(Number);
-  $('cmo').textContent = MON[m - 1] + ' ' + y;
-  // границы — пять лет вокруг текущего года, а не жёсткие даты, как было раньше
-  const nowY = new Date().getFullYear();
-  $('pm').disabled = mo <= (nowY - 3) + '-01';
-  $('nm').disabled = mo >= (nowY + 2) + '-12';
+/* Журнал: весь год двенадцатью месяцами, нажатие на месяц раскрывает его
+   целиком, нажатие на день открывает разбор. Месяцы разделены и подписаны —
+   сплошной лентой из 53 недель они сливались в кашу. */
+let calView = 'year';
+let calYear = new Date().getFullYear();
 
-  const first = new Date(y, m - 1, 1), off = (first.getDay() + 6) % 7, len = new Date(y, m, 0).getDate();
-  $('chead').innerHTML = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'].map(d => `<div class="cw">${d}</div>`).join('');
+// насыщенность клетки: сколько поднято в этот день относительно лучшего дня года
+function dayLevels(year) {
+  const tons = {}; let mx = 0;
+  Object.keys(S.rec).forEach(ds => {
+    if (+ds.slice(0, 4) !== year) return;
+    const t = dayTon(ds);
+    if (t > 0) { tons[ds] = t; if (t > mx) mx = t; }
+  });
+  return { tons: tons, mx: mx || 1 };
+}
+const lvlOf = (t, mx) => !t ? 0 : (t < mx * .3 ? 1 : t < mx * .6 ? 2 : t < mx * .85 ? 3 : 4);
 
-  const curWk = mondayOf(today());
-  const cells = [];
-  for (let i = 0; i < off; i++) cells.push({ blank: 1 });
-  for (let d = 1; d <= len; d++) cells.push({ ds: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, d });
-  while (cells.length % 7) cells.push({ blank: 1 });
-
-  const weeks = [];
-  for (let i = 0; i < cells.length; i += 7) {
-    const row = cells.slice(i, i + 7);
-    const anyDate = (row.find(c => c.ds) || {}).ds;
-    let lab = '';
-    if (anyDate) {
-      const w = weekOfDate(anyDate) >= 1 ? planWeek(anyDate) : 0;
-      if (w >= 1) {
-        const ci = (w - 1) % CYCLE.length;
-        lab = 'Н' + w + ' · Ц' + (Math.floor((w - 1) / CYCLE.length) + 1) + '·' + (ci + 1) +
-          (CYCLE[ci].ph === 'РАЗГРУЗКА' ? ' ⚡' : '');
-      } else lab = 'до старта';
-    }
-    const cur = row.some(c => c.ds === curWk);
-    const html = row.map(c => {
-      if (c.blank) return '<span class="cd"></span>';
-      const r = recOf(c.ds), t = dayOf(c.ds).t;
-      // Цвет дня берётся из темы классом, а не вписывается числом: тогда смена
-      // темы перекрашивает календарь сама, без перерисовки разметки.
-      const cls = ['cd', 'in', 't-' + t];
-      if (c.ds === today()) cls.push('today');
-      if (c.ds === sel) cls.push('sel');
-      if (r.wo) cls.push('wo');
-      return `<button class="${cls.join(' ')}" data-cd="${c.ds}">
-        ${S.map[c.ds] !== undefined ? '<span class="mv">↔</span>' : ''}
-        ${r.wo ? '<span class="ok">✓</span>' : ''}
-        <span>${c.d}</span>
-        ${t !== 'rest' ? '<span class="dot"></span>' : ''}
-        ${PH.indexOf(c.ds) >= 0 ? '<span class="pm"></span>' : ''}</button>`;
-    }).join('');
-    weeks.push(`<div class="cwk${cur ? ' cur' : ''}"><span class="wn">${lab}</span>${html}</div>`);
-  }
-  $('cgrid').innerHTML = weeks.join('');
-  $('cleg').innerHTML = TYPES.filter(t => t[0] !== 'rest' && t[0] !== 'other')
-    .map(([t, l]) => `<span><i style="background:var(--c-${t})"></i>${l}</span>`).join('') +
-    '<span>✓ выполнено</span><span>↔ перенесено</span><span>• есть фото</span>';
+function monthCells(y, m) {
+  const first = new Date(y, m - 1, 1), off = (first.getDay() + 6) % 7;
+  const len = new Date(y, m, 0).getDate();
+  const out = [];
+  for (let i2 = 0; i2 < off; i2++) out.push(null);
+  for (let d = 1; d <= len; d++)
+    out.push(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+  return out;
 }
 
-$('pm').addEventListener('click', () => { mo = shiftMonth(mo, -1); cal(); });
-$('nm').addEventListener('click', () => { mo = shiftMonth(mo, 1); cal(); });
+function cal() {
+  const L = dayLevels(calYear);
+  $('calBack').hidden = calView !== 'month';
+  $('cyear').hidden = calView !== 'year';
+  $('cmonth').hidden = calView !== 'month';
+
+  const nowY = new Date().getFullYear();
+  if (calView === 'year') {
+    const wos = Object.keys(S.rec).filter(d => +d.slice(0, 4) === calYear && S.rec[d].wo).length;
+    $('cmo').textContent = calYear + ' · ' + wos + ' ' + plural(wos, T('session'), T('sessions'), T('sessions'));
+    $('pm').disabled = calYear <= nowY - 6;
+    $('nm').disabled = calYear >= nowY + 1;
+    $('cyear').innerHTML = MON.map((nm, k) => {
+      const cells = monthCells(calYear, k + 1).map(ds => {
+        if (!ds) return '<i class="mc"></i>';
+        const t = (dayOf(ds) || {}).t || 'rest';
+        const lv = lvlOf(L.tons[ds], L.mx);
+        return `<i class="mc t-${t} l${lv}${ds === today() ? ' now' : ''}"></i>`;
+      }).join('');
+      return `<button class="mob" data-mo="${k + 1}"><b>${nm.slice(0, 3).toUpperCase()}</b>
+        <span class="mog">${cells}</span></button>`;
+    }).join('');
+  } else {
+    const [y, m] = mo.split('-').map(Number);
+    $('cmo').textContent = MON[m - 1] + ' ' + y;
+    $('pm').disabled = mo <= (nowY - 6) + '-01';
+    $('nm').disabled = mo >= (nowY + 1) + '-12';
+    $('chead').innerHTML = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'].map(d => `<div class="cw">${d}</div>`).join('');
+
+    const cells = monthCells(y, m);
+    while (cells.length % 7) cells.push(null);
+    const curWk = mondayOf(today());
+    const weeks = [];
+    for (let i2 = 0; i2 < cells.length; i2 += 7) {
+      const row = cells.slice(i2, i2 + 7);
+      const anyDate = row.find(Boolean);
+      let lab = '';
+      if (anyDate) {
+        const w = weekOfDate(anyDate) >= 1 ? planWeek(anyDate) : 0;
+        if (w >= 1) {
+          const ci = (w - 1) % CYCLE.length;
+          lab = 'Н' + w + ' · Ц' + (Math.floor((w - 1) / CYCLE.length) + 1) + '·' + (ci + 1);
+        } else lab = 'до старта';
+      }
+      const cur = row.some(c => c === curWk);
+      const html = row.map(ds => {
+        if (!ds) return '<span class="cd"></span>';
+        const r = recOf(ds), t = dayOf(ds).t;
+        const cls = ['cd', 'in', 't-' + t, 'l' + lvlOf(L.tons[ds], L.mx)];
+        if (ds === today()) cls.push('today');
+        if (ds === sel) cls.push('sel');
+        if (r.wo) cls.push('wo');
+        return `<button class="${cls.join(' ')}" data-cd="${ds}">
+          ${S.map[ds] !== undefined ? '<span class="mv">↔</span>' : ''}
+          ${r.wo ? '<span class="ok">✓</span>' : ''}
+          <span>${+ds.slice(8)}</span>
+          ${t !== 'rest' ? '<span class="dot"></span>' : ''}
+          ${PH.indexOf(ds) >= 0 ? '<span class="pm"></span>' : ''}</button>`;
+      }).join('');
+      weeks.push(`<div class="cwk${cur ? ' cur' : ''}"><span class="wn">${lab}</span>${html}</div>`);
+    }
+    $('cgrid').innerHTML = weeks.join('');
+  }
+
+  $('cleg').innerHTML = TYPES.filter(t => t[0] !== 'rest' && t[0] !== 'other')
+    .map(([t, l]) => `<span><i class="lg t-${t}"></i>${l}</span>`).join('') +
+    '<span>✓ выполнено</span><span>↔ перенесено</span>' +
+    '<span class="lgs">меньше<i class="lg l1"></i><i class="lg l2"></i><i class="lg l3"></i><i class="lg l4"></i>больше</span>';
+}
+
+$('cyear').addEventListener('click', e => {
+  const b = e.target.closest('[data-mo]'); if (!b) return;
+  mo = calYear + '-' + String(+b.dataset.mo).padStart(2, '0');
+  calView = 'month'; cal();
+});
+$('calBack').addEventListener('click', () => { calView = 'year'; cal(); });
+
+$('pm').addEventListener('click', () => {
+  if (calView === 'year') calYear--; else mo = shiftMonth(mo, -1);
+  cal();
+});
+$('nm').addEventListener('click', () => {
+  if (calView === 'year') calYear++; else mo = shiftMonth(mo, 1);
+  cal();
+});
 $('cgrid').addEventListener('click', e => {
   const b = e.target.closest('[data-cd]'); if (!b) return;
   const ds = b.dataset.cd;
