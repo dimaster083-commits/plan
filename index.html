@@ -47,6 +47,7 @@ input,select{font-size:16px}
   background:rgba(5,9,18,.93);backdrop-filter:blur(12px);
   border-top:1px solid var(--edge2);padding-bottom:var(--sb)}
 .tabbar .in{max-width:660px;margin:0 auto;display:flex;height:var(--tabh)}
+.tab i{font-style:normal}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   font-size:9px;letter-spacing:.1em;color:var(--mut);position:relative}
 .tab svg{width:21px;height:21px;fill:currentColor}
@@ -1260,6 +1261,196 @@ input,textarea,select{color:var(--ink)}
 .kcsrc{font-size:11.5px;color:var(--ink3)}
 .kcsrc button{padding:6px 11px;font-size:11px;border-radius:999px}
 
+
+/* =========================================================================
+   ОФОРМЛЕНИЕ ТЕМ
+   Ниже — форма, а не цвет: цвета уже пришли из токенов. Здесь панели,
+   шрифты, срезы углов и свечение. Всё завязано на переменные темы,
+   поэтому «Клеймо» получает те же правила с нулевым срезом и без свечения.
+   ========================================================================= */
+body{font-family:var(--f);font-weight:var(--wt);background:transparent}
+h1,h2,h3,h4,h5,.dsp{font-family:var(--fd)}
+
+/* ---------- панель ---------- */
+.win{
+  background:var(--s1);
+  border:1px solid var(--ln);
+  color:var(--ink);
+  border-radius:0;
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+  backdrop-filter:blur(var(--blur)) saturate(var(--sat));
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(var(--sat));
+  box-shadow:0 0 var(--glow-r) var(--glow-c);
+}
+/* «Система»: светящаяся засечка слева. «Клеймо»: уголки, как на гравюре. */
+:root[data-skin="sl"] .win::before{content:'';position:absolute;left:0;top:10px;
+  width:2px;height:20px;background:var(--acc);box-shadow:var(--glow-t);pointer-events:none}
+:root[data-skin="ber"] .win::before,
+:root[data-skin="ber"] .win::after{content:'';position:absolute;width:9px;height:9px;
+  border:1px solid var(--ink3);pointer-events:none;background:none}
+:root[data-skin="ber"] .win::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+:root[data-skin="ber"] .win::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+
+/* ---------- типографика ---------- */
+.shead h2{font-family:var(--fd);font-size:25px;font-weight:var(--wtd);
+  letter-spacing:var(--track);text-transform:var(--caps);color:var(--ink)}
+.shead p{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.wtitle{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
+  color:var(--ink3);text-transform:uppercase;padding:13px 14px 0}
+h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
+  color:var(--ink3);text-transform:uppercase;margin:24px 0 10px}
+.dh h3,.dh h3 input{font-family:var(--fd);font-size:22px;font-weight:var(--wtd);
+  letter-spacing:.04em;color:var(--ink)}
+.dh p{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+.dateline{font-size:10.5px;letter-spacing:.2em;color:var(--acc-2);text-transform:uppercase}
+.exname{font-family:var(--fd);font-size:18px;font-weight:var(--wtd);letter-spacing:.02em}
+.tri b,.st .vl,.qnum input,.fl input,.it input,.phw input,.wtab td,.mac input,
+.setr .rbx input,.tot b,.ld .v b,.jrow i,.cd{font-family:var(--fn);font-variant-numeric:tabular-nums}
+
+/* ---------- поля ---------- */
+.fl label{font-size:10px;letter-spacing:.2em;color:var(--ink3);text-transform:uppercase;font-weight:400}
+.fl input,.qnum input,.it input,.phw input,.mac input,.cycStart input,
+.setr .rbx input,.fpn .r input{
+  background:var(--s2);border:1px solid var(--ln);border-radius:0;box-shadow:none;color:var(--ink)}
+.fl input:focus,.qnum input:focus,.it input:focus,.phw input:focus,.mac input:focus,
+.setr .rbx input:focus,.fpn .r input:focus{
+  outline:none;border-color:var(--acc);background:var(--s3);box-shadow:0 0 var(--glow-r) var(--glow-c)}
+
+/* ---------- кнопки ---------- */
+.fin{background:var(--acc-fill);color:var(--onacc);border-radius:0;
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+  padding:17px;font-size:15px;font-weight:var(--wtd);letter-spacing:.16em;
+  text-transform:uppercase;box-shadow:var(--shacc);text-shadow:none}
+.fin.done{background:var(--s2);color:var(--ink3);border:1px solid var(--ln);box-shadow:none}
+.fin:disabled{background:var(--s2);color:var(--ink3);box-shadow:none;opacity:1}
+.add{border:1px solid var(--ln);border-radius:0;color:var(--ink2);padding:14px;
+  font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;background:var(--s2)}
+.anb,.cpb,.copyb{background:var(--s2);border:1px solid var(--ln);border-radius:0;color:var(--ink);
+  padding:14px;font-size:12.5px;font-weight:var(--wt);letter-spacing:.18em;text-transform:uppercase}
+.go,.rest{height:48px;border-radius:0;background:var(--s2);border:1px solid var(--ln);box-shadow:none}
+.ex.done .go{background:var(--acc-fill);border-color:var(--acc-fill);color:var(--onacc);
+  box-shadow:0 0 var(--glow-r) var(--glow-c)}
+.gear{width:44px;height:44px;border-radius:0;background:var(--s2);border:1px solid var(--ln);color:var(--ink2)}
+.gear.on{background:var(--acc-soft);color:var(--acc-ink);border-color:var(--acc)}
+.x{color:var(--ink3)}
+
+/* ---------- таблетки ---------- */
+.intg,.grp,.grpsel button,.miles div,.types button,.prb,.rkchip{
+  border-radius:0;clip-path:none;border:1px solid var(--ln);background:var(--s2);
+  color:var(--ink2);font-weight:var(--wt);letter-spacing:.14em;text-transform:uppercase}
+.types button.on{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill)}
+.miles div.now{background:var(--acc-soft);color:var(--acc-ink);border-color:var(--acc)}
+.miles div.hit{background:var(--s3);color:var(--ink2)}
+.prb.lock{background:var(--acc-soft);color:var(--acc-ink)}
+
+/* ---------- дни недели ---------- */
+.days{background:var(--glass);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--ln)}
+.chip{background:var(--s1);border:1px solid var(--ln);border-radius:0;color:var(--ink3);
+  backdrop-filter:blur(var(--blur))}
+.chip b{font-size:12px;font-weight:var(--wt);letter-spacing:.14em;text-transform:uppercase}
+.chip.on{background:var(--acc-soft);border-color:var(--acc);color:var(--ink);
+  box-shadow:0 0 var(--glow-r) var(--glow-c)}
+:root[data-skin="ber"] .chip.on{background:var(--acc-fill);color:var(--onacc)}
+.chip .tk,.cd .ok,.jrow em.ok{color:var(--ink)}
+
+/* ---------- шкалы ---------- */
+.xpb,.qb,.qprog,.tbar,.st .tk,.vol .r .b,.cycBar div,.ld .b{background:var(--s2);border-radius:0}
+.xpb i,.qb i,.qprog i,.tbar i,.st .tk i,.vol .r .b i,.ld .b i{border-radius:0}
+.xpb i,.qb i,.qprog i{background:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c)}
+.cycBar div.now{background:var(--acc)}
+.cycBar div.done{background:var(--acc-soft)}
+.cycBar div.dl{background:var(--ink3)}
+
+/* ---------- упражнение ---------- */
+.ex{padding:15px;margin-bottom:9px}
+.ex.done{background:var(--s1);border-color:var(--ln);opacity:.5}
+.setr{background:var(--s2);border:1px solid var(--ln);border-radius:0}
+.setr .rbx.hit input{background:var(--acc-soft);border-color:var(--acc);color:var(--ink)}
+.setr .fillall{background:var(--s3);border:1px solid var(--ln);color:var(--ink);border-radius:0;
+  letter-spacing:.14em;text-transform:uppercase}
+.setr .sh span,.setr .rbx i{letter-spacing:.2em;text-transform:uppercase;color:var(--ink3)}
+.pl{color:var(--ink3);font-size:12px;letter-spacing:.06em}
+
+/* ---------- нижние вкладки ---------- */
+.tabbar{background:var(--glass2);backdrop-filter:blur(var(--blur));border-top:1px solid var(--ln)}
+.tab{font-size:9px;font-weight:400;letter-spacing:.2em;text-transform:uppercase;gap:5px;color:var(--ink3)}
+.tab svg{width:19px;height:19px}
+.tab.on{color:var(--acc-2)}
+.tab.on svg{filter:drop-shadow(var(--glow-t))}
+:root[data-skin="ber"] .tab.on{color:var(--ink)}
+:root[data-skin="ber"] .tab.on svg{filter:none}
+
+/* ---------- шторки и диалоги ---------- */
+.sheet,.ov,.fp{background:var(--glass2);backdrop-filter:blur(var(--blur))}
+.ask{background:var(--scrim)}
+.askw,.setw{background:var(--s1);border:1px solid var(--ln);border-radius:0;
+  backdrop-filter:blur(var(--blur));box-shadow:var(--sh3)}
+.askw button{border:1px solid var(--ln);border-radius:0;color:var(--ink2);
+  letter-spacing:.16em;text-transform:uppercase}
+.askw button.yes{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill)}
+.ovh b{font-family:var(--fd);font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink)}
+.ovh button{width:38px;height:38px;border-radius:0;background:var(--s2);border:1px solid var(--ln);color:var(--ink2)}
+.note{background:var(--s1);border:1px solid var(--acc);color:var(--ink);border-radius:0;
+  box-shadow:0 0 var(--glow-r) var(--glow-c);backdrop-filter:blur(var(--blur))}
+.note span{color:var(--ink);letter-spacing:.1em}
+#boot{background:var(--s0)}
+#boot b{color:var(--acc-2);letter-spacing:.4em;font-family:var(--fd)}
+
+/* ---------- шапка со статусом ---------- */
+#statusbar{padding:calc(var(--st) + 10px) 0 9px}
+.st8{padding:12px 14px}
+.st8h{display:flex;align-items:center;gap:12px}
+.st8lv{width:50px;height:50px;flex:0 0 auto;position:relative;display:grid;place-items:center;color:var(--acc)}
+.st8lv svg{position:absolute;inset:0;filter:drop-shadow(var(--glow-t))}
+.st8lv b{font-family:var(--fn);font-size:20px;color:var(--ink);text-shadow:var(--glow-t)}
+.st8t{flex:1;min-width:0}
+.st8t h1{margin:0;font-family:var(--fd);font-size:20px;font-weight:var(--wtd);
+  letter-spacing:var(--track);text-transform:var(--caps);color:var(--ink)}
+.st8r{display:inline-block;font-family:var(--fn);font-size:9px;letter-spacing:.2em;
+  color:var(--acc-ink);border:1px solid var(--ln2);padding:2px 8px;margin-top:5px;background:var(--acc-soft)}
+.st8b{margin-top:11px;display:grid;gap:6px}
+.st8row{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:9px}
+.st8row .k{font-size:8.5px;letter-spacing:.2em;color:var(--ink3);text-transform:uppercase}
+.st8row .v{font-family:var(--fn);font-size:9.5px;color:var(--ink3);letter-spacing:.04em}
+.st8row .bar{height:6px;background:var(--s2);border:1px solid var(--ln);overflow:hidden}
+.st8row .bar i{display:block;height:100%;width:0;background:var(--acc);
+  box-shadow:0 0 var(--glow-r) var(--glow-c);transition:width .45s}
+/* шестигранник — «Система», клеймо — «Клеймо». Панель и место одни и те же. */
+:root[data-skin="sl"] .st8lv .brand{display:none}
+:root[data-skin="ber"] .st8lv .hx{display:none}
+:root[data-skin="ber"] .st8lv{color:var(--ink2)}
+:root[data-skin="ber"] .st8lv b{position:absolute;right:-2px;bottom:-4px;font-size:15px;
+  background:var(--s0);padding:0 3px;border:1px solid var(--ln)}
+:root[data-skin="ber"] .st8r{background:none;color:var(--ink2)}
+
+/* ---------- выбор темы в настройках ---------- */
+.skinpick{display:block;width:100%;text-align:left;padding:14px 15px;margin-bottom:8px}
+.skinpick b{display:block;font-family:var(--fd);font-size:17px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink)}
+.skinpick span{display:block;font-size:11.5px;letter-spacing:.12em;color:var(--ink3);margin-top:4px}
+.skinpick.on{border-color:var(--acc);background:var(--acc-soft);box-shadow:0 0 var(--glow-r) var(--glow-c)}
+.cph{font-size:10px;letter-spacing:.26em;color:var(--ink3);text-transform:uppercase;margin:16px 0 8px}
+
+/* ---------- история и календарь ---------- */
+.jrow b{font-family:var(--fd);font-size:16px;letter-spacing:.03em}
+.jrow span{font-size:13px;color:var(--ink2)}
+.jrow i{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.cwk{border:1px solid var(--ln);border-radius:0;background:transparent}
+.cwk.cur{border-color:var(--acc);background:var(--acc-soft);box-shadow:none}
+.cwk .wn,.cwk.cur .wn{background:var(--s0);color:var(--ink3);letter-spacing:.1em}
+.cd{border-radius:0}
+.cd.today{outline:1px solid var(--acc);outline-offset:-1px}
+.cd.sel{border-color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc)}
+.cnav button{border:1px solid var(--ln);border-radius:0;color:var(--ink2)}
+.wtab th{letter-spacing:.16em}
+.wtab td{border-bottom:1px solid var(--ln)}
+.bkb button{background:var(--s2);border:1px solid var(--ln);border-radius:0;color:var(--ink2);
+  letter-spacing:.14em;text-transform:uppercase}
+.bkb button.hi{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill)}
+.ld .v b{font-family:var(--fn)}
+
 </style>
 </head>
 <script>
@@ -1278,6 +1469,28 @@ input,textarea,select{color:var(--ink)}
 <div id="boot"><div><b>GYM</b></div></div>
 
 <!-- выбранный день: показывается на вкладках «Зал» и «Еда» -->
+<!-- статус: уровень, опыт и цикл. Панель одна, подписи и оформление даёт тема -->
+<div id="statusbar"><div class="wrap">
+  <div class="win st8">
+    <div class="st8h">
+      <span class="st8lv"><svg viewBox="0 0 50 50" aria-hidden="true">
+        <path class="hx" d="M25 2l20 11.5v23L25 48 5 36.5v-23z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <g class="brand" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round">
+          <path d="M25 13v24M15 20l20 12M35 20L15 32"/></g>
+      </svg><b id="st8n">1</b></span>
+      <span class="st8t">
+        <h1 data-t="hero">Охотник</h1>
+        <span class="st8r" id="st8rank">РАНГ E</span>
+      </span>
+    </div>
+    <div class="st8b">
+      <div class="st8row"><span class="k" data-t="xp">XP</span>
+        <span class="bar"><i id="st8xp"></i></span><span class="v" id="st8xpv">0</span></div>
+      <div class="st8row"><span class="k" data-t="cycle">Цикл</span>
+        <span class="bar"><i id="st8cy"></i></span><span class="v" id="st8cyv">—</span></div>
+    </div>
+  </div>
+</div></div>
 <nav class="days" id="daysbar"><div class="drow" id="chips"></div></nav>
 <div id="dayctx">
   <div class="wrap">
@@ -1343,7 +1556,7 @@ input,textarea,select{color:var(--ink)}
 
 <!-- ================= ПРОГРЕСС ================= -->
 <section class="scr" id="scr-prog">
-  <div class="shead"><h2><span>Сводка</span><i></i></h2><p>вес, цель и весь журнал</p></div>
+  <div class="shead" style="padding-top:4px"><h2><span data-t="journal">Журнал</span><i></i></h2><p>вес, цель и весь журнал</p></div>
 
   <div class="win" style="margin-top:10px">
     <div class="wtitle">ИТОГИ</div>
@@ -2310,11 +2523,12 @@ $('shX').addEventListener('click', sheetClose);
 /* =========================================================================
    НАВИГАЦИЯ: нижние вкладки и общий выбранный день
    ========================================================================= */
+// ключ вкладки — он же ключ словаря: подпись даёт тема, поведение общее
 const SCREENS = [
-  ['wo', 'Зал', 'M4 7h2v10H4zM18 7h2v10h-2zM7 11h10v2H7z'],
-  ['prog', 'Прогресс', 'M4 19h16v2H4zM6 10h3v7H6zm4.5-5h3v12h-3zM15 13h3v4h-3z'],
-  ['food', 'Еда', 'M7 3v8a3 3 0 0 0 6 0V3h-2v6H9V3H7zm9 0c-1.7 0-3 2.7-3 6v3h2v9h2V3h-1z'],
-  ['photo', 'Фото', 'M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9-3h-4l-2-2H9L7 6H3v14h18V6z']
+  ['wo', 'gym', 'M4 7h2v10H4zM18 7h2v10h-2zM7 11h10v2H7z'],
+  ['prog', 'progress', 'M4 19h16v2H4zM6 10h3v7H6zm4.5-5h3v12h-3zM15 13h3v4h-3z'],
+  ['food', 'food', 'M7 3v8a3 3 0 0 0 6 0V3h-2v6H9V3H7zm9 0c-1.7 0-3 2.7-3 6v3h2v9h2V3h-1z'],
+  ['photo', 'photo', 'M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9-3h-4l-2-2H9L7 6H3v14h18V6z']
 ];
 
 let tab = 'wo';
@@ -2324,7 +2538,7 @@ let mo = sel.slice(0, 7);
 let edit = false;
 
 $('tabs').innerHTML = SCREENS.map(([k, l, d]) =>
-  `<button class="tab" data-tab="${k}"><svg viewBox="0 0 24 24"><path d="${d}"/></svg>${l}
+  `<button class="tab" data-tab="${k}"><svg viewBox="0 0 24 24"><path d="${d}"/></svg><i data-t="${l}"></i>
    <span class="bdg" id="bdg-${k}" hidden></span></button>`).join('');
 
 $('tabs').addEventListener('click', e => {
@@ -2348,7 +2562,23 @@ function render() {
   if (tab === 'prog') paintProgress();
   if (tab === 'photo') paintPhotoScreen();
   paintBadge();
+  paintStatus();
   if (typeof syncWake === 'function') syncWake();
+}
+
+/* Шапка со статусом. Уровень и опыт считались и раньше, но были спрятаны;
+   теперь это главная строка. Панель одна на обе темы — меняются только
+   подписи и оформление, цифры и правила общие. */
+function paintStatus() {
+  const lv = levelOf(), inLv = S.xp % PER;
+  $('st8n').textContent = lv;
+  $('st8rank').textContent = T('rank') + ' ' + rankOf(lv);
+  $('st8xp').style.width = (inLv / PER * 100) + '%';
+  $('st8xpv').textContent = inLv + '/' + PER;
+  const w = planWeek(), ci = cycIdx();
+  $('st8cy').style.width = ((ci + 1) / CYCLE.length * 100) + '%';
+  $('st8cyv').textContent = started() ? ('НЕД ' + ((ci + 1)) + '/' + CYCLE.length) : 'ДО СТАРТА';
+  $('statusbar').hidden = !(tab === 'wo' || tab === 'prog');
 }
 
 // точка на вкладке «Зал», пока сегодняшняя тренировка не закрыта
