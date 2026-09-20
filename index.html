@@ -4318,11 +4318,7 @@ $('shB').addEventListener('click', e => {
     sheetClose(); render(); window.scrollTo(0, 0); return; }
 
   const f = e.target.closest('[data-from]');
-  if (f) {
-    recRW(sel).ml = JSON.parse(JSON.stringify(mealsOf(f.dataset.from)));
-    save(); sheetClose(); render(); note('Рацион скопирован');
-    return;
-  }
+  if (f) { putRation(mealsOf(f.dataset.from), 'Рацион скопирован'); return; }
 
   const td = e.target.closest('[data-tdel]');
   if (td) {
@@ -4332,13 +4328,11 @@ $('shB').addEventListener('click', e => {
   }
 
   const t = e.target.closest('[data-tpl]');
-  if (t) {
-    recRW(sel).ml = JSON.parse(JSON.stringify(S.tpl[+t.dataset.tpl].ml));
-    save(); sheetClose(); render(); note('Шаблон применён');
-    return;
-  }
+  if (t) { putRation((S.tpl[+t.dataset.tpl] || {}).ml || [], 'Шаблон применён'); return; }
 
   if (e.target.closest('[data-save]')) {
+    // пустой шаблон сохранять незачем: он потом молча сотрёт живой день
+    if (!daySum(sel).k) { note('В этом дне пока ничего не записано'); return; }
     askText('Название шаблона', 'Обычный день').then(n => {
       if (!n) return;
       S.tpl.push({ n: n, ml: JSON.parse(JSON.stringify(mealsOf(sel))) });
@@ -4346,6 +4340,18 @@ $('shB').addEventListener('click', e => {
     });
   }
 });
+
+/* Рацион кладётся поверх дня целиком. Раньше одно касание молча стирало
+   уже записанную еду — теперь, если в дне что-то есть, сначала спрашиваем. */
+async function putRation(ml, msg) {
+  const cur = daySum(sel);
+  if (cur.k > 0) {
+    const okGo = await ask('В этом дне уже записано ' + rnd(cur.k) + ' ккал. Заменить рацион целиком?', 'ЗАМЕНИТЬ');
+    if (!okGo) return;
+  }
+  recRW(sel).ml = JSON.parse(JSON.stringify(ml));
+  save(); sheetClose(); render(); note(msg);
+}
 
 /* =========================================================================
    ВКЛАДКА «ПРОГРЕСС»
