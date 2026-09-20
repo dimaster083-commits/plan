@@ -883,7 +883,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --caps:uppercase; --track:.14em; --wt:600; --wtd:700;
 
   --wall:url('./img/bg-nebula.jpg');
-  --wall-gray:0; --wall-dim:radial-gradient(120% 75% at 50% 18%,rgba(7,4,15,.18),rgba(7,4,15,.62) 62%,rgba(7,4,15,.9) 100%);
+  --wall-gray:0; --wall-dim:radial-gradient(120% 72% at 50% 12%,rgba(7,4,15,.2),rgba(7,4,15,.8) 55%,rgba(7,4,15,.95) 100%);
 
   /* цвета дней недели и групп мышц */
   --c-rest:#3A3358; --c-up1:#6631DB; --c-lo1:#A981FF; --c-up2:#7B45F0; --c-lo2:#D0BCFC; --c-other:#8E7AC0;
@@ -919,7 +919,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --caps:uppercase; --track:.2em; --wt:300; --wtd:400;
 
   --wall:url('./img/bg-ink.jpg');
-  --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.36) 0%,rgba(11,13,15,.72) 48%,rgba(11,13,15,.94) 100%);
+  --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
 
   --c-rest:#3A3D40; --c-up1:#CFD1D4; --c-lo1:#A5A9AE; --c-up2:#F8F9FA; --c-lo2:#5F6266; --c-other:#6E7276;
   --c-back:#CFD1D4; --c-chest:#F8F9FA; --c-delts:#A5A9AE; --c-legs:#8A8E92; --c-arms:#5F6266;
@@ -1514,6 +1514,51 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
 .cd.t-lo2{--cd-c:var(--c-lo2)} .cd.t-other{--cd-c:var(--c-other)}
 .cd .dot{background:var(--cd-c)}
 
+/* ---------- надписи вне панелей ----------
+   Эти строки лежат прямо на обоях, а там есть светлые места: замер
+   показал контраст 1,6–3,4 при норме 4,5. Берём более светлый тон
+   и подкладываем мягкую тёмную основу под саму строку. */
+.dh p,#dt,h2.sec,.bkst,#kcTxt,#phDate,.striph{color:var(--ink2)}
+.dh p,#dt,h2.sec,.bkst,#kcTxt,#phDate{
+  text-shadow:0 1px 10px var(--s0),0 0 22px var(--s0)}
+h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
+  border-left:2px solid var(--acc);backdrop-filter:blur(var(--blur))}
+#dayctx{background:linear-gradient(180deg,var(--glass) 0%,var(--glass) 74%,transparent 100%);
+  backdrop-filter:blur(var(--blur))}
+#phDate,.bkst,#kcTxt{background:var(--glass);padding:4px 9px;display:inline-block;
+  backdrop-filter:blur(var(--blur))}
+/* «Темп» и напоминание красились цветом группы мышц: на тёмной панели
+   он давал контраст 3,5 при норме 4,5 */
+.chart .hint b,.chart .hint.warn b,.chart .hint.good b,
+.rem p b,#remT b{color:var(--acc-ink)}
+.chart .hint.warn b,.rem p b{color:var(--warn)}
+.chart .hint.good b{color:var(--ok)}
+/* подписи осей графика лежат на самой заливке — даём им тёмную обводку */
+
+
+/* ---------- разделы «Прогресса» ----------
+   Раньше это была одна длинная простыня: вес, цель, цикл, нагрузка,
+   история, календарь, таблица весов и архив подряд. Теперь четыре раздела
+   переключаются сверху, и каждый помещается на экран. */
+.pseg{display:flex;margin:calc(var(--st) + 6px) 0 11px;border:1px solid var(--ln)}
+.pseg button{flex:1;padding:10px 0;font-size:clamp(9.5px,3vw,11.5px);font-weight:var(--wt);
+  letter-spacing:clamp(.04em,.5vw,.14em);text-transform:uppercase;color:var(--ink3);
+  background:var(--s1);backdrop-filter:blur(var(--blur));
+  border-right:1px solid var(--ln)}
+.pseg button:last-child{border-right:0}
+.pseg button.on{color:var(--onacc);background:var(--acc-fill);
+  box-shadow:0 0 var(--glow-r) var(--glow-c)}
+.psec[hidden]{display:none}
+.psec>:first-child{margin-top:0}
+
+/* ---------- плитки с числами ---------- */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);padding:0;overflow:hidden}
+.tiles>div{padding:15px 6px;text-align:center;border-right:1px solid var(--ln)}
+.tiles>div:last-child{border-right:0}
+.tiles b{display:block;font-family:var(--fn);font-size:clamp(19px,6vw,25px);color:var(--ink);line-height:1}
+.tiles s{text-decoration:none;display:block;font-size:clamp(8px,2.5vw,9.5px);letter-spacing:.16em;
+  color:var(--ink3);text-transform:uppercase;margin-top:6px}
+
 /* ---------- добавки отдельной рамкой ---------- */
 .supp{margin-top:18px;padding:14px clamp(11px,3.6vw,15px)}
 .supph{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
@@ -1734,22 +1779,24 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
 
 <!-- ================= ПРОГРЕСС ================= -->
 <section class="scr" id="scr-prog">
-  <div class="shead" style="padding-top:4px"><h2><span data-t="journal">Журнал</span><i></i></h2><p>вес, цель и весь журнал</p></div>
-
-  <div class="win" style="margin-top:10px">
-    <div class="wtitle">ИТОГИ</div>
-    <div class="top">
-      <div class="sumr">
-        <div><b id="sumStreak">0</b><span>недель подряд</span></div>
-        <div><b id="sumWo">0</b><span>тренировок</span></div>
-        <div><b id="sumTon">0,0</b><span>тонн поднято</span></div>
-      </div>
-    </div>
+  <div class="pseg" id="pseg">
+    <button data-sec="log" class="on">Журнал</button>
+    <button data-sec="load">Нагрузка</button>
+    <button data-sec="goal">Цель</button>
+    <button data-sec="prog">Веса</button>
   </div>
 
-  <button class="anb" id="anBtn">Разбор</button>
-  <button class="anb" id="progBtn" style="margin-top:7px">Прогресс по упражнениям</button>
+  <div class="psec" data-s="log">
+  <div class="win tiles">
+    <div><b id="sumWo">0</b><s>ТРЕНИРОВОК</s></div>
+    <div><b id="sumTon">0,0</b><s>ТОНН</s></div>
+    <div><b id="sumStreak">0</b><s>НЕДЕЛЬ ПОДРЯД</s></div>
+  </div>
 
+
+  </div><!-- /log -->
+
+  <div class="psec" data-s="goal" hidden>
   <div class="win quest">
     <div class="qrow"><label>ЦЕЛЬ ПО ВЕСУ</label>
       <div class="qnum"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес тела"><span>кг</span></div></div>
@@ -1773,6 +1820,9 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
       <input id="startIn" type="date" aria-label="Дата старта плана"></div>
   </div>
 
+  </div><!-- /goal -->
+
+  <div class="psec" data-s="load" hidden>
   <div class="win rem" id="rem"><p id="remT"></p></div>
 
   <div class="win chart">
@@ -1787,6 +1837,9 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
       квадрицепс, бицепс бедра, икры и пресс. Подходы и тоннаж — за весь журнал.</p>
   </div>
 
+  </div><!-- /load -->
+
+  <div class="psec" data-s="log">
   <h2 class="sec">ИСТОРИЯ</h2>
   <div id="hist"></div>
   <button class="add" id="histMore" hidden>Показать ещё</button>
@@ -1805,6 +1858,11 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
     <button class="add" id="moBtn" style="margin-top:11px">Итоги месяца</button>
   </div>
 
+  </div><!-- /log -->
+
+  <div class="psec" data-s="prog" hidden>
+  <button class="anb" id="anBtn">Разбор</button>
+  <button class="anb" id="progBtn" style="margin-top:7px">Прогресс по упражнениям</button>
   <h2 class="sec">ПРОГРАММА</h2>
   <div class="win pln">
     <h4>РАБОЧИЕ ВЕСА</h4>
@@ -1832,6 +1890,7 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
     <div class="bkst" id="bkst"></div>
   </div>
   <input type="file" id="impFile" accept="application/json,.json" hidden>
+  </div><!-- /prog -->
 </section>
 
 <!-- ================= ФОТО ================= -->
@@ -3601,8 +3660,10 @@ function miniChart(pts, color) {
   return `<svg viewBox="0 0 300 110" preserveAspectRatio="none">
     <path d="${line}" fill="none" style="stroke:${color}" stroke-width="2" stroke-linejoin="round"/>
     ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" style="fill:${color}"/>`).join('')}
-    <text x="10" y="12" style="fill:var(--ink3)" font-size="9">${hi} кг</text>
-    <text x="10" y="108" style="fill:var(--ink3)" font-size="9">${lo} кг</text></svg>`;
+    <rect x="6" y="3" width="42" height="13" style="fill:var(--s0)" opacity=".85"/>
+    <text x="9" y="13" style="fill:var(--ink)" font-size="9">${hi} кг</text>
+    <rect x="6" y="97" width="42" height="13" style="fill:var(--s0)" opacity=".85"/>
+    <text x="9" y="107" style="fill:var(--ink)" font-size="9">${lo} кг</text></svg>`;
 }
 
 function openHistory(name) {
@@ -3711,7 +3772,20 @@ $('shB').addEventListener('click', e => {
 /* =========================================================================
    ВКЛАДКА «ПРОГРЕСС»
    ========================================================================= */
+let pSec = 'log';
+function paintSections() {
+  document.querySelectorAll('#scr-prog .psec').forEach(el => { el.hidden = el.dataset.s !== pSec; });
+  document.querySelectorAll('#pseg button').forEach(b2 => b2.classList.toggle('on', b2.dataset.sec === pSec));
+}
+$('pseg').addEventListener('click', e => {
+  const b2 = e.target.closest('[data-sec]'); if (!b2) return;
+  pSec = b2.dataset.sec;
+  paintSections();
+  window.scrollTo(0, 0);
+});
+
 function paintProgress() {
+  paintSections();
   // Вместо уровня и ранга — числа, за которыми есть смысл.
   $('sumStreak').textContent = streak();
   $('sumWo').textContent = Object.values(S.rec).filter(r => r.wo).length;
@@ -3895,8 +3969,10 @@ function paintChart() {
     <path d="${line} L ${X(pts[pts.length - 1][0]).toFixed(1)} 115 L ${X(pts[0][0]).toFixed(1)} 115 Z" fill="url(#wg)"/>
     <path d="${line}" fill="none" style="stroke:var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
     ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" style="fill:var(--acc-ink)"/>`).join('')}
-    <text x="10" y="12" style="fill:var(--ink3)" font-size="9">${hi.toFixed(1)}</text>
-    <text x="10" y="118" style="fill:var(--ink3)" font-size="9">${lo.toFixed(1)}</text>`;
+    <rect x="6" y="3" width="34" height="13" style="fill:var(--s0)" opacity=".85"/>
+    <text x="9" y="13" style="fill:var(--ink)" font-size="9">${hi.toFixed(1)}</text>
+    <rect x="6" y="108" width="34" height="13" style="fill:var(--s0)" opacity=".85"/>
+    <text x="9" y="118" style="fill:var(--ink)" font-size="9">${lo.toFixed(1)}</text>`;
   pace(pts);
 }
 
@@ -3978,7 +4054,7 @@ function paintHistory() {
     if (st) bits.push(st + ' ' + plural(st, 'подход', 'подхода', 'подходов'));
     if (ton) bits.push(ton >= 1000 ? dec(ton / 1000) + ' т' : rnd(ton) + ' кг');
     if (food) bits.push(rnd(food) + ' ккал');
-    if (num(r.bw)) bits.push(kg(num(r.bw)) + ' кг веса');
+    if (num(r.bw)) bits.push(dec(num(r.bw)) + ' кг веса');
     return `<button class="win jrow hrow" data-day="${ds}">
       <b>${fmt(ds)}${r.wo ? ' <em class="ok">✓</em>' : ''}</b>
       <span>${esc(st ? d.s : (d.t === 'rest' ? 'Отдых' : 'Тренировка не отмечена'))}</span>
