@@ -219,7 +219,7 @@ input,select{font-size:16px}
 .cd.in{color:var(--tx)}
 .cd.today{outline:1px solid var(--cy);outline-offset:-1px}
 .cd.sel{border-color:var(--cy);box-shadow:0 0 10px rgba(var(--tint),.4)}
-.cd .dot{width:15px;height:3px;border-radius:2px}
+.cd .dot{width:17px;height:4px;border-radius:2px}
 .cd.wo{font-weight:800;color:#fff}
 .cd .ok{position:absolute;top:1px;right:3px;font-size:8px;color:var(--legs)}
 .cd .mv{position:absolute;top:1px;left:3px;font-size:7px;color:var(--cy)}
@@ -878,7 +878,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   /* форма: скругления, свечение, размытие стекла.
      Срез угла убран: он рубил каждую панель и читался дёшево.
      Теперь форма задаётся радиусами, одной шкалой на всё приложение. */
-  --r-s:10px; --r-m:14px; --r-l:20px; --r-p:999px;
+  --r-s:8px; --r-m:11px; --r-l:15px; --r-p:999px;
   --cut:0px; --blur:16px; --sat:1.2;
   --glow-r:22px; --glow-c:rgba(123,69,240,.22);
   --glow-t:0 0 14px rgba(123,69,240,.55);
@@ -899,7 +899,9 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --wall-gray:0; --wall-dim:radial-gradient(120% 72% at 50% 12%,rgba(7,4,15,.2),rgba(7,4,15,.8) 55%,rgba(7,4,15,.95) 100%);
 
   /* цвета дней недели и групп мышц */
-  --c-rest:#3A3358; --c-up1:#6631DB; --c-lo1:#A981FF; --c-up2:#7B45F0; --c-lo2:#D0BCFC; --c-other:#8E7AC0;
+  --c-rest:#3A3358; --c-other:#8E7AC0;
+  --c-up:#D0BCFC; --c-up-ink:#1A0A38; --c-lo:#7B45F0; --c-lo-ink:#FFFFFF;
+  --c-up1:var(--c-up); --c-up2:var(--c-up); --c-lo1:var(--c-lo); --c-lo2:var(--c-lo);
   --c-back:#6631DB; --c-chest:#7B45F0; --c-delts:#A981FF; --c-legs:#D0BCFC; --c-arms:#491AB1;
   color-scheme:dark;
 }
@@ -922,7 +924,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --scrim:rgba(5,6,7,.82);
 
   /* «Клеймо» — те же радиусы, но втрое короче: гравюра, а не стекло */
-  --r-s:4px; --r-m:6px; --r-l:9px; --r-p:999px;
+  --r-s:3px; --r-m:4px; --r-l:6px; --r-p:999px;
   --cut:0px; --blur:14px; --sat:0;
   --glow-r:0px; --glow-c:transparent;
   --glow-t:none;
@@ -942,7 +944,9 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --wall:url('./img/bg-ink.jpg');
   --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
 
-  --c-rest:#3A3D40; --c-up1:#CFD1D4; --c-lo1:#A5A9AE; --c-up2:#F8F9FA; --c-lo2:#5F6266; --c-other:#6E7276;
+  --c-rest:#3A3D40; --c-other:#6E7276;
+  --c-up:#F8F9FA; --c-up-ink:#181B1E; --c-lo:#8A8E92; --c-lo-ink:#0B0D0F;
+  --c-up1:var(--c-up); --c-up2:var(--c-up); --c-lo1:var(--c-lo); --c-lo2:var(--c-lo);
   --c-back:#CFD1D4; --c-chest:#F8F9FA; --c-delts:#A5A9AE; --c-legs:#8A8E92; --c-arms:#5F6266;
   color-scheme:dark;
 }
@@ -1573,9 +1577,9 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
 .cd.wo::after{opacity:.42}
 .cd.t-rest::after{opacity:.07}
 .cd>*{position:relative;z-index:1}
-.cd.t-rest{--cd-c:var(--c-rest)} .cd.t-up1{--cd-c:var(--c-up1)}
-.cd.t-lo1{--cd-c:var(--c-lo1)} .cd.t-up2{--cd-c:var(--c-up2)}
-.cd.t-lo2{--cd-c:var(--c-lo2)} .cd.t-other{--cd-c:var(--c-other)}
+.cd.t-rest{--cd-c:var(--c-rest)} .cd.t-other{--cd-c:var(--c-other)}
+.cd.t-up1,.cd.t-up2{--cd-c:var(--c-up)}
+.cd.t-lo1,.cd.t-lo2{--cd-c:var(--c-lo)}
 .cd .dot{background:var(--cd-c)}
 
 /* ---------- надписи вне панелей ----------
@@ -1704,13 +1708,42 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 .mc.t-lo1{--cd-c:var(--c-lo1)} .mc.t-up2{--cd-c:var(--c-up2)}
 .mc.t-lo2{--cd-c:var(--c-lo2)} .mc.t-other{--cd-c:var(--c-other)}
 /* насыщенность = сколько поднято в этот день относительно лучшего за год */
-.mc.l1::after,.cd.l1::after{opacity:.3}
-.mc.l2::after,.cd.l2::after{opacity:.5}
-.mc.l3::after,.cd.l3::after{opacity:.75}
-.mc.l4::after,.cd.l4::after{opacity:1}
+/* Две разные шкалы плотности, и это не прихоть.
+   В годовой сетке клетка пустая — там заливка может быть сколь угодно
+   плотной, цветные квадраты и есть вся картинка.
+   В месяце внутри клетки стоит число. Заливка, проходя через середину
+   шкалы, давала серый фон, на котором не читалась ни светлая цифра, ни
+   тёмная: замер по пикселям показывал 2,0–4,3 при норме 4,5. Поэтому в
+   месяце заливка остаётся тёмной подложкой, а цвет и форму дня несёт
+   полоска снизу — она всегда в полную силу. */
+.mc.l1::after{opacity:.46}
+.mc.l2::after{opacity:.64}
+.mc.l3::after{opacity:.82}
+.mc.l4::after{opacity:1}
+.cd.l1::after{opacity:.13}
+.cd.l2::after{opacity:.19}
+.cd.l3::after{opacity:.25}
+.cd.l4::after{opacity:.32}
+
+/* Четыре близких оттенка одной палитры на клетке в восемь пикселей
+   не различались ни в одной теме. Теперь цвет отвечает только за
+   «верх или низ», а «сила или объём» читается формой метки:
+   сила — сплошной квадрат, объём — кольцо. */
+.mc.t-up2::after,.mc.t-lo2::after{
+  background:radial-gradient(circle at 50% 50%,transparent 0 36%,var(--cd-c) 37%)}
+.cd.t-up2 .dot,.cd.t-lo2 .dot{
+  background:repeating-linear-gradient(90deg,var(--cd-c) 0 4px,transparent 4px 7px)}
+.cleg .lg.t-up2,.cleg .lg.t-lo2{
+  background:radial-gradient(circle at 50% 50%,transparent 0 32%,var(--cd-c) 33%)}
+/* в месяце тип дня показан полоской — легенда показывает то же самое */
+.cleg.mo .lg{width:17px;height:4px;border-radius:2px;vertical-align:1px}
+.cleg.mo .lg.t-up2,.cleg.mo .lg.t-lo2{
+  background:repeating-linear-gradient(90deg,var(--cd-c) 0 4px,transparent 4px 7px)}
+.cleg.mo .lgs .lg{width:11px;height:11px;border-radius:2px;vertical-align:-1px}
 .cd.l0::after{opacity:.12}
 .cd.wo.l0::after{opacity:.3}
-.cleg .lg{display:inline-block;width:8px;height:8px;margin-right:4px;background:var(--cd-c,var(--s3))}
+.cleg .lg{display:inline-block;width:11px;height:11px;margin-right:5px;
+  vertical-align:-1px;border-radius:2px;background:var(--cd-c,var(--s3))}
 .cleg .lg.t-up1{--cd-c:var(--c-up1)} .cleg .lg.t-lo1{--cd-c:var(--c-lo1)}
 .cleg .lg.t-up2{--cd-c:var(--c-up2)} .cleg .lg.t-lo2{--cd-c:var(--c-lo2)}
 .cleg .lg.l1{background:var(--acc);opacity:.3} .cleg .lg.l2{background:var(--acc);opacity:.5}
@@ -4429,6 +4462,7 @@ function cal() {
     $('cgrid').innerHTML = weeks.join('');
   }
 
+  $('cleg').className = 'cleg' + (calView === 'month' ? ' mo' : '');
   $('cleg').innerHTML = TYPES.filter(t => t[0] !== 'rest' && t[0] !== 'other')
     .map(([t, l]) => `<span><i class="lg t-${t}"></i>${l}</span>`).join('') +
     '<span>✓ выполнено</span><span>↔ перенесено</span>' +
