@@ -1172,6 +1172,33 @@ input,textarea,select{color:var(--ink)}
 .anb{border:0;background:var(--s2);color:var(--ink);font-weight:600}
 .striph{font-size:12px;letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
 
+/* ---------- повторы по подходам ----------
+   Раньше это был один ряд: при шести-восьми подходах коробки сжимались
+   в узкие вертикальные полоски и переставали читаться. Теперь сетка
+   подбирает число столбцов сама и переносит лишнее на вторую строку. */
+.setr .rb{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));
+  gap:8px;align-items:end}
+.setr .rbx{max-width:none;min-width:0}
+.setr .rbx input{padding:11px 0;font-size:18px}
+.setr .rbx i{font-size:11px;color:var(--ink3);font-weight:500}
+
+/* ---------- состояния ----------
+   Зелёный рядом с красным акцентом и серыми поверхностями давал мешанину.
+   Закрытое просто гаснет: приглушённая карточка и отметка акцентом. */
+.ex.done{background:var(--s1);border-color:var(--ln);opacity:.62}
+.ex.done .exname,.ex.done .pl{color:var(--ink3)}
+.ex.done .go{background:var(--acc-fill);border-color:var(--acc-fill);color:var(--onacc)}
+/* закрытый подход просто заполнен, без цвета: красный здесь читался бы
+   как ошибка, а зелёный возвращал бы прежнюю мешанину */
+.setr .rbx.hit input{background:var(--s3);border-color:var(--ln2);color:var(--ink);font-weight:800}
+.fin.done{background:var(--s2);color:var(--ink3);border:1px solid var(--ln)}
+.qpen.done{color:var(--ink3)}
+/* галочки сидят на цветных заливках дней — цветом их не покрасить,
+   контраста не хватает ни красным, ни зелёным. Берём цвет текста. */
+.chip .tk,.cd .ok,.jrow em.ok{color:var(--ink)}
+.prb.lock{background:var(--acc-soft);color:var(--acc-ink)}
+.miles div.hit{background:var(--s3);color:var(--ink2)}
+
 /* ---------- история дня ---------- */
 .lsplit{height:1px;background:var(--ln);margin:16px 0 14px}
 .dayrh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
@@ -1522,6 +1549,10 @@ const dec = (v, n) => Number(v).toFixed(n === undefined ? 1 : n).replace('.', ',
 const rnd = v => Math.round(v);
 const r25 = v => Math.round(v / 2.5) * 2.5;
 const firstRep = v => num(String(v ?? '').split('-')[0]);
+/* Очищенное поле приходит сюда пустой строкой. Раньше она считалась заданным
+   значением: подходы показывались пустыми и обнулялись после возврата на вкладку.
+   Пустое значение — это «не задано», берём цифру из программы. */
+const pick = (v, fb) => (v === undefined || v === null || String(v).trim() === '') ? fb : v;
 const kg = v => String(v).replace('.', ',');   // 12.5 → 12,5, как принято в русском тексте
 
 /* ---------- справочники ---------- */
@@ -2038,6 +2069,16 @@ function migrate() {
     S.mig12 = 1;
   }
 
+  // Коробки повторов какое-то время писали в журнал ключ «undefined».
+  // Вреда он не делал, но таскался в каждой копии — убираем.
+  if (!S.mig13) {
+    Object.keys(S.rec).forEach(ds => {
+      const lg = (S.rec[ds] || {}).log || {};
+      Object.keys(lg).forEach(j => { if (lg[j] && 'undefined' in lg[j]) delete lg[j].undefined; });
+    });
+    S.mig13 = 1;
+  }
+
   if (!S.mig8) {
     const storedVol = Object.assign({}, S.vol), storedXp = num(S.xp);
     S.volBase = null; S.xpBase = 0;
@@ -2068,7 +2109,7 @@ function recomputeStats() {
       const e = (day && day.ex[j]) || {};
       const g = l.g || e.g;
       const v = (l.vol !== undefined) ? num(l.vol)
-        : (g ? num(l.s ?? e.s) * firstRep(l.r ?? e.r) * num(l.w ?? e.w) : 0);
+        : (g ? num(pick(l.s, e.s)) * firstRep(pick(l.r, e.r)) * num(pick(l.w, e.w)) : 0);
       if (g && vol[g] !== undefined) vol[g] += v;
       xp += num(l.xp) || XP_EX;
     });
@@ -2420,12 +2461,12 @@ function paintWorkout() {
         <div class="exTop"><span class="exN"><button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button></span>
           <button class="x" data-del="${j}" aria-label="Убрать">×</button></div>
         <div class="flds">
-          <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(g.s ?? sets)}" aria-label="Подходы"></span>
-          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(g.r ?? (pv && pv.r) ?? e.r)}" aria-label="Повторы"></span>
-          <span class="fl"><label>КГ</label><input inputmode="decimal" data-f="w" value="${esc(kg(g.w ?? sug))}" aria-label="Вес"></span>
+          <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(pick(g.s, sets))}" aria-label="Подходы"></span>
+          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, pick(pv && pv.r, e.r)))}" aria-label="Повторы"></span>
+          <span class="fl"><label>КГ</label><input inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}" aria-label="Вес"></span>
           <button class="rest" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
           <button class="go" data-go="${j}" aria-label="${g.done ? 'Отменить подход' : 'Закрыть подход'}">${g.done ? '✓' : '○'}</button></div>
-        <div class="setr">${repBoxes(e, g, g.s ?? sets, lastDone(e.n, sel))}</div>
+        <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel))}</div>
         <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
           : (num(e.w) ? 'рабочий вес ' + kg(e.w) + ' кг' : 'без отягощения')}${
           num(e.w) && sug && sug !== num(e.w)
@@ -2481,11 +2522,24 @@ $('editPast').addEventListener('click', () => { editPast = true; render(); });
 /* ---------- ввод в карточке упражнения ---------- */
 $('exl').addEventListener('input', e => {
   const inp = e.target.closest('input'); if (!inp) return;
-  const j = +inp.closest('.ex').dataset.j, f = inp.dataset.f;
+  const f = inp.dataset.f;
+  if (!f) return;                      // коробки повторов живут своей жизнью, ниже
+  const j = +inp.closest('.ex').dataset.j;
   if (f === 'n') dayOf(sel).ex[j].n = inp.value;
   else { const r = recRW(sel); r.log[j] = r.log[j] || {}; r.log[j][f] = inp.value; }
   save();
 });
+
+/* Поле очистили и ушли — возвращаем цифру из программы, а не пустоту.
+   Иначе после перехода на другую вкладку подходы показывались обнулёнными. */
+$('exl').addEventListener('blur', e => {
+  const inp = e.target.closest('input[data-f]'); if (!inp) return;
+  const f = inp.dataset.f;
+  if (f === 'n' || String(inp.value).trim() !== '') return;
+  const j = +inp.closest('.ex').dataset.j, r = S.rec[sel];
+  if (r && r.log[j]) { delete r.log[j][f]; save(); }
+  render();
+}, true);
 
 $('exl').addEventListener('click', e => {
   const t = e.target.closest('[data-rest]');
@@ -2664,14 +2718,14 @@ function nextGoal(rs, top, sets) {
 // закреплён ли вес: все подходы сделаны и каждый не ниже верхней границы
 function fixedAt(e, g) {
   const top = topRep(e.r);
-  const sets = num(g.s ?? e.s);
+  const sets = num(pick(g.s, e.s));
   const rs = g.rs || [];
   if (!top || !sets || rs.length < sets) return false;
   return rs.slice(0, sets).every(v => num(v) >= top);
 }
 
 function holdBadge(e, g) {
-  const top = topRep(e.r), sets = num(g.s ?? e.s), rs = g.rs || [];
+  const top = topRep(e.r), sets = num(pick(g.s, e.s)), rs = g.rs || [];
   if (!top || !rs.length) return '';
   if (fixedAt(e, g)) return '<span class="prb lock">закреплено</span>';
   const ng = nextGoal(rs, top, sets);
@@ -2721,7 +2775,7 @@ function toggleSet(j) {
     l.r = card.querySelector('[data-f="r"]').value;
     l.w = card.querySelector('[data-f="w"]').value;
   }
-  const w = num(l.w ?? p.w), sets = num(l.s ?? p.s), reps = firstRep(l.r ?? p.r);
+  const w = num(pick(l.w, p.w)), sets = num(pick(l.s, p.s)), reps = firstRep(pick(l.r, p.r));
   const g = p.g || l.g || null;
 
   // Повторы по подходам. Пустое поле — это не ноль: берём общее число из графы
@@ -2774,7 +2828,7 @@ function maybeProgress(l, p, w) {
   if (l.prog || !w) return;
   if (w < num(p.w)) return;               // сделано на облегчённом весе — рабочий не трогаем
   const top = topRep(p.r);
-  const sets = num(l.s ?? p.s);
+  const sets = num(pick(l.s, p.s));
   if (!top || !sets) return;
   if (!fixedAt(p, l)) return;             // результат ещё не закреплён
   l.prog = 1;
@@ -2842,7 +2896,7 @@ function workoutSummary(ds) {
   d.ex.forEach((e, j) => {
     const l = r.log[j];
     if (!l || !l.done) return;
-    const st = num(l.s ?? e.s), rp = firstRep(l.r ?? e.r), w = num(l.w ?? e.w);
+    const st = num(pick(l.s, e.s)), rp = firstRep(pick(l.r, e.r)), w = num(pick(l.w, e.w));
     sets += st;
     ton += st * rp * w;
     if (l.prevPr !== undefined && l.prevPr > 0) records.push([l.n || e.n, w, l.prevPr]);
@@ -2879,7 +2933,7 @@ function dayEntries(ds) {
     const l = r.log[j];
     if (!l || !l.done) return;
     const p = ex[j] || {};
-    const sets = num(l.s ?? p.s), reps = String(l.r ?? p.r ?? ''), w = num(l.w ?? p.w);
+    const sets = num(pick(l.s, p.s)), reps = String(pick(l.r, p.r) ?? ''), w = num(pick(l.w, p.w));
     const rs = (l.rs && l.rs.length && l.rs.some(v => num(v) > 0)) ? l.rs.map(num) : null;
     const vol = (l.vol !== undefined) ? num(l.vol)
       : (rs ? rs.reduce((a, b) => a + b, 0) : sets * firstRep(reps)) * w;
@@ -3007,8 +3061,8 @@ function exHistory(name) {
     Object.keys(lg).forEach(j => {
       const p = day.ex[j] || {};
       if ((lg[j].n || p.n) !== name || !lg[j].done) return;
-      const w = num(lg[j].w ?? p.w);
-      if (w) out.push([ds, w, num(lg[j].s ?? p.s), String(lg[j].r ?? p.r)]);
+      const w = num(pick(lg[j].w, p.w));
+      if (w) out.push([ds, w, num(pick(lg[j].s, p.s)), String(pick(lg[j].r, p.r))]);
     });
   });
   return out;
@@ -3387,7 +3441,7 @@ function paintVol() {
       if (!l || !l.done) return;
       const p = ex[j] || {};
       const g = l.g || p.g;
-      if (g && sets[g] !== undefined) sets[g] += (l.rs && l.rs.length ? l.rs.length : num(l.s ?? p.s)) || 0;
+      if (g && sets[g] !== undefined) sets[g] += (l.rs && l.rs.length ? l.rs.length : num(pick(l.s, p.s))) || 0;
     });
   });
   const mx = Math.max(1, ...GROUPS.map(([n]) => num(S.vol[n])));
@@ -3515,8 +3569,8 @@ async function monthReport(ym) {
     Object.keys(lg).forEach(j => {
       if (!lg[j].done) return;
       const p = day.ex[j] || {};
-      const st = num(lg[j].s ?? p.s), rp = firstRep(lg[j].r ?? p.r);
-      sets += st; ton += st * rp * num(lg[j].w ?? p.w);
+      const st = num(pick(lg[j].s, p.s)), rp = firstRep(pick(lg[j].r, p.r));
+      sets += st; ton += st * rp * num(pick(lg[j].w, p.w));
     });
   });
   const ws = days.map(d => [d, num(S.rec[d].bw)]).filter(x => x[1]);
@@ -3811,7 +3865,7 @@ function setsOfExercise(name, days) {
     Object.keys(lg).forEach(j => {
       const e = (day && day.ex[j]) || {};
       if (!lg[j].done || (lg[j].n || e.n) !== name) return;
-      sets += num(lg[j].s ?? e.s) || 0;
+      sets += num(pick(lg[j].s, e.s)) || 0;
     });
   });
   return sets;
@@ -3892,7 +3946,7 @@ function buildCsv() {
     }
     keys.forEach(j => {
       const l = lg[j], e = (day && day.ex[j]) || {};
-      const sets = num(l.s ?? e.s), reps = l.r ?? e.r, w = num(l.w ?? e.w);
+      const sets = num(pick(l.s, e.s)), reps = pick(l.r, e.r), w = num(pick(l.w, e.w));
       const rs = (l.rs || []).filter(v => num(v) > 0);
       out.push(base.concat([
         q(l.n || e.n || ''), q(l.g || e.g || ''),
@@ -5359,7 +5413,7 @@ function vol7() {
       if (!lg[j].done) return;
       const p = day.ex[j] || {};
       const g = lg[j].g || p.g;
-      if (g && acc[g] !== undefined) acc[g] += num(lg[j].s ?? p.s) || 0;
+      if (g && acc[g] !== undefined) acc[g] += num(pick(lg[j].s, p.s)) || 0;
     });
   });
   return acc;
@@ -5381,7 +5435,7 @@ function pushPull(days) {
       const l = lg[j];
       if (!l.done) return;
       const e = (day && day.ex[j]) || {};
-      const n = l.n || e.n || '', sets = num(l.s ?? e.s) || 0;
+      const n = l.n || e.n || '', sets = num(pick(l.s, e.s)) || 0;
       if ((l.g || e.g) === 'Ноги') return;        // низ в этом балансе не участвует
       if (PULL.test(n)) pull += sets;
       else if (PUSH.test(n)) push += sets;
