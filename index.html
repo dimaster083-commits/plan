@@ -5039,7 +5039,7 @@ function openSetup() {
 }
 function closeSetup() { $('setup').classList.remove('on'); }
 
-$('setOk').addEventListener('click', () => {
+$('setOk').addEventListener('click', async () => {
   const first = !S.setup;          // первый запуск задаёт и точку отсчёта квеста
   const a = {};
   ANCHORS.forEach(([k]) => { a[k] = num($('an-' + k).value); });
@@ -5054,9 +5054,21 @@ $('setOk').addEventListener('click', () => {
   applyNutri();                                  // нормы еды пересчитываются под нового человека
   S.returning = $('setRet').checked ? 1 : 0;
   S.setup = 1;
+  /* Вес, поднятый прогрессией или вписанный руками, помечен как свой и
+     пересчёт его не трогает. Раньше кнопка всё равно говорила «веса
+     пересчитаны», хотя половина оставалась на месте: после перерыва
+     сбросить их было нечем. Теперь спрашиваем прямо. */
+  const own = S.days.reduce((n, d) => n + (d.ex || []).filter(e => e.fixed).length, 0);
+  let reset = false;
+  if (!first && own) {
+    reset = await ask('Есть ' + own + ' ' + plural(own, 'вес', 'веса', 'весов') +
+      ', поднятых самим приложением или вписанных руками. Сбросить и их? ' +
+      'Отмена — пересчитаем только остальные.', 'СБРОСИТЬ ВСЁ');
+    if (reset) S.days.forEach(d => (d.ex || []).forEach(e => { delete e.fixed; }));
+  }
   deriveWeights();
   flush(); closeSetup(); render();
-  note('Веса и нормы пересчитаны');
+  note(own && !reset ? ('Пересчитано, кроме ' + own + ' поднятых') : 'Веса и нормы пересчитаны');
 });
 $('setSkip').addEventListener('click', () => { S.setup = 1; save(); closeSetup(); });
 $('wtab').addEventListener('click', e => {
