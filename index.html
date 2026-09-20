@@ -4036,15 +4036,15 @@ $('fin').addEventListener('click', () => {
    Считается по тому же журналу, что и статистика, — отдельных чисел не заводим. */
 function workoutSummary(ds) {
   const d = dayOf(ds), r = recOf(ds);
-  let sets = 0, ton = 0;
+  // Считаем ровно тем же способом, что и весь остальной журнал: по
+  // записанным повторам. Раньше здесь брались повторы из плана, и 10/10/9/8
+  // уходило в итог как 4x10 — цифра расходилась с «Прогрессом».
+  const sets = daySets(ds), ton = dayTon(ds);
   const records = [];
   d.ex.forEach((e, j) => {
     const l = r.log[j];
     if (!l || !l.done) return;
-    const st = num(pick(l.s, e.s)), rp = firstRep(pick(l.r, e.r)), w = num(pick(l.w, e.w));
-    sets += st;
-    ton += st * rp * w;
-    if (l.prevPr !== undefined && l.prevPr > 0) records.push([l.n || e.n, w, l.prevPr]);
+    if (l.prevPr !== undefined && l.prevPr > 0) records.push([l.n || e.n, num(pick(l.w, e.w)), l.prevPr]);
   });
   const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
   const st = streak();
@@ -4874,17 +4874,10 @@ $('cgrid').addEventListener('click', e => {
 /* ---------- итоги месяца ---------- */
 async function monthReport(ym) {
   const days = Object.keys(S.rec).filter(d => d.startsWith(ym)).sort();
+  // те же dayEntries, что и везде: иначе шапка итогов не сходилась с
+  // разбивкой по группам прямо под ней
   let sets = 0, ton = 0;
-  days.forEach(d => {
-    const day = dayOf(d), lg = S.rec[d].log || {};
-    if (!day) return;
-    Object.keys(lg).forEach(j => {
-      if (!lg[j].done) return;
-      const p = day.ex[j] || {};
-      const st = num(pick(lg[j].s, p.s)), rp = firstRep(pick(lg[j].r, p.r));
-      sets += st; ton += st * rp * num(pick(lg[j].w, p.w));
-    });
-  });
+  days.forEach(d => { sets += daySets(d); ton += dayTon(d); });
   const ws = days.map(d => [d, num(S.rec[d].bw)]).filter(x => x[1]);
   const dw = ws.length > 1 ? ws[ws.length - 1][1] - ws[0][1] : 0;
   const wos = days.filter(d => S.rec[d].wo).length;
