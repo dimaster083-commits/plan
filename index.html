@@ -884,6 +884,11 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --fn:'JetBrains Mono',ui-monospace,'SF Mono',monospace;
   --caps:uppercase; --track:.14em; --wt:600; --wtd:700;
 
+  /* соты — знак «системы»; лежат одним слоем поверх обоев, не на панелях */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='40' viewBox='0 0 34 40'%3E%3Cpath d='M17 0l15 8.7v17.6L17 35 2 26.3V8.7z' fill='none' stroke='%237B45F0' stroke-width='.8'/%3E%3C/svg%3E");
+  --grain-size:34px 40px; --grain-op:.09; --grain-mode:normal;
+  --sheen:linear-gradient(135deg,rgba(169,129,255,.1),transparent 42%);
+  --edge-lit:linear-gradient(180deg,var(--acc),transparent);
   --wall:url('./img/bg-nebula.jpg');
   --wall-gray:0; --wall-dim:radial-gradient(120% 72% at 50% 12%,rgba(7,4,15,.2),rgba(7,4,15,.8) 55%,rgba(7,4,15,.95) 100%);
 
@@ -922,6 +927,11 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --fn:'Oswald',var(--f);
   --caps:uppercase; --track:.2em; --wt:300; --wtd:400;
 
+  /* зерно бумаги: рваный штрих вместо сот */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  --grain-size:120px 120px; --grain-op:.16; --grain-mode:overlay;
+  --sheen:linear-gradient(135deg,rgba(248,249,250,.05),transparent 38%);
+  --edge-lit:linear-gradient(180deg,var(--ink2),transparent);
   --wall:url('./img/bg-ink.jpg');
   --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
 
@@ -929,6 +939,21 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --c-back:#CFD1D4; --c-chest:#F8F9FA; --c-delts:#A5A9AE; --c-legs:#8A8E92; --c-arms:#5F6266;
   color-scheme:dark;
 }
+
+/* =========================================================================
+   ФАКТУРА
+   Всё, что ниже, рисуется один раз и кэшируется браузером: текстуры,
+   градиенты, засечки. Анимации идут только по прозрачности и сдвигу —
+   их считает видеочип, а не процессор. Поэтому визуала можно сколько
+   угодно, в отличие от размытия, которое пересчитывается на каждый кадр.
+   ========================================================================= */
+#grain{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:var(--grain);background-size:var(--grain-size);
+  opacity:var(--grain-op);mix-blend-mode:var(--grain-mode);
+  transform:translateZ(0);contain:strict}
+#vign{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(130% 95% at 50% 40%,transparent 38%,var(--s0) 100%);
+  opacity:.9;transform:translateZ(0);contain:strict}
 
 /* обои живут отдельным слоем: их меняет тема, а не разметка */
 /* Обои вынесены в собственный слой: без этого телефон перерисовывал
@@ -1709,12 +1734,108 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
 .sum{gap:clamp(6px,2.4vw,9px)}
 .mac{gap:clamp(6px,2.4vw,9px)}
 
+/* =========================================================================
+   ЖИВОЕ ОФОРМЛЕНИЕ
+   Блики на панелях, засечки, свечение под нажатием и три коротких
+   анимации. Всё на градиентах и сдвигах — телефон рисует это один раз
+   и держит в памяти, а не пересчитывает покадрово.
+   ========================================================================= */
+
+/* ---------- блик по панели ---------- */
+.win{background-image:var(--sheen)}
+:root[data-skin="ber"] .win{
+  background-image:var(--sheen),
+    linear-gradient(var(--ink3),var(--ink3)),linear-gradient(var(--ink3),var(--ink3)),
+    linear-gradient(var(--ink3),var(--ink3)),linear-gradient(var(--ink3),var(--ink3));
+  background-size:auto,11px 1px,1px 11px,11px 1px,1px 11px;
+  background-position:0 0,left top,left top,right bottom,right bottom;
+  background-repeat:no-repeat}
+
+/* ---------- шапка статуса: живая ---------- */
+.st8{overflow:hidden;position:relative}
+/* «Система»: луч сканирования раз в 7 секунд */
+:root[data-skin="sl"] .st8::after{content:'';position:absolute;left:-40%;top:0;bottom:0;width:40%;
+  background:linear-gradient(105deg,transparent,rgba(169,129,255,.16),transparent);
+  animation:scan 7s ease-in-out infinite;pointer-events:none}
+@keyframes scan{0%,72%{transform:translateX(0)}100%{transform:translateX(350%)}}
+/* «Клеймо»: двойная линия под шапкой, как оттиск */
+:root[data-skin="ber"] .st8::after{content:'';position:absolute;left:14px;right:14px;bottom:8px;height:3px;
+  background:linear-gradient(var(--ln2),var(--ln2)) top/100% 1px no-repeat,
+             linear-gradient(var(--ln),var(--ln)) bottom/100% 1px no-repeat;
+  pointer-events:none}
+
+/* уровень: пульс ореола */
+:root[data-skin="sl"] .st8lv svg{animation:pulse 3.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.85}50%{opacity:1}}
+
+/* ---------- полосы ---------- */
+.st8row .bar,.qprog,.tbar{position:relative;overflow:hidden}
+.st8row .bar i,.qprog i,.tbar i{position:relative}
+/* бегущий отблеск по заполненной части — только в «Системе» */
+:root[data-skin="sl"] .st8row .bar i::after,
+:root[data-skin="sl"] .qprog i::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+  transform:translateX(-100%);animation:sweep 2.8s ease-in-out infinite}
+@keyframes sweep{0%,55%{transform:translateX(-100%)}100%{transform:translateX(220%)}}
+
+/* ---------- строки упражнений ---------- */
+.exrow{position:relative;overflow:hidden;transition:transform .12s ease}
+.exrow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--edge-lit);opacity:.5;transition:opacity .15s}
+.exrow:active{transform:scale(.985)}
+.exrow:active::before{opacity:1}
+.exrow.done::before{opacity:.2}
+/* закрытое упражнение получает печать «сделано» */
+:root[data-skin="ber"] .exrow.done .n::after{content:' ✕';color:var(--ink3);font-size:12px}
+
+/* ---------- кнопки под нажатием ---------- */
+.fin,.add,.anb,.cpb,.pseg button,.skinpick,.go,.rest{transition:transform .1s ease,background .15s}
+.fin:active,.add:active,.anb:active,.cpb:active,.skinpick:active{transform:scale(.98)}
+.go:active,.rest:active{transform:scale(.94)}
+.tab{transition:color .2s}
+
+/* ---------- заголовки ---------- */
+/* «Система»: угловые скобки, как в интерфейсе из игры */
+:root[data-skin="sl"] .shead h2 span::before{content:'⟨ ';color:var(--acc);font-weight:400}
+:root[data-skin="sl"] .shead h2 span::after{content:' ⟩';color:var(--acc);font-weight:400}
+/* «Клеймо»: ромб-разделитель */
+:root[data-skin="ber"] .shead h2 span::after{content:' ◆';color:var(--ink3);font-size:.6em;vertical-align:.25em}
+
+/* ---------- шторки: выезжают, а не возникают ---------- */
+.sheet .shin,.ov .ovin{animation:rise .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.askw{animation:pop .18s cubic-bezier(.2,.8,.3,1)}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+
+/* ---------- нижние вкладки ---------- */
+.tab.on::after{content:'';position:absolute;left:50%;bottom:6px;width:20px;height:2px;
+  margin-left:-10px;background:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c)}
+:root[data-skin="ber"] .tab.on::after{background:var(--ink);box-shadow:none}
+
+/* ---------- выбор темы ---------- */
+.skinpick{display:block;width:100%;text-align:left;padding:15px 16px;margin-bottom:9px;
+  background:var(--s1);border:1px solid var(--ln);background-image:var(--sheen);
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+.skinpick i{display:block;font-style:normal;font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink3);margin-top:7px}
+.skinpick.on{border-color:var(--acc);background-color:var(--acc-soft);
+  box-shadow:0 0 var(--glow-r) var(--glow-c)}
+.skinpick.on i{color:var(--acc-ink)}
+
+/* ---------- клетки журнала ---------- */
+.mc,.cd{transition:opacity .15s}
+.mob:active .mog{opacity:.75}
+
+/* ---------- кому мешает движение, тому его нет ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
 /* ---------- выбор темы в настройках ---------- */
-.skinpick{display:block;width:100%;text-align:left;padding:14px 15px;margin-bottom:8px}
-.skinpick b{display:block;font-family:var(--fd);font-size:17px;letter-spacing:.1em;
+.skinpick b{display:block;font-family:var(--fd);font-size:18px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink)}
-.skinpick span{display:block;font-size:11.5px;letter-spacing:.12em;color:var(--ink3);margin-top:4px}
-.skinpick.on{border-color:var(--acc);background:var(--acc-soft);box-shadow:0 0 var(--glow-r) var(--glow-c)}
+.skinpick span{display:block;font-size:12px;letter-spacing:.1em;color:var(--ink3);margin-top:5px}
 .cph{font-size:10px;letter-spacing:.26em;color:var(--ink3);text-transform:uppercase;margin:16px 0 8px}
 
 /* подпись типа дня в разборе: раньше красилась цветом группы прямо в
@@ -1766,6 +1887,8 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
 </script>
 <body>
 <div id="wall"></div>
+<div id="grain"></div>
+<div id="vign"></div>
 <div id="boot"><div><b>GYM</b></div></div>
 
 <!-- выбранный день: показывается на вкладках «Зал» и «Еда» -->
