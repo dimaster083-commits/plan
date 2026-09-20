@@ -139,6 +139,10 @@ input,select{font-size:16px}
   padding:5px 6px;font-size:20px;font-weight:800;text-align:center;border-radius:2px}
 .qnum span{font-size:12px;color:var(--mut)}
 .qb{height:6px;background:rgba(var(--tint),.14);margin-top:10px;overflow:hidden}
+.qgoal{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
+.qgoal input{width:38px;background:var(--s2);border:1px solid var(--ln);border-radius:var(--r-s);
+  color:var(--ink);font:inherit;font-family:var(--fn);font-size:11.5px;text-align:right;padding:3px 5px}
+.qgoal i{font-style:normal}
 .qb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2F6AD0,#6FA8FF,var(--gold));
   box-shadow:0 0 12px rgba(240,194,74,.55);transition:width .5s}
 .qlg{display:flex;justify-content:space-between;font-size:10.5px;color:var(--mut);margin-top:6px}
@@ -903,7 +907,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --sheen:linear-gradient(135deg,rgba(169,129,255,.1),transparent 42%);
   --edge-lit:linear-gradient(180deg,var(--acc),transparent);
   --wall:url('./img/bg-nebula.jpg');
-  --wall-gray:0; --img-gray:0; --wall-dim:radial-gradient(120% 72% at 50% 12%,rgba(7,4,15,.2),rgba(7,4,15,.8) 55%,rgba(7,4,15,.95) 100%);
+  --wall-gray:0; --wall-dim:radial-gradient(120% 72% at 50% 12%,rgba(7,4,15,.2),rgba(7,4,15,.8) 55%,rgba(7,4,15,.95) 100%);
 
   /* цвета дней недели и групп мышц */
   --c-rest:#3A3358; --c-other:#8E7AC0;
@@ -950,7 +954,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --sheen:linear-gradient(135deg,rgba(248,249,250,.05),transparent 38%);
   --edge-lit:linear-gradient(180deg,var(--ink2),transparent);
   --wall:url('./img/bg-ink.jpg');
-  --wall-gray:1; --img-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
+  --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
 
   --c-rest:#3A3D40; --c-other:#6E7276;
   --c-up:#F8F9FA; --c-up-ink:#181B1E; --c-lo:#8A8E92; --c-lo-ink:#0B0D0F;
@@ -1232,7 +1236,15 @@ input,textarea,select{color:var(--ink)}
 
 /* заставка и повышение уровня */
 #boot polygon{filter:none}
-.lvup{background:radial-gradient(420px 320px at 50% 50%,var(--glow),transparent 72%)}
+/* Окно новой ступени было почти прозрачным и его текст ложился прямо
+   на список упражнений. Под ним нужна подложка, иначе это не событие,
+   а надпись поверх чужого текста. */
+.lvup{background:radial-gradient(460px 340px at 50% 50%,var(--acc-soft),transparent 70%),var(--glass2)}
+/* Текст ступени ложился прямо на список упражнений. Ему нужна своя
+   карточка, иначе это не событие, а надпись поверх чужих строк. */
+.lvup div{background:var(--panel-solid);border:1px solid var(--acc);
+  border-radius:var(--r-l);padding:26px 38px;box-shadow:var(--sh3);
+  min-width:min(74vw,300px)}
 .lvup b{color:var(--acc);text-shadow:none}
 .lvup span{color:var(--ink);text-shadow:none}
 .lvup em{color:var(--ink3);text-transform:uppercase}
@@ -1287,6 +1299,19 @@ input,textarea,select{color:var(--ink)}
 .jrow i{display:block;font-style:normal;font-size:12px;color:var(--ink3);margin-top:3px}
 .jrow em.ok{font-style:normal;color:var(--ok)}
 .hrow:active{background:var(--s2)}
+/* ---------- пятиугольник нагрузки ---------- */
+.radar{padding:14px clamp(11px,3.6vw,15px) 13px}
+.radar svg{width:100%;height:auto;display:block;margin:2px 0 4px}
+.rgrid{fill:none;stroke:var(--ln);stroke-width:1}
+.rgrid.norm{stroke:var(--ln2);stroke-width:1;stroke-dasharray:3 3}
+.rspoke{stroke:var(--ln);stroke-width:1}
+.rfill{fill:var(--acc-soft);stroke:var(--acc);stroke-width:2;stroke-linejoin:round}
+.rdot{fill:var(--acc-2)}
+:root[data-skin="sl"] .rdot{filter:drop-shadow(0 0 5px var(--acc))}
+.rlab{fill:var(--ink2);font-family:var(--f);font-size:10px;letter-spacing:.1em}
+.rnum{fill:var(--ink3);font-family:var(--fn);font-size:9px;letter-spacing:.04em}
+.radn{margin:0;font-size:11.5px;color:var(--ink3);line-height:1.5}
+
 .ld{display:flex;align-items:center;gap:10px;padding:7px 0}
 .ld .n{width:64px;flex:0 0 auto;font-size:13px;color:var(--ink2)}
 .ld .b{flex:1;height:7px;background:var(--s2);border-radius:999px;overflow:hidden}
@@ -1344,10 +1369,6 @@ input,textarea,select{color:var(--ink)}
 .wtab td.g{color:var(--acc-ink);font-weight:700}
 
 /* ---------- картинки ---------- */
-/* Снимки техники — часть оформления, а не данные: в «Клейме» красный
-   помост и жёлтый пол посреди строго серой темы били в глаза.
-   Фотографии самого хозяина не трогаем, это его журнал. */
-.howimg img{filter:grayscale(var(--img-gray))}
 .howimg img,.pane .pic{border-radius:var(--r-m);border-color:var(--ln)}
 .strip img{border-radius:var(--r-s)}
 .howb h5{font-size:18px;letter-spacing:-.01em}
@@ -2133,8 +2154,10 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 
   <div class="psec" data-s="goal" hidden>
   <div class="win quest">
-    <div class="qrow"><label>ЦЕЛЬ ПО ВЕСУ</label>
-      <div class="qnum"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес тела"><span>кг</span></div></div>
+    <!-- В это поле вносят сегодняшний вес, а подпись говорила «цель по
+         весу»: цель задаётся ниже, у правого края шкалы. -->
+    <div class="qrow"><label>ВЕС СЕЙЧАС</label>
+      <div class="qnum"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес сейчас"><span>кг</span></div></div>
     <button class="bmi" id="bmiRow" aria-label="Индекс массы тела">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
         <path d="M8 8h8a2 2 0 0 1 2 2v4h-2v7h-3v-5h-2v5H8v-7H6v-4a2 2 0 0 1 2-2z"/></svg>
@@ -2142,8 +2165,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
       <span class="f" id="bmiF"></span><i>›</i></button>
     <div class="qb"><i id="qf"></i></div>
     <div class="qlg"><span id="qStart">70</span><span id="qleft"></span>
-      <span><input id="goalIn" inputmode="decimal" aria-label="Цель по весу" style="width:44px;background:none;
-        border:0;color:var(--mut);font:inherit;font-size:10.5px;text-align:right;padding:0" value="95"></span></div>
+      <span class="qgoal">цель <input id="goalIn" inputmode="decimal" aria-label="Цель по весу" value="95"><i>кг</i></span></div>
     <div class="miles" id="miles"></div>
   </div>
 
@@ -2164,6 +2186,16 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 
   <div class="psec" data-s="load" hidden>
   <div class="win rem" id="rem"><p id="remT"></p></div>
+
+  <!-- Баланс по группам за неделю: пятиугольник по числу групп.
+       Столбики показывают, сколько сделано, но не показывают перекоса —
+       а он виден сразу, как только фигура перестаёт быть ровной. -->
+  <div class="win radar">
+    <div class="wtitle" style="padding:0 0 2px">БАЛАНС ЗА НЕДЕЛЮ</div>
+    <svg id="rad" viewBox="0 0 300 232" role="img"
+      aria-label="Подходы по группам мышц за последние семь дней"></svg>
+    <p class="radn"></p>
+  </div>
 
   <div class="win chart">
     <div class="wtitle" style="padding:0 0 8px">ВЕС И НАГРУЗКА</div>
@@ -4248,8 +4280,8 @@ function paintGoal() {
   const next = ms.find(m => up ? m > b : m < b);
   const hit = m => up ? b >= m : b <= m;
   $('qleft').textContent = (up ? b >= g : b <= g) ? 'ЦЕЛЬ ДОСТИГНУТА'
-    : (next ? 'до ' + next + ' кг: ' + kg(Math.round(Math.abs(next - b) * 10) / 10)
-            : 'осталось ' + kg(Math.round(Math.abs(g - b) * 10) / 10));
+    : (next ? 'до ' + next + ' кг — ещё ' + kg(Math.round(Math.abs(next - b) * 10) / 10) + ' кг'
+            : 'до цели ещё ' + kg(Math.round(Math.abs(g - b) * 10) / 10) + ' кг');
   $('miles').innerHTML = ms.map(m =>
     `<div class="${hit(m) ? 'hit' : (m === next ? 'now' : '')}">${m}</div>`).join('');
 }
@@ -4258,9 +4290,7 @@ function paintCycle() {
   const i = cycIdx(), c = CYCLE[i], go = started();
   $('cycW').innerHTML = go ? 'Неделя ' + (i + 1) + '<i> из ' + CYCLE.length + '</i>' : 'План ещё не начался';
   // раньше здесь стояло название фазы; номер цикла понятнее и не путается с неделей
-  $('cycPh').textContent = go
-    ? (T('cycle').toUpperCase() + ' ' + (Math.floor((planWeek() - 1) / CYCLE.length) + 1))
-    : 'ОЖИДАНИЕ';
+  $('cycPh').textContent = cycLabel();
   const done = doneThisWeek();
   $('cycNote').innerHTML = go
     ? esc(c.t) + '<br><span style="color:var(--cy2)">Закрыто на этой неделе: <b>' + done + ' из 4</b>. ' +
@@ -4417,6 +4447,52 @@ function paintVol() {
     `<div class="ld"><span class="n">${n}</span>
       <span class="b"><i style="width:${Math.round(num(S.vol[n]) / mx * 100)}%;background:var(--c-${t})"></i></span>
       <span class="v"><b>${dec(num(S.vol[n]) / 1000)} т</b><em>${sets[n]} подх.</em></span></div>`).join('');
+  paintRadar();
+}
+
+/* Пятиугольник по пяти группам. Радиус вершины — доля недельной нормы
+   подходов, обрезанная сверху: перебор в три нормы иначе раздувал бы
+   фигуру и прятал остальные оси. Цвета берутся из темы, поэтому
+   переключение оформления перекрашивает диаграмму на месте. */
+function paintRadar() {
+  const sv = $('rad'); if (!sv) return;
+  const acc = vol7();
+  const cx = 150, cy = 114, R = 78, MAX = 1.5;
+  const pt = (i, k) => {
+    const a = (i * 72 - 90) * Math.PI / 180;
+    return [cx + Math.cos(a) * R * k, cy + Math.sin(a) * R * k];
+  };
+  const poly = k => GROUPS.map((_, i) => pt(i, k).map(v => v.toFixed(1)).join(',')).join(' ');
+  const vals = GROUPS.map(([n]) => Math.min(MAX, (acc[n] || 0) / (VOL_TARGET[n] || 1)));
+  const shape = vals.map((v, i) => pt(i, Math.max(0.05, v / MAX))
+    .map(x => x.toFixed(1)).join(',')).join(' ');
+
+  let h = '';
+  [1, 2 / 3, 1 / 3].forEach(k =>
+    h += `<polygon points="${poly(k)}" class="rgrid${Math.abs(k - 2 / 3) < .01 ? ' norm' : ''}"/>`);
+  GROUPS.forEach((_, i) => { const q = pt(i, 1);
+    h += `<line x1="${cx}" y1="${cy}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}" class="rspoke"/>`; });
+  // на пустом журнале пять нулей слипались в центре комком: фигуры нет,
+  // пока нет ни одного подхода
+  const any = vals.some(v => v > 0);
+  if (any) {
+    h += `<polygon points="${shape}" class="rfill"/>`;
+    vals.forEach((v, i) => { if (!v) return;
+      const q = pt(i, v / MAX);
+      h += `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="3.4" class="rdot"/>`; });
+  }
+  GROUPS.forEach(([n], i) => {
+    const q = pt(i, 1.26);
+    const anchor = i === 0 ? 'middle' : (q[0] > cx + 1 ? 'start' : 'end');
+    const dy = i === 0 ? -8 : (q[1] > cy ? 11 : 2);
+    h += `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy).toFixed(1)}" text-anchor="${anchor}" class="rlab">${n.toUpperCase()}</text>` +
+         `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy + 13).toFixed(1)}" text-anchor="${anchor}" class="rnum">${acc[n] || 0}/${VOL_TARGET[n]}</text>`;
+  });
+  sv.innerHTML = h;
+  const note2 = sv.parentNode.querySelector('.radn');
+  if (note2) note2.textContent = any
+    ? 'Пунктир — недельная норма подходов. Чем дальше от центра, тем больше сделано; ровная фигура значит, что группы идут вровень.'
+    : 'Закрой первую тренировку за неделю — и здесь появится фигура по пяти группам.';
 }
 
 /* Список прошедших дней: нажатие открывает, что и как прошло. */
@@ -4845,7 +4921,22 @@ function applyTheme(id) {
   syncCol();          // COL нужен расчётам, в разметке его больше нет
   syncThemeColor();
   paintDict();        // подписи меняются на месте, узлы те же
+  paintNamed();       // и те, что считает код, а не разметка
 }
+
+/* Четыре подписи берутся из словаря не разметкой, а кодом: ступень,
+   круг и заголовок журнала. Раньше они обновлялись только при полной
+   перерисовке, и после смены темы в «Клейме» оставался «РАНГ E» —
+   та же склейка двух тем, что уже ловилась в шапке. Перерисовка тут
+   не годится: тема меняется посреди набора, поля трогать нельзя. */
+function paintNamed() {
+  try { $('st8rank').textContent = rankTitle(levelOf()); } catch (e) {}
+  try { $('cycPh').textContent = cycLabel(); } catch (e) {}
+  try { if (tab === 'prog') cal(); } catch (e) {}
+}
+const cycLabel = () => started()
+  ? (T('cycle').toUpperCase() + ' ' + (Math.floor((planWeek() - 1) / CYCLE.length) + 1))
+  : 'ОЖИДАНИЕ';
 
 // строка состояния берёт цвет фона темы
 function syncThemeColor() {
