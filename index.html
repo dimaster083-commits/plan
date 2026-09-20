@@ -2454,7 +2454,6 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 const num = v => Math.max(0, parseFloat(String(v ?? '').replace(',', '.')) || 0);
 const dec = (v, n) => Number(v).toFixed(n === undefined ? 1 : n).replace('.', ',');
 const rnd = v => Math.round(v);
-const r25 = v => Math.round(v / 2.5) * 2.5;
 const firstRep = v => num(String(v ?? '').split('-')[0]);
 /* Очищенное поле приходит сюда пустой строкой. Раньше она считалась заданным
    значением: подходы показывались пустыми и обнулялись после возврата на вкладку.
@@ -2773,7 +2772,10 @@ function deriveWeights() {
 function startWeight(name) {
   const r = EXDB[name], a = S.anchors || {};
   if (!r || !r[2] || !num(a[r[2]])) return 0;
-  return Math.max(2.5, r25(num(a[r[2]]) * r[3]));
+  // шаг сетки тот же, что у прибавок: лёгкое — по килограмму, тяжёлое — по 2,5.
+  // Округление всего подряд до 2,5 загоняло махи и разводки на чужую сетку.
+  const raw = num(a[r[2]]) * r[3], g = granOf(raw);
+  return Math.max(g, Math.round(raw / g) * g);
 }
 // множитель возвращения: действует только на первые недели плана
 function rampOf(ds) {
@@ -2782,10 +2784,10 @@ function rampOf(ds) {
   return (started(ds) && w <= RAMP.length) ? RAMP[w - 1] : 1;
 }
 // вес на сегодня = рабочий × интенсивность недели × вкатывание
-function weightFor(e, IN) {
+function weightFor(e, IN, ds) {
   const base = num(e.w);
   if (!base) return 0;
-  const k = (IN ? IN[0] : 1) * rampOf(sel);
+  const k = (IN ? IN[0] : 1) * rampOf(ds || sel);
   if (k === 1) return base;                  // тяжёлая неделя — ровно рабочий вес
   const g = granOf(base);
   return Math.max(g, Math.round(base * k / g) * g);
@@ -4988,7 +4990,9 @@ $('impFile').addEventListener('change', e => {
     try {
       const o = JSON.parse(fr.result);
       if (!o.state || !o.state.days) throw new Error('bad');
-      if (!await ask('Заменить текущий прогресс данными из копии? Всё нынешнее будет стёрто.', 'ВОССТАНОВИТЬ')) return;
+      // про фотографии говорим отдельно: они не стираются, а доливаются к нынешним
+      if (!await ask('Журнал, веса и рацион будут заменены на то, что в копии — нынешние пропадут. '
+        + 'Фотографии из копии добавятся к уже снятым.', 'ВОССТАНОВИТЬ')) return;
       for (const k of Object.keys(o.photos || {})) { await phPut(k, o.photos[k]); PHCACHE.set(k, o.photos[k]); }
       // Восстановление проходит тот же ремонт, что и обычная загрузка:
       // копия может быть старой, правленой руками или испорченной, а
@@ -5013,7 +5017,6 @@ $('impFile').addEventListener('change', e => {
 function paintPlan() {
   const rows = [];
   const seen = {};
-  const ramp = rampOf(today());
   S.days.forEach(d => {
     if (d.t === 'rest') return;
     const IN = intOf(today(), d.t);
@@ -5021,7 +5024,9 @@ function paintPlan() {
       if (seen[e.n]) return;
       seen[e.n] = 1;
       const base = num(e.w);
-      const now = base ? Math.max(2.5, r25(base * (IN ? IN[0] : 1) * ramp)) : 0;
+      // таблица плана считала вес по своей сетке 2,5 кг и расходилась
+      // с залом на лёгких упражнениях: там 9 кг, здесь 10
+      const now = weightFor(e, IN, today());
       rows.push([e.n, d.k, base, now, prOf(e.n)]);
     });
   });
