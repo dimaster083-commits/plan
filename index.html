@@ -139,6 +139,35 @@ input,select{font-size:16px}
   padding:5px 6px;font-size:20px;font-weight:800;text-align:center;border-radius:2px}
 .qnum span{font-size:12px;color:var(--mut)}
 .qb{height:6px;background:rgba(var(--tint),.14);margin-top:10px;overflow:hidden}
+/* Вес сейчас: подпись, число и направление режима — одна рамка.
+   Раньше подпись стояла слева, а число ютилось в маленьком поле справа. */
+.wbox{border:1px solid var(--ln);border-radius:var(--r-m);background:var(--s2);
+  padding:13px 15px 12px;margin-bottom:12px}
+.wbox label{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:2px}
+.wval{display:flex;align-items:baseline;gap:6px;border-bottom:1px solid var(--ln);padding-bottom:6px}
+.wval input{flex:1;min-width:0;width:100%;background:none;border:0;padding:0;
+  color:var(--ink);font-family:var(--fn);font-weight:700;
+  font-size:clamp(34px,11vw,44px);line-height:1.05;letter-spacing:-.01em}
+.wval input:focus{outline:none}
+.wval span{font-size:14px;color:var(--ink3);flex:0 0 auto}
+.wdir{display:flex;gap:7px;margin-top:11px}
+.wdir button{flex:1;padding:9px 6px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  border:1px solid var(--ln);border-radius:var(--r-p);background:var(--s1);color:var(--ink3)}
+.wdir button.on{background:var(--acc-fill);border-color:var(--acc-fill);color:var(--onacc);font-weight:700}
+
+/* ---------- аналоги упражнения ---------- */
+.alts{display:grid;gap:7px;margin-bottom:9px}
+.altb{display:flex;align-items:baseline;gap:9px;width:100%;text-align:left;
+  padding:12px 14px;border:1px solid var(--ln);border-radius:var(--r-m);
+  background:var(--s2);color:var(--ink)}
+.altb b{font-size:13.5px;font-weight:600;flex:1;min-width:0}
+.altb em{font-style:normal;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+.altb i{font-style:normal;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--acc-ink);flex:0 0 auto}
+.altb:active{background:var(--s3)}
+.alth{margin:0;font-size:11.5px;color:var(--ink3);line-height:1.5}
+
 .qgoal{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
 .qgoal input{width:38px;background:var(--s2);border:1px solid var(--ln);border-radius:var(--r-s);
   color:var(--ink);font:inherit;font-family:var(--fn);font-size:11.5px;text-align:right;padding:3px 5px}
@@ -2156,8 +2185,12 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
   <div class="win quest">
     <!-- В это поле вносят сегодняшний вес, а подпись говорила «цель по
          весу»: цель задаётся ниже, у правого края шкалы. -->
-    <div class="qrow"><label>ВЕС СЕЙЧАС</label>
-      <div class="qnum"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес сейчас"><span>кг</span></div></div>
+    <div class="wbox">
+      <label for="bw">ВЕС СЕЙЧАС</label>
+      <div class="wval"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес сейчас"><span>кг</span></div>
+      <div class="wdir" id="wdir">
+        <button data-dir="up">НАБОР</button><button data-dir="down">ПОХУДЕНИЕ</button></div>
+    </div>
     <button class="bmi" id="bmiRow" aria-label="Индекс массы тела">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
         <path d="M8 8h8a2 2 0 0 1 2 2v4h-2v7h-3v-5h-2v5H8v-7H6v-4a2 2 0 0 1 2-2z"/></svg>
@@ -2352,6 +2385,10 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
     <input id="anBw" inputmode="decimal" value="70" aria-label="Вес сейчас"><i>кг</i></div>
   <div class="srow"><span>Цель по весу</span>
     <input id="anGoal" inputmode="decimal" value="95" aria-label="Цель по весу"><i>кг</i></div>
+  <!-- Раньше режим выводился молча из того, выше цель текущего веса или
+       ниже. Спросить прямо честнее: цифра подставится сама. -->
+  <div class="wdir" id="anDir"><button data-dir="up">НАБОР</button>
+    <button data-dir="down">ПОХУДЕНИЕ</button></div>
   <p style="margin:6px 0 10px;font-size:10.5px;color:var(--mut)">От веса и цели считаются
      нормы калорий и белка, дневная норма и прогноз срока. Цель может быть и ниже
      текущего веса — тогда режим сменится на снижение.</p>
@@ -2392,7 +2429,10 @@ const pick = (v, fb) => (v === undefined || v === null || String(v).trim() === '
 const kg = v => {
   const n = Number(v);
   if (!isFinite(n)) return String(v).replace('.', ',');
-  return String(Math.round(n * 100) / 100).replace('.', ',');
+  // Один знак после запятой. Блины идут шагом 1,25 кг, рабочие веса —
+  // кратно 2,5, вес тела человек пишет с десятыми. Второй знак давал
+  // «12,13» и «35,63» — числа, которых в зале не бывает.
+  return String(Math.round(n * 10) / 10).replace('.', ',');
 };
 
 /* ---------- справочники ---------- */
@@ -2567,6 +2607,39 @@ function plural(n, one, few, many) {
    Доли взяты по обычным соотношениям этих движений; поправленный руками вес
    пересчёт больше не трогает. */
 const ANCHORS = [['b', 'Жим лёжа', 70], ['s', 'Присед со штангой', 50], ['d', 'Становая тяга', 60]];
+
+/* Чем заменить. Группы собраны по рисунку движения, а не просто по
+   мышце: жим лёжа меняется на жим гантелей, а не на разводку — иначе
+   «аналог» уводил бы нагрузку в другую сторону. Упражнение, которого
+   нет ни в одной группе, подменяется по своей мышечной группе. */
+const ALT = [
+  ['Жим лёжа', 'Жим гантелей лёжа', 'Жим в тренажёре', 'Жим лёжа узким хватом'],
+  ['Жим штанги на наклонной', 'Жим гантелей на наклонной'],
+  ['Разводка гантелей', 'Сведения в кроссовере', 'Бабочка в тренажёре', 'Разводка на наклонной'],
+  ['Тяга штанги в наклоне', 'Тяга гантели одной рукой', 'Тяга горизонтального блока', 'Тяга Т-грифа'],
+  ['Тяга верхнего блока', 'Тяга верхнего блока узким хватом', 'Тяга Т-грифа'],
+  ['Шраги со штангой', 'Шраги с гантелями'],
+  ['Жим гантелей сидя', 'Жим штанги стоя'],
+  ['Махи в стороны', 'Тяга штанги к подбородку'],
+  ['Махи в наклоне', 'Тяга каната к лицу'],
+  ['Присед со штангой', 'Фронтальный присед', 'Присед в Смите', 'Гакк-присед', 'Жим ногами'],
+  ['Выпады с гантелями', 'Болгарские выпады', 'Зашагивания на скамью'],
+  ['Становая тяга', 'Румынская тяга', 'Становая на прямых ногах', 'Наклоны со штангой'],
+  ['Сгибания ног', 'Сгибания ног сидя'],
+  ['Икры стоя', 'Икры сидя'],
+  ['Подъём штанги на бицепс', 'Подъём гантелей на бицепс', 'Сгибания на скамье Скотта', 'Сгибания на блоке'],
+  ['Молотки', 'Обратные сгибания на бицепс', 'Концентрированные сгибания'],
+  ['Французский жим', 'Разгибания на блоке', 'Разгибания из-за головы', 'Жим лёжа узким хватом']
+];
+function altsOf(name) {
+  const out = [];
+  ALT.forEach(g => { if (g.indexOf(name) >= 0) g.forEach(n => { if (n !== name && out.indexOf(n) < 0) out.push(n); }); });
+  if (!out.length && EXDB[name]) {
+    const g = EXDB[name][1];
+    Object.keys(EXDB).forEach(n => { if (n !== name && EXDB[n][1] === g) out.push(n); });
+  }
+  return out.slice(0, 6);
+}
 
 const EXDB = {
   'Жим лёжа': ['bench', 'Грудь', 'b', 1.0, 'Лопатки сведены и прижаты к скамье, стопы упёрты в пол. Штанга опускается на низ груди, локти примерно под 45° к корпусу. Ошибка — разводить локти в стороны и отбивать штангу от груди.', 180],
@@ -4282,6 +4355,7 @@ function paintGoal() {
   $('qleft').textContent = (up ? b >= g : b <= g) ? 'ЦЕЛЬ ДОСТИГНУТА'
     : (next ? 'до ' + next + ' кг — ещё ' + kg(Math.round(Math.abs(next - b) * 10) / 10) + ' кг'
             : 'до цели ещё ' + kg(Math.round(Math.abs(g - b) * 10) / 10) + ' кг');
+  paintDir($('wdir'), g >= (num(S.bw) || a));
   $('miles').innerHTML = ms.map(m =>
     `<div class="${hit(m) ? 'hit' : (m === next ? 'now' : '')}">${m}</div>`).join('');
 }
@@ -4314,6 +4388,26 @@ function setBw(v) {
   applyNutri(); save();
   syncBwFields(); paintGoal(); paintChart(); paintRem(); paintTotals(); paintKcSrc();
 }
+/* Набор или похудение — это не отдельная настройка, а то, с какой
+   стороны стоит цель. Кнопки только двигают цель в нужную сторону,
+   чтобы не завести второй источник правды. */
+function paintDir(box, up) {
+  if (!box) return;
+  box.querySelectorAll('[data-dir]').forEach(b2 =>
+    b2.classList.toggle('on', (b2.dataset.dir === 'up') === up));
+}
+function dirClick(e, getBw, setVal) {
+  const b2 = e.target.closest('[data-dir]'); if (!b2) return;
+  const cur = getBw() || 70, want = b2.dataset.dir === 'up';
+  setVal(String(Math.round(want ? cur + 15 : Math.max(35, cur - 10))));
+}
+$('anDir').addEventListener('click', e => dirClick(e,
+  () => num($('anBw').value),
+  v => { $('anGoal').value = v; setGoal(v); paintDir($('anDir'), num(v) >= (num($('anBw').value) || 70)); }));
+$('wdir').addEventListener('click', e => dirClick(e,
+  () => num(S.bw) || startW(),
+  v => setGoal(v)));
+
 function setGoal(v) {
   S.goal = v;
   applyNutri(); save();
@@ -4457,7 +4551,7 @@ function paintVol() {
 function paintRadar() {
   const sv = $('rad'); if (!sv) return;
   const acc = vol7();
-  const cx = 150, cy = 114, R = 78, MAX = 1.5;
+  const cx = 150, cy = 114, R = 78, MAX = 2;
   const pt = (i, k) => {
     const a = (i * 72 - 90) * Math.PI / 180;
     return [cx + Math.cos(a) * R * k, cy + Math.sin(a) * R * k];
@@ -4468,8 +4562,10 @@ function paintRadar() {
     .map(x => x.toFixed(1)).join(',')).join(' ');
 
   let h = '';
-  [1, 2 / 3, 1 / 3].forEach(k =>
-    h += `<polygon points="${poly(k)}" class="rgrid${Math.abs(k - 2 / 3) < .01 ? ' norm' : ''}"/>`);
+  // Только внешняя граница и пунктир нормы: промежуточные кольца
+  // ничего не считали, а взгляд цеплялся за них, а не за фигуру.
+  h += `<polygon points="${poly(1)}" class="rgrid"/>`;
+  h += `<polygon points="${poly(1 / MAX)}" class="rgrid norm"/>`;
   GROUPS.forEach((_, i) => { const q = pt(i, 1);
     h += `<line x1="${cx}" y1="${cy}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}" class="rspoke"/>`; });
   // на пустом журнале пять нулей слипались в центре комком: фигуры нет,
@@ -4836,6 +4932,7 @@ function openSetup() {
       <input id="an-${k}" inputmode="decimal" value="${esc(a[k] ?? def)}" aria-label="${label}"><i>кг</i></div>`).join('');
   $('anH').value = S.height || 177;
   $('setRet').checked = !!S.returning;
+  paintDir($('anDir'), num($('anGoal').value) >= (num($('anBw').value) || 70));
   $('setup').classList.add('on');
 }
 function closeSetup() { $('setup').classList.remove('on'); }
@@ -5014,7 +5111,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
    (общественное достояние). Описания — свои.
    ========================================================================= */
 
-function openHow(name) {
+function openHow(name, j) {
   const h = EXDB[name];
   if (!h) {
     sheet(name.toUpperCase(), '<div class="win howb"><p>Для этого упражнения описание не добавлено — ' +
@@ -5022,15 +5119,60 @@ function openHow(name) {
     return;
   }
   const key = h[0], text = h[4];
-  sheet('ТЕХНИКА', `<div class="win howb">
+  const alts = altsOf(name);
+  // Индекс нужен, чтобы заменить упражнение прямо в дне. Если шторку
+  // открыли из таблицы или истории, заменять нечего — только показываем.
+  const idx = (j === undefined && exOpen !== null &&
+    ((dayOf(sel).ex || [])[exOpen] || {}).n === name) ? exOpen : j;
+  const swap = idx !== undefined && idx !== null && !recOf(sel).wo && sel >= today();
+  let h2 = `<div class="win howb">
       <h5>${esc(name)}</h5>
       <div class="howimg">
         <figure><img src="img/${key}-0.jpg" alt="${esc(name)}, начало" loading="lazy"><figcaption>начало</figcaption></figure>
         <figure><img src="img/${key}-1.jpg" alt="${esc(name)}, конец" loading="lazy"><figcaption>рабочая точка</figcaption></figure>
       </div>
       <p>${text}</p>
-    </div>`);
+    </div>`;
+  if (alts.length) {
+    h2 += '<div class="cph">ЧЕМ ЗАМЕНИТЬ</div><div class="alts">' +
+      alts.map(n => {
+        // группа у всех аналогов та же, что у исходного — вместо неё
+        // показываем стартовый вес: это то, что человеку и нужно знать
+        const w2 = startWeight(n);
+        return `<button class="altb"${swap ? ` data-alt="${esc(n)}" data-altj="${idx}"` : ''}>
+          <b>${esc(n)}</b><em>${w2 ? kg(w2) + ' кг' : ''}</em>${swap ? '<i>поставить</i>' : ''}</button>`;
+      }).join('') + '</div>' +
+      `<p class="alth">${swap
+        ? 'Тот же рисунок движения и та же нагрузка. Замена встаёт в программу этого дня недели — приложение спросит подтверждение.'
+        : 'Те же мышцы и тот же рисунок движения. Заменить можно из открытого упражнения в «Зале».'}</p>`;
+  }
+  sheet('ТЕХНИКА', h2);
 }
+
+/* Замена упражнения на аналог. День недели в этом приложении — общий
+   шаблон на все недели, отдельной копии на дату нет. Значит замена
+   меняет программу, и притворяться, что она «только на сегодня»,
+   нельзя: спрашиваем прямо. Записанные подходы этого места стираются —
+   они относились к другому движению. */
+$('shB').addEventListener('click', async e => {
+  const b2 = e.target.closest('[data-alt]'); if (!b2) return;
+  const name = b2.dataset.alt, j = num(b2.dataset.altj);
+  const d = dayOf(sel), e2 = (d.ex || [])[j];
+  if (!e2) { sheetClose(); return; }
+  const was = e2.n;
+  const okGo = await ask('Заменить «' + was + '» на «' + name + '»? Это место в программе ' +
+    (d.k ? ('(' + d.k + ')') : '') + ' — замена встанет во все недели.', 'ЗАМЕНИТЬ');
+  if (!okGo) return;
+  const src = EXDB[name] || [];
+  e2.n = name;
+  e2.g = src[1] || e2.g;
+  e2.w = String(startWeight(name) || num(e2.w) || 0);
+  delete e2.fixed;                 // вес у нового движения свой, не перенесённый
+  const r = recRW(sel);
+  if (r.log && r.log[j]) delete r.log[j];
+  save(); recomputeStats(1); sheetClose(); render();
+  note(was + ' → ' + name);
+});
 
 /* =========================================================================
    СВОЙ РАЗБОР ПРОГРЕССИИ
