@@ -9,14 +9,37 @@
 <meta name="theme-color" content="#07040F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GYM">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Forum&family=Oswald:wght@200;300;400;600&display=swap" rel="stylesheet">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" href="./icon-192.png">
 <title>GYM</title>
 <style>
+/* Шрифты лежат в репозитории: приложение должно открываться в подвале
+   без связи, а Rajdhani к тому же не знает кириллицы — весь русский
+   текст падал на системный шрифт мимо оформления. */
+@font-face{font-family:'Exo 2';font-style:normal;font-weight:400;font-display:swap;src:url('./font/exo2-400-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Exo 2';font-style:normal;font-weight:400;font-display:swap;src:url('./font/exo2-400-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Exo 2';font-style:normal;font-weight:500;font-display:swap;src:url('./font/exo2-500-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Exo 2';font-style:normal;font-weight:500;font-display:swap;src:url('./font/exo2-500-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Exo 2';font-style:normal;font-weight:600;font-display:swap;src:url('./font/exo2-600-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Exo 2';font-style:normal;font-weight:600;font-display:swap;src:url('./font/exo2-600-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Exo 2';font-style:normal;font-weight:700;font-display:swap;src:url('./font/exo2-700-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Exo 2';font-style:normal;font-weight:700;font-display:swap;src:url('./font/exo2-700-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Forum';font-style:normal;font-weight:400;font-display:swap;src:url('./font/forum-400-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Forum';font-style:normal;font-weight:400;font-display:swap;src:url('./font/forum-400-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url('./font/jbmono-400-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url('./font/jbmono-400-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:600;font-display:swap;src:url('./font/jbmono-600-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:600;font-display:swap;src:url('./font/jbmono-600-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:200;font-display:swap;src:url('./font/oswald-200-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:200;font-display:swap;src:url('./font/oswald-200-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:300;font-display:swap;src:url('./font/oswald-300-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:300;font-display:swap;src:url('./font/oswald-300-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:400;font-display:swap;src:url('./font/oswald-400-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:400;font-display:swap;src:url('./font/oswald-400-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:600;font-display:swap;src:url('./font/oswald-600-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:600;font-display:swap;src:url('./font/oswald-600-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
 :root{
   /* Метрики и шрифт. Цвета живут ниже, в блоке оформления: там их два набора —
      светлый и тёмный, — и переключаются они одной строкой на <html>. */
@@ -854,9 +877,9 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --sh1:none; --sh2:none; --sh3:0 20px 50px -20px rgba(0,0,0,.85);
   --shacc:0 0 26px rgba(123,69,240,.55);
 
-  --f:'Rajdhani',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-  --fd:'Rajdhani',var(--f);
-  --fn:'Share Tech Mono',ui-monospace,'SF Mono',monospace;
+  --f:'Exo 2',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --fd:'Exo 2',var(--f);
+  --fn:'JetBrains Mono',ui-monospace,'SF Mono',monospace;
   --caps:uppercase; --track:.14em; --wt:600; --wtd:700;
 
   --wall:url('./img/bg-nebula.jpg');
@@ -1424,6 +1447,60 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 :root[data-skin="ber"] .st8lv b{position:absolute;right:-2px;bottom:-4px;font-size:15px;
   background:var(--s0);padding:0 3px;border:1px solid var(--ln)}
 :root[data-skin="ber"] .st8r{background:none;color:var(--ink2)}
+
+/* ---------- строка упражнения ---------- */
+.exrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;
+  padding:13px 14px;margin-bottom:8px}
+.exrow .t{min-width:0}
+.exrow .n{display:block;font-family:var(--fd);font-size:16.5px;font-weight:var(--wtd);
+  letter-spacing:.02em;color:var(--ink);line-height:1.2}
+.exrow .s{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink3);margin-top:5px}
+.exrow .kg{font-family:var(--fn);font-size:19px;color:var(--acc-ink);text-shadow:var(--glow-t)}
+.exrow .go{width:36px;height:36px;flex:0 0 auto}
+.exrow.done{opacity:.46}
+:root[data-skin="ber"] .exrow .kg{color:var(--ink2);text-shadow:none}
+
+/* ---------- упражнение на весь экран ---------- */
+.exfbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.exfback{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc-ink);
+  border:1px solid var(--ln);padding:8px 12px;background:var(--s2)}
+.exfcnt{font-family:var(--fn);font-size:11px;letter-spacing:.16em;color:var(--ink3)}
+.exf{padding:18px 17px}
+.exfhead{margin-bottom:14px}
+.exf .exname{font-size:25px;line-height:1.1;text-align:left;display:block;padding:0}
+.exfgrp{display:block;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--acc-ink);margin-top:7px}
+.exfw{display:flex;align-items:flex-end;gap:10px;margin:4px 0 6px}
+.exfkg{width:132px;background:none;border:0;border-bottom:1px solid var(--ln);
+  font-family:var(--fn);font-size:52px;line-height:1;color:var(--ink);padding:0 0 4px;
+  text-shadow:var(--glow-t)}
+.exfkg:focus{outline:none;border-bottom-color:var(--acc);background:none}
+.exfu{font-family:var(--fn);font-size:14px;color:var(--ink3);padding-bottom:10px}
+.exfsm{display:flex;gap:9px;margin-left:auto;padding-bottom:4px}
+.exfsm .fl{display:flex;flex-direction:column}
+.exfsm .fl input{width:62px;text-align:center;padding:9px 0;font-size:16px}
+.exfhist{margin-top:14px}
+.exfhist .lbl{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:6px}
+.exfhist svg{width:100%;height:64px;display:block}
+.exfact{display:grid;grid-template-columns:1fr 60px;gap:9px;margin-top:16px}
+.exfgo{margin-top:0;font-size:14px;padding:16px 0}
+.exftm{height:auto;font-size:20px}
+.exfft{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.exfdots{display:flex;gap:5px;justify-content:center;padding:14px 0 4px}
+.exfdots .dot{width:22px;height:4px;background:var(--s3);border:0;padding:0}
+.exfdots .dot.dn{background:var(--ln2)}
+.exfdots .dot.on{background:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c)}
+
+/* раскрытое упражнение занимает экран целиком */
+body.exopen #daysbar,body.exopen #dayctx,body.exopen .qbox,
+body.exopen #scr-wo h2.sec,body.exopen #spl,body.exopen #addSp,
+body.exopen .foot,body.exopen #editPast{display:none}
+body.exopen{padding-bottom:calc(var(--tabh) + var(--sb))}
+body.exopen #scr-wo{padding-top:calc(var(--st) + 12px)}
+body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
+  background:linear-gradient(var(--s0),var(--s0) 62%,transparent)}
 
 /* ---------- выбор темы в настройках ---------- */
 .skinpick{display:block;width:100%;text-align:left;padding:14px 15px;margin-bottom:8px}
@@ -2534,6 +2611,7 @@ const SCREENS = [
 let tab = 'wo';
 let sel = today();
 let editPast = false;      // прошедший день открыт на правку, а не как история
+let exOpen = null;         // раскрытое упражнение; null — список
 let mo = sel.slice(0, 7);
 let edit = false;
 
@@ -2545,6 +2623,7 @@ $('tabs').addEventListener('click', e => {
   const b = e.target.closest('[data-tab]');
   if (!b || b.dataset.tab === tab) return;
   tab = b.dataset.tab;
+  exOpen = null;
   render();
   window.scrollTo(0, 0);
 });
@@ -2578,7 +2657,7 @@ function paintStatus() {
   const w = planWeek(), ci = cycIdx();
   $('st8cy').style.width = ((ci + 1) / CYCLE.length * 100) + '%';
   $('st8cyv').textContent = started() ? ('НЕД ' + ((ci + 1)) + '/' + CYCLE.length) : 'ДО СТАРТА';
-  $('statusbar').hidden = !(tab === 'wo' || tab === 'prog');
+  $('statusbar').hidden = !(tab === 'wo' || tab === 'prog') || exOpen !== null;
 }
 
 // точка на вкладке «Зал», пока сегодняшняя тренировка не закрыта
@@ -2627,9 +2706,9 @@ function paintDay() {
 
 $('chips').addEventListener('click', e => {
   const b = e.target.closest('[data-d]'); if (!b) return;
-  sel = b.dataset.d; mo = sel.slice(0, 7); edit = false; editPast = false; render();
+  sel = b.dataset.d; mo = sel.slice(0, 7); edit = false; editPast = false; exOpen = null; render();
 });
-$('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 7); editPast = false; render(); });
+$('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 7); editPast = false; exOpen = null; render(); });
 $('gear').addEventListener('click', () => { edit = !edit; paintDay(); });
 $('dnm').addEventListener('input', e => { dayOf(sel).n = e.target.value; save(); });
 $('types').addEventListener('click', async e => {
@@ -2667,6 +2746,7 @@ $('movedX').addEventListener('click', () => { delete S.map[sel]; save(); render(
    ========================================================================= */
 function paintWorkout() {
   const d = dayOf(sel), r = recOf(sel), tr = d.t !== 'rest';
+  if (!tr) { exOpen = null; document.body.classList.remove('exopen'); }
   // Прошедший день показываем как историю: что реально сделано, без полей ввода.
   // Кнопка «Править» возвращает обычные карточки, если нужно что-то исправить.
   const jr = sel < today() && !editPast && dayEntries(sel).length > 0;
@@ -2675,7 +2755,7 @@ function paintWorkout() {
   $('fin').hidden = jr;
   $('editPast').hidden = !jr;
 
-  if (jr) { paintJournal(); }
+  if (jr) { exOpen = null; document.body.classList.remove('exopen'); paintJournal(); }
   else if (tr) {
     // квест дня: сколько закрыто, что за награда, что будет при пропуске
     const doneCnt = d.ex.filter((_, j) => (r.log[j] || {}).done).length;
@@ -2688,32 +2768,18 @@ function paintWorkout() {
     if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'Тренировка закрыта'; }
     else { pen.className = 'qpen'; pen.textContent = 'Пропуск сбрасывает серию недель'; }
     const IN = intOf(sel, d.t);
-    $('exl').innerHTML = d.ex.map((e, j) => {
-      const g = r.log[j] || {};
-      const pv = (!g.done && g.w === undefined) ? lastDone(e.n, sel) : null;
-      const sug = weightFor(e, IN);
-      const sets = setsOf(sel, num(e.s), j);
-      const pr = prOf(e.n);
-      return `<div class="win ex${g.done ? ' done' : ''}" data-j="${j}">
-        <div class="exTop"><span class="exN"><button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button></span>
-          <button class="x" data-del="${j}" aria-label="Убрать">×</button></div>
-        <div class="flds">
-          <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(pick(g.s, sets))}" aria-label="Подходы"></span>
-          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, pick(pv && pv.r, e.r)))}" aria-label="Повторы"></span>
-          <span class="fl"><label>КГ</label><input inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}" aria-label="Вес"></span>
-          <button class="rest" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
-          <button class="go" data-go="${j}" aria-label="${g.done ? 'Отменить подход' : 'Закрыть подход'}">${g.done ? '✓' : '○'}</button></div>
-        <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel))}</div>
-        <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
-          : (num(e.w) ? 'рабочий вес ' + kg(e.w) + ' кг' : 'без отягощения')}${
-          num(e.w) && sug && sug !== num(e.w)
-            ? ' · на этой неделе ' + kg(sug) + ' кг' + (sug < num(e.w) ? ', полегче' : '')
-            : ''}</div>
-        <div class="exft">
-          ${pr ? `<span class="prb">рекорд <b>${kg(pr)} кг</b></span>` : ''}
-          ${g.done ? holdBadge(e, g) : ''}
-        </div></div>`;
-    }).join('');
+    // Открытое упражнение занимает весь экран, закрытое — строка списка.
+    // Разметка карточки та же самая, поэтому все обработчики ввода,
+    // таймера и закрытия подхода работают и там, и там.
+    if (exOpen !== null && exOpen >= d.ex.length) exOpen = null;
+    $('exl').innerHTML = (exOpen === null)
+      ? d.ex.map((e, j) => exRow(e, j, r, IN)).join('')
+      : exFull(d.ex[exOpen], exOpen, r, IN, d);
+    $('exl').classList.toggle('full', exOpen !== null);
+    $('addEx').hidden = exOpen !== null;
+    $('fin').hidden = exOpen !== null;
+    // раскрытое упражнение занимает экран целиком: всё остальное уходит
+    document.body.classList.toggle('exopen', exOpen !== null);
 
     const all = d.ex.length > 0 && d.ex.every((_, j) => (r.log[j] || {}).done);
     const f = $('fin');
@@ -2756,6 +2822,91 @@ function paintJournal() {
 
 $('editPast').addEventListener('click', () => { editPast = true; render(); });
 
+/* Листание вбок между упражнениями. Порог в 48 px, чтобы не срабатывало
+   при обычном нажатии, и проверка на вертикаль — страница должна
+   прокручиваться как обычно. */
+(function () {
+  let x0 = 0, y0 = 0, on = false;
+  const el = $('exl');
+  el.addEventListener('touchstart', e => {
+    if (exOpen === null || e.touches.length !== 1) { on = false; return; }
+    if (e.target.closest('input,textarea')) { on = false; return; }
+    on = true; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (!on || exOpen === null) return;
+    on = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - x0, dy = t.clientY - y0;
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+    const n = (dayOf(sel).ex || []).length;
+    if (!n) return;
+    exOpen = (exOpen + (dx < 0 ? 1 : -1) + n) % n;
+    render(); window.scrollTo(0, 0);
+  }, { passive: true });
+})();
+
+
+/* Строка списка: имя, схема, вес и отметка. Нажатие раскрывает упражнение. */
+function exRow(e, j, r, IN) {
+  const g = r.log[j] || {};
+  const sug = weightFor(e, IN);
+  const sets = setsOf(sel, num(e.s), j);
+  const w = num(pick(g.w, sug));
+  const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, e.r));
+  return `<div class="win exrow${g.done ? ' done' : ''}" data-j="${j}" data-open="${j}">
+    <span class="t"><span class="n">${esc(e.n)}</span>
+      <span class="s">${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
+    <span class="kg">${w ? kg(w) : '—'}</span>
+    <button class="go" data-go="${j}" aria-label="${g.done ? 'Отменить подход' : 'Закрыть подход'}">${g.done ? '✓' : '○'}</button>
+  </div>`;
+}
+
+/* Упражнение на весь экран: то же самое, только крупно и с историей. */
+function exFull(e, j, r, IN, d) {
+  const g = r.log[j] || {};
+  const pv = (!g.done && g.w === undefined) ? lastDone(e.n, sel) : null;
+  const sug = weightFor(e, IN);
+  const sets = setsOf(sel, num(e.s), j);
+  const pr = prOf(e.n);
+  const hist = exHistory(e.n).slice(-8);
+  const dots = d.ex.map((_, k) =>
+    `<button class="dot${k === j ? ' on' : ((r.log[k] || {}).done ? ' dn' : '')}" data-jump="${k}"
+      aria-label="Упражнение ${k + 1}"></button>`).join('');
+  return `<div class="exfbar">
+      <button class="exfback" data-close="1">‹ К списку</button>
+      <span class="exfcnt">${String(j + 1).padStart(2, '0')} / ${String(d.ex.length).padStart(2, '0')}</span>
+    </div>
+    <div class="win ex exf" data-j="${j}">
+      <div class="exfhead">
+        <button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button>
+        <span class="exfgrp">${e.g ? esc(e.g) : ''}</span>
+      </div>
+      <div class="exfw">
+        <input class="exfkg" inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}" aria-label="Вес">
+        <span class="exfu">КГ</span>
+        <span class="exfsm">
+          <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(pick(g.s, sets))}" aria-label="Подходы"></span>
+          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, pick(pv && pv.r, e.r)))}" aria-label="Повторы"></span>
+        </span>
+      </div>
+      <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
+        : (num(e.w) ? 'рабочий вес ' + kg(e.w) + ' кг' : 'без отягощения')}${
+        num(e.w) && sug && sug !== num(e.w)
+          ? ' · на этой неделе ' + kg(sug) + ' кг' + (sug < num(e.w) ? ', полегче' : '') : ''}${
+        pr ? ' · рекорд ' + kg(pr) + ' кг' : ''}</div>
+      <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel))}</div>
+      ${hist.length > 1 ? `<div class="exfhist"><span class="lbl">Рост по журналу</span>
+        ${miniChart(hist.map(x => [x[0], x[1]]), cssVar('--acc-2', '#A981FF'))}</div>` : ''}
+      <div class="exfact">
+        <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
+        <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
+      </div>
+      <div class="exfft">${g.done ? holdBadge(e, g) : ''}</div>
+    </div>
+    <div class="exfdots">${dots}</div>`;
+}
+
 /* ---------- ввод в карточке упражнения ---------- */
 $('exl').addEventListener('input', e => {
   const inp = e.target.closest('input'); if (!inp) return;
@@ -2782,11 +2933,20 @@ $('exl').addEventListener('click', e => {
   const t = e.target.closest('[data-rest]');
   if (t) { tStart(+t.dataset.rest); return; }
 
+  const cl = e.target.closest('[data-close]');
+  if (cl) { exOpen = null; render(); window.scrollTo(0, 0); return; }
+
+  const jp = e.target.closest('[data-jump]');
+  if (jp) { exOpen = +jp.dataset.jump; render(); window.scrollTo(0, 0); return; }
+
   const hw = e.target.closest('[data-how]');
   if (hw) { openHow(hw.dataset.how); return; }
 
   const go = e.target.closest('[data-go]');
   if (go) { toggleSet(+go.dataset.go); return; }
+
+  const op = e.target.closest('[data-open]');
+  if (op) { exOpen = +op.dataset.open; render(); window.scrollTo(0, 0); return; }
 
   const x = e.target.closest('[data-del]');
   if (x) {
@@ -3330,15 +3490,15 @@ function miniChart(pts, color) {
   return `<svg viewBox="0 0 300 110" preserveAspectRatio="none">
     <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
     ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" fill="${color}"/>`).join('')}
-    <text x="10" y="12" fill="${cssVar('--ink3', '#61666B')}" font-size="9">${hi} кг</text>
-    <text x="10" y="108" fill="${cssVar('--ink3', '#61666B')}" font-size="9">${lo} кг</text></svg>`;
+    <text x="10" y="12" fill="${cssVar('--ink3', '#A18AD0')}" font-size="9">${hi} кг</text>
+    <text x="10" y="108" fill="${cssVar('--ink3', '#A18AD0')}" font-size="9">${lo} кг</text></svg>`;
 }
 
 function openHistory(name) {
   const h = exHistory(name), pr = prOf(name);
   let html = `<div class="win shb"><h5>${esc(name)}</h5>
     <div class="s">${pr ? ('личный рекорд ' + kg(pr) + ' кг') : 'рекорда пока нет'}</div>
-    ${miniChart(h, cssVar('--acc', '#1F5F8B'))}`;
+    ${miniChart(h, cssVar('--acc-2', '#A981FF'))}`;
   if (h.length > 1) {
     const df = h[h.length - 1][1] - h[0][1];
     html += `<div class="s" style="margin-top:8px">с ${fmt(h[0][0])}:
