@@ -1309,11 +1309,20 @@ h1,h2,h3,h4,h5,.dsp{font-family:var(--fd)}
 /* «Система»: светящаяся засечка слева. «Клеймо»: уголки, как на гравюре. */
 :root[data-skin="sl"] .win::before{content:'';position:absolute;left:0;top:10px;
   width:2px;height:20px;background:var(--acc);box-shadow:var(--glow-t);pointer-events:none}
+/* Уголки-засечки рисуются фоном самой панели, а не псевдоэлементами:
+   у псевдоэлементов оставалась привязка left/top из прежнего оформления,
+   она перебивала right/bottom, и уголок уезжал из угла в середину
+   панели — получался тот самый квадратик ниоткуда. */
 :root[data-skin="ber"] .win::before,
-:root[data-skin="ber"] .win::after{content:'';position:absolute;width:9px;height:9px;
-  border:1px solid var(--ink3);pointer-events:none;background:none}
-:root[data-skin="ber"] .win::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
-:root[data-skin="ber"] .win::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+:root[data-skin="ber"] .win::after{content:none}
+:root[data-skin="ber"] .win{
+  background-color:var(--s1);
+  background-image:
+    linear-gradient(var(--ink3),var(--ink3)),linear-gradient(var(--ink3),var(--ink3)),
+    linear-gradient(var(--ink3),var(--ink3)),linear-gradient(var(--ink3),var(--ink3));
+  background-size:11px 1px,1px 11px,11px 1px,1px 11px;
+  background-position:left top,left top,right bottom,right bottom;
+  background-repeat:no-repeat}
 
 /* ---------- типографика ---------- */
 .shead h2{font-family:var(--fd);font-size:25px;font-weight:var(--wtd);
