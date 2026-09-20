@@ -1,0 +1,12 @@
+{
+  "name": "plan",
+  "private": true,
+  "description": "Дневник тренировок: одно приложение в одном файле",
+  "scripts": {
+    "test": "node test/run.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0",
+    "pngjs": "^7.0.0"
+  }
+}
