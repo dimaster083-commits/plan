@@ -1,4 +1,4 @@
-const CACHE = "sys-gym-96";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-97";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
@@ -125,6 +125,8 @@ self.addEventListener('fetch', e => {
         caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
         return res;
       })
-      .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+      // Для картинок и шрифтов подсовывать страницу вместо файла нельзя:
+      // браузер получит html там, где ждёт jpg. Пусть лучше не будет ничего.
+      .catch(() => caches.match(e.request))
   );
 });

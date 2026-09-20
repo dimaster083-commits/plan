@@ -1669,11 +1669,32 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 .exfgo{margin-top:0;font-size:14px;padding:16px 0}
 .exftm{height:auto;font-size:20px}
 .exfft{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
-.exfdel{display:block;width:100%;margin-top:14px;padding:11px;background:none;border:0;
+/* ---------- размер под палец ----------
+   В зале жмут мокрыми руками и не глядя. Всё, во что нужно попасть,
+   не меньше 44 пикселей по короткой стороне — это тот минимум, ниже
+   которого промахи становятся обычным делом. */
+.cnav button,.monav button,.shh button,.ovh button{min-width:44px;min-height:44px}
+.pseg button{min-height:44px}
+.phbtns button,.exfback,.rd,.calback,.altb,.mladd,.add,.anb,.cpb,.copyb,
+.bmi,.wdir button{min-height:44px}
+#rd,.gh{min-height:44px;min-width:44px;padding-left:16px;padding-right:16px}
+/* Кружок отметки в строке упражнения — то, во что жмут чаще всего */
+.exrow .go{min-width:48px}
+.exfdel{min-height:46px}
+/* Галочка маленькая по рисунку, но зона нажатия вокруг неё полная */
+.schk input{position:relative}
+.schk input::after{content:'';position:absolute;inset:-11px}
+.go,.rest{min-height:48px}
+.exname{min-height:44px}
+.setr .fillall{min-height:44px}
+.exfdel{display:block;width:100%;margin-top:14px;padding:13px;background:none;border:0;
   font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
 .exfdel:active{color:var(--ink2)}
-.exfdots{display:flex;gap:5px;justify-content:center;padding:14px 0 4px}
-.exfdots .dot{width:22px;height:4px;background:var(--s3);border:0;padding:0}
+.exfdots{display:flex;gap:2px;justify-content:center;padding:4px 0 0}
+/* Полоска-страница в раскрытом упражнении рисуется в четыре пикселя,
+   но нажимать нужно по всей высоте вокруг неё. */
+.exfdots .dot{width:44px;height:44px;background:var(--s3);border:0;
+  padding:20px 11px;background-clip:content-box}
 .exfdots .dot.dn{background:var(--ln2)}
 .exfdots .dot.on{background:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c)}
 
