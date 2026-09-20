@@ -337,8 +337,11 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 /* добавки */
 .row{display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:7px}
 .row.on{border-color:rgba(var(--tint),.4)}
+/* Галочка тянула за собой межбуквенный интервал темы и вставала не по
+   центру квадрата: ширина знака 32 px в клетке 21 px. */
 .box{width:23px;height:23px;flex:0 0 auto;border:1px solid var(--edge);display:grid;place-items:center;
-  font-size:12px;color:transparent;border-radius:2px;position:relative}
+  font-size:13px;line-height:1;letter-spacing:0;text-indent:0;padding:0;
+  color:transparent;border-radius:2px;position:relative}
 .box::after{content:'';position:absolute;inset:-11px;border-radius:4px}
 .row.on .box{background:var(--cy);border-color:var(--cy);color:#05101F}
 .row .t{flex:1;min-width:0}
@@ -1225,7 +1228,8 @@ input,textarea,select{color:var(--ink)}
 .lvup{background:radial-gradient(420px 320px at 50% 50%,var(--glow),transparent 72%)}
 .lvup b{color:var(--acc);text-shadow:none}
 .lvup span{color:var(--ink);text-shadow:none}
-.lvup em{color:var(--ink3)}
+.lvup em{color:var(--ink3);text-transform:uppercase}
+.lvup b{font-family:var(--fd)}
 
 /* резервная копия и кнопка разбора */
 .bk h4{color:var(--ink3);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
@@ -1299,11 +1303,29 @@ input,textarea,select{color:var(--ink)}
    страницы. Ширины столбцов задаются жёстко, название переносится по словам. */
 .wtab{table-layout:fixed;width:100%}
 .wtab td,.wtab th{padding:10px 4px;font-size:12.5px}
-.wtab th{color:var(--ink3);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.02em}
-.wtab col.nm{width:38%}
-.wtab col.d{width:13%}
-.wtab col.n{width:16%}
-.wtab td:first-child,.wtab th:first-child{overflow-wrap:anywhere;padding-left:0}
+/* Заголовки столбцов были в одну строку и шире своих колонок: на 390 px
+   «РАБОЧИЙ», «НЕДЕЛЯ» и «РЕКОРД» наезжали друг на друга. Переносим их
+   по словам и ужимаем вместе с экраном. */
+.wtab th{color:var(--ink3);font-weight:600;text-transform:uppercase;
+  font-size:clamp(7px,2.3vw,10.5px);letter-spacing:0;line-height:1.15;
+  white-space:normal;overflow-wrap:normal;word-break:keep-all;hyphens:none;
+  vertical-align:bottom;
+  /* страховка: заголовок физически не может наехать на соседний столбец */
+  overflow:hidden}
+.wtab th:not(:first-child){white-space:normal}
+.wtab col.nm{width:34%}
+.wtab col.d{width:12%}
+.wtab col.n{width:18%}
+/* шесть столбцов: доли должны складываться в сто процентов, иначе
+   браузер ужимает всё подряд и заголовки лезут друг на друга */
+.wtab col.nm6{width:32%}
+.wtab col.n6{width:15%}
+.wtab col.d6{width:8%}
+/* в таблице из шести столбцов числа мельче: иначе на 320 px
+   «17,5» и «−3,5» встают вплотную и читаются как одно число */
+.wtab.w6 td{font-size:clamp(10px,3vw,12.5px);padding-left:3px}
+.wtab td:first-child{overflow-wrap:anywhere;padding-left:0}
+.wtab th:first-child{padding-left:0}
 .wtab td:last-child,.wtab th:last-child{padding-right:0}
 .wtab td.lnk{color:var(--acc-ink);text-decoration:none}
 
@@ -1457,6 +1479,29 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 .sheet,.ov,.fp{background:var(--glass2);backdrop-filter:blur(var(--blur))}
 .ask{background:var(--scrim)}
 .askw,.setw{background:var(--panel-solid);border:1px solid var(--ln);border-radius:var(--r-l);box-shadow:var(--sh3)}
+/* Экран первичной настройки — первое, что видит человек. Его поля и
+   галочка остались синими от самой первой версии и в обеих темах
+   смотрелись чужими. */
+.setw h5{color:var(--ink3)}
+.setw p{color:var(--ink3)}
+.srow span{color:var(--ink)}
+.srow i{color:var(--ink3)}
+.srow input{background:var(--s2);border:1px solid var(--ln);color:var(--ink);
+  border-radius:var(--r-s);font-family:var(--fn)}
+.schk{color:var(--ink2)}
+.schk input{accent-color:var(--acc-fill)}
+.setw .b button{border-radius:var(--r-m)}
+/* «Посчитать» — главное действие экрана, оно должно быть залито,
+   а не выглядеть как «Позже» */
+.setw .b button.hi{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill);
+  font-weight:700}
+/* Родная галочка в тёмной теме рисуется болотным квадратом.
+   Рисуем свою — той же формы, что и отметка приёма добавки. */
+.schk input{-webkit-appearance:none;appearance:none;width:23px;height:23px;flex:0 0 auto;
+  background:var(--s2);border:1px solid var(--ln);border-radius:var(--r-s);
+  display:grid;place-items:center;margin:0;cursor:pointer}
+.schk input:checked{background:var(--acc-fill);border-color:var(--acc-fill)}
+.schk input:checked::after{content:'✓';font-size:13px;line-height:1;color:var(--onacc)}
 .askw button{border:1px solid var(--ln);border-radius:var(--r-m);color:var(--ink2);
   letter-spacing:.16em;text-transform:uppercase}
 .askw button.yes{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill)}
@@ -1699,6 +1744,14 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 .mob:active b{color:var(--acc-ink)}
 [hidden]{display:none!important}
 .mog{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dpick{position:relative;display:inline-block;
+  background:var(--s2);border:1px solid var(--ln);border-radius:var(--r-s);
+  padding:9px 13px;color:var(--ink)}
+.dpick b{font-family:var(--fn);font-weight:400;font-size:13px;
+  letter-spacing:.04em;pointer-events:none;white-space:nowrap}
+.dpick:active{background:var(--s3)}
+.dpick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;
+  padding:0;margin:0;border:0;background:none;-webkit-appearance:none;appearance:none}
 .mc{display:block;aspect-ratio:1;background:var(--s2);position:relative;font-style:normal;
   border-radius:calc(var(--r-s) / 3)}
 .mc::after{content:'';position:absolute;inset:0;background:var(--cd-c,transparent);opacity:0;
@@ -1785,7 +1838,11 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
   gap:clamp(5px,2.2vw,8px)}
 .tri{gap:clamp(6px,2.4vw,9px)}
 .tab{font-size:clamp(8px,2.6vw,9.5px);letter-spacing:clamp(.04em,.6vw,.2em)}
-.wtab td,.wtab th{padding:10px clamp(2px,1vw,5px);font-size:clamp(11px,3.4vw,12.5px)}
+.wtab td{padding:10px clamp(2px,1vw,5px);font-size:clamp(11px,3.4vw,12.5px)}
+/* Заголовкам столбцов своя шкала: они короткие, но их пять-шесть в ряд,
+   и на 320 px общая ширина слов больше ширины таблицы. */
+.wtab th{padding:10px clamp(2px,1vw,5px);font-size:clamp(7px,2.1vw,10px)}
+.wtab.w6 th{font-size:clamp(6.5px,2vw,9.5px);letter-spacing:-.01em}
 .sum{gap:clamp(6px,2.4vw,9px)}
 .mac{gap:clamp(6px,2.4vw,9px)}
 
@@ -2077,7 +2134,12 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
     <div class="cycBar" id="cycBar"></div>
     <div class="cycNote" id="cycNote"></div>
     <div class="cycStart">старт плана
-      <input id="startIn" type="date" aria-label="Дата старта плана"></div>
+      <!-- Родное поле даты рисует формат по языку системы, и на англоязычном
+           телефоне посреди русского приложения появлялось 09/14/2026.
+           Дату пишем сами, а поле оставляем прозрачным сверху — нажатие
+           по-прежнему открывает родной выбор даты, на любом телефоне. -->
+      <span class="dpick"><b id="startTxt">—</b>
+        <input id="startIn" type="date" aria-label="Дата старта плана"></span></div>
   </div>
 
   </div><!-- /goal -->
@@ -2241,7 +2303,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
   <div class="srow"><span>Цель по весу</span>
     <input id="anGoal" inputmode="decimal" value="95" aria-label="Цель по весу"><i>кг</i></div>
   <p style="margin:6px 0 10px;font-size:10.5px;color:var(--mut)">От веса и цели считаются
-     нормы калорий и белка, шкала квеста и прогноз срока. Цель может быть и ниже
+     нормы калорий и белка, дневная норма и прогноз срока. Цель может быть и ниже
      текущего веса — тогда режим сменится на снижение.</p>
   <label class="schk"><input type="checkbox" id="setRet"> возвращаюсь после перерыва</label>
   <p style="margin:0 0 12px">Первые две недели пойдут на 80 и 90 % — сила возвращается
@@ -2250,7 +2312,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 </div></div>
 
 <div class="lvup" id="lvup"><div>
-  <b>УРОВЕНЬ ПОВЫШЕН</b><span id="lvupN">2</span><em id="lvupR">РАНГ E</em>
+  <b data-t="lvup">УРОВЕНЬ ПОВЫШЕН</b><span id="lvupN">2</span><em id="lvupR">РАНГ E</em>
 </div></div>
 
 <div class="note" id="note"><span id="noteT"></span></div>
@@ -2274,7 +2336,14 @@ const firstRep = v => num(String(v ?? '').split('-')[0]);
    значением: подходы показывались пустыми и обнулялись после возврата на вкладку.
    Пустое значение — это «не задано», берём цифру из программы. */
 const pick = (v, fb) => (v === undefined || v === null || String(v).trim() === '') ? fb : v;
-const kg = v => String(v).replace('.', ',');   // 12.5 → 12,5, как принято в русском тексте
+// 12.5 → 12,5, как принято в русском тексте. Округление обязательно:
+// после сложений с шагом веса число вида 12.300000000000001 выводилось
+// целиком, а в таблице такая строка ещё и лезла на соседний столбец.
+const kg = v => {
+  const n = Number(v);
+  if (!isFinite(n)) return String(v).replace('.', ',');
+  return String(Math.round(n * 100) / 100).replace('.', ',');
+};
 
 /* ---------- справочники ---------- */
 const TYPES = [['rest', 'Отдых'], ['up1', 'Верх · сила'], ['lo1', 'Низ · сила'],
@@ -2557,16 +2626,16 @@ const INT = { h: [1.00, 'ТЯЖЁЛАЯ', 'h'], m: [0.90, 'СРЕДНЯЯ', 'm']
    Рекомендации сходятся на интервале 4–8 недель, для середняка ближе к 4–6;
    дальше восьмой копится усталость и веса встают. Раньше цикл был на восемь. */
 const CYCLE = [
- { ph: 'НАКОПЛЕНИЕ', d: { up1: 'm', lo1: 'm', up2: 'l', lo2: 'm' }, ds: 0,
-   t: 'Входим в цикл. Веса умеренные, задача — поставить технику и закрыть все подходы.' },
- { ph: 'НАКОПЛЕНИЕ', d: { up1: 'h', lo1: 'm', up2: 'm', lo2: 'l' }, ds: 0,
+ { ph: 'НАБОР ОБЪЁМА', d: { up1: 'm', lo1: 'm', up2: 'l', lo2: 'm' }, ds: 0,
+   t: 'Первая неделя. Веса умеренные, задача — поставить технику и закрыть все подходы.' },
+ { ph: 'НАБОР ОБЪЁМА', d: { up1: 'h', lo1: 'm', up2: 'm', lo2: 'l' }, ds: 0,
    t: 'Первый тяжёлый верх. На остальных днях держим запас 2 повтора.' },
  { ph: 'ИНТЕНСИФИКАЦИЯ', d: { up1: 'h', lo1: 'h', up2: 'm', lo2: 'm' }, ds: 1,
    t: 'Тяжёлые верх и низ в одну неделю, плюс подход сверху на базе.' },
  { ph: 'ИНТЕНСИФИКАЦИЯ', d: { up1: 'm', lo1: 'h', up2: 'h', lo2: 'h' }, ds: 1,
    t: 'Пик объёма. Если веса встали — это нормально, дожимай повторы.' },
  { ph: 'ПИК', d: { up1: 'h', lo1: 'h', up2: 'h', lo2: 'h' }, ds: 2,
-   t: 'Самая тяжёлая неделя цикла. Здесь обычно и ставятся личные рекорды.' },
+   t: 'Самая тяжёлая неделя. Здесь обычно и ставятся личные рекорды.' },
  { ph: 'РАЗГРУЗКА', d: { up1: 'd', lo1: 'd', up2: 'd', lo2: 'd' }, ds: -1,
    t: 'Веса минус 40%, подходов меньше. Не пропускай: именно сейчас тело догоняет нагрузку.' }
 ];
@@ -2970,10 +3039,12 @@ function addXp(n, msg) {
   else if (msg && n > 0) note(msg);
 }
 
-// полноэкранное уведомление, как при повышении уровня в системе
+// Полноэкранное уведомление о новой ступени. Оно было выключено строкой
+// return ещё тогда, когда уровней в приложении не было. Уровни вернулись
+// вместе с оформлением, а окно так и осталось мёртвым кодом.
 function levelUp(lv) {
-  return;                                  // уровней больше нет, окно не показываем
   const el = $('lvup');
+  $('lvup').querySelector('b').textContent = T('lvup');
   $('lvupN').textContent = lv;
   $('lvupR').textContent = rankTitle(lv);
   el.classList.remove('on');
@@ -3764,7 +3835,7 @@ function workoutSummary(ds) {
   }
   h += `<div class="win pln" style="margin-top:10px"><p style="margin:0">
     ${st > 1 ? 'Серия: <b>' + st + '</b> недель подряд по четыре тренировки. Не рви её.'
-      : 'Четыре тренировки за неделю складываются в серию — она видна в статусе игрока.'}</p></div>`;
+      : 'Четыре тренировки за неделю складываются в серию — она видна в шапке.'}</p></div>`;
   sheet('ТРЕНИРОВКА ЗАКРЫТА', h);
 }
 
@@ -3950,9 +4021,9 @@ function miniChart(pts, color) {
     <path d="${line}" fill="none" style="stroke:${color}" stroke-width="2" stroke-linejoin="round"/>
     ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" style="fill:${color}"/>`).join('')}
     <rect x="6" y="3" width="42" height="13" style="fill:var(--s0)" opacity=".85"/>
-    <text x="9" y="13" style="fill:var(--ink)" font-size="9">${hi} кг</text>
+    <text x="9" y="13" style="fill:var(--ink)" font-size="9">${kg(hi)} кг</text>
     <rect x="6" y="97" width="42" height="13" style="fill:var(--s0)" opacity=".85"/>
-    <text x="9" y="107" style="fill:var(--ink)" font-size="9">${lo} кг</text></svg>`;
+    <text x="9" y="107" style="fill:var(--ink)" font-size="9">${kg(lo)} кг</text></svg>`;
 }
 
 function openHistory(name) {
@@ -4152,14 +4223,15 @@ function paintGoal() {
   const p = Math.max(0, Math.min(1, (b - a) / ((g - a) || 1)));
   $('bw').value = S.bw;
   $('goalIn').value = S.goal || 95;
-  $('qStart').textContent = dec(a);
+  $('qStart').textContent = kg(Math.round(a * 10) / 10);
   paintBmi();
   $('qf').style.width = (p * 100) + '%';
   const ms = milesOf();
   const next = ms.find(m => up ? m > b : m < b);
   const hit = m => up ? b >= m : b <= m;
   $('qleft').textContent = (up ? b >= g : b <= g) ? 'ЦЕЛЬ ДОСТИГНУТА'
-    : (next ? 'до ' + next + ' кг: ' + dec(Math.abs(next - b)) : 'осталось ' + dec(Math.abs(g - b)));
+    : (next ? 'до ' + next + ' кг: ' + kg(Math.round(Math.abs(next - b) * 10) / 10)
+            : 'осталось ' + kg(Math.round(Math.abs(g - b) * 10) / 10));
   $('miles').innerHTML = ms.map(m =>
     `<div class="${hit(m) ? 'hit' : (m === next ? 'now' : '')}">${m}</div>`).join('');
 }
@@ -4168,7 +4240,9 @@ function paintCycle() {
   const i = cycIdx(), c = CYCLE[i], go = started();
   $('cycW').innerHTML = go ? 'Неделя ' + (i + 1) + '<i> из ' + CYCLE.length + '</i>' : 'План ещё не начался';
   // раньше здесь стояло название фазы; номер цикла понятнее и не путается с неделей
-  $('cycPh').textContent = go ? ('ЦИКЛ ' + (Math.floor((planWeek() - 1) / CYCLE.length) + 1)) : 'ОЖИДАНИЕ';
+  $('cycPh').textContent = go
+    ? (T('cycle').toUpperCase() + ' ' + (Math.floor((planWeek() - 1) / CYCLE.length) + 1))
+    : 'ОЖИДАНИЕ';
   const done = doneThisWeek();
   $('cycNote').innerHTML = go
     ? esc(c.t) + '<br><span style="color:var(--cy2)">Закрыто на этой неделе: <b>' + done + ' из 4</b>. ' +
@@ -4178,6 +4252,7 @@ function paintCycle() {
       '</span>'
     : 'Старт ' + fmt(planStart()) + '. До него — свободные тренировки.';
   $('startIn').value = planStart();
+  $('startTxt').textContent = fmt(planStart());
   $('cycBar').innerHTML = CYCLE.map((w, k) =>
     `<div class="${go && k === i ? 'now' : (w.ph === 'РАЗГРУЗКА' ? 'dl' : (go && k < i ? 'done' : ''))}"></div>`).join('');
 }
@@ -4209,6 +4284,7 @@ $('goalIn').addEventListener('input', e => setGoal(e.target.value));
 $('anBw').addEventListener('input', e => setBw(e.target.value));
 $('anGoal').addEventListener('input', e => setGoal(e.target.value));
 $('startIn').addEventListener('change', e => {
+  $('startTxt').textContent = fmt(e.target.value);
   if (!e.target.value) return;
   S.start = e.target.value; save(); render(); note('Старт плана: ' + fmt(S.start));
 });
@@ -4259,9 +4335,9 @@ function paintChart() {
     <path d="${line}" fill="none" style="stroke:var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
     ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" style="fill:var(--acc-ink)"/>`).join('')}
     <rect x="6" y="3" width="34" height="13" style="fill:var(--s0)" opacity=".85"/>
-    <text x="9" y="13" style="fill:var(--ink)" font-size="9">${hi.toFixed(1)}</text>
+    <text x="9" y="13" style="fill:var(--ink)" font-size="9">${kg(hi.toFixed(1))}</text>
     <rect x="6" y="108" width="34" height="13" style="fill:var(--s0)" opacity=".85"/>
-    <text x="9" y="118" style="fill:var(--ink)" font-size="9">${lo.toFixed(1)}</text>`;
+    <text x="9" y="118" style="fill:var(--ink)" font-size="9">${kg(lo.toFixed(1))}</text>`;
   pace(pts);
 }
 
@@ -4676,7 +4752,7 @@ const SKINS = [
    Справа — как это называется в каждой теме. Функция одна и та же. */
 const DICT = {
   sl: {
-    hero: 'Охотник', rank: 'РАНГ', level: 'Уровень', xp: 'XP',
+    hero: 'Охотник', rank: 'РАНГ', level: 'Уровень', xp: 'XP', lvup: 'УРОВЕНЬ ПОВЫШЕН',
     ranks: ['E', 'D', 'C', 'B', 'A', 'S'],
     quest: 'Квест дня', reward: 'Награда', done: 'Выполнено',
     progress: 'Прогресс', journal: 'Журнал', cycle: 'Цикл',
@@ -4685,7 +4761,7 @@ const DICT = {
     left: 'осталось', session: 'тренировка', sessions: 'тренировок'
   },
   ber: {
-    hero: 'Поход', rank: '', level: 'Ступень', xp: 'Опыт',
+    hero: 'Поход', rank: '', level: 'Ступень', xp: 'Опыт', lvup: 'НОВАЯ СТУПЕНЬ',
     ranks: ['Новобранец', 'Наёмник', 'Воин', 'Ветеран', 'Капитан', 'Чёрный мечник'],
     quest: 'Сегодня', reward: 'Добыто', done: 'Сделано',
     progress: 'Летопись', journal: 'Летопись', cycle: 'Круг',
@@ -4881,10 +4957,10 @@ function openProgression() {
       <p style="margin:0 0 10px;font-size:11px;color:var(--mut)">Числа без выводов: смотри сам.
         «За месяц» — насколько вырос лучший вес за 30 дней, «всего» — с первой записи.
         Строки без пометки уже не в программе, но остались в журнале.</p>
-      <table class="wtab">
-        <colgroup><col class="nm"><col class="n"><col class="n"><col class="n"><col class="n"><col class="d"></colgroup>
+      <table class="wtab w6">
+        <colgroup><col class="nm6"><col class="n6"><col class="n6"><col class="n6"><col class="n6"><col class="d6"></colgroup>
         <thead><tr>
-        <th>Упражнение</th><th>Рабочий</th><th>Лучший</th><th>Месяц</th><th>Всего</th><th>Раз</th>
+        <th>Упражнение</th><th>Раб.</th><th>Лучший</th><th>Месяц</th><th>Всего</th><th>Раз</th>
       </tr></thead><tbody>
       ${rows.map(r => `<tr>
         <td class="lnk" data-hist="${esc(r.n)}">${esc(r.n)}${r.plan ? '' :
@@ -6460,15 +6536,15 @@ function analyze() {
   /* --- вес и темп --- */
   const pts = wlog();
   if (!pts.length) {
-    add('bad', 'МАССА ТЕЛА', 'Показатель не снят ни разу. Цель по весу не отслеживается: ' +
-      'без веса не работают ни график, ни контроль темпа.',
+    add('bad', 'МАССА ТЕЛА', 'Вес не записан ни разу. Без него не работают ни график, ' +
+      'ни проверка темпа.',
       'Взвесься утром натощак и впиши цифру');
   } else {
     const last = pts[pts.length - 1];
     const stale = daysBetween(last[0], today());
     if (stale >= 7) {
       add('warn', 'МАССА ТЕЛА', 'Последнее измерение <b>' + stale + ' дн. назад</b>: ' + kg(last[1]) +
-        ' кг. Анализ ведётся по устаревшему показателю.',
+        ' кг. Разбор считается по старой цифре.',
         'Обнови вес');
     }
     const cut = at(last[0]); cut.setDate(cut.getDate() - 21);
@@ -6485,7 +6561,7 @@ function analyze() {
       const word = dn ? 'Снижение' : 'Прирост';
       const sh = v => (v > 0 ? '+' : '') + dec(v, 2);
       if (toward < 0.1) {
-        add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> за ' + dd + ' дн. Показатель заморожен.',
+        add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> за ' + dd + ' дн. Вес стоит на месте.',
           dn ? 'Убери 300 ккал в день, проверка через 14 дней'
              : 'Добавь 300 ккал в день, проверка через 14 дней');
       } else if (toward > 0.7) {
@@ -6505,11 +6581,11 @@ function analyze() {
   const a7 = attendance(7), a14 = attendance(14);
   if (a14.planned) {
     if (a7.done === 0 && a7.planned > 0) {
-      add('bad', 'ШТРАФ ЗА ПРОСТОЙ', 'За 7 дней закрыто <b>0 из ' + a7.planned + '</b> тренировок. ' +
+      add('bad', 'ПРОСТОЙ', 'За 7 дней закрыто <b>0 из ' + a7.planned + '</b> тренировок. ' +
         'При простое свыше 14 дней рабочие веса снижаются.', 'Закрой ближайшую тренировку');
     } else if (a14.done < a14.planned * 0.7) {
       add('warn', 'ПОСЕЩАЕМОСТЬ', 'За 14 дней закрыто <b>' + a14.done + ' из ' + a14.planned +
-        '</b>. Норма протокола — четыре в неделю.', 'Не пропускай следующую');
+        '</b>. Норма — четыре в неделю.', 'Не пропускай следующую');
     } else {
       const st = streak();
       add('ok', 'ПОСЕЩАЕМОСТЬ', 'За 14 дней закрыто <b>' + a14.done + ' из ' + a14.planned + '</b>' +
@@ -6530,10 +6606,10 @@ function analyze() {
     if (low.length) {
       add('warn', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Недобор подходов: <b>' + low.join(', ') + '</b>. ' +
         (high.length ? 'Перебор: ' + high.join(', ') + '. ' : '') +
-        'Характеристика, которая недобирает, прекращает рост первой.',
+        'Группа, которая недобирает, встаёт первой.',
         'Добавь подходы на отстающие группы');
     } else {
-      add('ok', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Все характеристики в норме: ' +
+      add('ok', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Все группы в норме: ' +
         GROUPS.map(([n]) => n.toLowerCase() + ' ' + acc[n]).join(', ') + ' подходов.',
         'Продолжай в том же объёме');
     }
@@ -6553,7 +6629,7 @@ function analyze() {
     }
   }));
   if (stuck.length) {
-    add('warn', 'ЗАСТОЙ ПАРАМЕТРА', 'Вес не растёт три тренировки подряд: <b>' +
+    add('warn', 'ЗАСТОЙ В ВЕСАХ', 'Вес не растёт три тренировки подряд: <b>' +
       stuck.slice(0, 4).join('; ') + '</b>' + (stuck.length > 4 ? ' и ещё ' + (stuck.length - 4) : '') + '.',
       'Закрой верхнюю границу повторов во всех подходах — прибавку система предложит сама');
   }
@@ -6598,7 +6674,7 @@ function analyze() {
       add('ok', 'ФАЗА: РАЗГРУЗКА', 'Неделя <b>' + w + '</b>. Веса минус 40%, подходов меньше. ' +
         'Именно на разгрузке организм догоняет нагрузку.', 'Не пропускай разгрузку');
     } else {
-      add('ok', 'ФАЗА: ' + c.ph, 'Неделя <b>' + w + '</b> цикла. ' + c.t, 'Следуй протоколу недели');
+      add('ok', 'ФАЗА: ' + c.ph, 'Неделя <b>' + w + '</b>. ' + c.t, 'Держись плана недели');
     }
     if (rampOf(today()) < 1) {
       add('ok', 'РЕЖИМ ВОЗВРАЩЕНИЯ', 'Веса снижены до <b>' + Math.round(rampOf(today()) * 100) +
@@ -6696,8 +6772,8 @@ function analyze() {
   /* --- пора ли разгружаться --- */
   if (started() && stuck.length >= 2 && cycOf(today()).ph !== 'РАЗГРУЗКА' && planWeek() >= 3) {
     add('warn', 'ПОРА РАЗГРУЖАТЬСЯ', 'Стоит <b>' + stuck.length + '</b> ' +
-      plural(stuck.length, 'упражнение', 'упражнения', 'упражнений') + ' подряд, идёт неделя ' +
-      planWeek() + ' цикла. Так выглядит накопленная усталость, а не слабость.',
+      plural(stuck.length, 'упражнение', 'упражнения', 'упражнений') + ' подряд, идёт ' +
+      planWeek() + '-я неделя подряд. Так выглядит накопленная усталость, а не слабость.',
       'Возьми неделю на 60% весов — после неё веса обычно идут вверх сами');
   }
 
@@ -6744,7 +6820,7 @@ function openAnalysis() {
     <p class="bkst">Выгрузка — обычный текст с твоими числами. Вставь его в чат с Claude
        и спроси что угодно: разбор программы, замену упражнения, что делать с застоем.</p>`;
 
-  sheet('АНАЛИЗ', html);
+  sheet('РАЗБОР', html);
   $('anCopy').addEventListener('click', copySummary);
 }
 
