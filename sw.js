@@ -1,4 +1,4 @@
-const CACHE = "sys-gym-114";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-115";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
@@ -95,6 +95,10 @@ self.addEventListener('activate', e => {
   );
 });
 
+// Ответ годится в кэш, только если он удачный и наш собственный:
+// чужие ответы приходят непрозрачными, с нулевым статусом.
+const keep = res => res && res.ok && (res.type === 'basic' || res.type === 'default');
+
 // Сеть в приоритете, кэш как запасной вариант.
 // Так обновления подхватываются сразу, а без интернета всё равно работает.
 self.addEventListener('fetch', e => {
@@ -110,8 +114,13 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(url.pathname + '?v=' + CACHE, { cache: 'no-store' })
         .then(res => {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put('./index.html', copy)).catch(() => {});
+          // В кэш кладём только удачный ответ. Иначе разовые 404 и 502
+          // хостинга ложились на место рабочей сборки и потом честно
+          // отдавались в подвале без связи.
+          if (keep(res)) {
+            const copy = res.clone();
+            caches.open(CACHE).then(c => c.put('./index.html', copy)).catch(() => {});
+          }
           return res;
         })
         .catch(() => caches.match('./index.html').then(r => r || caches.match('./')))
@@ -121,8 +130,10 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        if (keep(res)) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        }
         return res;
       })
       // Для картинок и шрифтов подсовывать страницу вместо файла нельзя:
