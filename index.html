@@ -6826,9 +6826,12 @@ $('phDel').addEventListener('click', async () => {
   paintPhotoScreen();
 });
 $('phW').addEventListener('input', e => {
+  // Вес, вписанный рядом со снимком, — тот же самый вес. Раньше он ложился
+  // в журнал мимо общего пути: нормы по калориям и белку от него не
+  // пересчитывались, и «Еда» продолжала считать от старой цифры.
+  if (sel === today()) { setBw(e.target.value); return; }
   recRW(sel).bw = e.target.value;
-  if (sel === today()) S.bw = e.target.value;
-  save();
+  save(); paintChart(); paintGoal();
 });
 
 /* ---------- сравнение снимков ---------- */
