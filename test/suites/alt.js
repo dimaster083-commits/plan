@@ -80,6 +80,41 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     return { n0, now:dayOf(sel).ex[1].n };
   });
   chk(!cancel.err && cancel.n0===cancel.now, '10. отказ от замены ничего не меняет', JSON.stringify(cancel));
+
+  // 11-13. У каждого движения должна быть замена по рисунку, а не «что угодно
+  // на ту же мышцу»: подтягивания и шраги — разные движения на одну спину.
+  const ptrn = await p.evaluate(() => {
+    const noAlt = [], selfAlt = [], fallback = [];
+    Object.keys(EXDB).forEach(n => {
+      const a = altsOf(n);
+      if (!a.length) noAlt.push(n);
+      if (a.indexOf(n) >= 0) selfAlt.push(n);
+      if (a.length && !a.same) fallback.push(n);
+    });
+    return { noAlt, selfAlt, fallback };
+  });
+  chk(ptrn.noAlt.length === 0, '11. замена есть у каждого упражнения каталога',
+      ptrn.noAlt.join(', ') || 'у всех есть');
+  chk(ptrn.selfAlt.length === 0, '12. никто не предлагает сам себя',
+      ptrn.selfAlt.join(', ') || 'никто');
+  chk(ptrn.fallback.length === 0, '13. никому не подставляется вся мышечная группа подряд',
+      ptrn.fallback.join(', ') || 'всем подобран рисунок движения');
+
+  // 14. Подпись честная: если рисунка движения нет, так и написано
+  const label = await p.evaluate(() => {
+    const out = {};
+    const fake = 'ВЫДУМАННОЕ ДВИЖЕНИЕ';
+    EXDB[fake] = ['crunch', 'Грудь', null, 0, 'нет', 90];
+    const a = altsOf(fake);
+    out.fallbackWorks = a.length > 0 && a.same === false;
+    delete EXDB[fake];
+    const real = altsOf('Жим лёжа');
+    out.realIsPattern = real.same === true;
+    return out;
+  });
+  chk(label.realIsPattern, '14. у настоящего движения признак «по рисунку»', String(label.realIsPattern));
+  chk(label.fallbackWorks, '15. незнакомому движению подставляется мышца и помечается как не-замена',
+      String(label.fallbackWorks));
   console.log('ошибки JS:',errs.length?errs.join('|'):'нет');
   await b.close();
   console.log('провалено: '+fails);
