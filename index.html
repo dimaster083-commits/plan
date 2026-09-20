@@ -1633,6 +1633,10 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 .exrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;
   padding:13px 14px;margin-bottom:8px}
 .exrow .t{min-width:0}
+/* Название бывает в одно длинное слово — своё упражнение или свой
+   продукт человек пишет как хочет. Переносим по буквам, иначе строка
+   вылезает из карточки. */
+.exrow .n,.dayr .it .nm,.dayr span,.jrow b,.jrow span,.altb b,.it .nm,.prl b{overflow-wrap:anywhere}
 .exrow .n{display:block;font-family:var(--fd);font-size:16.5px;font-weight:var(--wtd);
   letter-spacing:.02em;color:var(--ink);line-height:1.2}
 .exrow .s{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
@@ -4946,7 +4950,13 @@ $('impFile').addEventListener('change', e => {
       if (!o.state || !o.state.days) throw new Error('bad');
       if (!await ask('Заменить текущий прогресс данными из копии? Всё нынешнее будет стёрто.', 'ВОССТАНОВИТЬ')) return;
       for (const k of Object.keys(o.photos || {})) { await phPut(k, o.photos[k]); PHCACHE.set(k, o.photos[k]); }
-      S = o.state; migrate(); flush();
+      // Восстановление проходит тот же ремонт, что и обычная загрузка:
+      // копия может быть старой, правленой руками или испорченной, а
+      // мусорный ключ в журнале роняет «Прогресс» целиком.
+      S = o.state;
+      if (!S || typeof S !== 'object') throw new Error('bad');
+      if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
+      scrubKeys(); migrate(); recomputeStats(1); flush();
       await phSync();
       sel = today(); mo = sel.slice(0, 7);
       render(); note('Прогресс восстановлен');
