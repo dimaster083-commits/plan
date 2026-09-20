@@ -3228,6 +3228,7 @@ function ding(freq, len, vol) {
 const dingSet = () => ding(880, 0.14, 0.09);
 const dingPR = () => { ding(1046, 0.16, 0.12); setTimeout(() => ding(1568, 0.22, 0.12), 110); };
 const dingLevel = () => [784, 1046, 1318].forEach((f2, i) => setTimeout(() => ding(f2, 0.3, 0.13), i * 130));
+const dingRest = () => { ding(660, 0.22, 0.13); setTimeout(() => ding(880, 0.3, 0.13), 200); };
 
 /* ---------- опыт ---------- */
 function addXp(n, msg) {
@@ -3241,6 +3242,7 @@ function addXp(n, msg) {
 // Полноэкранное уведомление о новой ступени. Оно было выключено строкой
 // return ещё тогда, когда уровней в приложении не было. Уровни вернулись
 // вместе с оформлением, а окно так и осталось мёртвым кодом.
+let lvupTimer = null;
 function levelUp(lv) {
   const el = $('lvup');
   $('lvup').querySelector('b').textContent = T('lvup');
@@ -3249,7 +3251,9 @@ function levelUp(lv) {
   el.classList.remove('on');
   void el.offsetWidth;              // перезапуск анимации
   el.classList.add('on');
-  setTimeout(() => el.classList.remove('on'), 2300);
+  // две ступени подряд: старый таймер гасил окно второй раньше времени
+  clearTimeout(lvupTimer);
+  lvupTimer = setTimeout(() => el.classList.remove('on'), 2300);
   dingLevel();
   if (navigator.vibrate) navigator.vibrate([60, 60, 120]);
 }
@@ -5436,10 +5440,13 @@ $('csv').addEventListener('click', exportCsv);
 /* =========================================================================
    ТАЙМЕР ОТДЫХА
    ========================================================================= */
-let tEnd = 0, tInt = null;
+let tEnd = 0, tInt = null, tHide = null;
 function tShow(left) { $('tmrV').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'); }
 function tStart(sec) {
   tEnd = Date.now() + sec * 1000;
+  // окно закрывается через 1,4 с после нуля. Если за это время закрыть
+  // следующий подход, старый таймер прятал уже новый отсчёт — гасим его.
+  clearTimeout(tHide); tHide = null;
   $('tmr').classList.add('on');
   tShow(sec);
   clearInterval(tInt);
@@ -5448,15 +5455,21 @@ function tStart(sec) {
     const left = Math.max(0, Math.round((tEnd - Date.now()) / 1000));
     tShow(left);
     if (left <= 0) {
-      clearInterval(tInt);
+      clearInterval(tInt); tInt = null;
+      // вибрации в Safari на iPhone нет, поэтому конец отдыха ещё и звучит
+      dingRest();
       if (navigator.vibrate) navigator.vibrate([200, 90, 200]);
       note('Отдых окончен');
-      setTimeout(() => $('tmr').classList.remove('on'), 1400);
+      tHide = setTimeout(() => { tHide = null; $('tmr').classList.remove('on'); }, 1400);
     }
   }, 250);
 }
 $('tmr').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) tStart(+b.dataset.t); });
-$('tmrX').addEventListener('click', () => { clearInterval(tInt); $('tmr').classList.remove('on'); });
+$('tmrX').addEventListener('click', () => {
+  clearInterval(tInt); tInt = null;
+  clearTimeout(tHide); tHide = null;
+  $('tmr').classList.remove('on');
+});
 
 const FOOD=[
 ["Овсяные хлопья сухие",366,11.9,7.2,59],
