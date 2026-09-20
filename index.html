@@ -512,6 +512,12 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   padding:14px;font-size:13px;font-weight:800;letter-spacing:.1em;
   clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
   box-shadow:0 0 22px rgba(var(--tint),.45)}
+.fpw{position:relative}
+.fpw .fpi{padding-right:48px}
+.fpdel{position:absolute;right:0;top:0;width:44px;height:44px;display:grid;place-items:center;
+  font-size:17px;line-height:1;color:var(--mut);background:none;border:0}
+.fpi.my b::after{content:'своё';margin-left:7px;font-size:9px;letter-spacing:.1em;
+  color:var(--mut);font-weight:600;vertical-align:1px}
 .fpn{padding:12px;border:1px dashed var(--edge2);border-radius:2px;margin-bottom:10px}
 .fpn p{margin:0 0 9px;font-size:11px;color:var(--mut)}
 .fpn .r{display:flex;gap:6px}
@@ -3708,13 +3714,6 @@ $('exl').addEventListener('click', e => {
 });
 
 // «одна запись / две записи / пять записей»
-function plural(n, one, few, many) {
-  const a = Math.abs(n) % 100, b = a % 10;
-  if (a > 10 && a < 20) return many;
-  if (b > 1 && b < 5) return few;
-  if (b === 1) return one;
-  return many;
-}
 
 // Возврат всего, что начислил закрытый подход: объём, опыт и рекорд.
 // Рекорд тоже откатываем — иначе случайное нажатие навсегда впишет чужую цифру.
@@ -4991,7 +4990,7 @@ $('impFile').addEventListener('change', e => {
       S = o.state;
       if (!S || typeof S !== 'object') throw new Error('bad');
       if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
-      scrubKeys(); migrate(); recomputeStats(1); flush();
+      scrubKeys(); invalidateFood(); migrate(); recomputeStats(1); flush();
       await phSync();
       sel = today(); mo = sel.slice(0, 7);
       render(); note('Прогресс восстановлен');
@@ -6381,6 +6380,9 @@ const CHAINS = ['Вкусно и точка', 'Ростикс', 'Бургер К
 // Указатель имя → строка базы. Раньше на каждый продукт заново строился массив
 // из тысячи с лишним позиций, и подсчёт дня заметно тормозил на телефоне.
 let FOODLIST = null, FOODMAP = null, FOODMY = -1;
+// Правка своего продукта не меняет длину списка, поэтому одной длины мало:
+// сбрасываем указатель явно на каждое изменение своей базы.
+function invalidateFood() { FOODLIST = null; FOODMAP = null; FOODMY = -1; }
 function allFood() {
   if (!FOODLIST || FOODMY !== S.myFood.length) {
     FOODLIST = FOOD.concat(REST).concat(S.myFood.map(f => [f.n, f.k, f.p, f.f, f.c]));
@@ -6388,6 +6390,16 @@ function allFood() {
     FOODMY = S.myFood.length;
   }
   return FOODLIST;
+}
+// сколько раз продукт уже записан в журнал и в шаблоны — чтобы не удалять молча
+function foodUses(name) {
+  let n = 0;
+  Object.keys(S.rec).forEach(ds => {
+    const ml = S.rec[ds] && S.rec[ds].ml;
+    if (Array.isArray(ml)) ml.forEach(m => (m.items || []).forEach(it => { if (it.p === name) n++; }));
+  });
+  (S.tpl || []).forEach(t => (t.ml || []).forEach(m => (m.items || []).forEach(it => { if (it.p === name) n++; })));
+  return n;
 }
 function findFood(name) { allFood(); return FOODMAP.get(name) || null; }
 
@@ -6564,23 +6576,34 @@ function drawPick(raw) {
   if (chainFilter) base = base.filter(f => f[0].startsWith(chainFilter));
   const list = base.filter(f => !q || f[0].toLowerCase().includes(q)).slice(0, 80);
 
+  const mine = new Set((S.myFood || []).map(f => f.n));
   let h = list.map(f => {
     const g = f[5] || 0;
     const sub = g ? `${rnd(f[1] * g / 100)} ккал · ${rnd(f[2] * g / 100)} б / порция ${g} г`
       : `${f[1]} ккал · ${f[2]} б / 100 г`;
-    return `<button class="fpi${picked.some(x => x.p === f[0]) ? ' sel' : ''}"
+    const btn = `<button class="fpi${picked.some(x => x.p === f[0]) ? ' sel' : ''}${mine.has(f[0]) ? ' my' : ''}"
       data-add="${esc(f[0])}" data-g="${g || 100}">
       <span class="mk">✓</span><span class="tx"><b>${esc(f[0])}</b></span><span>${sub}</span></button>`;
+    // Свой продукт раньше можно было только добавить: ошибся в калориях —
+    // и он оставался в базе навсегда. Крестик убирает, поиск по точному
+    // имени открывает ту же строку на правку.
+    return mine.has(f[0])
+      ? `<div class="fpw">${btn}<button class="fpdel" data-my="${esc(f[0])}"
+          aria-label="Убрать свой продукт">×</button></div>`
+      : btn;
   }).join('');
 
-  if (q && !list.some(f => f[0].toLowerCase() === q)) {
-    h = `<div class="fpn"><p>Нет в базе? Добавь свой продукт — значения на 100 г.</p>
-      <div class="r"><input id="nfN" placeholder="название" value="${esc(typed)}" aria-label="Название">
-        <input id="nfK" inputmode="numeric" placeholder="ккал" aria-label="Калории">
-        <input id="nfP" inputmode="decimal" placeholder="белок" aria-label="Белок">
-        <input id="nfF" inputmode="decimal" placeholder="жир" aria-label="Жир">
-        <input id="nfC" inputmode="decimal" placeholder="угл" aria-label="Углеводы"></div>
-      <button id="nfSave">СОХРАНИТЬ В БАЗУ</button></div>` + h;
+  const my = q ? (S.myFood || []).find(f => String(f.n).toLowerCase() === q) : null;
+  if (q && (my || !list.some(f => f[0].toLowerCase() === q))) {
+    const v = my || {};
+    h = `<div class="fpn"><p>${my ? 'Свой продукт — можно поправить значения на 100 г.'
+        : 'Нет в базе? Добавь свой продукт — значения на 100 г.'}</p>
+      <div class="r"><input id="nfN" placeholder="название" value="${esc(my ? my.n : typed)}" aria-label="Название">
+        <input id="nfK" inputmode="numeric" placeholder="ккал" value="${esc(v.k ?? '')}" aria-label="Калории">
+        <input id="nfP" inputmode="decimal" placeholder="белок" value="${esc(v.p ?? '')}" aria-label="Белок">
+        <input id="nfF" inputmode="decimal" placeholder="жир" value="${esc(v.f ?? '')}" aria-label="Жир">
+        <input id="nfC" inputmode="decimal" placeholder="угл" value="${esc(v.c ?? '')}" aria-label="Углеводы"></div>
+      <button id="nfSave">${my ? 'ОБНОВИТЬ ПРОДУКТ' : 'СОХРАНИТЬ В БАЗУ'}</button></div>` + h;
   }
 
   const chips = `<div class="chains"><button data-ch="" class="${chainFilter ? '' : 'on'}">Все</button>` +
@@ -6622,13 +6645,32 @@ $('fpl').addEventListener('click', e => {
     return;
   }
 
+  const del = e.target.closest('[data-my]');
+  if (del) {
+    const nm = del.dataset.my, uses = foodUses(nm);
+    ask('Убрать «' + nm + '» из своей базы?' +
+      (uses ? ' Он записан в дни и шаблоны ' + uses + ' ' + plural(uses, 'раз', 'раза', 'раз') +
+        ' — там строка останется, но перестанет считаться.' : ''), 'УБРАТЬ').then(okGo => {
+      if (!okGo) return;
+      S.myFood = S.myFood.filter(f => f.n !== nm);
+      const i2 = picked.findIndex(x => x.p === nm);
+      if (i2 >= 0) picked.splice(i2, 1);
+      invalidateFood(); save(); note('Продукт убран');
+      drawPick($('fq').value); paintFood();
+    });
+    return;
+  }
+
   if (e.target.id === 'nfSave') {
     const n = $('nfN').value.trim();
     if (!n) return;
-    S.myFood.push({ n: n, k: num($('nfK').value), p: num($('nfP').value), f: num($('nfF').value), c: num($('nfC').value) });
-    save(); note('Продукт добавлен в базу');
+    const rec = { n: n, k: num($('nfK').value), p: num($('nfP').value), f: num($('nfF').value), c: num($('nfC').value) };
+    const at = S.myFood.findIndex(f => String(f.n).toLowerCase() === n.toLowerCase());
+    if (at >= 0) S.myFood[at] = rec; else S.myFood.push(rec);
+    invalidateFood(); save();
+    note(at >= 0 ? 'Продукт обновлён' : 'Продукт добавлен в базу');
     $('fq').value = n;
-    drawPick(n);
+    drawPick(n); paintFood();
   }
 });
 
