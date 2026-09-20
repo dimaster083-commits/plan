@@ -3446,7 +3446,7 @@ function paintWorkout() {
   const jr = sel < today() && !editPast && dayEntries(sel).length > 0;
   $('tw').hidden = !tr && !jr;
   $('addEx').hidden = jr;
-  $('fin').hidden = jr;
+  $('fin').hidden = jr || sel > today();
   $('editPast').hidden = !jr;
 
   if (jr) { exOpen = null; document.body.classList.remove('exopen'); paintJournal(); }
@@ -3471,7 +3471,7 @@ function paintWorkout() {
       : exFull(d.ex[exOpen], exOpen, r, IN, d);
     $('exl').classList.toggle('full', exOpen !== null);
     $('addEx').hidden = exOpen !== null;
-    $('fin').hidden = exOpen !== null;
+    $('fin').hidden = exOpen !== null || sel > today();
     // раскрытое упражнение занимает экран целиком: всё остальное уходит
     document.body.classList.toggle('exopen', exOpen !== null);
 
@@ -3870,6 +3870,10 @@ function unbumpWorking(log) {
 }
 
 function toggleSet(j) {
+  // Будущий день — это план, а не журнал. Раньше подход там закрывался
+  // как обычно, и опыт с тоннажем начислялись за тренировку, которой
+  // ещё не было.
+  if (sel > today()) { note('Этот день ещё впереди — отмечать нечего'); return; }
   const d = dayOf(sel), r = recRW(sel), p = d.ex[j] || {};
   const l = r.log[j] = r.log[j] || {};
 
@@ -3986,6 +3990,7 @@ $('shB').addEventListener('input', e => {
   $('exlist').innerHTML = exPickList();
 });
 $('fin').addEventListener('click', () => {
+  if (sel > today()) { note('Этот день ещё впереди'); return; }
   const r = recRW(sel);
   if (r.wo) return;
   r.wo = 1;
