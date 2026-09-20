@@ -3064,8 +3064,22 @@ function load() {
   // только расписание, а всё заработанное остаётся на месте.
   if (!S || typeof S !== 'object') S = build();
   if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
+  scrubKeys();
   migrate();
   recomputeStats(1);
+}
+
+/* Ключ журнала — это дата. Если в хранилище попало что-то другое —
+   после сбоя, ручной правки файла копии или чужой версии, — весь
+   «Прогресс» валился с «Invalid time value» и вкладка переставала
+   открываться. Мусор выбрасываем на входе, остальное не трогаем. */
+function scrubKeys() {
+  const okDate = k => /^\d{4}-\d{2}-\d{2}$/.test(k) && !isNaN(new Date(k + 'T00:00:00').getTime());
+  ['rec', 'map'].forEach(field => {
+    const src = S[field];
+    if (!src || typeof src !== 'object' || Array.isArray(src)) { S[field] = {}; return; }
+    Object.keys(src).forEach(k => { if (!okDate(k)) delete src[k]; });
+  });
 }
 
 let saveTimer = null;
@@ -3680,9 +3694,16 @@ function purgeExercise(name) {
 
 /* Отдых под тип упражнения. Трёхминутный отдых на базе даёт больше и в силе,
    и в массе, чем минутный; изоляции хватает полутора. Раньше на всё стояло 90 с. */
+/* Отдых между подходами. Раньше здесь читалось r[5], а у записей
+   каталога всего пять полей — шестого нет ни у одного упражнения.
+   То есть таймер всегда предлагал 90 секунд, каким бы тяжёлым ни было
+   движение. Считаем от доли опорного веса: чем ближе к базе, тем
+   дольше отдых. */
 function restFor(name) {
   const r = EXDB[name];
-  return (r && r[5]) || 90;
+  if (!r) return 90;
+  const k = Number(r[3]) || 0;
+  return k >= 0.7 ? 180 : k >= 0.25 ? 120 : 90;
 }
 
 // одно нажатие проставляет все подходы по верхней границе: в зале это
