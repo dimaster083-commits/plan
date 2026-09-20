@@ -1453,8 +1453,10 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 :root[data-skin="sl"] .st8lv .brand{display:none}
 :root[data-skin="ber"] .st8lv .hx{display:none}
 :root[data-skin="ber"] .st8lv{color:var(--ink2)}
-:root[data-skin="ber"] .st8lv b{position:absolute;right:-2px;bottom:-4px;font-size:15px;
-  background:var(--s0);padding:0 3px;border:1px solid var(--ln)}
+:root[data-skin="ber"] .st8lv{overflow:visible}
+/* номер ступени стоял на нижнем штрихе клейма — отводим его за знак */
+:root[data-skin="ber"] .st8lv b{position:absolute;right:-9px;bottom:-7px;font-size:14px;
+  line-height:1;background:var(--s0);padding:2px 5px;border:1px solid var(--ln2)}
 :root[data-skin="ber"] .st8r{background:none;color:var(--ink2)}
 
 /* ---------- строка упражнения ---------- */
@@ -1746,8 +1748,16 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
     <div class="st8h">
       <span class="st8lv"><svg viewBox="0 0 50 50" aria-hidden="true">
         <path class="hx" d="M25 2l20 11.5v23L25 48 5 36.5v-23z" fill="none" stroke="currentColor" stroke-width="1.4"/>
-        <g class="brand" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round">
-          <path d="M25 13v24M15 20l20 12M35 20L15 32"/></g>
+        <!-- Клеймо жертвы: длинный стержень остриём вниз и две пары
+             штрихов, сужающихся к концу. Намеренно неровное: длины и
+             углы разные, штрихи слегка изогнуты. Рисуется цветом темы. -->
+        <g class="brand" fill="currentColor" stroke="none">
+          <path d="M23.75 3.38Q23.73 25.18 24.60 47.00L24.60 47.00Q25.17 25.20 26.65 3.42Z"/>
+          <path d="M24.99 16.67Q17.98 11.99 12.20 6.00L12.20 6.00Q17.29 12.72 23.61 18.13Z"/>
+          <path d="M26.58 15.94Q33.41 12.13 39.30 6.80L39.30 6.80Q32.83 11.20 25.42 14.06Z"/>
+          <path d="M23.60 25.93Q19.13 29.65 15.60 34.40L15.60 34.40Q19.73 30.31 24.80 27.27Z"/>
+          <path d="M25.58 25.48Q30.72 27.98 35.00 31.60L35.00 31.60Q31.23 27.31 26.62 24.12Z"/>
+        </g>
       </svg><b id="st8n">1</b></span>
       <span class="st8t">
         <h1 data-t="hero">Охотник</h1>
