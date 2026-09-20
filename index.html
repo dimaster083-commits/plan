@@ -5352,7 +5352,7 @@ function progressionRows() {
       best: h.length ? Math.max(...h.map(x => x[1])) : 0,
       first: h.length ? h[0][1] : 0,
       diff: sh ? sh.diff : null,
-      total: h.length ? h[h.length - 1][1] - h[0][1] : null,
+      total: h.length ? Math.max(...h.map(x => x[1])) - h[0][1] : null,
       last: h.length ? h[h.length - 1][0] : null,
       sessions: h.length,
       sets30: setsOfExercise(n, 30)
@@ -7004,7 +7004,11 @@ function strengthShift(name, days) {
   const from = new Date(); from.setDate(from.getDate() - days + 1);
   const win = h.filter(x => x[0] >= iso(from));
   if (win.length < 2) return null;
-  return { from: win[0][1], to: win[win.length - 1][1], diff: win[win.length - 1][1] - win[0][1] };
+  // Сравниваем лучший вес с первым, а не последний с первым. На неделе
+  // разгрузки веса ниже по самому плану, и «последнее минус первое»
+  // рисовало минус там, где рекорд как раз вырос.
+  const best = Math.max(...win.map(x => x[1]));
+  return { from: win[0][1], to: best, diff: best - win[0][1] };
 }
 
 function analyze() {
