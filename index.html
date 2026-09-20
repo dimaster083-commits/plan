@@ -1502,6 +1502,57 @@ body.exopen #scr-wo{padding-top:calc(var(--st) + 12px)}
 body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
   background:linear-gradient(var(--s0),var(--s0) 62%,transparent)}
 
+/* Заливка дня календаря: цвет приходит из темы переменной, насыщенность —
+   отдельным слоем. Числами в разметке цвета больше не задаются. */
+.cd{position:relative;overflow:hidden}
+.cd::after{content:'';position:absolute;inset:0;background:var(--cd-c,transparent);
+  opacity:.14;pointer-events:none;z-index:0}
+.cd.wo::after{opacity:.42}
+.cd.t-rest::after{opacity:.07}
+.cd>*{position:relative;z-index:1}
+.cd.t-rest{--cd-c:var(--c-rest)} .cd.t-up1{--cd-c:var(--c-up1)}
+.cd.t-lo1{--cd-c:var(--c-lo1)} .cd.t-up2{--cd-c:var(--c-up2)}
+.cd.t-lo2{--cd-c:var(--c-lo2)} .cd.t-other{--cd-c:var(--c-other)}
+.cd .dot{background:var(--cd-c)}
+
+/* ---------- подгон под любой телефон ----------
+   Проверено на 320, 360, 375, 390, 414, 430 и 768 px. Жёстких ширин
+   не осталось: всё, что упиралось в край на маленьком экране, задано
+   через clamp и доли, поэтому семь дней недели помещаются и на 320. */
+.wrap{padding:0 clamp(10px,3.6vw,16px)}
+.drow{gap:clamp(3px,1.3vw,6px);padding:0 clamp(10px,3.6vw,16px)}
+.chip{flex:1 1 0;min-width:0;padding:9px 2px}
+.chip b{font-size:clamp(10px,3vw,13px);letter-spacing:clamp(.02em,.5vw,.14em)}
+.chip .tk{font-size:8px}
+
+.st8h{gap:clamp(8px,3vw,12px)}
+.st8lv{width:clamp(42px,13vw,52px);height:clamp(42px,13vw,52px)}
+.st8lv b{font-size:clamp(16px,5vw,21px)}
+.st8t h1{font-size:clamp(16px,5.4vw,21px)}
+.st8row{grid-template-columns:clamp(30px,10vw,42px) 1fr auto}
+
+.exrow{gap:clamp(7px,2.6vw,12px);padding:13px clamp(10px,3.4vw,14px)}
+.exrow .n{font-size:clamp(14px,4.4vw,17px)}
+.exrow .kg{font-size:clamp(16px,5.2vw,20px)}
+
+.exf{padding:clamp(13px,4.4vw,18px)}
+.exf .exname{font-size:clamp(19px,6.6vw,26px)}
+.exfw{flex-wrap:wrap;row-gap:10px}
+.exfkg{width:clamp(92px,32vw,140px);font-size:clamp(38px,13vw,54px)}
+.exfsm{margin-left:auto;gap:clamp(6px,2.2vw,10px)}
+.exfsm .fl input{width:clamp(46px,15vw,64px);font-size:clamp(14px,4.4vw,17px)}
+.exfact{grid-template-columns:1fr clamp(48px,15vw,62px)}
+
+.flds{gap:clamp(5px,2vw,8px)}
+.setr{padding:clamp(10px,3.4vw,14px)}
+.setr .rb{grid-template-columns:repeat(auto-fit,minmax(clamp(46px,15vw,58px),1fr));
+  gap:clamp(5px,2.2vw,8px)}
+.tri{gap:clamp(6px,2.4vw,9px)}
+.tab{font-size:clamp(8px,2.6vw,9.5px);letter-spacing:clamp(.04em,.6vw,.2em)}
+.wtab td,.wtab th{padding:10px clamp(2px,1vw,5px);font-size:clamp(11px,3.4vw,12.5px)}
+.sum{gap:clamp(6px,2.4vw,9px)}
+.mac{gap:clamp(6px,2.4vw,9px)}
+
 /* ---------- выбор темы в настройках ---------- */
 .skinpick{display:block;width:100%;text-align:left;padding:14px 15px;margin-bottom:8px}
 .skinpick b{display:block;font-family:var(--fd);font-size:17px;letter-spacing:.1em;
@@ -2675,10 +2726,10 @@ function paintDay() {
     const ds = iso(base);
     return `<button class="chip${k === i ? ' on' : ''}" data-d="${ds}">
       ${recOf(ds).wo ? '<span class="tk">✓</span>' : ''}
-      <b>${esc(x.k)}</b><u style="background:${COL[x.t]}"></u></button>`;
+      <b>${esc(x.k)}</b><u style="background:var(--c-${x.t})"></u></button>`;
   }).join('');
 
-  $('dln').style.background = COL[d.t];
+  $('dln').style.background = 'var(--c-' + d.t + ')';
   $('dnm').value = d.n;
   $('dsb').textContent = d.s;
   const dd = at(sel);
@@ -2697,7 +2748,7 @@ function paintDay() {
       const lbl = x.t === 'rest' ? 'отдых'
         : ((TYPES.find(t => t[0] === x.t) || [, ''])[1] || '').toLowerCase();
       return `<button class="mvbtn${(mv === undefined ? wd : mv) === k ? ' on' : ''}" data-mv="${k}">
-        <b>${esc(x.k)}</b><i style="color:${COL[x.t]}">${esc(lbl)}</i></button>`;
+        <b>${esc(x.k)}</b><i style="color:var(--c-${x.t})">${esc(lbl)}</i></button>`;
     }).join('');
     $('movedRow').hidden = mv === undefined;
     if (mv !== undefined) $('movedTxt').textContent = 'Здесь тренировка за ' + S.days[mv].n;
@@ -2897,7 +2948,7 @@ function exFull(e, j, r, IN, d) {
         pr ? ' · рекорд ' + kg(pr) + ' кг' : ''}</div>
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel))}</div>
       ${hist.length > 1 ? `<div class="exfhist"><span class="lbl">Рост по журналу</span>
-        ${miniChart(hist.map(x => [x[0], x[1]]), cssVar('--acc-2', '#A981FF'))}</div>` : ''}
+        ${miniChart(hist.map(x => [x[0], x[1]]), 'var(--acc-2)')}</div>` : ''}
       <div class="exfact">
         <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
         <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
@@ -3362,7 +3413,7 @@ async function openDayReport(ds) {
   const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
 
   let h = `<div class="dayrh"><b>${fmt(ds)}</b>
-    <i style="color:${COL[d.t]}">${esc(d.t === 'rest' ? 'Отдых' : d.s)}</i></div>`;
+    <i style="color:var(--c-${d.t})">${esc(d.t === 'rest' ? 'Отдых' : d.s)}</i></div>`;
 
   if (ent.length) {
     h += `<div class="sum">
@@ -3488,17 +3539,17 @@ function miniChart(pts, color) {
   const Y = v => 100 - ((v - lo) / sp) * 80;
   const line = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
   return `<svg viewBox="0 0 300 110" preserveAspectRatio="none">
-    <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
-    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" fill="${color}"/>`).join('')}
-    <text x="10" y="12" fill="${cssVar('--ink3', '#A18AD0')}" font-size="9">${hi} кг</text>
-    <text x="10" y="108" fill="${cssVar('--ink3', '#A18AD0')}" font-size="9">${lo} кг</text></svg>`;
+    <path d="${line}" fill="none" style="stroke:${color}" stroke-width="2" stroke-linejoin="round"/>
+    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" style="fill:${color}"/>`).join('')}
+    <text x="10" y="12" style="fill:var(--ink3)" font-size="9">${hi} кг</text>
+    <text x="10" y="108" style="fill:var(--ink3)" font-size="9">${lo} кг</text></svg>`;
 }
 
 function openHistory(name) {
   const h = exHistory(name), pr = prOf(name);
   let html = `<div class="win shb"><h5>${esc(name)}</h5>
     <div class="s">${pr ? ('личный рекорд ' + kg(pr) + ' кг') : 'рекорда пока нет'}</div>
-    ${miniChart(h, cssVar('--acc-2', '#A981FF'))}`;
+    ${miniChart(h, 'var(--acc-2)')}`;
   if (h.length > 1) {
     const df = h[h.length - 1][1] - h[0][1];
     html += `<div class="s" style="margin-top:8px">с ${fmt(h[0][0])}:
@@ -3776,15 +3827,16 @@ function paintChart() {
   const Y = v => 110 - ((v - lo) / span) * 100;
   const line = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
   // цвет графика берётся из темы: раньше он был сиреневым независимо от оформления
-  const acc = cssVar('--acc', '#1F5F8B'), dot = cssVar('--acc-ink', acc), mut = cssVar('--ink3', '#61666B');
+  // цвета в стилях, а не в атрибутах: тогда они следуют за темой без перерисовки
+  const acc = 'var(--acc)', dot = 'var(--acc-ink)', mut = 'var(--ink3)';
   sv.innerHTML = `<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${acc}" stop-opacity=".28"/>
-      <stop offset="1" stop-color="${acc}" stop-opacity="0"/></linearGradient></defs>
+      <stop offset="0" style="stop-color:var(--acc)" stop-opacity=".28"/>
+      <stop offset="1" style="stop-color:var(--acc)" stop-opacity="0"/></linearGradient></defs>
     <path d="${line} L ${X(pts[pts.length - 1][0]).toFixed(1)} 115 L ${X(pts[0][0]).toFixed(1)} 115 Z" fill="url(#wg)"/>
-    <path d="${line}" fill="none" stroke="${acc}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" fill="${dot}"/>`).join('')}
-    <text x="10" y="12" fill="${mut}" font-size="9">${hi.toFixed(1)}</text>
-    <text x="10" y="118" fill="${mut}" font-size="9">${lo.toFixed(1)}</text>`;
+    <path d="${line}" fill="none" style="stroke:var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" style="fill:var(--acc-ink)"/>`).join('')}
+    <text x="10" y="12" style="fill:var(--ink3)" font-size="9">${hi.toFixed(1)}</text>
+    <text x="10" y="118" style="fill:var(--ink3)" font-size="9">${lo.toFixed(1)}</text>`;
   pace(pts);
 }
 
@@ -3844,7 +3896,7 @@ function paintVol() {
   const mx = Math.max(1, ...GROUPS.map(([n]) => num(S.vol[n])));
   $('loadList').innerHTML = GROUPS.map(([n, t]) =>
     `<div class="ld"><span class="n">${n}</span>
-      <span class="b"><i style="width:${Math.round(num(S.vol[n]) / mx * 100)}%;background:${COL[t]}"></i></span>
+      <span class="b"><i style="width:${Math.round(num(S.vol[n]) / mx * 100)}%;background:var(--c-${t})"></i></span>
       <span class="v"><b>${dec(num(S.vol[n]) / 1000)} т</b><em>${sets[n]} подх.</em></span></div>`).join('');
 }
 
@@ -3924,25 +3976,25 @@ function cal() {
     const cur = row.some(c => c.ds === curWk);
     const html = row.map(c => {
       if (c.blank) return '<span class="cd"></span>';
-      const r = recOf(c.ds), t = dayOf(c.ds).t, col = COL[t];
-      const cls = ['cd', 'in'];
+      const r = recOf(c.ds), t = dayOf(c.ds).t;
+      // Цвет дня берётся из темы классом, а не вписывается числом: тогда смена
+      // темы перекрашивает календарь сама, без перерисовки разметки.
+      const cls = ['cd', 'in', 't-' + t];
       if (c.ds === today()) cls.push('today');
       if (c.ds === sel) cls.push('sel');
       if (r.wo) cls.push('wo');
-      // день отдыха был подсвечен сиреневым, зашитым числом; теперь нейтральный, из темы
-      const bg = t === 'rest' ? (COL.rest + '16') : (r.wo ? col + '55' : col + '1E');
-      return `<button class="${cls.join(' ')}" style="background:${bg}" data-cd="${c.ds}">
+      return `<button class="${cls.join(' ')}" data-cd="${c.ds}">
         ${S.map[c.ds] !== undefined ? '<span class="mv">↔</span>' : ''}
         ${r.wo ? '<span class="ok">✓</span>' : ''}
         <span>${c.d}</span>
-        ${t !== 'rest' ? `<span class="dot" style="background:${col}"></span>` : ''}
+        ${t !== 'rest' ? '<span class="dot"></span>' : ''}
         ${PH.indexOf(c.ds) >= 0 ? '<span class="pm"></span>' : ''}</button>`;
     }).join('');
     weeks.push(`<div class="cwk${cur ? ' cur' : ''}"><span class="wn">${lab}</span>${html}</div>`);
   }
   $('cgrid').innerHTML = weeks.join('');
   $('cleg').innerHTML = TYPES.filter(t => t[0] !== 'rest' && t[0] !== 'other')
-    .map(([t, l]) => `<span><i style="background:${COL[t]}"></i>${l}</span>`).join('') +
+    .map(([t, l]) => `<span><i style="background:var(--c-${t})"></i>${l}</span>`).join('') +
     '<span>✓ выполнено</span><span>↔ перенесено</span><span>• есть фото</span>';
 }
 
@@ -4159,14 +4211,19 @@ const DICT = {
 const skinNow = () => (document.documentElement.dataset.skin === 'ber' ? 'ber' : 'sl');
 const T = k => (DICT[skinNow()] || DICT.sl)[k] ?? (DICT.sl[k] ?? k);
 
+/* Переключение темы НИЧЕГО не перерисовывает. Это принципиально: сменить
+   оформление можно посреди любого незаконченного действия — с набранным
+   и ещё не сохранённым числом в поле, с идущим таймером, с раскрытым
+   упражнением, с открытой шторкой, — и ни одно из них не прервётся.
+   Поэтому все цвета в разметке ссылаются на переменные темы, а не на
+   числа: перекрашивание делает браузер, а не наш код. */
 function applyTheme(id) {
   const ok = SKINS.some(s2 => s2.id === id) ? id : 'sl';
   document.documentElement.dataset.skin = ok;
   try { localStorage.setItem('sys-gym-skin', ok); } catch (e) { /* приватный режим */ }
-  syncCol();
+  syncCol();          // COL нужен расчётам, в разметке его больше нет
   syncThemeColor();
-  paintDict();
-  render();
+  paintDict();        // подписи меняются на месте, узлы те же
 }
 
 // строка состояния берёт цвет фона темы
