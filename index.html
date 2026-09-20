@@ -856,7 +856,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
    ========================================================================= */
 :root, :root[data-skin="sl"]{
   /* СИСТЕМА — палитра #34117E … #D0BCFC */
-  --s0:#07040F; --s1:rgba(26,10,62,.74); --s2:rgba(52,17,126,.34); --s3:rgba(102,49,219,.30);
+  --s0:#07040F; --s1:rgba(24,11,54,.93); --s2:rgba(52,17,126,.42); --s3:rgba(102,49,219,.38);
+  --btn:rgba(32,15,72,.92); --panel-solid:#140A2E;
   --ln:rgba(123,69,240,.42); --ln2:rgba(123,69,240,.62);
   --ink:#F3EDFF; --ink2:#D0BCFC; --ink3:#A18AD0;
 
@@ -894,7 +895,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 
 :root[data-skin="ber"]{
   /* КЛЕЙМО — палитра #F8F9FA … #181B1E, ни одного цвета и ни грамма свечения */
-  --s0:#0B0D0F; --s1:rgba(24,27,30,.82); --s2:rgba(95,98,102,.22); --s3:rgba(165,169,174,.26);
+  --s0:#0B0D0F; --s1:rgba(20,22,25,.93); --s2:rgba(95,98,102,.3); --s3:rgba(165,169,174,.32);
+  --btn:rgba(28,31,34,.93); --panel-solid:#16181B;
   --ln:rgba(165,169,174,.3); --ln2:rgba(165,169,174,.5);
   --ink:#F8F9FA; --ink2:#CFD1D4; --ink3:#A5A9AE;
 
@@ -929,8 +931,11 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 }
 
 /* обои живут отдельным слоем: их меняет тема, а не разметка */
+/* Обои вынесены в собственный слой: без этого телефон перерисовывал
+   картинку при каждой прокрутке. */
 #wall{position:fixed;inset:0;z-index:-2;background:var(--wall) center top/cover no-repeat;
-  filter:grayscale(var(--wall-gray))}
+  filter:grayscale(var(--wall-gray));transform:translateZ(0);will-change:transform;
+  contain:strict;pointer-events:none}
 #wall::after{content:'';position:absolute;inset:0;background:var(--wall-dim)}
 
 /* старые имена: на них завязаны десятки правил ниже по файлу */
@@ -1297,6 +1302,10 @@ body{font-family:var(--f);font-weight:var(--wt);background:transparent}
 h1,h2,h3,h4,h5,.dsp{font-family:var(--fd)}
 
 /* ---------- панель ---------- */
+/* Размытия здесь больше нет. Панелей на экране десятки, и каждая с
+   backdrop-filter — это отдельный слой, который телефон пересчитывает
+   на каждый кадр: прокрутка начинала дёргаться. Плотности заливки
+   хватает, чтобы обои не мешали читать. */
 .win{
   background:var(--s1);
   border:1px solid var(--ln);
@@ -1304,8 +1313,6 @@ h1,h2,h3,h4,h5,.dsp{font-family:var(--fd)}
   border-radius:0;
   clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),
     calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
-  backdrop-filter:blur(var(--blur)) saturate(var(--sat));
-  -webkit-backdrop-filter:blur(var(--blur)) saturate(var(--sat));
   box-shadow:0 0 var(--glow-r) var(--glow-c);
 }
 /* «Система»: светящаяся засечка слева. «Клеймо»: уголки, как на гравюре. */
@@ -1381,8 +1388,7 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 
 /* ---------- дни недели ---------- */
 .days{background:var(--glass);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--ln)}
-.chip{background:var(--s1);border:1px solid var(--ln);border-radius:0;color:var(--ink3);
-  backdrop-filter:blur(var(--blur))}
+.chip{background:var(--s1);border:1px solid var(--ln);border-radius:0;color:var(--ink3)}
 .chip b{font-size:12px;font-weight:var(--wt);letter-spacing:.14em;text-transform:uppercase}
 .chip.on{background:var(--acc-soft);border-color:var(--acc);color:var(--ink);
   box-shadow:0 0 var(--glow-r) var(--glow-c)}
@@ -1419,15 +1425,14 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 /* ---------- шторки и диалоги ---------- */
 .sheet,.ov,.fp{background:var(--glass2);backdrop-filter:blur(var(--blur))}
 .ask{background:var(--scrim)}
-.askw,.setw{background:var(--s1);border:1px solid var(--ln);border-radius:0;
-  backdrop-filter:blur(var(--blur));box-shadow:var(--sh3)}
+.askw,.setw{background:var(--panel-solid);border:1px solid var(--ln);border-radius:0;box-shadow:var(--sh3)}
 .askw button{border:1px solid var(--ln);border-radius:0;color:var(--ink2);
   letter-spacing:.16em;text-transform:uppercase}
 .askw button.yes{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill)}
 .ovh b{font-family:var(--fd);font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink)}
 .ovh button{width:38px;height:38px;border-radius:0;background:var(--s2);border:1px solid var(--ln);color:var(--ink2)}
-.note{background:var(--s1);border:1px solid var(--acc);color:var(--ink);border-radius:0;
-  box-shadow:0 0 var(--glow-r) var(--glow-c);backdrop-filter:blur(var(--blur))}
+.note{background:var(--panel-solid);border:1px solid var(--acc);color:var(--ink);border-radius:0;
+  box-shadow:0 0 var(--glow-r) var(--glow-c)}
 .note span{color:var(--ink);letter-spacing:.1em}
 #boot{background:var(--s0)}
 #boot b{color:var(--acc-2);letter-spacing:.4em;font-family:var(--fd)}
@@ -1542,11 +1547,9 @@ body.exopen .exfbar{position:sticky;top:0;z-index:12;padding:6px 0 10px;
 .dh p,#dt,h2.sec,.bkst,#kcTxt,#phDate{
   text-shadow:0 1px 10px var(--s0),0 0 22px var(--s0)}
 h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
-  border-left:2px solid var(--acc);backdrop-filter:blur(var(--blur))}
-#dayctx{background:linear-gradient(180deg,var(--glass) 0%,var(--glass) 74%,transparent 100%);
-  backdrop-filter:blur(var(--blur))}
-#phDate,.bkst,#kcTxt{background:var(--glass);padding:4px 9px;display:inline-block;
-  backdrop-filter:blur(var(--blur))}
+  border-left:2px solid var(--acc)}
+#dayctx{background:linear-gradient(180deg,var(--glass) 0%,var(--glass) 74%,transparent 100%)}
+#phDate,.bkst,#kcTxt{background:var(--glass);padding:4px 9px;display:inline-block}
 /* «Темп» и напоминание красились цветом группы мышц: на тёмной панели
    он давал контраст 3,5 при норме 4,5 */
 .chart .hint b,.chart .hint.warn b,.chart .hint.good b,
@@ -1563,8 +1566,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
 .pseg{display:flex;margin:calc(var(--st) + 6px) 0 11px;border:1px solid var(--ln)}
 .pseg button{flex:1;padding:10px 0;font-size:clamp(9.5px,3vw,11.5px);font-weight:var(--wt);
   letter-spacing:clamp(.04em,.5vw,.14em);text-transform:uppercase;color:var(--ink3);
-  background:var(--s1);backdrop-filter:blur(var(--blur));
-  border-right:1px solid var(--ln)}
+  background:var(--btn);border-right:1px solid var(--ln)}
 .pseg button:last-child{border-right:0}
 .pseg button.on{color:var(--onacc);background:var(--acc-fill);
   box-shadow:0 0 var(--glow-r) var(--glow-c)}
@@ -1616,11 +1618,11 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
 .strip button em{font-size:10.5px;letter-spacing:.06em;color:var(--ink3)}
 .pane .pic,.mopair .pic{border-radius:0;border-color:var(--ln);background:var(--s2)}
 
-/* полупрозрачные поверхности поверх обоев обязаны размывать фон,
-   иначе сквозь кнопку просвечивает картинка */
-.add,.anb,.cpb,.copyb,.bkb button,.pseg button,.chip,.calback,
+/* Размытие на каждой кнопке съедало кадры. Вместо него плотная заливка:
+   выглядит так же, а рисуется в один проход. */
+.add,.anb,.cpb,.copyb,.bkb button,.pseg button,.calback,
 .phbtns button,.mladd,.go,.rest,.gear,.types button,.cnav button{
-  backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur))}
+  background:var(--btn)}
 
 /* ---------- добавки отдельной рамкой ---------- */
 .supp{margin-top:18px;padding:14px clamp(11px,3.6vw,15px)}
@@ -1629,7 +1631,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
   text-transform:uppercase;color:var(--ink)}
 .supph em{font-style:normal;font-family:var(--fn);font-size:11px;color:var(--ink3);letter-spacing:.08em}
 .suppn{margin:5px 0 11px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
-.supp .row{background:var(--s2);border:1px solid var(--ln);margin-bottom:7px}
+.supp .row{background:var(--btn);border:1px solid var(--ln);margin-bottom:7px}
 .supp .add{margin-top:4px;font-size:11.5px;padding:11px}
 
 /* ---------- журнал за год ---------- */
@@ -2622,7 +2624,7 @@ function migrate() {
   if (!S.mig8) {
     const storedVol = Object.assign({}, S.vol), storedXp = num(S.xp);
     S.volBase = null; S.xpBase = 0;
-    recomputeStats();
+    recomputeStats(1);
     const base = {};
     GROUPS.forEach(([n]) => {
       const d = (num(storedVol[n]) || 0) - (S.vol[n] || 0);
@@ -2637,7 +2639,13 @@ function migrate() {
 /* Тонны и опыт пересчитываются из журнала при каждом запуске, а не копятся отдельным
    счётчиком. Поэтому случайное нажатие, отменённый подход или удалённый день
    автоматически приводят цифры в порядок — расходиться им больше негде. */
-function recomputeStats() {
+let statsDirty = true;
+function recomputeStats(force) {
+  // Пересчёт идёт по всему журналу. Раньше он запускался на каждую
+  // перерисовку — при годе записей это тысячи проходов на каждое нажатие.
+  // Теперь только когда журнал действительно менялся.
+  if (!statsDirty && !force) return;
+  statsDirty = false;
   wkCache = null;
   const vol = zeroVol();
   let xp = 0;
@@ -2672,12 +2680,14 @@ function load() {
   if (!S || typeof S !== 'object') S = build();
   if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
   migrate();
-  recomputeStats();
+  recomputeStats(1);
 }
 
 let saveTimer = null;
 function save() {
   wkCache = null;
+  statsDirty = true;
+  entCache = null;
   if (!canSave) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(flush, 150);      // пачкой: за одно нажатие состояние меняется не раз
@@ -2954,7 +2964,10 @@ $('chips').addEventListener('click', e => {
   sel = b.dataset.d; mo = sel.slice(0, 7); edit = false; editPast = false; exOpen = null; render();
 });
 $('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 7); editPast = false; exOpen = null; render(); });
-$('gear').addEventListener('click', () => { edit = !edit; paintDay(); });
+// Шестерёнка открывает настройки. Раньше она переключала правку дня,
+// а экран настроек был написан, но никуда не привязан — сменить тему
+// было физически нечем.
+$('gear').addEventListener('click', () => { edit = false; paintDay(); openSettings(); });
 $('dnm').addEventListener('input', e => { dayOf(sel).n = e.target.value; save(); });
 $('types').addEventListener('click', async e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
@@ -3270,7 +3283,7 @@ function purgeExercise(name) {
     if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw) delete S.rec[ds];
   });
   delete S.pr[name];
-  recomputeStats();
+  recomputeStats(1);
   return n;
 }
 
@@ -3575,7 +3588,14 @@ function workoutSummary(ds) {
    название, группа, подходы, повторы и вес, — поэтому перестановка дней
    недели или правка программы больше не уносят прошедшие тренировки.
    ========================================================================= */
+/* Разбор дня раньше считался заново на каждое обращение, а список истории
+   спрашивает его трижды на строку: тоннаж, подходы и сама строка. Кэш
+   сбрасывается любой записью в журнал. */
+let entCache = null;
 function dayEntries(ds) {
+  if (!entCache) entCache = new Map();
+  const hit = entCache.get(ds);
+  if (hit) return hit;
   const r = recOf(ds), day = dayOf(ds) || {}, ex = day.ex || [], out = [];
   Object.keys(r.log).map(Number).filter(j => !isNaN(j)).sort((a, b) => a - b).forEach(j => {
     const l = r.log[j];
@@ -3588,6 +3608,7 @@ function dayEntries(ds) {
     out.push({ n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs,
       vol: vol, g: l.g || p.g || null, pr: l.prevPr !== undefined && l.prevPr > 0 });
   });
+  entCache.set(ds, out);
   return out;
 }
 const dayTon = ds => dayEntries(ds).reduce((a, e) => a + e.vol, 0);
@@ -4520,12 +4541,15 @@ function openSettings() {
   const cur = skinNow();
   sheet('НАСТРОЙКИ',
     '<div class="cph">ОФОРМЛЕНИЕ</div>' +
-    SKINS.map(s2 => `<button class="win prl skinpick${s2.id === cur ? ' on' : ''}" data-skin-set="${s2.id}">
-      <b>${esc(s2.n)}</b><span>${esc(s2.sub)}</span></button>`).join('') +
-    '<p class="s" style="color:var(--mut);font-size:12px;margin:8px 0 0">' +
-    'Оформление и подписи меняются, журнал и веса остаются на месте.</p>' +
+    SKINS.map(s2 => `<button class="skinpick${s2.id === cur ? ' on' : ''}" data-skin-set="${s2.id}">
+      <b>${esc(s2.n)}</b><span>${esc(s2.sub)}</span>
+      <i>${s2.id === cur ? 'выбрано' : 'выбрать'}</i></button>`).join('') +
+    '<p class="s" style="color:var(--mut);font-size:12.5px;margin:9px 0 0;line-height:1.5">' +
+    'Оформление и подписи меняются, журнал, веса и снимки остаются на месте.</p>' +
+    '<div class="cph">ЭТОТ ДЕНЬ</div>' +
+    '<button class="add" data-dayset="1">Настроить тренировку этого дня</button>' +
     '<div class="cph">ЗВУК</div>' +
-    `<button class="add" data-snd="1">Звук системы: ${S.sound === 0 ? 'выкл' : 'вкл'}</button>` +
+    `<button class="add" data-snd="1">Звук: ${S.sound === 0 ? 'выкл' : 'вкл'}</button>` +
     '<div class="cph">ВЕСА</div>' +
     '<button class="add" data-recalc="1">Пересчитать рабочие веса</button>');
 }
@@ -4537,6 +4561,8 @@ $('shB').addEventListener('click', e => {
   if (sn) { S.sound = S.sound === 0 ? 1 : 0; save(); if (S.sound) dingSet(); openSettings(); return; }
   const rc = e.target.closest('[data-recalc]');
   if (rc) { sheetClose(); openSetup(); return; }
+  const dst = e.target.closest('[data-dayset]');
+  if (dst) { sheetClose(); tab = 'wo'; edit = true; exOpen = null; render(); window.scrollTo(0, 0); return; }
 });
 
 syncThemeColor();
