@@ -2124,7 +2124,9 @@ syncCol();
    Передняя дельта догружается жимами, задняя — тягами; отдельно считаем то,
    что делается на плечи напрямую. */
 const GROUPS = [['Спина', 'back'], ['Грудь', 'chest'], ['Плечи', 'delts'], ['Ноги', 'legs'], ['Руки', 'arms']];
-const RANKS = [[40, 'S'], [26, 'A'], [17, 'B'], [10, 'C'], [5, 'D'], [1, 'E']];
+// Шесть ступеней. Порог один и тот же в любой теме, меняется только название:
+// буквы принадлежат первой теме, во второй ступени называются словами.
+const RANKS = [[40, 5], [26, 4], [17, 3], [10, 2], [5, 1], [1, 0]];
 const zeroVol = () => GROUPS.reduce((a, [n]) => (a[n] = 0, a), {});
 const XP_EX = 12, XP_WO = 60, XP_SP = 4, XP_PR = 30, PER = 500;
 const MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август',
@@ -2741,7 +2743,9 @@ const cycOf = ds => CYCLE[cycIdx(ds)];
 function intOf(ds, type) { if (!started(ds)) return null; const k = (cycOf(ds).d || {})[type]; return k ? INT[k] : null; }
 function setsOf(ds, base, j) { return (started(ds) && j < 2) ? Math.max(2, base + cycOf(ds).ds) : base; }
 const levelOf = () => Math.floor(S.xp / PER) + 1;
-function rankOf(l) { for (const [m, r] of RANKS) if (l >= m) return r; return 'E'; }
+function rankIdx(l) { for (const [m, r] of RANKS) if (l >= m) return r; return 0; }
+// название ступени берётся из темы, как и все остальные подписи
+function rankOf(l) { return (DICT[skinNow()] || DICT.sl).ranks[rankIdx(l)]; }
 const prOf = n => num((S.pr || {})[n]);
 
 /* ---------- звук системы ---------- */
@@ -2780,7 +2784,7 @@ function levelUp(lv) {
   return;                                  // уровней больше нет, окно не показываем
   const el = $('lvup');
   $('lvupN').textContent = lv;
-  $('lvupR').textContent = 'РАНГ ' + rankOf(lv);
+  $('lvupR').textContent = rankTitle(lv);
   el.classList.remove('on');
   void el.offsetWidth;              // перезапуск анимации
   el.classList.add('on');
@@ -2892,7 +2896,7 @@ function render() {
 function paintStatus() {
   const lv = levelOf(), inLv = S.xp % PER;
   $('st8n').textContent = lv;
-  $('st8rank').textContent = T('rank') + ' ' + rankOf(lv);
+  $('st8rank').textContent = rankTitle(lv);
   $('st8xp').style.width = (inLv / PER * 100) + '%';
   $('st8xpv').textContent = inLv + '/' + PER;
   const w = planWeek(), ci = cycIdx();
@@ -4462,6 +4466,7 @@ const SKINS = [
 const DICT = {
   sl: {
     hero: 'Охотник', rank: 'РАНГ', level: 'Уровень', xp: 'XP',
+    ranks: ['E', 'D', 'C', 'B', 'A', 'S'],
     quest: 'Квест дня', reward: 'Награда', done: 'Выполнено',
     progress: 'Прогресс', journal: 'Журнал', cycle: 'Цикл',
     gym: 'Зал', food: 'Еда', photo: 'Фото',
@@ -4469,7 +4474,8 @@ const DICT = {
     left: 'осталось', session: 'тренировка', sessions: 'тренировок'
   },
   ber: {
-    hero: 'Поход', rank: 'КЛЕЙМО', level: 'Ступень', xp: 'Опыт',
+    hero: 'Поход', rank: '', level: 'Ступень', xp: 'Опыт',
+    ranks: ['Новобранец', 'Наёмник', 'Воин', 'Ветеран', 'Капитан', 'Чёрный мечник'],
     quest: 'Сегодня', reward: 'Добыто', done: 'Сделано',
     progress: 'Летопись', journal: 'Летопись', cycle: 'Круг',
     gym: 'Зал', food: 'Еда', photo: 'Фото',
@@ -4479,6 +4485,9 @@ const DICT = {
 };
 const skinNow = () => (document.documentElement.dataset.skin === 'ber' ? 'ber' : 'sl');
 const T = k => (DICT[skinNow()] || DICT.sl)[k] ?? (DICT.sl[k] ?? k);
+// «РАНГ C» в первой теме и «Ветеран» во второй: приставка там пустая,
+// иначе выходила склейка вроде «КЛЕЙМО E» — слова из разных тем в одной строке
+const rankTitle = lv => (T('rank') ? T('rank') + ' ' : '') + rankOf(lv);
 
 /* Переключение темы НИЧЕГО не перерисовывает. Это принципиально: сменить
    оформление можно посреди любого незаконченного действия — с набранным
