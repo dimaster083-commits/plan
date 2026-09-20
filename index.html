@@ -2583,11 +2583,20 @@ const TPL = [
    уместны, а те же +2,5 к махам 7,5 кг — это плюс треть веса за раз.
    Низ берём крупнее: там и веса больше, и адаптация быстрее. */
 const STEP_UP = 0.03, STEP_LOW = 0.05;
+/* Сетка весов. До 20 кг шаг в килограмм: это гантели и блоки, где
+   пара блинов 1,25 просто не существует. Выше — 2,5 кг, пара блинов.
+   Одна функция на прибавку и на показ: пока они считали по-разному,
+   прибавка ставила 13,5 кг, показ округлял его обратно до 12,5, и
+   упражнение навсегда застревало ниже собственного рабочего веса —
+   прогрессия для всего лёгкого просто не работала. */
+const granOf = w => (num(w) >= 20 ? 2.5 : 1);
+const roundW = w => { const g = granOf(w); return Math.round(num(w) / g) * g; };
+
 function stepFor(ex) {
   const base = num(ex.w);
   if (!base) return 0;
   const raw = base * (ex.g === 'Ноги' ? STEP_LOW : STEP_UP);
-  const gran = base >= 20 ? 2.5 : 1;          // на штанге минимум пара блинов 1,25
+  const gran = granOf(base);
   return Math.max(gran, Math.round(raw / gran) * gran);
 }
 const topRep = r => { const p = String(r).split('-'); return num(p[p.length - 1]); };
@@ -2739,7 +2748,10 @@ function rampOf(ds) {
 function weightFor(e, IN) {
   const base = num(e.w);
   if (!base) return 0;
-  return Math.max(2.5, r25(base * (IN ? IN[0] : 1) * rampOf(sel)));
+  const k = (IN ? IN[0] : 1) * rampOf(sel);
+  if (k === 1) return base;                  // тяжёлая неделя — ровно рабочий вес
+  const g = granOf(base);
+  return Math.max(g, Math.round(base * k / g) * g);
 }
 
 const INT = { h: [1.00, 'ТЯЖЁЛАЯ', 'h'], m: [0.90, 'СРЕДНЯЯ', 'm'],
