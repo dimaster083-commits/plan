@@ -1559,6 +1559,49 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
 .tiles s{text-decoration:none;display:block;font-size:clamp(8px,2.5vw,9.5px);letter-spacing:.16em;
   color:var(--ink3);text-transform:uppercase;margin-top:6px}
 
+/* ---------- еда ---------- */
+.tot{padding:15px clamp(11px,3.6vw,15px)}
+.tot b{font-family:var(--fn);font-size:clamp(22px,7vw,28px);color:var(--ink)}
+.tot b i{font-style:normal;font-family:var(--f);font-size:13px;color:var(--ink3);letter-spacing:.06em}
+.tot .tl span{font-size:10px;letter-spacing:.2em;color:var(--ink3);text-transform:uppercase}
+.tbar{height:7px;background:var(--s2);border:1px solid var(--ln);margin:7px 0 13px;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c);
+  transition:width .45s}
+.tbar i.pr{background:var(--acc-2)}
+.tot .mini{display:flex;gap:14px;font-size:11.5px;letter-spacing:.08em;color:var(--ink3)}
+.mac input{font-family:var(--fn);font-size:clamp(18px,5.6vw,22px)}
+.mac span{font-size:9.5px;letter-spacing:.18em;color:var(--ink3);text-transform:uppercase}
+.ml{padding:13px clamp(11px,3.6vw,15px);margin-bottom:9px}
+.mlh input{font-family:var(--fd);font-size:16px;font-weight:var(--wtd);color:var(--ink);
+  background:none;border:0;padding:0}
+.mlh em{font-style:normal;font-family:var(--fn);font-size:11.5px;color:var(--acc-ink);letter-spacing:.04em}
+.it{border-top:1px solid var(--ln);padding:11px 0 0;margin-top:11px}
+.it .nm{font-size:14px;color:var(--ink)}
+.it .kk{font-size:11.5px;color:var(--ink3);letter-spacing:.04em}
+.it input{font-family:var(--fn)}
+.mladd{border:1px dashed var(--ln2);color:var(--ink2);background:none;border-radius:0;
+  letter-spacing:.16em;text-transform:uppercase;font-size:11px;padding:11px;margin-top:11px;width:100%}
+
+/* ---------- фото ---------- */
+.ph{padding:14px clamp(11px,3.6vw,15px)}
+.phthumb{width:clamp(76px,26vw,96px);height:auto;aspect-ratio:3/4;border:1px solid var(--ln);
+  border-radius:0;background:var(--s2);display:grid;place-items:center}
+.phthumb span{font-size:26px;color:var(--ink3)}
+.phTxt,#phTxt{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.phbtns button{background:var(--s2);border:1px solid var(--ln);border-radius:0;color:var(--ink2);
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:10px 12px}
+.phbtns button.cmp{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill)}
+.phw label{font-size:9.5px;letter-spacing:.2em;color:var(--ink3);text-transform:uppercase}
+.phw input{font-family:var(--fn)}
+.strip button em{font-size:10.5px;letter-spacing:.06em;color:var(--ink3)}
+.pane .pic,.mopair .pic{border-radius:0;border-color:var(--ln);background:var(--s2)}
+
+/* полупрозрачные поверхности поверх обоев обязаны размывать фон,
+   иначе сквозь кнопку просвечивает картинка */
+.add,.anb,.cpb,.copyb,.bkb button,.pseg button,.chip,.calback,
+.phbtns button,.mladd,.go,.rest,.gear,.types button,.cnav button{
+  backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur))}
+
 /* ---------- добавки отдельной рамкой ---------- */
 .supp{margin-top:18px;padding:14px clamp(11px,3.6vw,15px)}
 .supph{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
@@ -1754,9 +1797,9 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 10px;
 <section class="scr" id="scr-food">
   <div class="win tot">
     <div class="tl"><b id="tKc">0<i> / 3300 ккал</i></b><span>КАЛОРИИ</span></div>
-    <div class="tbar"><i id="bKc" style="background:linear-gradient(90deg,#2A7FB8,var(--cy2))"></i></div>
+    <div class="tbar"><i id="bKc"></i></div>
     <div class="tl"><b id="tPr">0<i> / 200 г</i></b><span>БЕЛОК</span></div>
-    <div class="tbar"><i id="bPr" style="background:linear-gradient(90deg,#2E7A55,var(--legs))"></i></div>
+    <div class="tbar"><i id="bPr" class="pr"></i></div>
     <div class="mini"><span id="tFa">жиры 0 г</span><span id="tCa">углеводы 0 г</span></div>
   </div>
   <div class="mac">
