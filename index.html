@@ -2442,7 +2442,10 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 
 const $ = i => document.getElementById(i);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const num = v => parseFloat(String(v ?? '').replace(',', '.')) || 0;
+/* Отрицательных весов, подходов и повторов не бывает. Раньше минус
+   доезжал до счёта и уводил тоннаж вниз: одна опечатка в поле веса —
+   и общая цифра за год становилась меньше. */
+const num = v => Math.max(0, parseFloat(String(v ?? '').replace(',', '.')) || 0);
 const dec = (v, n) => Number(v).toFixed(n === undefined ? 1 : n).replace('.', ',');
 const rnd = v => Math.round(v);
 const r25 = v => Math.round(v / 2.5) * 2.5;
