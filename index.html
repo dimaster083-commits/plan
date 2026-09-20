@@ -710,6 +710,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .setr .sg u{text-decoration:none;color:var(--legs)}
 .prb.hold{color:var(--arms);border-color:var(--arms)}
 .prb.lock{color:var(--legs);border-color:var(--legs)}
+/* верх добран, но неделя облегчённая: закрепление есть, прибавки не будет */
+.prb.lock.soft{color:var(--mut);border-color:var(--edge2);background:none}
 
 /* заметка к дню */
 .dnote{margin-top:12px;padding:11px 13px}
@@ -1141,6 +1143,7 @@ input,textarea,select{color:var(--ink)}
 .prb{padding:5px 12px;font-size:11px;color:var(--ink2)}
 .prb.hold{background:var(--bad-soft);color:var(--bad)}
 .prb.lock{background:var(--ok-soft);color:var(--ok)}
+.prb.lock.soft{background:none;color:var(--ink3);border:1px solid var(--edge2)}
 .miles div{padding:8px 2px;font-size:12px;color:var(--ink3)}
 .miles div.hit{background:var(--ok-soft);color:var(--ok)}
 .miles div.now{background:var(--acc-soft);color:var(--acc-ink)}
@@ -1325,6 +1328,7 @@ input,textarea,select{color:var(--ink)}
    контраста не хватает ни красным, ни зелёным. Берём цвет текста. */
 .chip .tk,.cd .ok,.jrow em.ok{color:var(--ink)}
 .prb.lock{background:var(--acc-soft);color:var(--acc-ink)}
+.prb.lock.soft{background:none;color:var(--ink3);border:1px solid var(--edge2)}
 .miles div.hit{background:var(--s3);color:var(--ink2)}
 
 /* ---------- история дня ---------- */
@@ -1517,6 +1521,7 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 .miles div.now{background:var(--acc-soft);color:var(--acc-ink);border-color:var(--acc)}
 .miles div.hit{background:var(--s3);color:var(--ink2)}
 .prb.lock{background:var(--acc-soft);color:var(--acc-ink)}
+.prb.lock.soft{background:none;color:var(--ink3);border:1px solid var(--edge2)}
 
 /* ---------- дни недели ---------- */
 .days{background:var(--glass);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--ln)}
@@ -2649,6 +2654,7 @@ function stepFor(ex) {
   return Math.max(gran, Math.round(raw / gran) * gran);
 }
 const topRep = r => { const p = String(r).split('-'); return num(p[p.length - 1]); };
+const botRep = r => { const p = String(r).split('-'); return num(p[0]); };
 
 // склонение после числа: 1 подход, 2 подхода, 5 подходов
 function plural(n, one, few, many) {
@@ -3811,6 +3817,7 @@ function rollback(l) {
     if (l.prevPr) S.pr[l.n] = l.prevPr; else delete S.pr[l.n];
   }
   l.vol = 0; l.xp = 0; l.prog = 0;
+  delete l.down;
   delete l.prevPr;
 }
 
@@ -3944,7 +3951,16 @@ function fixedAt(e, g) {
 function holdBadge(e, g) {
   const top = topRep(e.r), sets = num(pick(g.s, e.s)), rs = g.rs || [];
   if (!top || !rs.length) return '';
-  if (fixedAt(e, g)) return '<span class="prb lock">закреплено</span>';
+  if (fixedAt(e, g)) {
+    // Верх диапазона добран, но на весе ниже рабочего — так по плану идёт
+    // облегчённая неделя, и рабочий вес от неё не растёт. Значок обещал
+    // «закреплено», прибавки не было, и почему — было неоткуда узнать.
+    const wNow = num(pick(g.w, e.w)), base = num(e.w);
+    if (base && wNow && wNow < base) {
+      return '<span class="prb lock soft">закреплено · неделя полегче</span>';
+    }
+    return '<span class="prb lock">закреплено</span>';
+  }
   const ng = nextGoal(rs, top, sets);
   return '<span class="prb hold">' + rs.join('/') + (ng ? ' → цель ' + ng.join('/') : '') + '</span>';
 }
@@ -3953,11 +3969,13 @@ function holdBadge(e, g) {
 /* Рабочий вес принадлежит программе, а не одному дню. Поднял больше, чем стояло —
    цифра подтягивается во всех днях, где есть это упражнение, и держится дальше.
    Прежние значения кладём в журнал: снятая отметка должна возвращать всё назад. */
-function bumpWorking(name, w, log) {
+function setWorking(name, w, log, dir) {
   if (!name || !(w > 0)) return 0;
   const undo = [];
   S.days.forEach((d, di) => (d.ex || []).forEach((e, ei) => {
-    if (e.n !== name || num(e.w) >= w) return;
+    if (e.n !== name) return;
+    if (dir > 0 && num(e.w) >= w) return;   // подъём идёт только вверх
+    if (dir < 0 && num(e.w) <= w) return;   // снижение — только вниз
     undo.push([di, ei, e.w, e.fixed || 0]);
     e.w = w;
     e.fixed = 1;                 // дальше пересчёт от опорных весов его не трогает
@@ -3966,6 +3984,8 @@ function bumpWorking(name, w, log) {
   if (log) log.bump = (log.bump || []).concat(undo);
   return undo.length;
 }
+const bumpWorking = (name, w, log) => setWorking(name, w, log, 1);
+const dropWorking = (name, w, log) => setWorking(name, w, log, -1);
 function unbumpWorking(log) {
   (log.bump || []).slice().reverse().forEach(([di, ei, w, fx]) => {
     const e = ((S.days[di] || {}).ex || [])[ei];
@@ -4039,6 +4059,60 @@ function toggleSet(j) {
   if (!allDone) tStart(restFor(p.n));      // база отдыхает дольше изоляции
 
   maybeProgress(l, p, w);
+  maybeRegress(l, p, w);
+}
+
+/* Сколько тренировок подряд, считая эту, низ диапазона не добран на рабочем
+   весе. Тренировки, где упражнения не было, пропускаем: пропуск дня — не
+   провал. Первая же удачная обрывает счёт. */
+function failStreak(name, base, upTo) {
+  let n = 0;
+  const days = Object.keys(S.rec).filter(ds => ds <= upTo).sort().reverse();
+  for (const ds of days) {
+    const day = dayOf(ds), lg = S.rec[ds].log || {};
+    let seen = false, failed = false;
+    Object.keys(lg).forEach(j => {
+      const l = lg[j];
+      if (!l || !l.done) return;
+      const p = ((day && day.ex) || [])[j] || {};
+      if ((l.n || p.n) !== name) return;
+      seen = true;
+      const w = num(pick(l.w, p.w));
+      const bot = botRep(pick(l.r, p.r));
+      const sets = num(pick(l.s, p.s));
+      const rs = (l.rs || []).slice(0, sets).map(num);
+      if (w >= base && bot && sets && rs.length >= sets && rs.some(v => v < bot)) failed = true;
+    });
+    if (!seen) continue;
+    if (!failed) break;
+    n++;
+    if (n >= 4) break;
+  }
+  return n;
+}
+
+/* Обратная сторона двойной прогрессии. Вес умел только расти: после болезни,
+   перерыва или просто неудачного захода человек оставался на весе, который
+   больше не тянет, и каждая тренировка превращалась в провал. Разбор про
+   застой писал, а сделать ничего не мог.
+   Правило: два раза подряд не добрал даже низ диапазона на рабочем весе —
+   рабочий вес опускается на один шаг сетки. Снятая отметка возвращает всё
+   назад тем же журналом, что и прибавку. */
+function maybeRegress(l, p, w) {
+  if (l.prog || l.down || !w) return;
+  const base = num(p.w);
+  if (!base || w < base) return;          // облегчённая неделя провалом не считается
+  const bot = botRep(p.r), sets = num(pick(l.s, p.s));
+  const rs = (l.rs || []).slice(0, sets).map(num);
+  if (!bot || !sets || rs.length < sets) return;
+  if (rs.every(v => v >= bot)) return;    // низ добран — всё в порядке
+  if (failStreak(p.n, base, sel) < 2) return;
+  const next = base - stepFor({ g: p.g, w: base });
+  if (!(next > 0) || next >= base) return;
+  l.down = 1;
+  if (!dropWorking(p.n, next, l)) { delete l.down; return; }
+  save(); render();
+  note('Второй раз не добран низ диапазона — рабочий вес ' + p.n + ' снижен до ' + kg(next) + ' кг');
 }
 
 /* Двойная прогрессия. Вес растёт не за сам факт выхода на верхнюю границу,
