@@ -4505,16 +4505,21 @@ function paintDir(box, up) {
   box.querySelectorAll('[data-dir]').forEach(b2 =>
     b2.classList.toggle('on', (b2.dataset.dir === 'up') === up));
 }
-function dirClick(e, getBw, setVal) {
+function dirClick(e, getBw, getGoal, setVal) {
   const b2 = e.target.closest('[data-dir]'); if (!b2) return;
-  const cur = getBw() || 70, want = b2.dataset.dir === 'up';
+  const cur = getBw() || 70, want = b2.dataset.dir === 'up', goal = getGoal();
+  // Цель уже стоит с этой стороны — второе нажатие ничего не меняет.
+  // Раньше оно переписывало вписанную цель: 95 превращалось в «вес + 15».
+  if (goal && Math.abs(goal - cur) > 0.5 && (goal > cur) === want) return;
   setVal(String(Math.round(want ? cur + 15 : Math.max(35, cur - 10))));
 }
 $('anDir').addEventListener('click', e => dirClick(e,
   () => num($('anBw').value),
+  () => num($('anGoal').value),
   v => { $('anGoal').value = v; setGoal(v); paintDir($('anDir'), num(v) >= (num($('anBw').value) || 70)); }));
 $('wdir').addEventListener('click', e => dirClick(e,
   () => num(S.bw) || startW(),
+  () => num(S.goal),
   v => setGoal(v)));
 
 function setGoal(v) {
