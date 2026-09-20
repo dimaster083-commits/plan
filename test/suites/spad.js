@@ -97,6 +97,66 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(/закреплено</.test(badge.рабочий)&&!/полегче/.test(badge.рабочий),
       '10. на рабочем весе значок прежний',badge.рабочий.replace(/<[^>]+>/g,''));
 
+  /* 12-15. Рабочий вес — это вес, с которым сделан весь диапазон.
+     Разовый подход на трёх повторах при цели 6-8 идёт в рекорды, но
+     рабочим весом не становится: иначе программа дальше требует
+     шесть повторов с весом, который взят на три. */
+  const single=await p.evaluate(([имя])=>{
+    S.rec={}; S.pr={};
+    const день=S.days.find(d=>(d.ex||[]).some(x=>x.n===имя));
+    const j=день.ex.findIndex(x=>x.n===имя);
+    день.ex[j].w=50; день.ex[j].r='6-8'; день.ex[j].s=3; delete день.ex[j].fixed;
+    let ds=today();
+    for(let k=0;k<7;k++){ const d=new Date(); d.setDate(d.getDate()-k);
+      if(S.days[wdOf(iso(d))]===день){ ds=iso(d); break; } }
+    recRW(ds).log={}; save();
+    sel=ds; tab='wo'; exOpen=j; render();
+    const card=document.querySelector('.ex[data-j="'+j+'"]');
+    card.querySelector('[data-f="w"]').value='60';
+    card.querySelector('[data-f="s"]').value='3';
+    card.querySelector('[data-f="r"]').value='6-8';
+    [...card.querySelectorAll('[data-rs]')].slice(0,3).forEach((x,i)=>{x.value=[3,3,2][i];});
+    toggleSet(j);
+    return {рабочий:num(S.days[wdOf(ds)].ex[j].w), рекорд:num(S.pr[имя]), ds:ds, j:j};
+  },[prep.имя]);
+  chk(single.рабочий===50,'12. разовый подход не становится рабочим весом',
+      'рабочий '+single.рабочий+' кг после подхода 60×3');
+  chk(single.рекорд===60,'13. но в рекорды он попадает','рекорд '+single.рекорд+' кг');
+
+  const held=await p.evaluate(([имя,ds,j])=>{
+    toggleSet(j);                       // снимаем прошлую отметку
+    sel=ds; tab='wo'; exOpen=j; render();
+    const card=document.querySelector('.ex[data-j="'+j+'"]');
+    if(!card) return {err:'карточки нет'};
+    card.querySelector('[data-f="w"]').value='55';
+    card.querySelector('[data-f="s"]').value='3';
+    card.querySelector('[data-f="r"]').value='6-8';
+    [...card.querySelectorAll('[data-rs]')].slice(0,3).forEach((x,i)=>{x.value=[7,6,6][i];});
+    toggleSet(j);
+    return {рабочий:num(S.days[wdOf(ds)].ex[j].w)};
+  },[prep.имя, single.ds, single.j]);
+  chk(!held.err&&held.рабочий===55,'14. вес, отработанный по диапазону, рабочим становится',
+      held.err||('рабочий '+held.рабочий+' кг после 55 на 7/6/6'));
+
+  /* 16-17. Пустые клетки повторов — «не записал», а не «не смог».
+     Человек, который просто закрыл подход не заполняя повторы, не должен
+     ни терять прибавку, ни получать снижение веса. */
+  const empty=await p.evaluate(([имя,ds,j])=>{
+    toggleSet(j);
+    sel=ds; tab='wo'; exOpen=j; render();
+    const card=document.querySelector('.ex[data-j="'+j+'"]');
+    if(!card) return {err:'карточки нет'};
+    card.querySelector('[data-f="w"]').value='70';
+    card.querySelector('[data-f="s"]').value='3';
+    card.querySelector('[data-f="r"]').value='6-8';
+    [...card.querySelectorAll('[data-rs]')].forEach(x=>{x.value='';});
+    toggleSet(j);
+    return {рабочий:num(S.days[wdOf(ds)].ex[j].w), сниж:!!(recOf(ds).log[j]||{}).down};
+  },[prep.имя, single.ds, single.j]);
+  chk(!empty.err&&empty.рабочий===70,'16. без записанных повторов вес поднимается как раньше',
+      empty.err||('рабочий '+empty.рабочий+' кг'));
+  chk(!empty.сниж,'17. и снижения от пустых клеток не бывает',String(empty.сниж));
+
   chk(errs.length===0,'11. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   console.log('\nпроблем: '+fails);

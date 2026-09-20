@@ -4034,9 +4034,19 @@ function toggleSet(j) {
   l.vol = g ? (rsOk ? l.rs.reduce((a, b) => a + num(b), 0) : sets * reps) * w : 0;
   if (g && S.vol[g] !== undefined) S.vol[g] += l.vol;
 
-  // поднял больше, чем стоит в программе — программа запоминает это сама,
-  // во всех следующих днях, без единого нажатия
-  const raised = bumpWorking(p.n, w, l);
+  /* Поднял больше, чем стоит в программе, — программа запоминает это сама,
+     во всех следующих днях, без единого нажатия. Но рабочий вес — это вес,
+     с которым сделан весь диапазон, а не разовый подход: 55 кг на три
+     повтора при цели 6-8 раньше становились рабочими, и дальше программа
+     требовала 55 на шесть. Теперь такой подход идёт в рекорды, а рабочий
+     вес остаётся прежним. */
+  const botAim = botRep(pick(l.r, p.r));
+  const rsDone = (l.rs || []).slice(0, sets).map(num);
+  // Пустая клетка повторов — это «не записал», а не «не смог»: судим только
+  // тогда, когда записаны все подходы.
+  const rsKnown = sets > 0 && rsDone.length >= sets && rsDone.every(v => v > 0);
+  const holds = !botAim || !rsKnown || rsDone.every(v => v >= botAim);
+  const raised = holds ? bumpWorking(p.n, w, l) : 0;
 
   const old = num(S.pr[p.n]);
   if (w > 0 && w > old) { l.prevPr = old; S.pr[p.n] = w; }
@@ -4081,7 +4091,8 @@ function failStreak(name, base, upTo) {
       const bot = botRep(pick(l.r, p.r));
       const sets = num(pick(l.s, p.s));
       const rs = (l.rs || []).slice(0, sets).map(num);
-      if (w >= base && bot && sets && rs.length >= sets && rs.some(v => v < bot)) failed = true;
+      if (w >= base && bot && sets && rs.length >= sets &&
+          rs.every(v => v > 0) && rs.some(v => v < bot)) failed = true;
     });
     if (!seen) continue;
     if (!failed) break;
@@ -4105,6 +4116,7 @@ function maybeRegress(l, p, w) {
   const bot = botRep(p.r), sets = num(pick(l.s, p.s));
   const rs = (l.rs || []).slice(0, sets).map(num);
   if (!bot || !sets || rs.length < sets) return;
+  if (!rs.every(v => v > 0)) return;      // повторы не записаны — судить не о чем
   if (rs.every(v => v >= bot)) return;    // низ добран — всё в порядке
   if (failStreak(p.n, base, sel) < 2) return;
   const next = base - stepFor({ g: p.g, w: base });
