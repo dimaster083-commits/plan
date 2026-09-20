@@ -6676,6 +6676,10 @@ $('fpl').addEventListener('click', e => {
     if (!n) return;
     const rec = { n: n, k: num($('nfK').value), p: num($('nfP').value), f: num($('nfF').value), c: num($('nfC').value) };
     const at = S.myFood.findIndex(f => String(f.n).toLowerCase() === n.toLowerCase());
+    // имя — ключ продукта в записях дня, два одинаковых развалят подсчёт
+    if (at < 0 && FOOD.concat(REST).some(f => String(f[0]).toLowerCase() === n.toLowerCase())) {
+      note('Такое название уже есть в базе — назови иначе'); return;
+    }
     if (at >= 0) S.myFood[at] = rec; else S.myFood.push(rec);
     invalidateFood(); save();
     note(at >= 0 ? 'Продукт обновлён' : 'Продукт добавлен в базу');
