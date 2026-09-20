@@ -94,12 +94,14 @@ const chk = (c,n,d)=>c?ok(n,d):bad(n,d);
     const pts = document.querySelector('#rad .rfill');
     if (!pts) return 'фигуры нет';
     const xy = pts.getAttribute('points').split(' ').map(s2=>s2.split(',').map(Number));
-    const cx=150, cy=114, R=78, MAX=2;
+    // Граница — одна недельная норма: добранная группа стоит на краю,
+    // а не на половине радиуса, как было при шкале до двух норм.
+    const cx=150, cy=114, R=78;
     const bad2=[];
     GROUPS.forEach(([n],i)=>{
-      const want = Math.min(MAX, (acc[n]||0)/VOL_TARGET[n]);
+      const want = Math.min(1, (acc[n]||0)/VOL_TARGET[n]);
       if (!want) return;
-      const d = Math.hypot(xy[i][0]-cx, xy[i][1]-cy) / R * MAX;
+      const d = Math.hypot(xy[i][0]-cx, xy[i][1]-cy) / R;
       if (Math.abs(d-want) > 0.02) bad2.push(n+': '+d.toFixed(2)+' вместо '+want.toFixed(2));
     });
     return bad2.join('; ') || true;

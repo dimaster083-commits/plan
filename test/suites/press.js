@@ -55,11 +55,12 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       const gr=sv.querySelector('polygon.rgrid');
       const pts=gr.getAttribute('points').trim().split(/\s+/).length;
       const подписи=[...sv.querySelectorAll('text.rlab')].map(t=>t.textContent);
-      const спицы=sv.querySelectorAll('line.rspoke').length;
-      return {углов:pts, подписи:подписи, спицы:спицы, групп:GROUPS.length};
+      // спиц и колец внутри больше нет: внутри только сама фигура
+      const внутри=sv.querySelectorAll('line, .rspoke, .rgrid.norm').length;
+      return {углов:pts, подписи:подписи, внутри:внутри, групп:GROUPS.length};
     });
     chk(rad.углов===rad.групп,'8. у фигуры столько углов, сколько групп',rad.углов+' при '+rad.групп+' группах');
-    chk(rad.спицы===rad.групп,'9. спиц столько же',String(rad.спицы));
+    chk(rad.внутри===0,'9. внутри шестиугольника нет разметки','лишних линий: '+rad.внутри);
     chk(rad.подписи.indexOf('ПРЕСС')>=0,'10. «ПРЕСС» подписан на диаграмме',rad.подписи.join(' · '));
 
     chk(errs.length===0,'11. без ошибок в консоли',errs.join(' | ')||'чисто');

@@ -1346,11 +1346,14 @@ input,textarea,select{color:var(--ink)}
 /* ---------- пятиугольник нагрузки ---------- */
 .radar{padding:14px clamp(11px,3.6vw,15px) 13px}
 .radar svg{width:100%;height:auto;display:block;margin:2px 0 4px}
-.rgrid{fill:none;stroke:var(--ln);stroke-width:1}
-.rgrid.norm{stroke:var(--ln2);stroke-width:1;stroke-dasharray:3 3}
-.rspoke{stroke:var(--ln);stroke-width:1}
+/* Граница — недельная норма. Внутри пусто: ни колец, ни спиц, ни пунктира —
+   разметка перетягивала взгляд на себя. */
+.rgrid{fill:none;stroke:var(--ln2);stroke-width:1.5}
 .rfill{fill:var(--acc-soft);stroke:var(--acc);stroke-width:2;stroke-linejoin:round}
 .rdot{fill:var(--acc-2)}
+/* группа добрана — точка сидит на границе и видна ярче */
+.rdot.full{fill:var(--acc)}
+.rnum.full{fill:var(--acc-2)}
 :root[data-skin="sl"] .rdot{filter:drop-shadow(0 0 5px var(--acc))}
 .rlab{fill:var(--ink2);font-family:var(--f);font-size:10px;letter-spacing:.1em}
 .rnum{fill:var(--ink3);font-family:var(--fn);font-size:9px;letter-spacing:.04em}
@@ -4833,44 +4836,50 @@ function paintVol() {
 function paintRadar() {
   const sv = $('rad'); if (!sv) return;
   const acc = vol7();
-  const cx = 150, cy = 114, R = 78, MAX = 2;
+  const cx = 150, cy = 114, R = 78;
   const step = 360 / GROUPS.length;        // не зашитый пятиугольник: групп стало шесть
   const pt = (i, k) => {
     const a = (i * step - 90) * Math.PI / 180;
     return [cx + Math.cos(a) * R * k, cy + Math.sin(a) * R * k];
   };
   const poly = k => GROUPS.map((_, i) => pt(i, k).map(v => v.toFixed(1)).join(',')).join(' ');
-  const vals = GROUPS.map(([n]) => Math.min(MAX, (acc[n] || 0) / (VOL_TARGET[n] || 1)));
-  const shape = vals.map((v, i) => pt(i, Math.max(0.05, v / MAX))
+
+  /* Граница фигуры — недельная норма, а не двойная норма. Раньше шкала шла
+     до двух норм, и полностью закрытая группа рисовалась ровно на середине
+     радиуса: цифры говорили «14 из 14», а картинка — «сделана половина».
+     Перебор упирается в край: сколько именно набрано, написано под осью. */
+  const done = GROUPS.map(([n]) => (acc[n] || 0) / (VOL_TARGET[n] || 1));
+  const vals = done.map(v => Math.min(1, v));
+  const shape = vals.map((v, i) => pt(i, Math.max(0.04, v))
     .map(x => x.toFixed(1)).join(',')).join(' ');
 
-  let h = '';
-  // Только внешняя граница и пунктир нормы: промежуточные кольца
-  // ничего не считали, а взгляд цеплялся за них, а не за фигуру.
-  h += `<polygon points="${poly(1)}" class="rgrid"/>`;
-  h += `<polygon points="${poly(1 / MAX)}" class="rgrid norm"/>`;
-  GROUPS.forEach((_, i) => { const q = pt(i, 1);
-    h += `<line x1="${cx}" y1="${cy}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}" class="rspoke"/>`; });
-  // на пустом журнале пять нулей слипались в центре комком: фигуры нет,
-  // пока нет ни одного подхода
-  const any = vals.some(v => v > 0);
+  // Никаких линий внутри: ни колец, ни спиц, ни пунктира. Внутри только
+  // сама фигура — взгляд цеплялся за разметку, а не за неё.
+  let h = `<polygon points="${poly(1)}" class="rgrid"/>`;
+  const any = done.some(v => v > 0);
   if (any) {
     h += `<polygon points="${shape}" class="rfill"/>`;
     vals.forEach((v, i) => { if (!v) return;
-      const q = pt(i, v / MAX);
-      h += `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="3.4" class="rdot"/>`; });
+      const q = pt(i, v);
+      h += `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="3.4" ` +
+           `class="rdot${done[i] >= 1 ? ' full' : ''}"/>`; });
   }
   GROUPS.forEach(([n], i) => {
     const q = pt(i, 1.26);
-    const anchor = i === 0 ? 'middle' : (q[0] > cx + 1 ? 'start' : 'end');
-    const dy = i === 0 ? -8 : (q[1] > cy ? 11 : 2);
+    const anchor = i === 0 ? 'middle' : (Math.abs(q[0] - cx) < 2 ? 'middle' : (q[0] > cx ? 'start' : 'end'));
+    const dy = (Math.abs(q[0] - cx) < 2 && q[1] < cy) ? -8 : (q[1] > cy + 2 ? 11 : 2);
     h += `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy).toFixed(1)}" text-anchor="${anchor}" class="rlab">${n.toUpperCase()}</text>` +
-         `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy + 13).toFixed(1)}" text-anchor="${anchor}" class="rnum">${acc[n] || 0}/${VOL_TARGET[n]}</text>`;
+         `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy + 13).toFixed(1)}" text-anchor="${anchor}" ` +
+         `class="rnum${done[i] >= 1 ? ' full' : ''}">${acc[n] || 0}/${VOL_TARGET[n]}</text>`;
   });
   sv.innerHTML = h;
   const note2 = sv.parentNode.querySelector('.radn');
+  const closed = done.filter(v => v >= 1).length;
   if (note2) note2.textContent = any
-    ? 'Пунктир — недельная норма подходов. Чем дальше от центра, тем больше сделано; ровная фигура значит, что группы идут вровень.'
+    ? (closed === GROUPS.length
+      ? 'Все группы добраны: фигура вышла на границу. Так выглядит полностью закрытая неделя.'
+      : 'Граница — недельная норма подходов. Фигура по краю значит, что группа добрана; ' +
+        'закрыто ' + closed + ' из ' + GROUPS.length + '.')
     : 'Закрой первую тренировку за неделю — и здесь появится фигура по всем группам.';
 }
 
