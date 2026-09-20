@@ -6735,8 +6735,12 @@ let A = null, B = null;
 async function openCmp() {
   await phSync();
   if (!PH.length) { note('Сначала загрузи хотя бы одно фото'); return; }
+  // «Первое и последнее». Раньше вторым снимком бралась выбранная дата,
+  // и если стоять на самом раннем снимке, обе половины показывали одно
+  // и то же фото — сравнивать было не с чем.
   A = PH[0];
-  B = PH.includes(sel) ? sel : PH[PH.length - 1];
+  B = (PH.includes(sel) && sel !== A) ? sel : PH[PH.length - 1];
+  if (B === A) B = PH.length > 1 ? PH[PH.length - 1] : null;
   const opts = d => PH.map(p => `<option value="${p}"${p === d ? ' selected' : ''}>${fmt(p)}</option>`).join('');
   $('selA').innerHTML = opts(A);
   $('selB').innerHTML = opts(B);
