@@ -116,7 +116,8 @@ const ok = (n, c, d) => out.push((c ? '  ✓ ' : '  ✗ ') + n + (c ? '' : '   �
     rows: document.querySelectorAll('#hist [data-day]').length,
     load: document.querySelectorAll('#loadList .ld').length }; });
   ok('в «Прогрессе» есть список истории', hl.rows > 0, JSON.stringify(hl));
-  ok('объём и тоннаж сведены в один список по группам', hl.load === 5, `строк: ${hl.load}, ожидалось 5`);
+  const nGroups = await page.evaluate(() => GROUPS.length);
+  ok('объём и тоннаж сведены в один список по группам', hl.load === nGroups, `строк: ${hl.load}, групп: ${nGroups}`);
 
   // ---- 8. разбор дня открывается ----
   await closeSetup();

@@ -218,9 +218,12 @@ const txt = async (p, t) => p.evaluate(tt => { tab=tt; exOpen=null; render(); re
       tab = 'prog'; pSec = 'load'; render();
       return { axes: document.querySelectorAll('#rad .rlab').length,
                nums: document.querySelectorAll('#rad .rnum').length,
+               groups: GROUPS.length,
                names: [...document.querySelectorAll('#rad .rlab')].map(t => t.textContent).join(' ') };
     });
-    chk(rad.axes === 5 && rad.nums === 5, '22. диаграмма нагрузки по пяти группам', rad.names);
+    chk(rad.axes === rad.groups && rad.nums === rad.groups,
+        '22. диаграмма нагрузки по всем группам, включая пресс',
+        rad.names + ' (групп: ' + rad.groups + ')');
 
     // 23. килограммы пишутся одним знаком после запятой
     chk(await p.evaluate(() => [12.125, 35.625, 70.04, 2.449]

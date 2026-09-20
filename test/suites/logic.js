@@ -120,6 +120,15 @@ const { LAUNCH, APP } = require('../env');
     migrate(); const m1=JSON.stringify(S);
     migrate(); const m2=JSON.stringify(S);
     ok('повторная миграция не меняет состояние', m1===m2, 'разошлось');
+    /* Номер переезда — ключ в хранилище. Занял чужой номер — и чужой переезд
+       молча не состоится: так один раз уже потерялись цель по весу и рост. */
+    (function(){
+      const src = document.documentElement.innerHTML;
+      const sets = (src.match(/S\.mig\d+ = 1/g) || []).map(x => x.match(/\d+/)[0]);
+      const seen = {}, dup = [];
+      sets.forEach(n => { if (seen[n]) dup.push(n); seen[n] = 1; });
+      ok('номера переездов не повторяются', dup.length === 0, dup.join(', ') || ('всего ' + sets.length));
+    })();
     ok('миграция не трогает журнал', JSON.parse(snap).rec && JSON.stringify(JSON.parse(m1).rec)===JSON.stringify(JSON.parse(snap).rec), 'журнал изменён');
 
     /* ---------- еда ---------- */
