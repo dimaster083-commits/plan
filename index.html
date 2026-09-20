@@ -43,7 +43,11 @@
 :root{
   /* Метрики и шрифт. Цвета живут ниже, в блоке оформления: там их два набора —
      светлый и тёмный, — и переключаются они одной строкой на <html>. */
-  --tint:10,122,255;
+  /* --tint достался от самой первой версии: это iOS-синий, и он стоял
+     один на всё приложение. Шестьдесят правил вида rgba(var(--tint),…)
+     красились им мимо темы — отсюда и синие поля первого экрана.
+     Значение теперь задаёт тема, здесь остаётся только запасное. */
+  --tint:123,69,240;
   --f:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Arial,sans-serif;
   --st:env(safe-area-inset-top,0px);
   --sb:env(safe-area-inset-bottom,0px);
@@ -899,11 +903,12 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --sheen:linear-gradient(135deg,rgba(169,129,255,.1),transparent 42%);
   --edge-lit:linear-gradient(180deg,var(--acc),transparent);
   --wall:url('./img/bg-nebula.jpg');
-  --wall-gray:0; --wall-dim:radial-gradient(120% 72% at 50% 12%,rgba(7,4,15,.2),rgba(7,4,15,.8) 55%,rgba(7,4,15,.95) 100%);
+  --wall-gray:0; --img-gray:0; --wall-dim:radial-gradient(120% 72% at 50% 12%,rgba(7,4,15,.2),rgba(7,4,15,.8) 55%,rgba(7,4,15,.95) 100%);
 
   /* цвета дней недели и групп мышц */
   --c-rest:#3A3358; --c-other:#8E7AC0;
   --c-up:#D0BCFC; --c-up-ink:#1A0A38; --c-lo:#7B45F0; --c-lo-ink:#FFFFFF;
+  --tint:123,69,240; --glow:rgba(102,49,219,.20);
   --c-up1:var(--c-up); --c-up2:var(--c-up); --c-lo1:var(--c-lo); --c-lo2:var(--c-lo);
   --c-back:#6631DB; --c-chest:#7B45F0; --c-delts:#A981FF; --c-legs:#D0BCFC; --c-arms:#491AB1;
   color-scheme:dark;
@@ -945,10 +950,11 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --sheen:linear-gradient(135deg,rgba(248,249,250,.05),transparent 38%);
   --edge-lit:linear-gradient(180deg,var(--ink2),transparent);
   --wall:url('./img/bg-ink.jpg');
-  --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
+  --wall-gray:1; --img-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
 
   --c-rest:#3A3D40; --c-other:#6E7276;
   --c-up:#F8F9FA; --c-up-ink:#181B1E; --c-lo:#8A8E92; --c-lo-ink:#0B0D0F;
+  --tint:165,169,174; --glow:rgba(165,169,174,.07);
   --c-up1:var(--c-up); --c-up2:var(--c-up); --c-lo1:var(--c-lo); --c-lo2:var(--c-lo);
   --c-back:#CFD1D4; --c-chest:#F8F9FA; --c-delts:#A5A9AE; --c-legs:#8A8E92; --c-arms:#5F6266;
   color-scheme:dark;
@@ -982,6 +988,7 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --bg:var(--s0); --panel:var(--s1); --panel2:var(--s2);
   --edge:var(--ln2); --edge2:var(--ln);
   --cy:var(--acc-2); --cy2:var(--acc-ink); --tx:var(--ink); --mut:var(--ink3);
+  --gold:var(--warn);
   --legs:var(--c-legs); --chest:var(--c-chest); --arms:var(--c-arms);
   --back:var(--c-back); --other:var(--c-other); --rest:var(--c-rest);
 }
@@ -1284,7 +1291,10 @@ input,textarea,select{color:var(--ink)}
 .ld .n{width:64px;flex:0 0 auto;font-size:13px;color:var(--ink2)}
 .ld .b{flex:1;height:7px;background:var(--s2);border-radius:999px;overflow:hidden}
 .ld .b i{display:block;height:100%;width:0;border-radius:999px;transition:width .45s}
-.ld .v{width:96px;text-align:right;font-variant-numeric:tabular-nums}
+/* «17,0 т 24 подх.» не помещалось в 96 px и рвалось на две строки,
+   отчего строки групп получались разной высоты */
+.ld .v{width:clamp(96px,30vw,118px);flex:0 0 auto;text-align:right;
+  white-space:nowrap;font-variant-numeric:tabular-nums}
 .ld .v b{font-size:13px;font-weight:600;color:var(--ink)}
 .ld .v em{font-style:normal;font-size:11.5px;color:var(--ink3);margin-left:5px}
 
@@ -1328,8 +1338,16 @@ input,textarea,select{color:var(--ink)}
 .wtab th:first-child{padding-left:0}
 .wtab td:last-child,.wtab th:last-child{padding-right:0}
 .wtab td.lnk{color:var(--acc-ink);text-decoration:none}
+/* Эти два класса остались с переменными первой версии: в темах таких
+   переменных нет, и цвет молча наследовался вместо заданного. */
+.wtab td.s{color:var(--ink3)}
+.wtab td.g{color:var(--acc-ink);font-weight:700}
 
 /* ---------- картинки ---------- */
+/* Снимки техники — часть оформления, а не данные: в «Клейме» красный
+   помост и жёлтый пол посреди строго серой темы били в глаза.
+   Фотографии самого хозяина не трогаем, это его журнал. */
+.howimg img{filter:grayscale(var(--img-gray))}
 .howimg img,.pane .pic{border-radius:var(--r-m);border-color:var(--ln)}
 .strip img{border-radius:var(--r-s)}
 .howb h5{font-size:18px;letter-spacing:-.01em}
@@ -4606,7 +4624,45 @@ async function monthReport(ym) {
       <div><div class="pic">${b ? `<img src="${b}" alt="">` : '<span>второго фото нет</span>'}</div>
         <i>${b ? fmt(phDays[phDays.length - 1]) : '—'}</i></div></div>`;
   }
-  if (!days.length) h += '<p style="color:var(--mut);font-size:12px">В этом месяце записей нет.</p>';
+  if (days.length) {
+    // Что месяц дал по группам и какие веса в нём взяты. Раньше здесь
+    // были только четыре числа и пустая шторка под ними.
+    const gv = {}, gs = {}, best = {};
+    GROUPS.forEach(([n]) => { gv[n] = 0; gs[n] = 0; });
+    days.forEach(d => dayEntries(d).forEach(e => {
+      if (e.g && gv[e.g] !== undefined) { gv[e.g] += e.vol; gs[e.g] += (e.rs ? e.rs.length : e.s); }
+      if (e.w > 0 && (!best[e.n] || e.w > best[e.n])) best[e.n] = e.w;
+    }));
+    const gmx = Math.max(1, ...GROUPS.map(([n]) => gv[n]));
+    if (GROUPS.some(([n]) => gv[n] > 0)) {
+      h += '<div class="cph">ЧТО НАГРУЖАЛИ</div><div class="win pln">' +
+        GROUPS.filter(([n]) => gv[n] > 0).map(([n, t]) =>
+          `<div class="ld"><span class="n">${n}</span>
+            <span class="b"><i style="width:${Math.round(gv[n] / gmx * 100)}%;background:var(--c-${t})"></i></span>
+            <span class="v"><b>${dec(gv[n] / 1000)} т</b><em>${gs[n]} подх.</em></span></div>`).join('') +
+        '</div>';
+    }
+    const tops = Object.keys(best).sort((x, y) => best[y] - best[x]).slice(0, 6);
+    if (tops.length) {
+      h += '<div class="cph">ЛУЧШИЕ ВЕСА МЕСЯЦА</div><div class="win pln">' +
+        '<table class="wtab"><colgroup><col class="nm"><col class="n"></colgroup><tbody>' +
+        tops.map(n => `<tr><td>${esc(n)}</td><td class="g">${kg(best[n])} кг</td></tr>`).join('') +
+        '</tbody></table></div>';
+    }
+    const planned = (() => { let c = 0;
+      const last = new Date(y, m, 0).getDate();
+      for (let i = 1; i <= last; i++) {
+        const ds = ym + '-' + String(i).padStart(2, '0');
+        if (ds > today()) break;
+        const dd = dayOf(ds); if (dd && dd.t !== 'rest') c++;
+      }
+      return c; })();
+    h += `<p style="margin:12px 0 0;font-size:12px;color:var(--ink3);line-height:1.5">
+      Закрыто <b style="color:var(--ink)">${wos}</b> из <b style="color:var(--ink)">${planned}</b>
+      запланированных тренировок${phDays.length ? ', снимков за месяц: ' + phDays.length : ''}.</p>`;
+  } else {
+    h += '<p style="color:var(--ink3);font-size:12.5px">В этом месяце записей нет.</p>';
+  }
 
   sheet('ИТОГИ', h);
   const pv = $('moP'), nx = $('moN');
