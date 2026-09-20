@@ -2810,15 +2810,32 @@ const CYCLE = [
 
 /* ---------- даты ---------- */
 // местное время, а не UTC: иначе вечером дата уезжает на вчера
-const iso = d => { const z = new Date(d); z.setMinutes(z.getMinutes() - z.getTimezoneOffset()); return z.toISOString().slice(0, 10); };
+// Негодная дата возвращает пустую строку, а не роняет всё вокруг:
+// один мусорный ключ в журнале раньше валил подсчёт серии, календарь
+// и «Прогресс» целиком.
+const iso = d => {
+  const z = new Date(d);
+  if (isNaN(z.getTime())) return '';
+  z.setMinutes(z.getMinutes() - z.getTimezoneOffset());
+  return z.toISOString().slice(0, 10);
+};
 const today = () => iso(new Date());
 const at = ds => new Date(ds + 'T12:00:00');          // полдень: перевод часов не сдвигает день
-const wdOf = ds => (at(ds).getDay() + 6) % 7;         // 0 = понедельник
-function mondayOf(ds) { const d = at(ds); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); }
+// Негодная дата даёт понедельник, а не NaN: иначе индекс дня уходил в
+// NaN, dayOf возвращал undefined, и весь «Прогресс» падал на первом же
+// обращении к такому дню.
+const wdOf = ds => { const d = at(ds); return isNaN(d.getTime()) ? 0 : (d.getDay() + 6) % 7; };
+function mondayOf(ds) {
+  const d = at(ds);
+  if (isNaN(d.getTime())) return '';
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return iso(d);
+}
 const daysBetween = (a, b) => Math.round((at(b) - at(a)) / 864e5);
 function fmt(ds, short) {
   if (!ds) return '—';
   const x = at(ds);
+  if (isNaN(x.getTime())) return String(ds);      // негодную дату показываем как есть
   return x.getDate() + ' ' + MON[x.getMonth()].slice(0, 3).toLowerCase() + (short ? '' : ' ' + x.getFullYear());
 }
 function shiftMonth(ym, n) { const [y, m] = ym.split('-').map(Number); return iso(new Date(y, m - 1 + n, 1)).slice(0, 7); }
@@ -3134,7 +3151,9 @@ const EMPTY = { log: {}, sp: {}, wo: 0 };
 function dayIdx(ds) {
   const m = S.map ? S.map[ds] : null;
   const i = (m === 0 || m) ? m : wdOf(ds);
-  return (i >= 0 && i < S.days.length) ? i : wdOf(ds);
+  if (i >= 0 && i < S.days.length) return i;
+  const w = wdOf(ds);
+  return (w >= 0 && w < S.days.length) ? w : 0;
 }
 const dayOf = ds => S.days[dayIdx(ds)];
 const recOf = ds => {                                         // чтение — без создания пустышек
@@ -4698,7 +4717,11 @@ $('histMore').addEventListener('click', () => { histLimit += 20; paintHistory();
 /* ---------- серия недель ---------- */
 function streak() {
   const cnt = {};
-  Object.keys(S.rec).forEach(d => { if (S.rec[d].wo) cnt[mondayOf(d)] = (cnt[mondayOf(d)] || 0) + 1; });
+  Object.keys(S.rec).forEach(d => {
+    if (!S.rec[d] || !S.rec[d].wo) return;
+    const m = mondayOf(d);
+    if (m) cnt[m] = (cnt[m] || 0) + 1;
+  });
   let n = 0;
   const c = at(mondayOf(today()));
   if ((cnt[iso(c)] || 0) < 4) c.setDate(c.getDate() - 7);   // текущую считаем только закрытой
