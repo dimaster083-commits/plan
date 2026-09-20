@@ -520,9 +520,12 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   color:var(--mut);font-weight:600;vertical-align:1px}
 .fpn{padding:12px;border:1px dashed var(--edge2);border-radius:2px;margin-bottom:10px}
 .fpn p{margin:0 0 9px;font-size:11px;color:var(--mut)}
-.fpn .r{display:flex;gap:6px}
+.fpn .r{display:flex;gap:6px;flex-wrap:wrap}
 .fpn .r input{flex:1;min-width:0;background:rgba(var(--tint),.09);border:1px solid var(--edge2);
   color:var(--tx);padding:8px 6px;border-radius:2px;text-align:center}
+/* Название в одном ряду с четырьмя числами сжималось до «Шаурм». Ему
+   отдельная строка во всю ширину, числам — ряд под ним. */
+.fpn .r input#nfN{flex:1 0 100%;text-align:left;padding-left:10px}
 .fpn button{width:100%;margin-top:8px;border:1px solid var(--cy);color:var(--cy2);padding:9px;
   font-size:11.5px;border-radius:2px;letter-spacing:.06em}
 .chains{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px;padding-bottom:2px;
@@ -6589,9 +6592,13 @@ function drawPick(raw) {
   const typed = String(raw ?? '').trim();     // как человек написал, с заглавными
   let base = allFood();
   if (chainFilter) base = base.filter(f => f[0].startsWith(chainFilter));
-  const list = base.filter(f => !q || f[0].toLowerCase().includes(q)).slice(0, 80);
-
   const mine = new Set((S.myFood || []).map(f => f.n));
+  // Свои продукты лежали в конце списка, за десятком позиций из базы, —
+  // а именно их ищут чаще всего. Поднимаем наверх, порядок остального цел.
+  const list = base.filter(f => !q || f[0].toLowerCase().includes(q))
+    .sort((x, y) => (mine.has(y[0]) ? 1 : 0) - (mine.has(x[0]) ? 1 : 0))
+    .slice(0, 80);
+
   let h = list.map(f => {
     const g = f[5] || 0;
     const sub = g ? `${rnd(f[1] * g / 100)} ккал · ${rnd(f[2] * g / 100)} б / порция ${g} г`
