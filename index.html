@@ -6,9 +6,12 @@
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#E8E8E6">
+<meta name="theme-color" content="#07040F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GYM">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Forum&family=Oswald:wght@200;300;400;600&display=swap" rel="stylesheet">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" href="./icon-192.png">
@@ -26,6 +29,7 @@
   --tabh:58px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{overflow-x:clip;max-width:100%}
 button{-webkit-user-select:none;user-select:none;touch-action:manipulation}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--f);font-size:15px;
@@ -820,102 +824,96 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
    вблизи это читается как дешёвая подделка под интерфейс из игры. Здесь всё
    наоборот: спокойные поверхности, один акцент, воздух и типографика.
    ========================================================================= */
+/* =========================================================================
+   ТЕМЫ
+   Тема — это только оформление: значения токенов, обои и словарь подписей.
+   Разметка, кнопки и состояние у всех тем общие, поэтому переключение
+   не может ничего сбить. Добавить третью тему — дописать один блок.
+   ========================================================================= */
+:root, :root[data-skin="sl"]{
+  /* СИСТЕМА — палитра #34117E … #D0BCFC */
+  --s0:#07040F; --s1:rgba(26,10,62,.74); --s2:rgba(52,17,126,.34); --s3:rgba(102,49,219,.30);
+  --ln:rgba(123,69,240,.42); --ln2:rgba(123,69,240,.62);
+  --ink:#F3EDFF; --ink2:#D0BCFC; --ink3:#A18AD0;
+
+  --acc:#7B45F0; --acc-2:#A981FF; --acc-fill:#6631DB; --acc-soft:rgba(123,69,240,.26);
+  --acc-ink:#C6ABFF; --onacc:#FFFFFF;
+  --ok:#A981FF;   --ok-soft:rgba(123,69,240,.22);  --ok-ln:rgba(123,69,240,.5);
+  --warn:#D0BCFC; --warn-soft:rgba(73,26,177,.34);
+  --bad:#FF6B8A;  --bad-soft:rgba(255,107,138,.16);
+
+  --glass:rgba(9,5,20,.84); --glass2:rgba(9,5,20,.9);
+  --scrim:rgba(4,2,10,.78);
+
+  /* форма: срезанный угол, свечение, размытие стекла */
+  --r-s:0px; --r-m:0px; --r-l:0px;
+  --cut:13px; --blur:16px; --sat:1.2;
+  --glow-r:22px; --glow-c:rgba(123,69,240,.22);
+  --glow-t:0 0 14px rgba(123,69,240,.55);
+  --sh1:none; --sh2:none; --sh3:0 20px 50px -20px rgba(0,0,0,.85);
+  --shacc:0 0 26px rgba(123,69,240,.55);
+
+  --f:'Rajdhani',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --fd:'Rajdhani',var(--f);
+  --fn:'Share Tech Mono',ui-monospace,'SF Mono',monospace;
+  --caps:uppercase; --track:.14em; --wt:600; --wtd:700;
+
+  --wall:url('./img/bg-nebula.jpg');
+  --wall-gray:0; --wall-dim:radial-gradient(120% 75% at 50% 18%,rgba(7,4,15,.18),rgba(7,4,15,.62) 62%,rgba(7,4,15,.9) 100%);
+
+  /* цвета дней недели и групп мышц */
+  --c-rest:#3A3358; --c-up1:#6631DB; --c-lo1:#A981FF; --c-up2:#7B45F0; --c-lo2:#D0BCFC; --c-other:#8E7AC0;
+  --c-back:#6631DB; --c-chest:#7B45F0; --c-delts:#A981FF; --c-legs:#D0BCFC; --c-arms:#491AB1;
+  color-scheme:dark;
+}
+
+:root[data-skin="ber"]{
+  /* КЛЕЙМО — палитра #F8F9FA … #181B1E, ни одного цвета и ни грамма свечения */
+  --s0:#0B0D0F; --s1:rgba(24,27,30,.82); --s2:rgba(95,98,102,.22); --s3:rgba(165,169,174,.26);
+  --ln:rgba(165,169,174,.3); --ln2:rgba(165,169,174,.5);
+  --ink:#F8F9FA; --ink2:#CFD1D4; --ink3:#A5A9AE;
+
+  --acc:#CFD1D4; --acc-2:#F8F9FA; --acc-fill:#CFD1D4; --acc-soft:rgba(207,209,212,.16);
+  --acc-ink:#F8F9FA; --onacc:#181B1E;
+  --ok:#F8F9FA;   --ok-soft:rgba(248,249,250,.12); --ok-ln:rgba(207,209,212,.45);
+  --warn:#CFD1D4; --warn-soft:rgba(165,169,174,.16);
+  --bad:#F8F9FA;  --bad-soft:rgba(248,249,250,.12);
+
+  --glass:rgba(11,13,15,.9); --glass2:rgba(11,13,15,.94);
+  --scrim:rgba(5,6,7,.82);
+
+  --r-s:0px; --r-m:0px; --r-l:0px;
+  --cut:0px; --blur:14px; --sat:0;
+  --glow-r:0px; --glow-c:transparent;
+  --glow-t:none;
+  --sh1:none; --sh2:none; --sh3:0 20px 50px -20px rgba(0,0,0,.9);
+  --shacc:none;
+
+  --f:'Oswald',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --fd:'Forum','Times New Roman',Georgia,serif;
+  --fn:'Oswald',var(--f);
+  --caps:uppercase; --track:.2em; --wt:300; --wtd:400;
+
+  --wall:url('./img/bg-ink.jpg');
+  --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.36) 0%,rgba(11,13,15,.72) 48%,rgba(11,13,15,.94) 100%);
+
+  --c-rest:#3A3D40; --c-up1:#CFD1D4; --c-lo1:#A5A9AE; --c-up2:#F8F9FA; --c-lo2:#5F6266; --c-other:#6E7276;
+  --c-back:#CFD1D4; --c-chest:#F8F9FA; --c-delts:#A5A9AE; --c-legs:#8A8E92; --c-arms:#5F6266;
+  color-scheme:dark;
+}
+
+/* обои живут отдельным слоем: их меняет тема, а не разметка */
+#wall{position:fixed;inset:0;z-index:-2;background:var(--wall) center top/cover no-repeat;
+  filter:grayscale(var(--wall-gray))}
+#wall::after{content:'';position:absolute;inset:0;background:var(--wall-dim)}
+
+/* старые имена: на них завязаны десятки правил ниже по файлу */
 :root{
-  /* БЕТОН — светлая тема. Тёплый серый вместо белизны, тёмно-синий акцент.
-     Тёмная тема ниже: чёрный с красным. Переключаются одной строкой на <html>,
-     ни одно правило оформления при этом не дублируется. */
-  --s0:#E8E8E6;            /* фон */
-  --s1:#FFFFFF;            /* карточка */
-  --s2:#EDEDEA;            /* поле, вложенный блок */
-  --s3:#DEDEDA;            /* нажатие */
-  --ln:#DCDCD8;            /* разделитель */
-  --ln2:#C4C4BF;
-
-  --ink:#16181A;           /* основной текст */
-  --ink2:#44484C;          /* вторичный */
-  --ink3:#61666B;          /* подписи: светлее нельзя, иначе не читаются */
-
-  --acc:#1F5F8B;           /* единственный акцент */
-  --acc-2:#17516F;         /* он же под нажатием */
-  --acc-fill:#1B5A84;      /* заливка кнопки: белый текст поверх должен читаться */
-  --acc-soft:#DCE8F0;      /* заливка выбранного состояния */
-  --acc-ink:#12506F;       /* текст поверх мягкой заливки */
-  --onacc:#FFFFFF;         /* текст поверх сплошного акцента */
-
-  --ok:#1A7A33;   --ok-soft:#E0F0E4;   --ok-ln:#BCDCC2;
-  --warn:#8A5A00; --warn-soft:#F5EAD4;
-  --bad:#B8322B;  --bad-soft:#F8E3E1;
-
-  --glass:rgba(232,232,230,.9);    /* полосы и шторки поверх контента */
-  --glass2:rgba(255,255,255,.92);  /* нижние вкладки */
-  --scrim:rgba(22,24,26,.45);      /* затемнение под диалогом */
-  --glow:rgba(31,95,139,.05);      /* мягкий свет у верхнего края */
-
-  --r-s:6px; --r-m:8px; --r-l:10px;
-  --sh1:0 1px 2px rgba(22,24,26,.06);
-  --sh2:0 4px 14px -6px rgba(22,24,26,.14);
-  --sh3:0 16px 36px -18px rgba(22,24,26,.24);
-  --shacc:0 8px 20px -12px rgba(31,95,139,.8);
-
-  /* Цвета дней недели и групп мышц. Раньше они были зашиты в коде одним
-     набором на обе темы — оттуда и брался сиреневый. */
-  --c-rest:#8E8E8A; --c-up1:#1F6E8B; --c-lo1:#1A7A33; --c-up2:#8A5A00; --c-lo2:#A05030; --c-other:#5C6166;
-  --c-back:#1F6E8B; --c-chest:#8A5A00; --c-delts:#2E7D7A; --c-legs:#1A7A33; --c-arms:#B8322B;
-
-  /* старые имена оставлены: на них завязаны десятки правил ниже по файлу */
   --bg:var(--s0); --panel:var(--s1); --panel2:var(--s2);
   --edge:var(--ln2); --edge2:var(--ln);
-  --cy:var(--acc); --cy2:var(--acc-ink); --tx:var(--ink); --mut:var(--ink3);
-  --legs:var(--ok); --chest:var(--warn); --arms:var(--bad); --back:#1F6E8B; --other:#5C6166;
-  --rest:#8E8E8A;
-  color-scheme:light;
-}
-
-/* Тёмная тема. Меняются только значения токенов. Системная настройка
-   учитывается, но ручной выбор на <html data-theme> всегда главнее. */
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-  /* ЧЁРНО-КРАСНЫЙ: чистый чёрный, один красный акцент. */
-  --s0:#0A0A0B; --s1:#151517; --s2:#1E1E21; --s3:#29292D;
-  --ln:#242427; --ln2:#33333A;
-  --ink:#FFFFFF; --ink2:#B0B0B8; --ink3:#8C8C96;
-  --acc:#E8413A; --acc-2:#FF5A52; --acc-fill:#B3251F; --acc-soft:#2A1211; --acc-ink:#FF6B63; --onacc:#FFFFFF;
-  --ok:#4FC26E; --ok-soft:#132414; --ok-ln:#28432C;
-  --warn:#E0A33A; --warn-soft:#2A2012;
-  --bad:#F0574F; --bad-soft:#2A1211;
-  --glass:rgba(10,10,11,.9); --glass2:rgba(21,21,23,.94);
-  --scrim:rgba(0,0,0,.72); --glow:rgba(232,65,58,.06);
-  --sh1:0 1px 2px rgba(0,0,0,.6);
-  --sh2:0 4px 14px -6px rgba(0,0,0,.7);
-  --sh3:0 16px 36px -18px rgba(0,0,0,.85);
-  --shacc:0 8px 20px -12px rgba(232,65,58,.75);
-  /* цвета дней и групп мышц: читаются из этих же переменных, а не зашиты в коде */
-  --c-rest:#3A3A40; --c-up1:#5B93CC; --c-lo1:#4FC26E; --c-up2:#E8413A; --c-lo2:#E0A33A; --c-other:#85858E;
-  --c-back:#5B93CC; --c-chest:#E8413A; --c-delts:#55B5B0; --c-legs:#4FC26E; --c-arms:#E0A33A;
-  --back:#5B93CC; --other:#85858E; --rest:#3A3A40;
-  color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  /* ЧЁРНО-КРАСНЫЙ: чистый чёрный, один красный акцент. */
-  --s0:#0A0A0B; --s1:#151517; --s2:#1E1E21; --s3:#29292D;
-  --ln:#242427; --ln2:#33333A;
-  --ink:#FFFFFF; --ink2:#B0B0B8; --ink3:#8C8C96;
-  --acc:#E8413A; --acc-2:#FF5A52; --acc-fill:#B3251F; --acc-soft:#2A1211; --acc-ink:#FF6B63; --onacc:#FFFFFF;
-  --ok:#4FC26E; --ok-soft:#132414; --ok-ln:#28432C;
-  --warn:#E0A33A; --warn-soft:#2A2012;
-  --bad:#F0574F; --bad-soft:#2A1211;
-  --glass:rgba(10,10,11,.9); --glass2:rgba(21,21,23,.94);
-  --scrim:rgba(0,0,0,.72); --glow:rgba(232,65,58,.06);
-  --sh1:0 1px 2px rgba(0,0,0,.6);
-  --sh2:0 4px 14px -6px rgba(0,0,0,.7);
-  --sh3:0 16px 36px -18px rgba(0,0,0,.85);
-  --shacc:0 8px 20px -12px rgba(232,65,58,.75);
-  /* цвета дней и групп мышц: читаются из этих же переменных, а не зашиты в коде */
-  --c-rest:#3A3A40; --c-up1:#5B93CC; --c-lo1:#4FC26E; --c-up2:#E8413A; --c-lo2:#E0A33A; --c-other:#85858E;
-  --c-back:#5B93CC; --c-chest:#E8413A; --c-delts:#55B5B0; --c-legs:#4FC26E; --c-arms:#E0A33A;
-  --back:#5B93CC; --other:#85858E; --rest:#3A3A40;
-  color-scheme:dark;
+  --cy:var(--acc-2); --cy2:var(--acc-ink); --tx:var(--ink); --mut:var(--ink3);
+  --legs:var(--c-legs); --chest:var(--c-chest); --arms:var(--c-arms);
+  --back:var(--c-back); --other:var(--c-other); --rest:var(--c-rest);
 }
 
 /* ---------- основа ---------- */
@@ -1230,8 +1228,16 @@ input,textarea,select{color:var(--ink)}
 .qpen{border-top:1px solid var(--ln);font-size:11.5px;letter-spacing:0;padding-top:9px}
 
 /* ---------- таблицы ---------- */
-.wtab td,.wtab th{padding:11px 8px;font-size:13px}
-.wtab th{color:var(--ink3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+/* Таблица весов была шире экрана (421 px при 390) и ломала границы всей
+   страницы. Ширины столбцов задаются жёстко, название переносится по словам. */
+.wtab{table-layout:fixed;width:100%}
+.wtab td,.wtab th{padding:10px 4px;font-size:12.5px}
+.wtab th{color:var(--ink3);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.02em}
+.wtab col.nm{width:38%}
+.wtab col.d{width:13%}
+.wtab col.n{width:16%}
+.wtab td:first-child,.wtab th:first-child{overflow-wrap:anywhere;padding-left:0}
+.wtab td:last-child,.wtab th:last-child{padding-right:0}
 .wtab td.lnk{color:var(--acc-ink);text-decoration:none}
 
 /* ---------- картинки ---------- */
@@ -1257,17 +1263,18 @@ input,textarea,select{color:var(--ink)}
 </style>
 </head>
 <script>
-/* Тема ставится до разбора остального кода: иначе при тёмной теме экран
-   успевает моргнуть белым. Значение лежит отдельным ключом — оно нужно
-   раньше, чем читается журнал. */
+/* Тема ставится до разбора остального кода: иначе экран успевает моргнуть
+   чужим оформлением. Значение лежит отдельным ключом — оно нужно раньше,
+   чем читается журнал. */
 (function () {
   try {
-    var t = localStorage.getItem('sys-gym-theme');
-    if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
-  } catch (e) { /* приватный режим: остаётся системная тема */ }
+    var t = localStorage.getItem('sys-gym-skin');
+    document.documentElement.dataset.skin = (t === 'ber') ? 'ber' : 'sl';
+  } catch (e) { document.documentElement.dataset.skin = 'sl'; }
 })();
 </script>
 <body>
+<div id="wall"></div>
 <div id="boot"><div><b>GYM</b></div></div>
 
 <!-- выбранный день: показывается на вкладках «Зал» и «Еда» -->
@@ -1406,14 +1413,14 @@ input,textarea,select{color:var(--ink)}
   <h2 class="sec">ПРОГРАММА</h2>
   <div class="win pln">
     <h4>РАБОЧИЕ ВЕСА</h4>
-    <table class="wtab"><thead><tr><th>Упражнение</th><th>День</th><th>Рабочий</th><th>Эта неделя</th><th>Рекорд</th></tr></thead>
+    <table class="wtab">
+      <colgroup><col class="nm"><col class="d"><col class="n"><col class="n"><col class="n"></colgroup>
+      <thead><tr><th>Упражнение</th><th>День</th><th>Рабочий</th><th>Неделя</th><th>Рекорд</th></tr></thead>
       <tbody id="wtab"></tbody></table>
     <p style="margin-top:10px;font-size:11.5px;color:var(--ink3)">«Рабочий» — вес, от которого считается
        программа: он поднимается сам, как только поднимешь больше. «Эта неделя» — что стоит
        в карточке сегодня. Веса гантелей — за одну, не за пару.</p>
     <button class="add" id="recalc" style="margin-top:12px">Пересчитать веса</button>
-    <button class="add" id="sndBtn" style="margin-top:7px">Звук системы: вкл</button>
-    <button class="add" id="thBtn" style="margin-top:7px">Тема: светлая</button>
   </div>
 
   <h2 class="sec">АРХИВ</h2>
@@ -3663,8 +3670,6 @@ $('impFile').addEventListener('change', e => {
 // Таблица весов собирается из самой программы, чтобы не разъезжаться со вкладкой «Зал».
 // Раньше здесь лежали зашитые ориентиры из первой версии плана, и они врали.
 function paintPlan() {
-  $('sndBtn').textContent = 'Звук системы: ' + (S.sound === 0 ? 'выкл' : 'вкл');
-  paintThemeBtn();
   const rows = [];
   const seen = {};
   const ramp = rampOf(today());
@@ -3726,62 +3731,91 @@ $('wtab').addEventListener('click', e => {
   if (t && EXDB[t.dataset.how]) openHow(t.dataset.how);
 });
 $('recalc').addEventListener('click', openSetup);
-$('sndBtn').addEventListener('click', () => {
-  S.sound = S.sound === 0 ? 1 : 0;
-  save(); paintPlan();
-  if (S.sound) dingSet();
-});
+
 
 
 /* =========================================================================
-   ТЕМА
-   Три положения по кругу: как в системе → светлая → тёмная. Цвет строки
-   состояния меняется вместе с фоном, иначе в iOS сверху остаётся полоса
-   от прежней темы.
+   ТЕМЫ
+   Тема меняет ровно три вещи: значения токенов оформления, обои и словарь
+   подписей. Разметка, кнопки и состояние общие для всех тем, поэтому
+   переключение физически не может ничего сбить: ни один элемент не
+   появляется и не исчезает, у каждого действия свой неизменный ключ.
    ========================================================================= */
-const THEMES = [['auto', 'как в системе'], ['light', 'светлая'], ['dark', 'тёмная']];
-function themeNow() {
-  const t = document.documentElement.dataset.theme;
-  return (t === 'light' || t === 'dark') ? t : 'auto';
-}
-function themeIsDark() {
-  const t = themeNow();
-  if (t !== 'auto') return t === 'dark';
-  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-}
-function applyTheme(t) {
-  if (t === 'auto') delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = t;
-  try { localStorage.setItem('sys-gym-theme', t); } catch (e) { /* приватный режим */ }
+const SKINS = [
+  { id: 'sl',  n: 'Система', sub: 'Solo Leveling · фиолетовая' },
+  { id: 'ber', n: 'Клеймо',  sub: 'Берсерк · чёрно-белая' }
+];
+
+/* Словарь подписей. Слева — смысл, он же ключ и в коде, и в разметке.
+   Справа — как это называется в каждой теме. Функция одна и та же. */
+const DICT = {
+  sl: {
+    hero: 'Охотник', rank: 'РАНГ', level: 'Уровень', xp: 'XP',
+    quest: 'Квест дня', reward: 'Награда', done: 'Выполнено',
+    progress: 'Прогресс', journal: 'Журнал', cycle: 'Цикл',
+    gym: 'Зал', food: 'Еда', photo: 'Фото',
+    supp: 'Снаряжение', suppHint: 'Приём добавок за день',
+    left: 'осталось', session: 'тренировка', sessions: 'тренировок'
+  },
+  ber: {
+    hero: 'Поход', rank: 'КЛЕЙМО', level: 'Ступень', xp: 'Опыт',
+    quest: 'Сегодня', reward: 'Добыто', done: 'Сделано',
+    progress: 'Летопись', journal: 'Летопись', cycle: 'Круг',
+    gym: 'Зал', food: 'Еда', photo: 'Фото',
+    supp: 'Припасы', suppHint: 'Приём добавок за день',
+    left: 'осталось', session: 'выход', sessions: 'выходов'
+  }
+};
+const skinNow = () => (document.documentElement.dataset.skin === 'ber' ? 'ber' : 'sl');
+const T = k => (DICT[skinNow()] || DICT.sl)[k] ?? (DICT.sl[k] ?? k);
+
+function applyTheme(id) {
+  const ok = SKINS.some(s2 => s2.id === id) ? id : 'sl';
+  document.documentElement.dataset.skin = ok;
+  try { localStorage.setItem('sys-gym-skin', ok); } catch (e) { /* приватный режим */ }
   syncCol();
   syncThemeColor();
+  paintDict();
   render();
 }
-// строка состояния и панель задач берут цвет отсюда
+
+// строка состояния берёт цвет фона темы
 function syncThemeColor() {
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--s0').trim();
-  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', bg || '#E8E8E6'));
-  const sb = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-  if (sb) sb.setAttribute('content', themeIsDark() ? 'black-translucent' : 'default');
-  const cs = document.querySelector('meta[name="color-scheme"]');
-  if (cs) cs.setAttribute('content', themeNow() === 'auto' ? 'light dark' : themeNow());
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', bg || '#07040F'));
 }
-function paintThemeBtn() {
-  const b = $('thBtn');
-  if (b) b.textContent = 'Тема: ' + (THEMES.find(x => x[0] === themeNow()) || THEMES[0])[1];
+
+/* Подписи в неизменной разметке: элемент помечен ключом словаря,
+   текст подставляется из темы. Кнопка остаётся той же кнопкой. */
+function paintDict() {
+  document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
 }
-$('thBtn').addEventListener('click', () => {
-  const i = THEMES.findIndex(x => x[0] === themeNow());
-  applyTheme(THEMES[(i + 1) % THEMES.length][0]);
+
+function openSettings() {
+  const cur = skinNow();
+  sheet('НАСТРОЙКИ',
+    '<div class="cph">ОФОРМЛЕНИЕ</div>' +
+    SKINS.map(s2 => `<button class="win prl skinpick${s2.id === cur ? ' on' : ''}" data-skin-set="${s2.id}">
+      <b>${esc(s2.n)}</b><span>${esc(s2.sub)}</span></button>`).join('') +
+    '<p class="s" style="color:var(--mut);font-size:12px;margin:8px 0 0">' +
+    'Оформление и подписи меняются, журнал и веса остаются на месте.</p>' +
+    '<div class="cph">ЗВУК</div>' +
+    `<button class="add" data-snd="1">Звук системы: ${S.sound === 0 ? 'выкл' : 'вкл'}</button>` +
+    '<div class="cph">ВЕСА</div>' +
+    '<button class="add" data-recalc="1">Пересчитать рабочие веса</button>');
+}
+
+$('shB').addEventListener('click', e => {
+  const sk = e.target.closest('[data-skin-set]');
+  if (sk) { applyTheme(sk.dataset.skinSet); openSettings(); return; }
+  const sn = e.target.closest('[data-snd]');
+  if (sn) { S.sound = S.sound === 0 ? 1 : 0; save(); if (S.sound) dingSet(); openSettings(); return; }
+  const rc = e.target.closest('[data-recalc]');
+  if (rc) { sheetClose(); openSetup(); return; }
 });
-// системная тема может смениться на ходу — в положении «как в системе» следим за ней
-if (window.matchMedia) {
-  const mq = window.matchMedia('(prefers-color-scheme: dark)');
-  const onSys = () => { if (themeNow() === 'auto') { syncCol(); syncThemeColor(); render(); } };
-  if (mq.addEventListener) mq.addEventListener('change', onSys);
-  else if (mq.addListener) mq.addListener(onSys);
-}
+
 syncThemeColor();
+paintDict();
 
 /* =========================================================================
    ЭКРАН НЕ ГАСНЕТ ВО ВРЕМЯ ТРЕНИРОВКИ
@@ -3906,8 +3940,10 @@ function openProgression() {
       <p style="margin:0 0 10px;font-size:11px;color:var(--mut)">Числа без выводов: смотри сам.
         «За месяц» — насколько вырос лучший вес за 30 дней, «всего» — с первой записи.
         Строки без пометки уже не в программе, но остались в журнале.</p>
-      <table class="wtab"><thead><tr>
-        <th>Упражнение</th><th>Рабочий</th><th>Лучший</th><th>За месяц</th><th>Всего</th><th>Раз</th>
+      <table class="wtab">
+        <colgroup><col class="nm"><col class="n"><col class="n"><col class="n"><col class="n"><col class="d"></colgroup>
+        <thead><tr>
+        <th>Упражнение</th><th>Рабочий</th><th>Лучший</th><th>Месяц</th><th>Всего</th><th>Раз</th>
       </tr></thead><tbody>
       ${rows.map(r => `<tr>
         <td class="lnk" data-hist="${esc(r.n)}">${esc(r.n)}${r.plan ? '' :
