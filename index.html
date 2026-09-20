@@ -3173,7 +3173,11 @@ const recOf = ds => {                                         // чтение �
 };
 const recRW = ds => S.rec[ds] || (S.rec[ds] = { log: {}, sp: {}, wo: 0 });
 
-const planStart = () => S.start || START_DEFAULT;
+// Негодная дата старта (правленая руками копия, чужой формат) отдавала из
+// mondayOf пустую строку, и цикл в planWeek крутился вечно: приложение не
+// падало, а намертво зависало. Дата проверяется здесь, один раз на всех.
+const okDay = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && !isNaN(at(v).getTime());
+const planStart = () => (okDay(S.start) ? S.start : START_DEFAULT);
 const weekOfDate = ds => Math.floor((at(ds) - at(mondayOf(planStart()))) / 6048e5) + 1;
 const started = ds => weekOfDate(ds || today()) >= 1;
 
@@ -3193,12 +3197,14 @@ function weekCounts() {
 function planWeek(ds) {
   const target = mondayOf(ds || today()), start = mondayOf(planStart());
   if (target <= start) return 1;
+  if (!start || !target) return 1;               // ни на что не опереться
   const cnt = weekCounts();
   const c = at(start);
-  let w = 1;
+  let w = 1, guard = 0;
   while (iso(c) < target) {
     if ((cnt[iso(c)] || 0) >= WEEK_MIN) w++;      // неделя засчитана — идём дальше
     c.setDate(c.getDate() + 7);
+    if (++guard > 5200) break;                   // сто лет плана — дальше только петля
   }
   return w;
 }
@@ -4530,7 +4536,7 @@ $('anBw').addEventListener('input', e => setBw(e.target.value));
 $('anGoal').addEventListener('input', e => setGoal(e.target.value));
 $('startIn').addEventListener('change', e => {
   $('startTxt').textContent = fmt(e.target.value);
-  if (!e.target.value) return;
+  if (!okDay(e.target.value)) { $('startTxt').textContent = fmt(planStart()); return; }
   S.start = e.target.value; save(); render(); note('Старт плана: ' + fmt(S.start));
 });
 
