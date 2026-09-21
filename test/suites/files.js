@@ -3,6 +3,7 @@
 const { chromium } = require('playwright-core');
 const { LAUNCH, APP } = require('../env');
 const fs=require('fs'), path=require('path');
+const PHOTO_FIXTURE = path.join(__dirname, '../../icon-192.png');
 const out=[]; const ok=(n,c,d)=>out.push((c?'  ✓ ':'  ✗ ')+n+(c?'':'   → '+d));
 
 (async()=>{
@@ -27,7 +28,7 @@ const out=[]; const ok=(n,c,d)=>out.push((c?'  ✓ ':'  ✗ ')+n+(c?'':'   → '
   await p.waitForTimeout(400);
 
   // ---- 1. загрузка снимка ----
-  await p.setInputFiles('#phFile','/tmp/photo0.jpg');
+  await p.setInputFiles('#phFile', PHOTO_FIXTURE);
   await p.waitForTimeout(1400);
   let r1=await p.evaluate(async()=>({stored:(await phKeys()).length, shown:!!document.querySelector('#phT img'),
     delBtn:!document.getElementById('phDel').hidden, day:PH[0]}));
@@ -37,7 +38,7 @@ const out=[]; const ok=(n,c,d)=>out.push((c?'  ✓ ':'  ✗ ')+n+(c?'':'   → '
   await p.evaluate(()=>{const d=new Date();d.setDate(d.getDate()-5);
     const z=new Date(d);z.setMinutes(z.getMinutes()-z.getTimezoneOffset());sel=z.toISOString().slice(0,10);render();});
   await p.waitForTimeout(300);
-  await p.setInputFiles('#phFile','/tmp/photo1.jpg');
+  await p.setInputFiles('#phFile', PHOTO_FIXTURE);
   await p.waitForTimeout(1400);
   let r2=await p.evaluate(async()=>({stored:(await phKeys()).length}));
   ok('второй снимок кладётся отдельной датой', r2.stored===2, JSON.stringify(r2));
