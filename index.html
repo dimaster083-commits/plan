@@ -141,13 +141,16 @@ input,select{font-size:16px}
 .qb{height:6px;background:rgba(var(--tint),.14);margin-top:10px;overflow:hidden}
 /* Вес сейчас: подпись, число и направление режима — одна рамка.
    Раньше подпись стояла слева, а число ютилось в маленьком поле справа. */
-.wbox{border:1px solid var(--ln);border-radius:var(--r-m);background:var(--s2);
-  padding:13px 15px 12px;margin-bottom:12px}
-.wbox label{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--ink3);margin-bottom:2px}
-.wpair{display:flex;gap:14px}
-.wcell{flex:1 1 0;min-width:0}
-.wval{display:flex;align-items:baseline;gap:5px;border-bottom:1px solid var(--ln);padding-bottom:6px}
+/* Вес и цель — две равные величины, и каждая сидит в своей рамке.
+   Общая рамка с подчёркиванием читалась как одно поле с приписками. */
+.wbox{margin-bottom:12px}
+.wbox label{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:3px;white-space:nowrap}
+.wpair{display:flex;gap:9px}
+.wcell{flex:1 1 0;min-width:0;border:1px solid var(--ln);border-radius:var(--r-m);
+  background:var(--s2);padding:11px 12px 10px}
+.wcell:focus-within{border-color:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c)}
+.wval{display:flex;align-items:baseline;gap:4px}
 /* Крупное число берёт заголовочный шрифт: у моноширинного ноль нарисован
    с точкой посередине, и «70» читалось как «7 и что-то в кружке». */
 .wval input{flex:1;min-width:0;width:100%;background:none;border:0;padding:0;
@@ -155,7 +158,7 @@ input,select{font-size:16px}
   font-size:clamp(28px,9vw,40px);line-height:1.05;letter-spacing:-.01em}
 .wval input:focus{outline:none}
 .wval span{font-size:14px;color:var(--ink3);flex:0 0 auto}
-.wdir{display:flex;gap:7px;margin-top:11px}
+.wdir{display:flex;gap:7px;margin-top:9px}
 .wdir button{flex:1;padding:9px 6px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
   border:1px solid var(--ln);border-radius:var(--r-p);background:var(--s1);color:var(--ink3)}
 .wdir button.on{background:var(--acc-fill);border-color:var(--acc-fill);color:var(--onacc);font-weight:700}
@@ -1355,8 +1358,9 @@ input,textarea,select{color:var(--ink)}
 /* Граница — недельная норма. Внутри пусто: ни колец, ни спиц, ни пунктира —
    разметка перетягивала взгляд на себя. */
 .rgrid{fill:none;stroke:var(--ln2);stroke-width:1.5}
-/* четверти нормы: по ним фигура читается числом, а не на глаз */
-.rstep{fill:none;stroke:var(--ln2);stroke-width:1;opacity:.75}
+/* десятые доли нормы: по ним фигура читается числом, а не на глаз */
+.rstep{fill:none;stroke:var(--ln);stroke-width:1;opacity:.55}
+.rstep.half{stroke:var(--ln2);opacity:.9}
 .rfill{fill:var(--acc-soft);stroke:var(--acc);stroke-width:2;stroke-linejoin:round}
 .rdot{fill:var(--acc-2)}
 /* группа добрана — точка сидит на границе и видна ярче */
@@ -2338,19 +2342,6 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
   <div class="psec" data-s="prog" hidden>
   <button class="anb" id="anBtn">Разбор</button>
   <button class="anb" id="progBtn" style="margin-top:7px">Прогресс по упражнениям</button>
-  <h2 class="sec">ПРОГРАММА</h2>
-  <div class="win pln">
-    <h4>РАБОЧИЕ ВЕСА</h4>
-    <table class="wtab">
-      <colgroup><col class="nm"><col class="d"><col class="n"><col class="n"><col class="n"></colgroup>
-      <thead><tr><th>Упражнение</th><th>День</th><th>Рабочий</th><th>Неделя</th><th>Рекорд</th></tr></thead>
-      <tbody id="wtab"></tbody></table>
-    <p style="margin-top:10px;font-size:11.5px;color:var(--ink3)">«Рабочий» — вес, от которого считается
-       программа: он поднимается сам, как только поднимешь больше. «Эта неделя» — что стоит
-       в карточке сегодня. Веса гантелей — за одну, не за пару.</p>
-    <button class="add" id="recalc" style="margin-top:12px">Пересчитать веса</button>
-  </div>
-
   <h2 class="sec">АРХИВ</h2>
   <div class="win bk">
     <h4>РЕЗЕРВНАЯ КОПИЯ</h4>
@@ -2364,6 +2355,19 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
     </div>
     <div class="bkst" id="bkst"></div>
   </div>
+  <h2 class="sec">ПРОГРАММА</h2>
+  <div class="win pln">
+    <h4>РАБОЧИЕ ВЕСА</h4>
+    <table class="wtab">
+      <colgroup><col class="nm"><col class="d"><col class="n"><col class="n"><col class="n"></colgroup>
+      <thead><tr><th>Упражнение</th><th>День</th><th>Рабочий</th><th>Неделя</th><th>Рекорд</th></tr></thead>
+      <tbody id="wtab"></tbody></table>
+    <p style="margin-top:10px;font-size:11.5px;color:var(--ink3)">«Рабочий» — вес, от которого считается
+       программа: он поднимается сам, как только поднимешь больше. «Эта неделя» — что стоит
+       в карточке сегодня. Веса гантелей — за одну, не за пару.</p>
+    <button class="add" id="recalc" style="margin-top:12px">Пересчитать веса</button>
+  </div>
+
   <input type="file" id="impFile" accept="application/json,.json" hidden>
   </div><!-- /prog -->
 </section>
@@ -4940,13 +4944,14 @@ function paintRadar() {
   const shape = vals.map((v, i) => pt(i, Math.max(0.04, v))
     .map(x => x.toFixed(1)).join(',')).join(' ');
 
-  /* Кольца по четвертям нормы. Без них фигура читалась на глаз: «где-то
-     больше половины». По кольцам видно, сколько именно — четверть, половина,
-     три четверти, целиком. Спиц нет: они делят фигуру, но ничего не меряют. */
+  /* Шкала внутри: кольцо на каждую десятую долю нормы, девять штук.
+     Четырёх ступеней не хватало — фигура всё равно читалась на глаз.
+     Половина выделена сильнее, чтобы было от чего считать. Спиц нет:
+     они делят фигуру, но ничего не меряют. */
   let h = '';
-  [0.25, 0.5, 0.75].forEach(k => {
-    h += `<polygon points="${poly(k)}" class="rstep"/>`;
-  });
+  for (let k = 1; k <= 9; k++) {
+    h += `<polygon points="${poly(k / 10)}" class="rstep${k === 5 ? ' half' : ''}"/>`;
+  }
   h += `<polygon points="${poly(1)}" class="rgrid"/>`;
   const any = done.some(v => v > 0);
   if (any) {
@@ -4970,7 +4975,7 @@ function paintRadar() {
   if (note2) note2.textContent = any
     ? (closed === GROUPS.length
       ? 'Все группы добраны: фигура вышла на границу. Так выглядит полностью закрытая неделя.'
-      : 'Граница — недельная норма подходов, кольца внутри — её четверти. ' +
+      : 'Граница — недельная норма подходов, каждое кольцо внутри — её десятая часть. ' +
         'Фигура по краю значит, что группа добрана; закрыто ' + closed + ' из ' + GROUPS.length + '.')
     : 'Закрой первую тренировку за неделю — и здесь появится фигура по всем группам.';
 }
@@ -5463,7 +5468,17 @@ function openSettings() {
     '<div class="cph">ЗВУК</div>' +
     `<button class="add" data-snd="1">Звук: ${S.sound === 0 ? 'выкл' : 'вкл'}</button>` +
     '<div class="cph">ВЕСА</div>' +
-    '<button class="add" data-recalc="1">Пересчитать рабочие веса</button>');
+    '<button class="add" data-recalc="1">Пересчитать рабочие веса</button>' +
+    /* Копия лежала внизу вкладки «Веса», под таблицей из двух десятков
+       строк: самая важная кнопка в приложении была спрятана глубже всех.
+       Теперь она есть и в шестерёнке — с любого экрана, в два касания. */
+    '<div class="cph">РЕЗЕРВНАЯ КОПИЯ</div>' +
+    '<button class="add hi" data-bk="exp">Сохранить копию</button>' +
+    '<button class="add" data-bk="imp">Восстановить из копии</button>' +
+    '<button class="add" data-bk="csv">Выгрузить CSV для Excel</button>' +
+    '<p class="s" style="color:var(--mut);font-size:12.5px;margin:9px 0 0;line-height:1.5">' +
+    'В копии весь журнал, веса, рацион и фотографии. iOS может очистить хранилище, ' +
+    'если не заходить месяцами, — сохраняй файл в «Файлы» или iCloud.</p>');
 }
 
 $('shB').addEventListener('click', e => {
@@ -5475,6 +5490,11 @@ $('shB').addEventListener('click', e => {
   if (rc) { sheetClose(); openSetup(); return; }
   const dst = e.target.closest('[data-dayset]');
   if (dst) { sheetClose(); tab = 'wo'; edit = true; exOpen = null; render(); window.scrollTo(0, 0); return; }
+  /* Жмём ту же кнопку, что в «Архиве», а не копию обработчика: выбор файла
+     и скачивание должны остаться внутри настоящего касания, иначе Safari
+     их не пустит. */
+  const bk = e.target.closest('[data-bk]');
+  if (bk) { const el = $(bk.dataset.bk); sheetClose(); if (el) el.click(); return; }
 });
 
 syncThemeColor();
