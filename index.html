@@ -442,6 +442,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--edge2);display:flex;gap:8px;
   flex-wrap:wrap;align-items:center}
 .foot p{margin:0;flex:1;min-width:170px;font-size:10.5px;color:var(--mut)}
+.saveState[data-save-state="saving"]{color:var(--cy2)}
+.saveState[data-save-state="failed"]{color:var(--arms);font-weight:700}
 .gh{border:1px solid var(--edge2);color:var(--mut);padding:8px 12px;font-size:11px;border-radius:2px}
 
 /* ===== ПИТАНИЕ ===== */
@@ -2197,7 +2199,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
     <button class="add" id="editPast" hidden>Править этот день</button>
   </div>
 
-  <div class="foot"><p>Прогресс сохраняется на этом устройстве</p>
+  <div class="foot"><p id="saveState" class="saveState" data-save-state="saved" role="status" aria-live="polite">Сохранено на устройстве</p>
     <button class="gh" id="rd">СБРОС ДНЯ</button></div>
 </section>
 
@@ -3232,7 +3234,7 @@ function recomputeStats(force) {
 
 function load() {
   try { const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : build(); }
-  catch (e) { canSave = false; S = build(); }
+  catch (e) { canSave = false; S = build(); setSaveState('failed'); }
   // Раньше здесь стояло S = build(): состояние без расписания стиралось целиком,
   // вместе с журналом, весами и накопленным тоннажем. Теперь восстанавливаем
   // только расписание, а всё заработанное остаётся на месте.
@@ -3257,19 +3259,27 @@ function scrubKeys() {
 }
 
 let saveTimer = null;
+function setSaveState(kind) {
+  const el = $('saveState');
+  if (!el) return;
+  el.dataset.saveState = kind;
+  el.textContent = kind === 'saving' ? 'Сохраняем на устройстве…'
+    : kind === 'failed' ? 'Не удалось сохранить данные' : 'Сохранено на устройстве';
+}
 function save() {
   wkCache = null;
   statsDirty = true;
   entCache = null;
-  if (!canSave) return;
+  if (!canSave) { setSaveState('failed'); return; }
   clearTimeout(saveTimer);
+  setSaveState('saving');
   saveTimer = setTimeout(flush, 150);      // пачкой: за одно нажатие состояние меняется не раз
 }
 function flush() {
-  if (!canSave) return;
+  if (!canSave) { setSaveState('failed'); return false; }
   clearTimeout(saveTimer);
-  try { localStorage.setItem(KEY, JSON.stringify(S)); }
-  catch (e) { canSave = false; note('Сохранение недоступно'); }
+  try { localStorage.setItem(KEY, JSON.stringify(S)); setSaveState('saved'); return true; }
+  catch (e) { canSave = false; setSaveState('failed'); note('Сохранение недоступно — сделай копию данных'); return false; }
 }
 
 /* ---------- выборки ---------- */
