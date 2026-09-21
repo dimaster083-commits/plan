@@ -64,16 +64,30 @@ const chk = (c,n,d)=>c?ok(n,d):bad(n,d);
     chk(mvInCal.found && mvInCal.mv, '8. в журнале на этой дате стоит ↔', JSON.stringify(mvInCal));
 
     // --- 9. записанные подходы перенос не стирает ---
+    /* Запись ищем по названию, а не по номеру: перенос меняет набор
+       упражнений под уже закрытыми подходами, и номер перестаёт значить
+       то же самое. Важно, что сама запись цела и не прикинулась чужим
+       упражнением. */
     const keep = await p.evaluate(() => {
-      const r = recRW(sel); r.log[0] = { n: dayOf(sel).ex[0].n, rs:['9','9','9'], vol: 123, s:'3' }; save();
-      const was = JSON.stringify(recOf(sel).log[0]);
+      const имя = dayOf(sel).ex[0].n;
+      const r = recRW(sel); r.log[0] = { n: имя, rs:['9','9','9'], vol: 123, s:'3' }; save();
+      const найти = () => {
+        const lg = recOf(sel).log || {};
+        const k = Object.keys(lg).find(x => lg[x] && lg[x].n === имя);
+        return k === undefined ? null : { поле: JSON.stringify(lg[k]), номер: +k };
+      };
+      const was = найти();
       tab='wo'; edit=true; render();
       document.querySelector('#moveTo [data-mv="'+wdOf(sel)+'"]').click();   // вернуть на место
-      const back = JSON.stringify(recOf(sel).log[0]);
-      return { was, back, map: S.map[sel] };
+      const back = найти();
+      const ex = dayOf(sel).ex || [];
+      const чужое = back && ex[back.номер] && ex[back.номер].n !== имя;
+      return { was: was && was.поле, back: back && back.поле, чужое: !!чужое, map: S.map[sel] };
     });
-    chk(keep.was === keep.back && keep.map === undefined,
-        '9. отмена переноса не трогает записанные подходы', keep.back + ' · перенос снят: ' + (keep.map === undefined));
+    chk(keep.was === keep.back && keep.map === undefined && !keep.чужое,
+        '9. отмена переноса не трогает записанные подходы',
+        (keep.back || 'запись потеряна') + ' · перенос снят: ' + (keep.map === undefined) +
+        (keep.чужое ? ' · ЗАПИСЬ НА ЧУЖОМ УПРАЖНЕНИИ' : ''));
 
     // --- 10. кнопка «ВЕРНУТЬ» ---
     await p.evaluate(k => { tab='wo'; edit=true; render();

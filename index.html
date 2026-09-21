@@ -3562,13 +3562,35 @@ $('types').addEventListener('click', async e => {
   }
   save(); render();
 });
+/* Перенос дня подставляет под уже закрытые подходы другой набор
+   упражнений. Отметка лежит под номером: после переноса номер ноль — это
+   уже не жим, а присед, и приложение показывало закрытым присед, которого
+   не было. Снять такую отметку значило откатить тоннаж жима.
+   Переставляем записи по названию. Того, чего в новом дне нет, уезжает за
+   край списка: в журнале, тоннаже и опыте оно остаётся — запись сама себя
+   описывает, — а в карточках дня не показывается. */
+function remapLog(ds) {
+  const r = S.rec[ds];
+  if (!r || !r.log) return;
+  const ex = (dayOf(ds) || {}).ex || [];
+  const used = {}, out = {};
+  let tail = ex.length;
+  Object.keys(r.log).sort((a, b2) => a - b2).forEach(k => {
+    const l = r.log[k];
+    if (!l) return;
+    const at = l.n ? ex.findIndex((e, i) => e.n === l.n && !used[i]) : -1;
+    if (at >= 0) { used[at] = 1; out[at] = l; } else out[tail++] = l;
+  });
+  r.log = out;
+}
 $('moveTo').addEventListener('click', e => {
   const b = e.target.closest('[data-mv]'); if (!b) return;
   const k = +b.dataset.mv;
   if (k === wdOf(sel)) delete S.map[sel]; else S.map[sel] = k;
+  remapLog(sel);
   save(); render();
 });
-$('movedX').addEventListener('click', () => { delete S.map[sel]; save(); render(); });
+$('movedX').addEventListener('click', () => { delete S.map[sel]; remapLog(sel); save(); render(); });
 
 /* =========================================================================
    ВКЛАДКА «ЗАЛ»
