@@ -3843,7 +3843,7 @@ $('exl').addEventListener('click', e => {
   if (hw) { openHow(hw.dataset.how); return; }
 
   const go = e.target.closest('[data-go]');
-  if (go) { runOnce('set:' + sel + ':' + go.dataset.go, () => toggleSet(+go.dataset.go)); return; }
+  if (go) { toggleSet(+go.dataset.go); return; }
 
   const op = e.target.closest('[data-open]');
   if (op) { exOpen = +op.dataset.open; render(); window.scrollTo(0, 0); return; }
