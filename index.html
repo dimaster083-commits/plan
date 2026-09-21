@@ -4355,9 +4355,26 @@ $('spl').addEventListener('click', e => {
     const j = +del.dataset.spd, d = dayOf(sel);
     ask('Убрать «' + (d.sp[j] || {}).n + '» из этого дня?').then(ok => {
       if (!ok) return;
-      const r = recRW(sel);
-      d.sp.splice(j, 1); delete r.sp[j];
-      save(); paintSupp();
+      /* Отметка приёма — это только номер строки: снимка, как у подхода,
+         у неё нет. Выкинули добавку из середины — и все отметки ниже
+         съехали на чужие строки, причём сразу во всех прошедших днях, а
+         отметка последней осталась висеть на несуществующем номере и
+         продолжала считаться в опыте. Двигаем отметки следом, в каждой
+         дате этого же дня недели. */
+      const di = S.days.indexOf(d);
+      d.sp.splice(j, 1);
+      Object.keys(S.rec).forEach(ds => {
+        const rec = S.rec[ds];
+        if (!rec || !rec.sp || dayIdx(ds) !== di) return;
+        const next = {};
+        Object.keys(rec.sp).forEach(k => {
+          const i = +k;
+          if (i === j) return;                    // отметка удалённой уходит
+          next[i > j ? i - 1 : i] = rec.sp[k];
+        });
+        rec.sp = next;
+      });
+      save(); recomputeStats(1); paintSupp(); paintStatus();
     });
   }
 });
