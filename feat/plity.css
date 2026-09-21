@@ -1,0 +1,79 @@
+/* ---------- РАЗМИНКА И БЛИНЫ ----------
+   Лесенка подходов к сегодняшнему весу и раскладка блинов под ней.
+   Ни одного своего цвета: всё из токенов темы, поэтому «Система» и
+   «Клеймо» получают одинаковый блок и каждая — своими красками.
+   Ширины не заданы в пикселях: блок живёт внутри карточки и обязан
+   влезать в 320 px вместе с ней. */
+
+/* Фишке нечего сказать (свой вес, лёгкая изоляция, вес меньше грифа) —
+   пустая обёртка остаётся в разметке, но на экране её нет. */
+.plt:empty { display: none }
+
+.pltbox {
+  margin-top: 14px; border: 1px solid var(--ln); border-radius: var(--r-m);
+  background: var(--s2); overflow: hidden;
+}
+
+/* шапка: нажатие сворачивает и разворачивает лесенку */
+.plth {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+  gap: 2px clamp(6px, 2.4vw, 10px); width: 100%; min-height: 44px;
+  padding: 8px clamp(8px, 3vw, 12px); background: none; border: 0;
+  text-align: left; color: var(--ink); font-family: var(--f);
+}
+.pltt {
+  grid-column: 1; font-size: clamp(9.5px, 3vw, 11px); font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink2);
+}
+.plts {
+  grid-column: 1; font-size: clamp(10.5px, 3.3vw, 11.5px); color: var(--ink3);
+  line-height: 1.3; overflow-wrap: anywhere;
+}
+/* уголок вместо значка: рисуется бордюрами, шрифт для этого не нужен */
+.pltar {
+  grid-column: 2; grid-row: 1 / span 2; width: 9px; height: 9px; flex: 0 0 auto;
+  border-right: 2px solid var(--ink3); border-bottom: 2px solid var(--ink3);
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+.pltoff .pltar { transform: rotate(-135deg) translate(-2px, -2px) }
+.pltoff .pltl { display: none }
+
+.pltl { border-top: 1px solid var(--ln) }
+
+/* Строка лесенки. Вес и повторы — первой строкой, раскладка блинов —
+   второй, во всю ширину: длинная раскладка не выдавливает вес за край. */
+.pltr {
+  display: grid; grid-template-columns: minmax(0, auto) minmax(0, auto) minmax(0, 1fr);
+  align-items: baseline; gap: 2px clamp(6px, 2.4vw, 10px);
+  width: 100%; min-height: 44px; padding: 8px clamp(8px, 3vw, 12px);
+  background: none; border: 0; border-top: 1px solid var(--ln);
+  text-align: left; color: var(--ink2); font-family: var(--f);
+}
+.pltl .pltr:first-child { border-top: 0 }
+.pltkg {
+  font-family: var(--fn); font-size: clamp(15px, 4.8vw, 18px); font-weight: 700;
+  color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.pltkg i { font-style: normal; font-size: 10px; color: var(--ink3); margin-left: 2px }
+.pltx {
+  font-family: var(--fn); font-size: clamp(11.5px, 3.6vw, 13px);
+  color: var(--ink2); white-space: nowrap;
+}
+.pltn {
+  justify-self: end; min-width: 0; text-align: right;
+  font-size: clamp(9px, 2.8vw, 10px); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pltp {
+  grid-column: 1 / -1; font-size: clamp(10.5px, 3.3vw, 11.5px);
+  color: var(--ink3); line-height: 1.35; overflow-wrap: anywhere;
+}
+
+/* рабочий подход — тот, ради которого всё остальное */
+.pltw { background: var(--s3) }
+.pltw .pltn { color: var(--acc-ink) }
+
+/* отмеченная строка гаснет и зачёркивается: в журнал разминка не идёт */
+.pltdn { opacity: .55 }
+.pltdn .pltkg { text-decoration: line-through }
+.pltr:active { background: var(--s3) }

@@ -1,0 +1,75 @@
+/* ФИШКА «МАКСИМУМ И РЕКОРДЫ».
+   Своя приставка mk-, свои классы, ни одного чужого селектора. Цвета —
+   только токены темы: фишка обязана одинаково работать и в «Системе»,
+   и в «Клейме», а собственных цветов у неё нет. */
+
+/* строка в раскрытой карточке упражнения */
+.mk { margin-top: 12px; }
+.mk-b {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 52px; padding: 10px 12px;
+  text-align: left; cursor: pointer;
+  border: 1px solid var(--ln); border-radius: var(--r-m);
+  background: var(--s2); color: var(--ink);
+  font-family: inherit;
+}
+.mk-b:active { border-color: var(--acc); }
+.mk-t { flex: 1 1 auto; min-width: 0; }
+.mk-l {
+  display: block; font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mk-v {
+  display: block; font-size: 21px; line-height: 1.15; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.mk-v i { font-style: normal; font-size: 11px; color: var(--ink3); margin-left: 4px; }
+.mk-f {
+  display: block; font-size: 11px; line-height: 1.35; color: var(--ink3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mk-g { flex: 0 0 auto; font-size: 13px; color: var(--ink3); }
+
+/* содержимое шторки */
+.mkx { min-width: 0; }
+.mkx-top {
+  border: 1px solid var(--ln); border-radius: var(--r-m);
+  background: var(--s2); padding: 12px 13px; margin-bottom: 14px;
+}
+.mkx-l {
+  display: block; font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink3);
+}
+.mkx-pm {
+  display: block; font-size: 30px; line-height: 1.1; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink); margin: 2px 0 3px;
+}
+.mkx-pm i { font-style: normal; font-size: 13px; color: var(--ink3); margin-left: 5px; }
+.mkx-f { display: block; font-size: 11.5px; line-height: 1.4; color: var(--ink3); }
+.mkx-warn {
+  margin: 0 0 14px; padding: 10px 12px; font-size: 11.5px; line-height: 1.45;
+  color: var(--ink2, var(--ink)); border: 1px solid var(--ln);
+  border-radius: var(--r-s); background: var(--s2);
+}
+.mkx-h {
+  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink3); margin: 0 0 6px;
+}
+.mkx-note { margin: 14px 0 0; font-size: 11px; line-height: 1.45; color: var(--ink3); }
+
+.mkt { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 16px; }
+.mkt td, .mkt th {
+  padding: 9px 4px; border-bottom: 1px solid var(--ln);
+  font-size: 13px; text-align: right; overflow: hidden; text-overflow: ellipsis;
+}
+.mkt th {
+  font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink3); font-weight: 600; white-space: nowrap;
+}
+.mkt td { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mkt .mk-k { text-align: left; color: var(--ink3); }
+.mkt .mk-w { font-weight: 700; }
+.mkt .mk-no { color: var(--ink3); font-weight: 400; }
+.mkt .mk-d { font-size: 11px; color: var(--ink3); width: 32%; }
+.mkt tr:last-child td { border-bottom: 0; }
