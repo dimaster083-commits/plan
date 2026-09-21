@@ -15,8 +15,12 @@ const chk = (ok, name, info = '') => { console.log((ok ? '  ✓ ' : '  ✗ ') + 
   });
   const before = await page.evaluate(() => dayOf(sel).ex.length);
   await page.click('#addEx');
-  const pick = page.locator('[data-addex]').first();
-  await pick.click(); await pick.click();
+  // Два touch-события приходят до следующей перерисовки; программный click
+  // повторяет именно этот короткий интервал без ожидания уже закрытой шторки.
+  await page.evaluate(() => {
+    const pick = document.querySelector('[data-addex]');
+    pick.click(); pick.click();
+  });
   await page.waitForTimeout(250);
   const after = await page.evaluate(() => dayOf(sel).ex.length);
   chk(after === before + 1, 'двойной тап добавляет упражнение один раз', `${before} → ${after}`);
