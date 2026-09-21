@@ -31,4 +31,4 @@ jobs:
         run: npx playwright-core install --with-deps chromium
 
       - name: Запустить все проверки
-        run: npm test -- -j 1
+        run: npm test
