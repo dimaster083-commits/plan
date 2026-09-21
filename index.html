@@ -5262,6 +5262,25 @@ $('wipe').addEventListener('click', async () => {
 });
 
 $('imp').addEventListener('click', () => $('impFile').click());
+/* Копия — внешний ввод. Проверяем форму целиком до вопроса и до записи
+   фотографий: старый код принимал любое поле days и только потом «чинил»
+   его, из-за чего испорченный файл успевал заменить открытый журнал. */
+function importStateOf(copy) {
+  const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const state = copy && copy.state;
+  if (!plain(copy) || !plain(state) || !Array.isArray(state.days) || !state.days.length) throw new Error('bad');
+  if (!state.days.every(d => plain(d) && typeof d.k === 'string' && typeof d.n === 'string'
+    && typeof d.t === 'string' && Array.isArray(d.ex))) throw new Error('bad');
+  ['rec', 'map', 'pr'].forEach(k => {
+    if (state[k] !== undefined && !plain(state[k])) throw new Error('bad');
+  });
+  ['myFood', 'tpl'].forEach(k => {
+    if (state[k] !== undefined && !Array.isArray(state[k])) throw new Error('bad');
+  });
+  if (copy.photos !== undefined && !plain(copy.photos)) throw new Error('bad');
+  // JSON-копия отделяет импорт от FileReader и не оставляет ссылок на внешний объект.
+  return JSON.parse(JSON.stringify(state));
+}
 $('impFile').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
   e.target.value = '';
@@ -5270,7 +5289,7 @@ $('impFile').addEventListener('change', e => {
   fr.onload = async () => {
     try {
       const o = JSON.parse(fr.result);
-      if (!o.state || !o.state.days) throw new Error('bad');
+      const next = importStateOf(o);
       // про фотографии говорим отдельно: они не стираются, а доливаются к нынешним
       if (!await ask('Журнал, веса и рацион будут заменены на то, что в копии — нынешние пропадут. '
         + 'Фотографии из копии добавятся к уже снятым.', 'ВОССТАНОВИТЬ')) return;
@@ -5278,9 +5297,9 @@ $('impFile').addEventListener('change', e => {
       // Восстановление проходит тот же ремонт, что и обычная загрузка:
       // копия может быть старой, правленой руками или испорченной, а
       // мусорный ключ в журнале роняет «Прогресс» целиком.
-      S = o.state;
-      if (!S || typeof S !== 'object') throw new Error('bad');
-      if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
+      S = next;
+      // Сюда попадает только уже проверенная копия; миграции сохраняют
+      // совместимость со старыми версиями без права на частичную загрузку.
       scrubKeys(); invalidateFood(); migrate(); recomputeStats(1); flush();
       await phSync();
       sel = today(); mo = sel.slice(0, 7);
