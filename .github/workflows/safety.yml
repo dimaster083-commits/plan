@@ -20,4 +20,4 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npx playwright-core install --with-deps chromium
-      - run: node test/run.js backup-safe vosst persist pishem progr taps -j 1
+      - run: node test/run.js backup-safe vosst persist pishem progr taps paltsy palitra -j 1
