@@ -2250,6 +2250,8 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
     <div><b id="sumTon">0,0</b><s>ТОНН</s></div>
     <div><b id="sumStreak">0</b><s>НЕДЕЛЬ ПОДРЯД</s></div>
   </div>
+  <!-- сюда фишки вешают свои карточки через реестр HOOK.prog -->
+  <div id="hookProg"></div>
 
 
   </div><!-- /log -->
@@ -3490,7 +3492,7 @@ function render() {
   if (dayScreen) paintDay();
   if (tab === 'wo') paintWorkout();
   if (tab === 'food') { paintFood(); paintSupp(); }
-  if (tab === 'prog') paintProgress();
+  if (tab === 'prog') { paintProgress(); paintHooks(); }
   if (tab === 'photo') paintPhotoScreen();
   paintBadge();
   paintStatus();
@@ -3803,6 +3805,13 @@ function exFull(e, j, r, IN, d) {
 const HOOK = { card: [], prog: [], day: [] };
 const hookHtml = (k, ...a) => (HOOK[k] || [])
   .map(f => { try { return f(...a) || ''; } catch (e) { return ''; } }).join('');
+
+/* Реестр фишек рисуется вместе с «Прогрессом». Отдельной функцией, а не
+   внутри paintProgress(): фишку можно убрать, не трогая перерисовку. */
+function paintHooks() {
+  const box = $('hookProg');
+  if (box) box.innerHTML = hookHtml('prog');
+}
 
 /* ---------- ввод в карточке упражнения ---------- */
 $('exl').addEventListener('input', e => {
