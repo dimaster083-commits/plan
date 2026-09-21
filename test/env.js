@@ -5,7 +5,13 @@ const path = require('path');
 
 // Приложение — index.html рядом с этой папкой. Открываем файлом, без сервера:
 // всё приложение в одном файле, сеть ему не нужна.
-const APP = 'file://' + path.resolve(__dirname, '..', 'index.html');
+/* Обычно проверяем сам index.html репозитория. Но когда фишка ещё только
+   собирается отдельным блоком, её удобно проверять на своей сборке —
+   путь к ней передаётся переменной PLAN_APP. */
+const APP = process.env.PLAN_APP
+  ? (/^file:/.test(process.env.PLAN_APP) ? process.env.PLAN_APP
+     : 'file://' + path.resolve(process.env.PLAN_APP))
+  : 'file://' + path.resolve(__dirname, '..', 'index.html');
 
 /* Chromium ищем по порядку:
    1. переменная CHROME — если браузер лежит где-то своём;
