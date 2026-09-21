@@ -3259,6 +3259,15 @@ function scrubKeys() {
 }
 
 let saveTimer = null;
+/* На телефоне один тап иногда приходит дважды до перерисовки. Блокируем
+   только повтор одной пишущей операции на короткое время. */
+const pendingActions = new Set();
+function runOnce(key, action, waitMs = 350) {
+  if (pendingActions.has(key)) return;
+  pendingActions.add(key);
+  try { return Promise.resolve(action()); }
+  finally { setTimeout(() => pendingActions.delete(key), waitMs); }
+}
 function setSaveState(kind) {
   const el = $('saveState');
   if (!el) return;
@@ -4065,7 +4074,8 @@ function unbumpWorking(log) {
   delete log.bump;
 }
 
-function toggleSet(j) {
+function toggleSet(j) { return runOnce('set:' + sel + ':' + j, () => toggleSetNow(j)); }
+function toggleSetNow(j) {
   // Будущий день — это план, а не журнал. Раньше подход там закрывался
   // как обычно, и опыт с тоннажем начислялись за тренировку, которой
   // ещё не было.
@@ -4546,8 +4556,10 @@ $('shB').addEventListener('click', e => {
   const ax = e.target.closest('[data-addex]');
   if (ax) {
     const n = ax.dataset.addex;
-    dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: EXDB[n][1] });
-    save(); sheetClose(); render(); note('Добавлено: ' + n);
+    runOnce('addex:' + sel + ':' + n, () => {
+      dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: EXDB[n][1] });
+      save(); sheetClose(); render(); note('Добавлено: ' + n);
+    });
     return;
   }
 
