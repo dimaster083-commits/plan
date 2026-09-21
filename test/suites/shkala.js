@@ -47,8 +47,12 @@ const seed = доля => (доля) => {};
         факт: GROUPS.map(([n])=>+((acc[n]||0)/VOL_TARGET[n]).toFixed(3)),
         подписи: [...sv.querySelectorAll('.rnum')].map(t=>t.textContent),
         полных: [...sv.querySelectorAll('.rdot.full')].length,
-        линийВнутри: sv.querySelectorAll('line, polygon.norm, .rspoke, .rgrid.norm').length,
+        спиц: sv.querySelectorAll('line, .rspoke').length,
         границ: sv.querySelectorAll('polygon.rgrid').length,
+        колец: [...sv.querySelectorAll('polygon.rstep')].map(g2=>{
+          const q=g2.getAttribute('points').trim().split(/\s+/)[0].split(',').map(Number);
+          return +(Math.hypot(q[0]-150,q[1]-114)/78).toFixed(2);
+        }).sort((a,c)=>a-c),
         текст: sv.parentNode.querySelector('.radn').textContent
       };
     },[skin,доля]);
@@ -75,9 +79,16 @@ const seed = доля => (доля) => {};
     chk(!/Все группы добраны/.test(половина.текст),'7. подпись не врёт про закрытую неделю',половина.текст);
 
     // 8-9. внутри пусто
-    chk(половина.линийВнутри===0,'8. внутри нет ни колец, ни спиц, ни пунктира',
-        'лишних линий: '+половина.линийВнутри);
+    chk(половина.спиц===0,'8. спиц внутри нет — они ничего не меряют',
+        'лишних линий: '+половина.спиц);
     chk(половина.границ===1,'9. граница ровно одна',String(половина.границ));
+    chk(половина.колец.join(',')==='0.25,0.5,0.75',
+        '9б. внутри кольца по четвертям нормы',половина.колец.join(', ')||'колец нет');
+    // фигура на половине нормы обязана лечь ровно на среднее кольцо
+    const наКольце=половина.доли.filter((v,i)=>Math.abs(половина.факт[i]-0.5)<0.03)
+      .every(v=>Math.abs(v-0.5)<0.03);
+    chk(наКольце,'9в. значение в половину нормы ложится на среднее кольцо',
+        половина.доли.join(', '));
 
     chk(errs.length===0,'10. без ошибок в консоли',errs.join(' | ')||'чисто');
     await p.context().close();

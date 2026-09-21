@@ -145,10 +145,14 @@ input,select{font-size:16px}
   padding:13px 15px 12px;margin-bottom:12px}
 .wbox label{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;
   color:var(--ink3);margin-bottom:2px}
-.wval{display:flex;align-items:baseline;gap:6px;border-bottom:1px solid var(--ln);padding-bottom:6px}
+.wpair{display:flex;gap:14px}
+.wcell{flex:1 1 0;min-width:0}
+.wval{display:flex;align-items:baseline;gap:5px;border-bottom:1px solid var(--ln);padding-bottom:6px}
+/* Крупное число берёт заголовочный шрифт: у моноширинного ноль нарисован
+   с точкой посередине, и «70» читалось как «7 и что-то в кружке». */
 .wval input{flex:1;min-width:0;width:100%;background:none;border:0;padding:0;
-  color:var(--ink);font-family:var(--fn);font-weight:700;
-  font-size:clamp(34px,11vw,44px);line-height:1.05;letter-spacing:-.01em}
+  color:var(--ink);font-family:var(--f);font-weight:700;font-variant-numeric:tabular-nums;
+  font-size:clamp(28px,9vw,40px);line-height:1.05;letter-spacing:-.01em}
 .wval input:focus{outline:none}
 .wval span{font-size:14px;color:var(--ink3);flex:0 0 auto}
 .wdir{display:flex;gap:7px;margin-top:11px}
@@ -168,9 +172,11 @@ input,select{font-size:16px}
 .altb:active{background:var(--s3)}
 .alth{margin:0;font-size:11.5px;color:var(--ink3);line-height:1.5}
 
-.qgoal{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
-.qgoal input{width:38px;background:var(--s2);border:1px solid var(--ln);border-radius:var(--r-s);
-  color:var(--ink);font:inherit;font-family:var(--fn);font-size:11.5px;text-align:right;padding:3px 5px}
+.wtscale{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.wtscale em{font-style:normal;font-size:10px;letter-spacing:.1em;color:var(--ink3);
+  text-transform:none;font-weight:400}
+.qgoal{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap;color:var(--ink3)}
+.qgoal b{color:var(--ink);font-weight:700}
 .qgoal i{font-style:normal}
 .qb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2F6AD0,#6FA8FF,var(--gold));
   box-shadow:0 0 12px rgba(240,194,74,.55);transition:width .5s}
@@ -1349,6 +1355,8 @@ input,textarea,select{color:var(--ink)}
 /* Граница — недельная норма. Внутри пусто: ни колец, ни спиц, ни пунктира —
    разметка перетягивала взгляд на себя. */
 .rgrid{fill:none;stroke:var(--ln2);stroke-width:1.5}
+/* четверти нормы: по ним фигура читается числом, а не на глаз */
+.rstep{fill:none;stroke:var(--ln2);stroke-width:1;opacity:.75}
 .rfill{fill:var(--acc-soft);stroke:var(--acc);stroke-width:2;stroke-linejoin:round}
 .rdot{fill:var(--acc-2)}
 /* группа добрана — точка сидит на границе и видна ярче */
@@ -2237,11 +2245,19 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 
   <div class="psec" data-s="goal" hidden>
   <div class="win quest">
-    <!-- В это поле вносят сегодняшний вес, а подпись говорила «цель по
-         весу»: цель задаётся ниже, у правого края шкалы. -->
+    <!-- Вес и цель — две равные величины, и вводятся они одинаково. Цель
+         раньше ютилась маленькой рамкой у края шкалы и выглядела чужой. -->
     <div class="wbox">
-      <label for="bw">ВЕС СЕЙЧАС</label>
-      <div class="wval"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес сейчас"><span>кг</span></div>
+      <div class="wpair">
+        <div class="wcell">
+          <label for="bw">ВЕС СЕЙЧАС</label>
+          <div class="wval"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес сейчас"><span>кг</span></div>
+        </div>
+        <div class="wcell">
+          <label for="goalIn">ЦЕЛЬ</label>
+          <div class="wval"><input id="goalIn" type="text" inputmode="decimal" value="95" aria-label="Цель по весу"><span>кг</span></div>
+        </div>
+      </div>
       <div class="wdir" id="wdir">
         <button data-dir="up">НАБОР</button><button data-dir="down">ПОХУДЕНИЕ</button></div>
     </div>
@@ -2252,7 +2268,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
       <span class="f" id="bmiF"></span><i>›</i></button>
     <div class="qb"><i id="qf"></i></div>
     <div class="qlg"><span id="qStart">70</span><span id="qleft"></span>
-      <span class="qgoal">цель <input id="goalIn" inputmode="decimal" aria-label="Цель по весу" value="95"><i>кг</i></span></div>
+      <span class="qgoal">цель <b id="qGoalV">95</b><i>кг</i></span></div>
     <div class="miles" id="miles"></div>
   </div>
 
@@ -2289,11 +2305,11 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
     <svg id="wchart" viewBox="0 0 300 120" preserveAspectRatio="none"></svg>
     <div class="hint" id="whint">Отметь вес несколько раз, и здесь появится кривая.</div>
     <div class="lsplit"></div>
-    <div class="wtitle" style="padding:0 0 9px">ЗА ВСЁ ВРЕМЯ</div>
+    <div class="wtitle wtscale" style="padding:0 0 9px">ЗА ВСЁ ВРЕМЯ<em id="volTop"></em></div>
     <div id="loadList"></div>
     <p style="margin:11px 0 0;font-size:11.5px;color:var(--ink3);line-height:1.5">
-      Счёт идёт по группам: плечи считаются отдельно от груди, в «Ноги» входят
-      квадрицепс, бицепс бедра, икры и пресс. Подходы и тоннаж — за весь журнал.</p>
+      Счёт идёт по группам: плечи и пресс считаются отдельно, в «Ноги» входят
+      квадрицепс, бицепс бедра и икры. Подходы и тоннаж — за весь журнал.</p>
   </div>
 
   </div><!-- /load -->
@@ -4672,6 +4688,7 @@ function paintGoal() {
   const p = Math.max(0, Math.min(1, (b - a) / ((g - a) || 1)));
   $('bw').value = S.bw;
   $('goalIn').value = S.goal || 95;
+  $('qGoalV').textContent = kg(g);
   $('qStart').textContent = kg(Math.round(a * 10) / 10);
   paintBmi();
   $('qf').style.width = (p * 100) + '%';
@@ -4692,11 +4709,22 @@ function paintCycle() {
   // раньше здесь стояло название фазы; номер цикла понятнее и не путается с неделей
   $('cycPh').textContent = cycLabel();
   const done = doneThisWeek();
+  /* Почему стоит именно эта неделя, видно только из прошлой: план не
+     двигается, пока в прошедшей неделе не закрыто WEEK_MIN тренировок.
+     Раньше здесь было написано «закрыто 0 из 4» про текущую неделю, и в
+     понедельник это читалось как «неделя не сменилась ни с того ни с сего». */
+  const prevMon = (() => { const d = at(mondayOf(today())); d.setDate(d.getDate() - 7); return iso(d); })();
+  const prev = weekCounts()[prevMon] || 0;
+  const repeat = i > 0 || planWeek() > 1 ? false : true;   // первая неделя цикла может и повторяться
   $('cycNote').innerHTML = go
     ? esc(c.t) + '<br><span style="color:var(--cy2)">Закрыто на этой неделе: <b>' + done + ' из 4</b>. ' +
       (done >= WEEK_MIN
         ? 'Неделя засчитана — со следующего понедельника идём дальше.'
-        : 'Для перехода на следующую неделю нужно ' + WEEK_MIN + '. Пропустишь — план не убежит вперёд, а повторит эту неделю.') +
+        : 'Для перехода на следующую неделю нужно ' + WEEK_MIN + '.') +
+      (prev > 0 || !repeat
+        ? ' Прошлая неделя: <b>' + prev + ' из 4</b>' +
+          (prev >= WEEK_MIN ? ' — засчитана.' : ' — не засчитана, поэтому идёт та же неделя плана.')
+        : ' Пропустишь — план не убежит вперёд, а повторит эту неделю.') +
       '</span>'
     : 'Старт ' + fmt(planStart()) + '. До него — свободные тренировки.';
   $('startIn').value = planStart();
@@ -4855,6 +4883,9 @@ function pace(pts) {
 /* Раньше здесь висели три отдельные карточки: тоннаж по группам, объём
    за последние семь дней и график веса. Семь дней ничего не говорят о работе
    за год, поэтому счёт идёт за весь журнал и одним списком. */
+/* Ступени общей шкалы тоннажа, в тоннах. Полоса упирается в потолок
+   только когда до него дошли, а не потому, что она самая длинная. */
+const VOL_MILES = [0.5, 1, 2.5, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 function paintVol() {
   const sets = zeroVol();
   Object.keys(S.rec).forEach(ds => {
@@ -4867,11 +4898,21 @@ function paintVol() {
       if (g && sets[g] !== undefined) sets[g] += (l.rs && l.rs.length ? l.rs.length : num(pick(l.s, p.s))) || 0;
     });
   });
-  const mx = Math.max(1, ...GROUPS.map(([n]) => num(S.vol[n])));
-  $('loadList').innerHTML = GROUPS.map(([n, t]) =>
-    `<div class="ld"><span class="n">${n}</span>
-      <span class="b"><i style="width:${Math.round(num(S.vol[n]) / mx * 100)}%;background:var(--c-${t})"></i></span>
-      <span class="v"><b>${dec(num(S.vol[n]) / 1000)} т</b><em>${sets[n]} подх.</em></span></div>`).join('');
+  /* Шкала шла до самой большой группы, поэтому та всегда стояла залитой
+     до конца: 8,8 т выглядели так же, как 880 т, и полоса ничего не
+     сообщала. Теперь общая шкала — ближайшая круглая отметка выше самой
+     большой группы. Отметка подписана, полоса упирается в неё только
+     когда до неё действительно дошли, а дальше шкала переезжает на
+     следующую ступень. */
+  const mxT = Math.max(...GROUPS.map(([n]) => num(S.vol[n]))) / 1000;
+  const topT = VOL_MILES.find(m => m > mxT) || Math.ceil(mxT / 1e4) * 1e4;
+  $('volTop').textContent = 'шкала до ' + (topT >= 1 ? kg(topT) + ' т' : rnd(topT * 1000) + ' кг');
+  $('loadList').innerHTML = GROUPS.map(([n, t]) => {
+    const тонн = num(S.vol[n]) / 1000;
+    return `<div class="ld"><span class="n">${n}</span>
+      <span class="b"><i style="width:${Math.min(100, тонн / topT * 100).toFixed(1)}%;background:var(--c-${t})"></i></span>
+      <span class="v"><b>${dec(тонн)} т</b><em>${sets[n]} подх.</em></span></div>`;
+  }).join('');
   paintRadar();
 }
 
@@ -4899,9 +4940,14 @@ function paintRadar() {
   const shape = vals.map((v, i) => pt(i, Math.max(0.04, v))
     .map(x => x.toFixed(1)).join(',')).join(' ');
 
-  // Никаких линий внутри: ни колец, ни спиц, ни пунктира. Внутри только
-  // сама фигура — взгляд цеплялся за разметку, а не за неё.
-  let h = `<polygon points="${poly(1)}" class="rgrid"/>`;
+  /* Кольца по четвертям нормы. Без них фигура читалась на глаз: «где-то
+     больше половины». По кольцам видно, сколько именно — четверть, половина,
+     три четверти, целиком. Спиц нет: они делят фигуру, но ничего не меряют. */
+  let h = '';
+  [0.25, 0.5, 0.75].forEach(k => {
+    h += `<polygon points="${poly(k)}" class="rstep"/>`;
+  });
+  h += `<polygon points="${poly(1)}" class="rgrid"/>`;
   const any = done.some(v => v > 0);
   if (any) {
     h += `<polygon points="${shape}" class="rfill"/>`;
@@ -4924,8 +4970,8 @@ function paintRadar() {
   if (note2) note2.textContent = any
     ? (closed === GROUPS.length
       ? 'Все группы добраны: фигура вышла на границу. Так выглядит полностью закрытая неделя.'
-      : 'Граница — недельная норма подходов. Фигура по краю значит, что группа добрана; ' +
-        'закрыто ' + closed + ' из ' + GROUPS.length + '.')
+      : 'Граница — недельная норма подходов, кольца внутри — её четверти. ' +
+        'Фигура по краю значит, что группа добрана; закрыто ' + closed + ' из ' + GROUPS.length + '.')
     : 'Закрой первую тренировку за неделю — и здесь появится фигура по всем группам.';
 }
 

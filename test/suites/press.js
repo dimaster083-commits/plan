@@ -55,12 +55,14 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       const gr=sv.querySelector('polygon.rgrid');
       const pts=gr.getAttribute('points').trim().split(/\s+/).length;
       const подписи=[...sv.querySelectorAll('text.rlab')].map(t=>t.textContent);
-      // спиц и колец внутри больше нет: внутри только сама фигура
-      const внутри=sv.querySelectorAll('line, .rspoke, .rgrid.norm').length;
-      return {углов:pts, подписи:подписи, внутри:внутри, групп:GROUPS.length};
+      // спиц нет, а кольца по четвертям нормы — есть
+      const спиц=sv.querySelectorAll('line, .rspoke').length;
+      const колец=sv.querySelectorAll('polygon.rstep').length;
+      return {углов:pts, подписи:подписи, спиц:спиц, колец:колец, групп:GROUPS.length};
     });
     chk(rad.углов===rad.групп,'8. у фигуры столько углов, сколько групп',rad.углов+' при '+rad.групп+' группах');
-    chk(rad.внутри===0,'9. внутри шестиугольника нет разметки','лишних линий: '+rad.внутри);
+    chk(rad.спиц===0&&rad.колец===3,'9. внутри три кольца по четвертям и ни одной спицы',
+        'колец '+rad.колец+', спиц '+rad.спиц);
     chk(rad.подписи.indexOf('ПРЕСС')>=0,'10. «ПРЕСС» подписан на диаграмме',rad.подписи.join(' · '));
 
     chk(errs.length===0,'11. без ошибок в консоли',errs.join(' | ')||'чисто');
