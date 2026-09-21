@@ -1713,13 +1713,20 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 .exfdel{display:block;width:100%;margin-top:14px;padding:13px;background:none;border:0;
   font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
 .exfdel:active{color:var(--ink2)}
-.exfdots{display:flex;gap:2px;justify-content:center;padding:4px 0 0}
+/* Восемь упражнений в дне не помещались в строку по 44 px, и точки
+   ужимались до 43: кнопка становилась меньше пальца. Промежуток убран —
+   он и так нарисован полями самой кнопки, — а что не влезло, переносится
+   на вторую строку, но не сжимается. */
+.exfdots{display:flex;gap:0;row-gap:2px;flex-wrap:wrap;justify-content:center;padding:4px 0 0}
 /* Полоска-страница в раскрытом упражнении рисуется в четыре пикселя,
    но нажимать нужно по всей высоте вокруг неё. */
-.exfdots .dot{width:44px;height:44px;background:var(--s3);border:0;
+.exfdots .dot{flex:0 0 44px;width:44px;height:44px;background:var(--s3);border:0;
   padding:20px 11px;background-clip:content-box}
-.exfdots .dot.dn{background:var(--ln2)}
-.exfdots .dot.on{background:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c)}
+/* Только цвет: сокращённое background сбрасывает background-clip обратно
+   на border-box, и точка заливалась целиком на все 44×44 — вместо полоски
+   получался квадрат. И свечение поэтому светило по всей кнопке. */
+.exfdots .dot.dn{background-color:var(--ln2)}
+.exfdots .dot.on{background-color:var(--acc);filter:drop-shadow(0 0 6px var(--glow-c))}
 
 /* раскрытое упражнение занимает экран целиком */
 body.exopen #daysbar,body.exopen #dayctx,body.exopen .qbox,
