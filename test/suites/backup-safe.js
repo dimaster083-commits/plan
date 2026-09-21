@@ -25,7 +25,8 @@ const file = (name, value) => {
     const r = recRW(today());
     r.wo = 1;
     S.bw = '73.5';
-    flush(); render();
+    flush();
+    tab = 'prog'; pSec = 'prog'; render();
   });
   const before = await page.evaluate(() => JSON.stringify(S));
   const brokenShape = file('bad-shape.json', {
