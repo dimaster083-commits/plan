@@ -2115,6 +2115,13 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 .bkb button.hi{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill)}
 .ld .v b{font-family:var(--fn)}
 
+
+/* =========================================================================
+   ФИШКИ. Каждая живёт своим блоком между своими метками и не трогает
+   чужие правила: так их можно добавлять и убирать по одной.
+   ========================================================================= */
+/* ==ФИШКИ:СТИЛИ== */
+/* ==/ФИШКИ:СТИЛИ== */
 </style>
 </head>
 <script>
@@ -3780,6 +3787,7 @@ function exFull(e, j, r, IN, d) {
         <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
       </div>
       <div class="exfft">${g.done ? holdBadge(e, g) : ''}</div>
+      ${hookHtml('card', e, g, j, d)}
       <!-- Обработчик удаления упражнения был написан, а кнопки к нему не
            существовало ни в одной разметке: добавить упражнение человек мог,
            а убрать — нет. -->
@@ -3787,6 +3795,14 @@ function exFull(e, j, r, IN, d) {
     </div>
     <div class="exfdots">${dots}</div>`;
 }
+
+/* Точки подключения для фишек. Фишка добавляет свою разметку сюда, а не
+   правит render(): так она не путается с чужим кодом и её видно целиком
+   в одном месте. Упавшая фишка не должна ронять экран, поэтому каждая
+   обёрнута. */
+const HOOK = { card: [], prog: [], day: [] };
+const hookHtml = (k, ...a) => (HOOK[k] || [])
+  .map(f => { try { return f(...a) || ''; } catch (e) { return ''; } }).join('');
 
 /* ---------- ввод в карточке упражнения ---------- */
 $('exl').addEventListener('input', e => {
@@ -7750,6 +7766,9 @@ setTimeout(() => {
   b.classList.add('off');
   setTimeout(() => { if (b.parentNode) b.remove(); }, 400);
 }, 220);
+
+/* ==ФИШКИ:КОД== */
+/* ==/ФИШКИ:КОД== */
 
 // офлайн-режим
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
