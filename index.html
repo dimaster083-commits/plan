@@ -2953,7 +2953,7 @@ function build() {
       ml: (d.t === 'rest' ? ML_RE : ML_TR).map(m => ({ n: m[0], note: m[1], items: [] })),
       kc: d.t === 'rest' ? '2700' : '2900', pr: d.t === 'rest' ? '145' : '155'
     })),
-    rec: {}, map: {}, pr: {}, myFood: [], tpl: []
+    rec: {}, map: {}, pr: {}, myFood: [], tpl: [], volumeMode: 'standard'
   };
 }
 
@@ -2973,6 +2973,8 @@ function migrate() {
   S.myFood = S.myFood || []; S.tpl = S.tpl || [];
   S.vol = S.vol || zeroVol();
   GROUPS.forEach(([n]) => { if (S.vol[n] === undefined) S.vol[n] = 0; });
+  // В старых журналах выбор объёма отсутствует: оставляем привычное назначение.
+  if (S.volumeMode !== 'light') S.volumeMode = 'standard';
 
   // Программа переезжала пять раз; теперь это один блок с прежним флагом.
   if (!S.mig5) {
@@ -3350,7 +3352,10 @@ const cycIdx = ds => (planWeek(ds) - 1) % CYCLE.length;
 const cycOf = ds => CYCLE[cycIdx(ds)];
 // интенсивность считается для показанной даты, а не для сегодняшней
 function intOf(ds, type) { if (!started(ds)) return null; const k = (cycOf(ds).d || {})[type]; return k ? INT[k] : null; }
-function setsOf(ds, base, j) { return (started(ds) && j < 2) ? Math.max(2, base + cycOf(ds).ds) : base; }
+function setsOf(ds, base, j) {
+  const prescribed = (started(ds) && j < 2) ? Math.max(2, base + cycOf(ds).ds) : base;
+  return S.volumeMode === 'light' && ds > today() ? Math.max(2, prescribed - 1) : prescribed;
+}
 const levelOf = () => Math.floor(S.xp / PER) + 1;
 function rankIdx(l) { for (const [m, r] of RANKS) if (l >= m) return r; return 0; }
 // название ступени берётся из темы, как и все остальные подписи
@@ -5495,6 +5500,9 @@ function openSettings() {
     '<button class="add" data-dayset="1">Настроить тренировку этого дня</button>' +
     '<div class="cph">ЗВУК</div>' +
     `<button class="add" data-snd="1">Звук: ${S.sound === 0 ? 'выкл' : 'вкл'}</button>` +
+    '<div class="cph">ОБЪЁМ ТРЕНИРОВКИ</div>' +
+    `<button class="add${S.volumeMode === 'standard' ? ' hi' : ''}" data-volume-mode="standard">Стандартный объём</button>` +
+    `<button class="add${S.volumeMode === 'light' ? ' hi' : ''}" data-volume-mode="light">Лёгкий объём: на 1 рабочий подход меньше</button>` +
     '<div class="cph">ВЕСА</div>' +
     '<button class="add" data-recalc="1">Пересчитать рабочие веса</button>' +
     /* Копия лежала внизу вкладки «Веса», под таблицей из двух десятков
@@ -5514,6 +5522,8 @@ $('shB').addEventListener('click', e => {
   if (sk) { applyTheme(sk.dataset.skinSet); openSettings(); return; }
   const sn = e.target.closest('[data-snd]');
   if (sn) { S.sound = S.sound === 0 ? 1 : 0; save(); if (S.sound) dingSet(); openSettings(); return; }
+  const vm = e.target.closest('[data-volume-mode]');
+  if (vm) { S.volumeMode = vm.dataset.volumeMode === 'light' ? 'light' : 'standard'; save(); openSettings(); return; }
   const rc = e.target.closest('[data-recalc]');
   if (rc) { sheetClose(); openSetup(); return; }
   const dst = e.target.closest('[data-dayset]');
