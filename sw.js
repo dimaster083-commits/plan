@@ -1,4 +1,4 @@
-const CACHE = "sys-gym-130";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-131";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
@@ -78,12 +78,23 @@ const FILES = [
   './img/squat-1.jpg'
 ];
 
+// Дополнительные упражнения тоже нужны при первом запуске без сети.
+// Все иллюстрации вместе занимают около 3 МБ; загрузка идёт при установке PWA.
+const EXTRA_TECHNIQUE_KEYS = `benchclose benchdb benchdip benchinc butterfly cablecrunch cablecurl
+  chestpress chinup conc crossover curldb dipschest dipstri facepull flyesinc
+  frontraise glute goodmorning hack hammer hangleg hyper legcurlseat legext lunge
+  militarypress overhead plank pulldownclose pullover pullup pushup reardelt revcurl
+  shrug shrugdb smithsquat stepup stiff tbar twist upright wrist`.trim().split(/\s+/);
+for (const key of EXTRA_TECHNIQUE_KEYS) {
+  FILES.push(`./img/${key}-0.jpg`, `./img/${key}-1.jpg`);
+}
+
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
       .then(c => c.addAll(FILES))
+      // При ошибке не активируем новый worker: прежний офлайн-кэш должен жить.
       .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting())
   );
 });
 

@@ -47,10 +47,11 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
       (btn.dataset.d??btn.dataset.j??btn.dataset.go??btn.dataset.open??btn.dataset.cd??btn.dataset.mo??
        btn.dataset.sec??btn.dataset.tab??btn.dataset.jump??btn.dataset.tog??btn.dataset.day??'')+'|'+
       btn.textContent.trim().slice(0,20);
-    const SKIP=/^(wipe|exp|imp|csv|impFile|phFile)$/;
+    // Native file pickers do not alter the DOM; foto.js exercises the upload flow.
+    const SKIP=/^(wipe|exp|imp|csv|impFile|phFile|phAdd)$/;
     const reset=t=>{try{sheetClose();}catch(e){} try{askClose(false);}catch(e){}
       ['fp','ov','setup'].forEach(id=>{const e2=document.getElementById(id); if(e2) e2.classList.remove('on');});
-      document.body.style.overflow=''; tab=t; exOpen=null; render();};
+      document.body.style.overflow=''; tab=t; sel=today(); exOpen=null; render();};
 
     for (const t of ['wo','prog','food','photo']) {
       sel=today(); reset(t);
@@ -70,7 +71,7 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
           try{ btn.click(); }catch(e){ res.push('ПАДАЕТ · '+k.split('|').pop()+' — '+e.message); reset(t); continue; }
           await tick();
           const after=snap();
-          if (before===after && !active) res.push('«'+k.split('|').pop()+'» на «'+t+'»');
+          if (before===after && !active) res.push('«'+k.split('|').pop()+'» на «'+t+'» ('+k+', день '+sel+')');
           reset(t);
         }
       }

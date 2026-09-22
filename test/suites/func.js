@@ -159,7 +159,7 @@ const ok = (n, c, d) => out.push((c ? '  ✓ ' : '  ✗ ') + n + (c ? '' : '   �
   await page.reload(); await page.waitForTimeout(1400); await closeSetup();
   const persisted = await page.evaluate(() => ({ attr: document.documentElement.dataset.skin,
     acc: getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() }));
-  ok('выбранная тема переживает перезагрузку', persisted.attr === 'ber' && persisted.acc === '#CFD1D4', JSON.stringify(persisted));
+  ok('выбранная тема переживает перезагрузку', persisted.attr === 'ber' && persisted.acc === '#C98A62', JSON.stringify(persisted));
 
   // ---- 11. закрытие тренировки ----
   await page.evaluate(() => { S.setup=1; save(); document.getElementById('setup').classList.remove('on');

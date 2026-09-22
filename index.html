@@ -976,14 +976,14 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 }
 
 :root[data-skin="ber"]{
-  /* КЛЕЙМО — палитра #F8F9FA … #181B1E, ни одного цвета и ни грамма свечения */
+  /* КЛЕЙМО — тёмные нейтральные поверхности и один спокойный медный акцент */
   --s0:#0B0D0F; --s1:rgba(20,22,25,.93); --s2:rgba(95,98,102,.3); --s3:rgba(165,169,174,.32);
   --btn:rgba(28,31,34,.93); --panel-solid:#16181B;
   --ln:rgba(165,169,174,.3); --ln2:rgba(165,169,174,.5);
   --ink:#F8F9FA; --ink2:#CFD1D4; --ink3:#A5A9AE;
 
-  --acc:#CFD1D4; --acc-2:#F8F9FA; --acc-fill:#CFD1D4; --acc-soft:rgba(207,209,212,.16);
-  --acc-ink:#F8F9FA; --onacc:#181B1E;
+  --acc:#C98A62; --acc-2:#E4AE83; --acc-fill:#C98A62; --acc-soft:rgba(201,138,98,.14);
+  --acc-ink:#E4AE83; --onacc:#181B1E;
   --ok:#F8F9FA;   --ok-soft:rgba(248,249,250,.12); --ok-ln:rgba(207,209,212,.45);
   --up-tx:#F8F9FA; --down-tx:#CFD1D4;
   --warn:#CFD1D4; --warn-soft:rgba(165,169,174,.16);
@@ -1008,8 +1008,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   /* зерно бумаги: рваный штрих вместо сот */
   --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
   --grain-size:120px 120px; --grain-op:.16; --grain-mode:overlay;
-  --sheen:linear-gradient(135deg,rgba(248,249,250,.05),transparent 38%);
-  --edge-lit:linear-gradient(180deg,var(--ink2),transparent);
+  --sheen:linear-gradient(135deg,rgba(201,138,98,.055),transparent 38%);
+  --edge-lit:linear-gradient(180deg,var(--acc),transparent);
   --wall:url('./img/bg-ink.jpg');
   --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
 
@@ -2066,7 +2066,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 /* ---------- нижние вкладки ---------- */
 .tab.on::after{content:'';position:absolute;left:50%;bottom:6px;width:20px;height:2px;
   margin-left:-10px;background:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c)}
-:root[data-skin="ber"] .tab.on::after{background:var(--ink);box-shadow:none}
+:root[data-skin="ber"] .tab.on::after{background:var(--acc);box-shadow:none}
 
 /* ---------- выбор темы ---------- */
 .skinpick{display:block;width:100%;text-align:left;padding:15px 16px;margin-bottom:9px;
@@ -5433,7 +5433,7 @@ $('recalc').addEventListener('click', openSetup);
    ========================================================================= */
 const SKINS = [
   { id: 'sl',  n: 'Система', sub: 'Solo Leveling · фиолетовая' },
-  { id: 'ber', n: 'Клеймо',  sub: 'Берсерк · чёрно-белая' }
+  { id: 'ber', n: 'Клеймо',  sub: 'Берсерк · тёмная бронза' }
 ];
 
 /* Словарь подписей. Слева — смысл, он же ключ и в коде, и в разметке.
@@ -7129,9 +7129,12 @@ function lazyStrip(root) {
 }
 
 async function paintPhotoScreen() {
-  const d = await phLoad(sel), r = recOf(sel);
-  $('phDate').textContent = 'снимок за ' + fmt(sel);
-  $('phT').innerHTML = d ? `<img src="${d}" alt="Фото ${sel}">` : '<span>+</span>';
+  const day = sel;
+  const d = await phLoad(day);
+  if (sel !== day || tab !== 'photo') return;
+  const r = recOf(day);
+  $('phDate').textContent = 'снимок за ' + fmt(day);
+  $('phT').innerHTML = d ? `<img src="${d}" alt="Фото ${day}">` : '<span>+</span>';
   $('phDel').hidden = !d;
   $('phTxt').textContent = d
     ? 'Снимок сохранён. Нажми «Сравнить», чтобы поставить его рядом с любым другим днём.'
@@ -7164,24 +7167,26 @@ $('phT').addEventListener('click', () => $('phFile').click());
 $('phAdd').addEventListener('click', () => $('phFile').click());
 $('phFile').addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0];
+  const day = sel;
   e.target.value = '';
   if (!f) return;
   try {
     const dat = await compress(f);
-    await phPut(sel, dat);
-    PHCACHE.set(sel, dat);
+    await phPut(day, dat);
+    PHCACHE.set(day, dat);
     await phSync();
-    if (!recOf(sel).bw) { recRW(sel).bw = S.bw; save(); }
+    if (!recOf(day).bw) { recRW(day).bw = S.bw; save(); }
     note('Снимок сохранён');
-    paintPhotoScreen();
+    if (sel === day && tab === 'photo') paintPhotoScreen();
   } catch (err) { note('Не удалось сохранить фото'); }
 });
 $('phDel').addEventListener('click', async () => {
-  if (!await ask('Удалить фото за ' + fmt(sel) + '?')) return;
-  await phDelete(sel);
-  PHCACHE.delete(sel);
+  const day = sel;
+  if (!await ask('Удалить фото за ' + fmt(day) + '?')) return;
+  await phDelete(day);
+  PHCACHE.delete(day);
   await phSync();
-  paintPhotoScreen();
+  if (sel === day && tab === 'photo') paintPhotoScreen();
 });
 $('phW').addEventListener('input', e => {
   // Вес, вписанный рядом со снимком, — тот же самый вес. Раньше он ложился

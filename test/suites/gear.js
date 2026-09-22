@@ -27,7 +27,7 @@ const out=[]; const ok=(n,c,d)=>out.push((c?'  ✓ ':'  ✗ ')+n+(c?'':'   → '
   const after=await p.evaluate(()=>({skin:skinNow(), acc:getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(),
     stored:localStorage.getItem('sys-gym-skin'),
     marked:!!document.querySelector('[data-skin-set="ber"].on')}));
-  ok('вторая тема включается нажатием', after.skin==='ber' && after.acc==='#CFD1D4' && after.stored==='ber',
+  ok('вторая тема включается нажатием', after.skin==='ber' && after.acc==='#C98A62' && after.stored==='ber',
      JSON.stringify(after));
   ok('выбранная тема отмечена в списке', after.marked, 'отметка не встала');
   await p.screenshot({path:D+'settings-ber.png'});
