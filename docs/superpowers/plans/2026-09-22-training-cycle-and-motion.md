@@ -71,13 +71,13 @@
 
 ### Task 5: Visual polish and accessible motion
 
-**Files:** Modify CSS and narrow render hooks in `index.html:1-2090` and tab/card rendering near `index.html:7240`; create `test/suites/motion.js`; update visual screenshots only after manual inspection.
+**Files:** Modify CSS and narrow render hooks in `index.html:1-2090` and tab/card rendering near `index.html:7240`; create `test/suites/motion.js`; add an original optimized asset under `img/` only if CSS cannot achieve the approved effect; update visual screenshots only after manual inspection.
 
 **Interfaces:** No state schema change. Motion uses CSS transform/opacity with short durations and the existing `prefers-reduced-motion` rule; controls remain usable before animations finish.
 
 - [ ] Write browser checks at mobile widths for both themes: tabs remain clickable during rapid changes, content is visible after transition, no horizontal overflow, and computed animation/transition durations are zero under `reducedMotion:'reduce'`.
 - [ ] Run `node test/run.js motion`; expect at least one missing-motion assertion to fail before changes.
-- [ ] Add restrained card/tab entrance, pressed-state feedback, and progress-fill polish; avoid continuous animation and expensive layout properties. Inspect 320 px and 390 px screenshots in both themes, including long names and open sheets.
+- [ ] Add restrained card/tab entrance, pressed-state feedback, progress-fill polish, and theme-specific panel borders: cool layered HUD lines in «Система», dark etched/copper edges in «Клеймо». Use the approved references for mood only, never copied frames or characters; avoid continuous animation and expensive layout properties. Inspect 320 px and 390 px screenshots in both themes, including long names and open sheets.
 - [ ] Run `node test/run.js motion parity palitra contrast contrast2 fit skroll paltsy`; commit `feat: polish motion and mobile surfaces`.
 
 ### Task 6: Release verification and independent review
