@@ -16,6 +16,7 @@
 - Keep both themes feature-equivalent; «Клеймо» retains restrained copper accents.
 - `prefers-reduced-motion: reduce` disables decorative motion without hiding information.
 - Real user-device storage is inaccessible from the repository; do not report it as restored.
+- Date, session completion, working load and logged sets must remain consistent across day, history, calendar, cycle and progress views.
 
 ## Review Focus
 
@@ -87,5 +88,5 @@
 **Interfaces:** The merged app preserves the `sys-gym-v3` data contract and passes the full existing suite plus new suites.
 
 - [ ] Run `npm test` and record actual suite/check totals and any failures. Run a fresh independent code review against `origin/main`, then fix confirmed findings with regression tests and rerun affected/full checks.
-- [ ] Serve the candidate locally and manually exercise a fresh journal and a copied historical fixture in Chromium: week 2 on 22 September, 17/19 history, standard/light volume, both themes, reduced motion, narrow viewport, export/reload.
+- [ ] Serve the candidate locally and manually exercise a fresh journal and a copied historical fixture in Chromium: week 2 on 22 September, 17/19 history, standard/light volume, both themes, reduced motion, narrow viewport, export/reload. Cross-check the same date and working load in day, history, calendar, cycle and progress views.
 - [ ] Push a PR, wait for CI and Pages safety checks, merge only when green, then verify the deployed page loads the new version. Do not claim that the user's iPhone local data was imported or verified.
