@@ -84,7 +84,7 @@ const chk = (c,n,d)=>c?ok(n,d):bad(n,d);
     tab='prog'; pSec='load'; render();
     const acc = vol7();
     const txt = [...document.querySelectorAll('#rad .rnum')].map(t=>t.textContent);
-    const mine = GROUPS.map(([n]) => (acc[n]||0)+'/'+VOL_TARGET[n]);
+    const mine = GROUPS.map(([n]) => (acc[n]||0)+'/'+volTarget(n));
     return JSON.stringify(txt)===JSON.stringify(mine) ? true : JSON.stringify({txt, mine});
   }) === true, '7. подписи диаграммы равны недельному счёту');
 
@@ -99,7 +99,7 @@ const chk = (c,n,d)=>c?ok(n,d):bad(n,d);
     const cx=150, cy=114, R=78;
     const bad2=[];
     GROUPS.forEach(([n],i)=>{
-      const want = Math.min(1, (acc[n]||0)/VOL_TARGET[n]);
+      const want = Math.min(1, (acc[n]||0)/volTarget(n));
       if (!want) return;
       const d = Math.hypot(xy[i][0]-cx, xy[i][1]-cy) / R;
       if (Math.abs(d-want) > 0.02) bad2.push(n+': '+d.toFixed(2)+' вместо '+want.toFixed(2));

@@ -2628,6 +2628,23 @@ const START_DEFAULT = '2026-09-14';
    «недобор» — предупреждение, которое всегда горит, перестают замечать. */
 const VOL_TARGET = { 'Спина': 14, 'Грудь': 14, 'Плечи': 13, 'Ноги': 34, 'Руки': 12, 'Пресс': 8 };
 
+/* Движения, которые делаются по одной стороне за раз: подход выполняется
+   дважды — на правую и на левую. Поэтому поднятое за подход считается
+   за две стороны, иначе тоннаж занижен вдвое. */
+const UNILATERAL = ['Тяга гантели одной рукой', 'Выпады с гантелями',
+  'Болгарские выпады', 'Зашагивания на скамью'];
+const sideMul = n => UNILATERAL.indexOf(n) >= 0 ? 2 : 1;
+
+/* Недельная норма подходов берётся из самой программы: сумма запланированных
+   подходов по группе за неделю. Прежние числа были записаны вручную и
+   устаревали при любой правке программы — фигура упиралась в край
+   уже на третьей тренировке. */
+function volTarget(n) {
+  let t = 0;
+  (S.days || []).forEach(d => (d.ex || []).forEach(e => { if (e.g === n) t += num(e.s) || 0; }));
+  return t || VOL_TARGET[n] || 1;
+}
+
 const SP_BASE = [
   ['утро', 'Креатин моногидрат 5 г', 'каждый день без пропусков, 300 мл воды, с едой'],
   ['утро', 'Витамин D3 2000 МЕ', 'вместе с жирной пищей — иначе не усвоится'],
@@ -3198,6 +3215,22 @@ function migrate() {
     S.mig15 = 1;
     if (touched) S.mig15note = 1;
     statsDirty = true;
+  }
+
+  /* Записи, сделанные до учёта сторон, считали односторонние движения за один
+     подход вместо двух. Поднимаем их один раз, по метке в самой записи. */
+  if (!S.mig16) {
+    Object.keys(S.rec).forEach(ds => {
+      const day = S.days[dayIdx(ds)], r = S.rec[ds] || {};
+      Object.keys(r.log || {}).forEach(j => {
+        const l = r.log[j]; if (!l || !l.done || l.sd) return;
+        const nm = l.n || ((day && day.ex[j]) || {}).n;
+        if (sideMul(nm) > 1 && num(l.vol)) l.vol = num(l.vol) * 2;
+        l.sd = 1;
+      });
+    });
+    statsDirty = true;
+    S.mig16 = 1;
   }
 
   // приёмы пищи старого формата: строка описания вместо списка продуктов
@@ -3960,26 +3993,35 @@ $('exl').addEventListener('input', ev => {
   const inp = ev.target.closest('[data-rs]'); if (!inp) return;
   const card = inp.closest('.ex'); if (!card) return;
   const e = (dayOf(sel).ex || [])[num(card.dataset.j)];
-  const top = e ? topRep(e.r) : 0;
+  const card2 = inp.closest('.ex');
+  const rF2 = card2 && card2.querySelector('[data-f="r"]');
+  const top = e ? topRep(rF2 && String(rF2.value).trim() ? rF2.value : e.r) : 0;
   const lab = inp.closest('.rbx');
   if (lab) lab.classList.toggle('hit', !!top && num(inp.value) >= top);
 });
 
-// число подходов меняется прямо в карточке — полей повторов должно стать столько же
+// Подходы и повторы меняются прямо в карточке: блок под ними должен
+// перестроиться сразу — и по числу полей, и по цели.
 $('exl').addEventListener('input', ev => {
-  const f = ev.target.closest('[data-f="s"]'); if (!f) return;
+  const f = ev.target.closest('[data-f="s"],[data-f="r"]'); if (!f) return;
   const card = f.closest('.ex'); if (!card) return;
   const j = num(card.dataset.j), box = card.querySelector('.setr');
   const e = (dayOf(sel).ex || [])[j]; if (!box || !e) return;
+  const sF = card.querySelector('[data-f="s"]'), rF = card.querySelector('[data-f="r"]');
   const keep = [...box.querySelectorAll('[data-rs]')].map(x => x.value);
-  box.innerHTML = repBoxes(e, recOf(sel).log[j] || {}, f.value, lastDone(e.n, sel), keep);
+  box.innerHTML = repBoxes(e, recOf(sel).log[j] || {}, sF ? sF.value : undefined,
+    lastDone(e.n, sel), keep, rF ? rF.value : undefined);
 });
 
 /* Повторы по каждому подходу. Без них правило «закрепить 4x10» непроверяемо:
    10/12/12/12 и 12/12/12/12 — это разные результаты, а одно общее число
    их не различает и молча разрешает прибавку. */
-function repBoxes(e, g, sets, prev, keep) {
-  const top = topRep(e.r);
+function repBoxes(e, g, sets, prev, keep, repsRaw) {
+  // Цель берём из поля ПОВТ, если там что-то стоит: поменял 8 на 10 —
+  // и кнопка «все по N», и подсказки под полями меняются сразу.
+  const rv = repsRaw !== undefined && repsRaw !== null && String(repsRaw).trim() !== ''
+    ? repsRaw : pick(g.r, e.r);
+  const top = topRep(rv);
   // пустое поле «ПОДХ» — это ещё не «один подход»: пока человек стирает
   // число, коробки не должны схлопываться в одну. Берём план упражнения.
   const n = Math.max(1, Math.min(12, num(sets) || num(e.s) || 1));
@@ -4119,7 +4161,11 @@ function toggleSet(j) {
   // объём считаем по фактическим повторам, если они есть: 10/12/12/12 это 46,
   // а не 4x10 и не 4x12
   const rsOk = l.rs && l.rs.length && l.rs.every(v => num(v) > 0);
-  l.vol = g ? (rsOk ? l.rs.reduce((a, b) => a + num(b), 0) : sets * reps) * w : 0;
+  /* Движение по одной стороне за раз делается дважды — на правую и на левую,
+     поэтому поднятое за подход считается за две стороны. Множитель кладём
+     прямо в запись, чтобы итог по группам всегда сходился с суммой журнала. */
+  l.vol = g ? (rsOk ? l.rs.reduce((a, b) => a + num(b), 0) : sets * reps) * w * sideMul(p.n || l.n) : 0;
+  l.sd = 1;                                   // множитель сторон уже учтён
   if (g && S.vol[g] !== undefined) S.vol[g] += l.vol;
 
   /* Поднял больше, чем стоит в программе, — программа запоминает это сама,
@@ -4923,6 +4969,19 @@ function pace(pts) {
 /* Ступени общей шкалы тоннажа, в тоннах. Полоса упирается в потолок
    только когда до него дошли, а не потому, что она самая длинная. */
 const VOL_MILES = [0.5, 1, 2.5, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
+
+/* Отметки шкалы. Прежний ряд шёл вдвое-впятеро реже: перешагнув 10 т,
+   ведущая группа падала с почти полной полосы до сорока процентов.
+   Мелкий шаг оставляет её в районе четырёх пятых и не даёт шкале прыгать. */
+const VOL_STEPS = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8];
+function volScale(v) {
+  if (!(v > 0)) return 0.5;
+  for (let k = -3; k <= 6; k++) {
+    const d = Math.pow(10, k);
+    for (const st of VOL_STEPS) { const m = st * d; if (m > v) return Math.round(m * 1000) / 1000; }
+  }
+  return Math.ceil(v);
+}
 function paintVol() {
   const sets = zeroVol();
   Object.keys(S.rec).forEach(ds => {
@@ -4942,7 +5001,7 @@ function paintVol() {
      когда до неё действительно дошли, а дальше шкала переезжает на
      следующую ступень. */
   const mxT = Math.max(...GROUPS.map(([n]) => num(S.vol[n]))) / 1000;
-  const topT = VOL_MILES.find(m => m > mxT) || Math.ceil(mxT / 1e4) * 1e4;
+  const topT = volScale(mxT);
   $('volTop').textContent = 'шкала до ' + (topT >= 1 ? kg(topT) + ' т' : rnd(topT * 1000) + ' кг');
   $('loadList').innerHTML = GROUPS.map(([n, t]) => {
     const тонн = num(S.vol[n]) / 1000;
@@ -4972,8 +5031,14 @@ function paintRadar() {
      до двух норм, и полностью закрытая группа рисовалась ровно на середине
      радиуса: цифры говорили «14 из 14», а картинка — «сделана половина».
      Перебор упирается в край: сколько именно набрано, написано под осью. */
-  const done = GROUPS.map(([n]) => (acc[n] || 0) / (VOL_TARGET[n] || 1));
-  const vals = done.map(v => Math.min(1, v));
+  const done = GROUPS.map(([n]) => (acc[n] || 0) / volTarget(n));
+  /* Пока всё в пределах нормы, граница — норма, и добранная группа стоит
+     по краю. Как только какая-то группа норму перебрала, вся фигура
+     сжимается под этот перебор: норма остаётся отмеченным кольцом, а
+     превышение видно. Раньше перебор упирался в край, и после двух верхних
+     дней диаграмма превращалась в залитый шестиугольник без смысла. */
+  const over = Math.max(1, ...done);
+  const vals = done.map(v => v / over);
   const shape = vals.map((v, i) => pt(i, Math.max(0.04, v))
     .map(x => x.toFixed(1)).join(',')).join(' ');
 
@@ -4983,9 +5048,11 @@ function paintRadar() {
      они делят фигуру, но ничего не меряют. */
   let h = '';
   for (let k = 1; k <= 9; k++) {
-    h += `<polygon points="${poly(k / 10)}" class="rstep${k === 5 ? ' half' : ''}"/>`;
+    h += `<polygon points="${poly(k / 10 / over)}" class="rstep${k === 5 ? ' half' : ''}"/>`;
   }
-  h += `<polygon points="${poly(1)}" class="rgrid"/>`;
+  // кольцо нормы: при переборе оно уходит внутрь, и видно, насколько перебрано
+  h += `<polygon points="${poly(1 / over)}" class="rgrid"/>`;
+  if (over > 1) h += `<polygon points="${poly(1)}" class="rstep"/>`;
   const any = done.some(v => v > 0);
   if (any) {
     h += `<polygon points="${shape}" class="rfill"/>`;
@@ -5000,7 +5067,7 @@ function paintRadar() {
     const dy = (Math.abs(q[0] - cx) < 2 && q[1] < cy) ? -8 : (q[1] > cy + 2 ? 11 : 2);
     h += `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy).toFixed(1)}" text-anchor="${anchor}" class="rlab">${n.toUpperCase()}</text>` +
          `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy + 13).toFixed(1)}" text-anchor="${anchor}" ` +
-         `class="rnum${done[i] >= 1 ? ' full' : ''}">${acc[n] || 0}/${VOL_TARGET[n]}</text>`;
+         `class="rnum${done[i] >= 1 ? ' full' : ''}">${acc[n] || 0}/${volTarget(n)}</text>`;
   });
   sv.innerHTML = h;
   const note2 = sv.parentNode.querySelector('.radn');
@@ -5008,8 +5075,11 @@ function paintRadar() {
   if (note2) note2.textContent = any
     ? (closed === GROUPS.length
       ? 'Все группы добраны: фигура вышла на границу. Так выглядит полностью закрытая неделя.'
-      : 'Граница — недельная норма подходов, каждое кольцо внутри — её десятая часть. ' +
-        'Фигура по краю значит, что группа добрана; закрыто ' + closed + ' из ' + GROUPS.length + '.')
+      : (over > 1
+        ? 'Яркое кольцо — недельная норма подходов, каждое кольцо внутри — её десятая часть. ' +
+          'Что вышло за него, набрано сверх нормы; закрыто ' + closed + ' из ' + GROUPS.length + '.'
+        : 'Граница — недельная норма подходов, каждое кольцо внутри — её десятая часть. ' +
+          'Фигура по краю значит, что группа добрана; закрыто ' + closed + ' из ' + GROUPS.length + '.'))
     : 'Закрой первую тренировку за неделю — и здесь появится фигура по всем группам.';
 }
 
@@ -5598,7 +5668,10 @@ function openHow(name, j) {
   // открыли из таблицы или истории, заменять нечего — только показываем.
   const idx = (j === undefined && exOpen !== null &&
     ((dayOf(sel).ex || [])[exOpen] || {}).n === name) ? exOpen : j;
-  const swap = idx !== undefined && idx !== null && !recOf(sel).wo && sel >= today();
+  // Раньше замену разрешали только на сегодняшний и будущие дни. Кнопки при
+  // этом рисовались обычными и молча не работали. Замена правит программу дня
+  // недели, а не конкретную дату, поэтому с какого дня её открыли — неважно.
+  const swap = idx !== undefined && idx !== null;
   let h2 = `<div class="win howb">
       <h5>${esc(name)}</h5>
       <div class="howimg">
@@ -5638,8 +5711,11 @@ $('shB').addEventListener('click', async e => {
   const d = dayOf(sel), e2 = (d.ex || [])[j];
   if (!e2) { sheetClose(); return; }
   const was = e2.n;
+  const logged = !!((recOf(sel).log || {})[j] || {}).done;
   const okGo = await ask('Заменить «' + was + '» на «' + name + '»? Это место в программе ' +
-    (d.k ? ('(' + d.k + ')') : '') + ' — замена встанет во все недели.', 'ЗАМЕНИТЬ');
+    (d.k ? ('(' + d.k + ')') : '') + ' — замена встанет во все недели.' +
+    (logged ? ' Записанный за этот день подход сотрётся: он относился к другому движению.' : ''),
+    'ЗАМЕНИТЬ');
   if (!okGo) return;
   const src = EXDB[name] || [];
   e2.n = name;
@@ -6895,20 +6971,22 @@ function openRation() {
   // копируем из прошедших дат: рацион теперь принадлежит дню, а не дню недели
   const src = Object.keys(S.rec).filter(ds => ds !== sel && sumMeals(mealsOf(ds)).k > 0)
     .sort().reverse().slice(0, 14);
-  let h = '<div class="cph">СКОПИРОВАТЬ ИЗ ДНЯ</div>';
-  h += src.length ? src.map(ds => {
-    const t = sumMeals(mealsOf(ds));
-    return `<button class="cpi" data-from="${ds}"><b>${fmt(ds)}</b>
-      <span>${mealsOf(ds).length} приёмов · ${rnd(t.k)} ккал · ${rnd(t.p)} г белка</span>
-     </button>`;
-  }).join('') : '<p class="s" style="color:var(--mut);font-size:12px;margin:0 0 4px">Съеденных дней пока нет.</p>';
-  h += '<div class="cph">МОИ ШАБЛОНЫ</div>';
+  // Свои шаблоны идут первыми: их немного и они нужны чаще, чем перебор
+  // прошедших дней, который за месяц вырастает в длинный список.
+  let h = '<div class="cph">МОИ ШАБЛОНЫ</div>';
   h += `<button class="cpi" data-save="1" style="border-color:var(--cy);color:var(--cy2)">
       <b>Сохранить текущий рацион</b><span>как шаблон</span></button>`;
   h += (S.tpl || []).map((t, i) =>
     `<div class="cpi"><b data-tpl="${i}">${esc(t.n)}</b>
       <span data-tpl="${i}">${t.ml.length} приёмов · ${rnd(t.ml.reduce((a, m) => a + mealSum(m).k, 0))} ккал</span>
       <button class="del" data-tdel="${i}" aria-label="Удалить шаблон">×</button></div>`).join('');
+  h += '<div class="cph">СКОПИРОВАТЬ ИЗ ДНЯ</div>';
+  h += src.length ? src.map(ds => {
+    const t = sumMeals(mealsOf(ds));
+    return `<button class="cpi" data-from="${ds}"><b>${fmt(ds)}</b>
+      <span>${mealsOf(ds).length} приёмов · ${rnd(t.k)} ккал · ${rnd(t.p)} г белка</span>
+     </button>`;
+  }).join('') : '<p class="s" style="color:var(--mut);font-size:12px;margin:0 0 4px">Съеденных дней пока нет.</p>';
   sheet('РАЦИОН', h);
 }
 $('cpBtn').addEventListener('click', openRation);
@@ -7461,7 +7539,7 @@ function analyze() {
   const acc = vol7();
   const low = [], high = [];
   GROUPS.forEach(([n]) => {
-    const tg = VOL_TARGET[n];
+    const tg = volTarget(n);
     if (acc[n] < tg * 0.6) low.push(n + ' ' + acc[n] + '/' + tg);
     else if (acc[n] > tg * 1.4) high.push(n + ' ' + acc[n] + '/' + tg);
   });
@@ -7729,7 +7807,7 @@ function buildSummary() {
   L.push('');
   L.push('ОБЪЁМ ЗА 7 ДНЕЙ (подходов / норма):');
   const vol = vol7();
-  GROUPS.forEach(([n]) => L.push('- ' + n + ': ' + vol[n] + ' / ' + VOL_TARGET[n]));
+  GROUPS.forEach(([n]) => L.push('- ' + n + ': ' + vol[n] + ' / ' + volTarget(n)));
   L.push('');
   L.push('ПИТАНИЕ (последние 14 дней журнала):');
   Object.keys(S.rec).filter(ds => daysBetween(ds, today()) <= 14).sort().forEach(ds => {
