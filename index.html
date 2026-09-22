@@ -3328,11 +3328,9 @@ const planStart = () => (okDay(S.start) ? S.start : START_DEFAULT);
 const weekOfDate = ds => Math.floor((at(ds) - at(mondayOf(planStart()))) / 6048e5) + 1;
 const started = ds => weekOfDate(ds || today()) >= 1;
 
-/* Неделя плана считается по закрытым тренировкам, а не по календарю.
-   Пропустил неделю — план не убегает вперёд на «Пик», а повторяет текущую
-   и ждёт. Для перехода достаточно WEEK_MIN тренировок из четырёх:
-   человек не станок, одна пропущенная неделю не обнуляет. */
-const WEEK_MIN = 3;
+/* Неделя плана привязана к календарным понедельникам. Посещаемость ниже
+   считается отдельно: она показывает факт, но не задерживает нагрузочную
+   фазу и не меняет уже записанные тренировки. */
 let wkCache = null;
 function weekCounts() {
   if (wkCache) return wkCache;
@@ -3343,17 +3341,8 @@ function weekCounts() {
 }
 function planWeek(ds) {
   const target = mondayOf(ds || today()), start = mondayOf(planStart());
-  if (target <= start) return 1;
   if (!start || !target) return 1;               // ни на что не опереться
-  const cnt = weekCounts();
-  const c = at(start);
-  let w = 1, guard = 0;
-  while (iso(c) < target) {
-    if ((cnt[iso(c)] || 0) >= WEEK_MIN) w++;      // неделя засчитана — идём дальше
-    c.setDate(c.getDate() + 7);
-    if (++guard > 5200) break;                   // сто лет плана — дальше только петля
-  }
-  return w;
+  return Math.max(1, Math.floor((at(target) - at(start)) / 6048e5) + 1);
 }
 // сколько тренировок закрыто на неделе, в которую попадает дата
 const doneThisWeek = ds => weekCounts()[mondayOf(ds || today())] || 0;
@@ -4746,22 +4735,9 @@ function paintCycle() {
   // раньше здесь стояло название фазы; номер цикла понятнее и не путается с неделей
   $('cycPh').textContent = cycLabel();
   const done = doneThisWeek();
-  /* Почему стоит именно эта неделя, видно только из прошлой: план не
-     двигается, пока в прошедшей неделе не закрыто WEEK_MIN тренировок.
-     Раньше здесь было написано «закрыто 0 из 4» про текущую неделю, и в
-     понедельник это читалось как «неделя не сменилась ни с того ни с сего». */
-  const prevMon = (() => { const d = at(mondayOf(today())); d.setDate(d.getDate() - 7); return iso(d); })();
-  const prev = weekCounts()[prevMon] || 0;
-  const repeat = i > 0 || planWeek() > 1 ? false : true;   // первая неделя цикла может и повторяться
   $('cycNote').innerHTML = go
     ? esc(c.t) + '<br><span style="color:var(--cy2)">Закрыто на этой неделе: <b>' + done + ' из 4</b>. ' +
-      (done >= WEEK_MIN
-        ? 'Неделя засчитана — со следующего понедельника идём дальше.'
-        : 'Для перехода на следующую неделю нужно ' + WEEK_MIN + '.') +
-      (prev > 0 || !repeat
-        ? ' Прошлая неделя: <b>' + prev + ' из 4</b>' +
-          (prev >= WEEK_MIN ? ' — засчитана.' : ' — не засчитана, поэтому идёт та же неделя плана.')
-        : ' Пропустишь — план не убежит вперёд, а повторит эту неделю.') +
+      'Это посещаемость; нагрузочная фаза меняется по календарю каждый понедельник.' +
       '</span>'
     : 'Старт ' + fmt(planStart()) + '. До него — свободные тренировки.';
   $('startIn').value = planStart();

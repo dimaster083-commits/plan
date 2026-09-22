@@ -1,4 +1,4 @@
-/* Питание, ИМТ и правило перехода недели: величины, которые человек
+/* Питание, ИМТ и календарная нумерация недели: величины, которые человек
    видит каждый день, но которых не трогал ни один прогон. */
 const { chromium } = require('playwright-core');
 const { LAUNCH, APP } = require('../env');
@@ -64,12 +64,11 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     return Math.abs(num(b2.v)-want)<0.1?true:JSON.stringify({got:b2.v,want});
   })===true, '4. ИМТ равен весу на квадрат роста');
 
-  // 5. неделя плана не уходит вперёд без закрытых тренировок
+  // 5. календарная неделя не зависит от закрытых тренировок
   chk(await p.evaluate(()=>{
-    const iso=d=>{const z=new Date(d);z.setMinutes(z.getMinutes()-z.getTimezoneOffset());return z.toISOString().slice(0,10);};
-    S.rec={}; const st=new Date(); st.setDate(st.getDate()-28); S.start=iso(st); save();
-    const idle=planWeek();
-    // закрываем четыре тренировки в первой неделе
+    S.rec={}; S.start='2026-09-14';
+    const idle=planWeek('2026-09-21');
+    // отмечаем четыре тренировки первой недели
     const mon=mondayOf(S.start);
     let added=0;
     for(let i=0;i<7&&added<4;i++){
@@ -77,13 +76,12 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       const ds=iso(d), day=dayOf(ds);
       if(day&&day.t!=='rest'){ recRW(ds).wo=1; added++; }
     }
-    save();
-    const after=planWeek();
-    return (idle===1&&after===2)?true:JSON.stringify({idle,after,added});
-  })===true, '5. неделя переходит только после четырёх закрытых тренировок');
+    wkCache=null;
+    const after=planWeek('2026-09-21');
+    return (idle===2&&after===2&&weekCounts()[mon]===4)?true:JSON.stringify({idle,after,added});
+  })===true, '5. неделя меняется по календарю, посещаемость учитывается отдельно');
 
-  // 6. разгрузочная неделя снимает и подходы. План идёт по закрытым
-  //    тренировкам, поэтому честно закрываем шесть недель подряд.
+  // 6. разгрузочная неделя снимает и подходы по календарному циклу.
   chk(await p.evaluate(()=>{
     const iso=d=>{const z=new Date(d);z.setMinutes(z.getMinutes()-z.getTimezoneOffset());return z.toISOString().slice(0,10);};
     S.rec={}; const st=new Date(); st.setDate(st.getDate()-7*7); S.start=iso(st); save();
