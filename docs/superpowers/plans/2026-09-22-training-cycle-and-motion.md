@@ -78,7 +78,8 @@
 
 - [ ] Write browser checks at mobile widths for both themes: tabs remain clickable during rapid changes, content is visible after transition, no horizontal overflow, and computed animation/transition durations are zero under `reducedMotion:'reduce'`.
 - [ ] Run `node test/run.js motion`; expect at least one missing-motion assertion to fail before changes.
-- [ ] Add restrained card/tab entrance, pressed-state feedback, progress-fill polish, and theme-specific panel borders: cool layered HUD lines in «Система», dark etched/copper edges in «Клеймо». Use the approved references for mood only, never copied frames or characters; avoid continuous animation and expensive layout properties. Inspect 320 px and 390 px screenshots in both themes, including long names and open sheets.
+- [ ] Reproduce and repair the existing `paltsy` touch-target failure: calendar day controls and photo actions must meet the suite's minimum hit area at narrow mobile widths. Run `node test/run.js paltsy` before and after the CSS change.
+- [ ] Add restrained card/tab entrance, pressed-state feedback, progress-fill polish, and theme-specific panel borders: cool layered HUD lines in «Система», dark etched/copper edges in «Клеймо». Replace the existing `img/bg-ink.jpg` character and the embedded exact brand mask with original art/glyph while preserving the theme concept. Use the approved references for mood only, never copied frames or characters; avoid continuous animation and expensive layout properties. Inspect 320 px and 390 px screenshots in both themes, including long names and open sheets.
 - [ ] Run `node test/run.js motion parity palitra contrast contrast2 fit skroll paltsy`; commit `feat: polish motion and mobile surfaces`.
 
 ### Task 6: Release verification and independent review
