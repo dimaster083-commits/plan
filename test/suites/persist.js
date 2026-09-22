@@ -36,6 +36,18 @@ const out=[]; const ok=(n,c,d)=>out.push((c?'  ✓ ':'  ✗ ')+n+(c?'':'   → '
   const sk=await p.evaluate(()=>skinNow());
   ok('выбранная тема переживает перезагрузку', sk==='ber', sk);
 
+  // Ошибка записи не должна выглядеть как успешно сохранённые данные.
+  const saveFailure=await p.evaluate(()=>{
+    const old=localStorage.setItem;
+    localStorage.setItem=()=>{throw new DOMException('quota','QuotaExceededError');};
+    S.bw='74'; flush();
+    const el=document.querySelector('[data-save-state]');
+    const result={state:el&&el.dataset.saveState,text:document.getElementById('noteT').textContent};
+    localStorage.setItem=old;
+    return result;
+  });
+  ok('отказ сохранения виден человеку',saveFailure.state==='failed'&&/сохран/i.test(saveFailure.text),JSON.stringify(saveFailure));
+
   // «Начать заново» стирает по-настоящему
   await p.evaluate(()=>{S.setup=1;document.getElementById('setup').classList.remove('on');tab='prog';pSec='prog';render();});
   await p.waitForTimeout(400);

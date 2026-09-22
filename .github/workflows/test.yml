@@ -1,0 +1,34 @@
+name: Проверка приложения
+
+on:
+  push:
+    branches: [main, feat/**]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  browser-tests:
+    name: Полный прогон в Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Установить Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Установить зависимости
+        run: npm install
+
+      - name: Установить Chromium для тестов
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Запустить все проверки
+        run: npm test

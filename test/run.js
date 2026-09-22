@@ -61,7 +61,7 @@ function one(name) {
       const cnt = good ? String(good).padStart(3) + ' проверок' : '  —        ';
       console.log(`${mark} ${name.padEnd(12)} ${cnt}  ${secs}с` +
         (bad ? `  ПРОБЛЕМ: ${bad}` : '') + (code !== 0 && !bad ? `  код выхода ${code}` : ''));
-      if (bad || code !== 0) buf.split('\n').filter(l => /✗|Error|error/.test(l)).slice(0, 12)
+      if (bad || code !== 0) buf.split('\n').filter(l => /✗|Error|error|FATAL|^\s{4,}\S/.test(l)).slice(0, 18)
         .forEach(l => console.log('      ' + l.trim()));
       res();
     });

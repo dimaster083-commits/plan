@@ -1,5 +1,5 @@
-/* Чужие цвета. «Клеймо» — строго серое: любой заметно насыщенный цвет
-   там остался от прежних версий. «Система» — фиолетовая: синева и
+/* Чужие цвета. «Клеймо» — нейтральные поверхности с медным акцентом;
+   другие заметно насыщенные цвета там чужие. «Система» — фиолетовая: синева и
    зелень в ней тоже чужие. Смотрим вычисленные стили всех видимых
    элементов на всех экранах и во всех шторках. */
 const { chromium } = require('playwright-core');
@@ -35,7 +35,7 @@ const SCAN = skin => {
     if (l<0.04 || l>0.97) return null;            // почти чёрное и почти белое — не в счёт
     // у очень тёмных тонов насыщенность считается по крохотной разнице
     // каналов и ничего не значит: сам фон «Клейма» #0B0D0F даёт 0,15
-    if (skin==='ber') return (s>0.12 && l>0.16) ? [h,s,l] : null;
+    if (skin==='ber') return (s>0.12 && l>0.16 && !(h>=15 && h<=45 && s<=0.65)) ? [h,s,l] : null;
     // «Система»: синева и зелень чужие, фиолет и розовый — свои
     if (s<0.2) return null;
     return (h>=180 && h<250) || (h>=70 && h<180) ? [h,s,l] : null; };
@@ -63,10 +63,18 @@ const SCAN = skin => {
   const b = await chromium.launch(LAUNCH);
   const p = await (await b.newContext({ viewport:{width:390,height:844} })).newPage();
   await p.goto(APP); await p.waitForTimeout(1400);
+  await p.addStyleTag({content:'*,*::before,*::after{transition:none!important;animation:none!important}'});
   await p.evaluate(SEED);
   await p.evaluate(() => { S.setup=1; document.getElementById('setup').classList.remove('on'); });
   for (const skin of ['sl','ber']) {
     await p.evaluate(s => applyTheme(s), skin);
+    if (skin === 'ber') {
+      const marker = await p.evaluate(() => getComputedStyle(document.querySelector('.tab.on'), '::after').backgroundColor);
+      if (marker !== 'rgb(201, 138, 98)') {
+        fails++;
+        console.log('  ✗ ber: активная вкладка не имеет медного акцента (' + marker + ')');
+      }
+    }
     const all = [];
     for (const t of ['wo','prog','food','photo']) {
       await p.evaluate(tt => { tab=tt; exOpen=null; sel=today(); render(); }, t);

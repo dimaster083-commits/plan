@@ -442,6 +442,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 .foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--edge2);display:flex;gap:8px;
   flex-wrap:wrap;align-items:center}
 .foot p{margin:0;flex:1;min-width:170px;font-size:10.5px;color:var(--mut)}
+.saveState[data-save-state="saving"]{color:var(--cy2)}
+.saveState[data-save-state="failed"]{color:var(--arms);font-weight:700}
 .gh{border:1px solid var(--edge2);color:var(--mut);padding:8px 12px;font-size:11px;border-radius:2px}
 
 /* ===== ПИТАНИЕ ===== */
@@ -965,18 +967,23 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --c-up1:var(--c-up); --c-up2:var(--c-up); --c-lo1:var(--c-lo); --c-lo2:var(--c-lo);
   --c-back:#6631DB; --c-chest:#7B45F0; --c-delts:#A981FF; --c-legs:#D0BCFC; --c-arms:#491AB1;
   --c-abs:#8E6BF5;
+  --bg:var(--s0); --panel:var(--s1); --panel2:var(--s2);
+  --edge:var(--ln2); --edge2:var(--ln);
+  --cy:var(--acc-2); --cy2:var(--acc-ink); --tx:var(--ink); --mut:var(--ink3);
+  --gold:var(--warn); --legs:var(--c-legs); --chest:var(--c-chest); --arms:var(--c-arms);
+  --back:var(--c-back); --other:var(--c-other); --rest:var(--c-rest);
   color-scheme:dark;
 }
 
 :root[data-skin="ber"]{
-  /* КЛЕЙМО — палитра #F8F9FA … #181B1E, ни одного цвета и ни грамма свечения */
+  /* КЛЕЙМО — тёмные нейтральные поверхности и один спокойный медный акцент */
   --s0:#0B0D0F; --s1:rgba(20,22,25,.93); --s2:rgba(95,98,102,.3); --s3:rgba(165,169,174,.32);
   --btn:rgba(28,31,34,.93); --panel-solid:#16181B;
   --ln:rgba(165,169,174,.3); --ln2:rgba(165,169,174,.5);
   --ink:#F8F9FA; --ink2:#CFD1D4; --ink3:#A5A9AE;
 
-  --acc:#CFD1D4; --acc-2:#F8F9FA; --acc-fill:#CFD1D4; --acc-soft:rgba(207,209,212,.16);
-  --acc-ink:#F8F9FA; --onacc:#181B1E;
+  --acc:#C98A62; --acc-2:#E4AE83; --acc-fill:#C98A62; --acc-soft:rgba(201,138,98,.14);
+  --acc-ink:#E4AE83; --onacc:#181B1E;
   --ok:#F8F9FA;   --ok-soft:rgba(248,249,250,.12); --ok-ln:rgba(207,209,212,.45);
   --up-tx:#F8F9FA; --down-tx:#CFD1D4;
   --warn:#CFD1D4; --warn-soft:rgba(165,169,174,.16);
@@ -1001,8 +1008,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   /* зерно бумаги: рваный штрих вместо сот */
   --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
   --grain-size:120px 120px; --grain-op:.16; --grain-mode:overlay;
-  --sheen:linear-gradient(135deg,rgba(248,249,250,.05),transparent 38%);
-  --edge-lit:linear-gradient(180deg,var(--ink2),transparent);
+  --sheen:linear-gradient(135deg,rgba(201,138,98,.055),transparent 38%);
+  --edge-lit:linear-gradient(180deg,var(--acc),transparent);
   --wall:url('./img/bg-ink.jpg');
   --wall-gray:1; --wall-dim:linear-gradient(180deg,rgba(11,13,15,.3) 0%,rgba(11,13,15,.82) 46%,rgba(11,13,15,.96) 100%);
 
@@ -1012,6 +1019,11 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   --c-up1:var(--c-up); --c-up2:var(--c-up); --c-lo1:var(--c-lo); --c-lo2:var(--c-lo);
   --c-back:#CFD1D4; --c-chest:#F8F9FA; --c-delts:#A5A9AE; --c-legs:#8A8E92; --c-arms:#5F6266;
   --c-abs:#B6BABE;
+  --bg:var(--s0); --panel:var(--s1); --panel2:var(--s2);
+  --edge:var(--ln2); --edge2:var(--ln);
+  --cy:var(--acc-2); --cy2:var(--acc-ink); --tx:var(--ink); --mut:var(--ink3);
+  --gold:var(--warn); --legs:var(--c-legs); --chest:var(--c-chest); --arms:var(--c-arms);
+  --back:var(--c-back); --other:var(--c-other); --rest:var(--c-rest);
   color-scheme:dark;
 }
 
@@ -1436,7 +1448,7 @@ input,textarea,select{color:var(--ink)}
 /* ряд действий над карточками: выделение заливкой, как у остальных состояний */
 .tools button{background:var(--s2);border:1px solid transparent;border-radius:var(--r-s);
   color:var(--ink2);font-size:13px;letter-spacing:0;padding:12px 8px;line-height:1.3}
-.tools button.hi,.tools button.on{background:var(--acc-soft);color:#9DC2FF;border-color:transparent}
+.tools button.hi,.tools button.on{background:var(--acc-soft);color:var(--acc-ink);border-color:transparent}
 .tools button:active{background:var(--s3)}
 
 /* ---------- сводка дня ---------- */
@@ -2054,7 +2066,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 /* ---------- нижние вкладки ---------- */
 .tab.on::after{content:'';position:absolute;left:50%;bottom:6px;width:20px;height:2px;
   margin-left:-10px;background:var(--acc);box-shadow:0 0 var(--glow-r) var(--glow-c)}
-:root[data-skin="ber"] .tab.on::after{background:var(--ink);box-shadow:none}
+:root[data-skin="ber"] .tab.on::after{background:var(--acc);box-shadow:none}
 
 /* ---------- выбор темы ---------- */
 .skinpick{display:block;width:100%;text-align:left;padding:15px 16px;margin-bottom:9px;
@@ -2197,7 +2209,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
     <button class="add" id="editPast" hidden>Править этот день</button>
   </div>
 
-  <div class="foot"><p>Прогресс сохраняется на этом устройстве</p>
+  <div class="foot"><p id="saveState" class="saveState" data-save-state="saved" role="status" aria-live="polite">Сохранено на устройстве</p>
     <button class="gh" id="rd">СБРОС ДНЯ</button></div>
 </section>
 
@@ -3232,7 +3244,7 @@ function recomputeStats(force) {
 
 function load() {
   try { const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : build(); }
-  catch (e) { canSave = false; S = build(); }
+  catch (e) { canSave = false; S = build(); setSaveState('failed'); }
   // Раньше здесь стояло S = build(): состояние без расписания стиралось целиком,
   // вместе с журналом, весами и накопленным тоннажем. Теперь восстанавливаем
   // только расписание, а всё заработанное остаётся на месте.
@@ -3257,19 +3269,36 @@ function scrubKeys() {
 }
 
 let saveTimer = null;
+/* На телефоне один тап иногда приходит дважды до перерисовки. Блокируем
+   только повтор одной пишущей операции на короткое время. */
+const pendingActions = new Set();
+function runOnce(key, action, waitMs = 350) {
+  if (pendingActions.has(key)) return;
+  pendingActions.add(key);
+  try { return Promise.resolve(action()); }
+  finally { setTimeout(() => pendingActions.delete(key), waitMs); }
+}
+function setSaveState(kind) {
+  const el = $('saveState');
+  if (!el) return;
+  el.dataset.saveState = kind;
+  el.textContent = kind === 'saving' ? 'Сохраняем на устройстве…'
+    : kind === 'failed' ? 'Не удалось сохранить данные' : 'Сохранено на устройстве';
+}
 function save() {
   wkCache = null;
   statsDirty = true;
   entCache = null;
-  if (!canSave) return;
+  if (!canSave) { setSaveState('failed'); return; }
   clearTimeout(saveTimer);
+  setSaveState('saving');
   saveTimer = setTimeout(flush, 150);      // пачкой: за одно нажатие состояние меняется не раз
 }
 function flush() {
-  if (!canSave) return;
+  if (!canSave) { setSaveState('failed'); return false; }
   clearTimeout(saveTimer);
-  try { localStorage.setItem(KEY, JSON.stringify(S)); }
-  catch (e) { canSave = false; note('Сохранение недоступно'); }
+  try { localStorage.setItem(KEY, JSON.stringify(S)); setSaveState('saved'); return true; }
+  catch (e) { canSave = false; setSaveState('failed'); note('Сохранение недоступно — сделай копию данных'); return false; }
 }
 
 /* ---------- выборки ---------- */
@@ -4536,8 +4565,10 @@ $('shB').addEventListener('click', e => {
   const ax = e.target.closest('[data-addex]');
   if (ax) {
     const n = ax.dataset.addex;
-    dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: EXDB[n][1] });
-    save(); sheetClose(); render(); note('Добавлено: ' + n);
+    runOnce('addex:' + sel + ':' + n, () => {
+      dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: EXDB[n][1] });
+      save(); sheetClose(); render(); note('Добавлено: ' + n);
+    });
     return;
   }
 
@@ -5262,6 +5293,25 @@ $('wipe').addEventListener('click', async () => {
 });
 
 $('imp').addEventListener('click', () => $('impFile').click());
+/* Копия — внешний ввод. Проверяем форму целиком до вопроса и до записи
+   фотографий: старый код принимал любое поле days и только потом «чинил»
+   его, из-за чего испорченный файл успевал заменить открытый журнал. */
+function importStateOf(copy) {
+  const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const state = copy && copy.state;
+  if (!plain(copy) || !plain(state) || !Array.isArray(state.days) || !state.days.length) throw new Error('bad');
+  if (!state.days.every(d => plain(d) && typeof d.k === 'string' && typeof d.n === 'string'
+    && typeof d.t === 'string' && Array.isArray(d.ex))) throw new Error('bad');
+  ['rec', 'map', 'pr'].forEach(k => {
+    if (state[k] !== undefined && !plain(state[k])) throw new Error('bad');
+  });
+  ['myFood', 'tpl'].forEach(k => {
+    if (state[k] !== undefined && !Array.isArray(state[k])) throw new Error('bad');
+  });
+  if (copy.photos !== undefined && !plain(copy.photos)) throw new Error('bad');
+  // JSON-копия отделяет импорт от FileReader и не оставляет ссылок на внешний объект.
+  return JSON.parse(JSON.stringify(state));
+}
 $('impFile').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
   e.target.value = '';
@@ -5270,7 +5320,7 @@ $('impFile').addEventListener('change', e => {
   fr.onload = async () => {
     try {
       const o = JSON.parse(fr.result);
-      if (!o.state || !o.state.days) throw new Error('bad');
+      const next = importStateOf(o);
       // про фотографии говорим отдельно: они не стираются, а доливаются к нынешним
       if (!await ask('Журнал, веса и рацион будут заменены на то, что в копии — нынешние пропадут. '
         + 'Фотографии из копии добавятся к уже снятым.', 'ВОССТАНОВИТЬ')) return;
@@ -5278,9 +5328,9 @@ $('impFile').addEventListener('change', e => {
       // Восстановление проходит тот же ремонт, что и обычная загрузка:
       // копия может быть старой, правленой руками или испорченной, а
       // мусорный ключ в журнале роняет «Прогресс» целиком.
-      S = o.state;
-      if (!S || typeof S !== 'object') throw new Error('bad');
-      if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
+      S = next;
+      // Сюда попадает только уже проверенная копия; миграции сохраняют
+      // совместимость со старыми версиями без права на частичную загрузку.
       scrubKeys(); invalidateFood(); migrate(); recomputeStats(1); flush();
       await phSync();
       sel = today(); mo = sel.slice(0, 7);
@@ -5383,7 +5433,7 @@ $('recalc').addEventListener('click', openSetup);
    ========================================================================= */
 const SKINS = [
   { id: 'sl',  n: 'Система', sub: 'Solo Leveling · фиолетовая' },
-  { id: 'ber', n: 'Клеймо',  sub: 'Берсерк · чёрно-белая' }
+  { id: 'ber', n: 'Клеймо',  sub: 'Берсерк · тёмная бронза' }
 ];
 
 /* Словарь подписей. Слева — смысл, он же ключ и в коде, и в разметке.
@@ -7079,9 +7129,12 @@ function lazyStrip(root) {
 }
 
 async function paintPhotoScreen() {
-  const d = await phLoad(sel), r = recOf(sel);
-  $('phDate').textContent = 'снимок за ' + fmt(sel);
-  $('phT').innerHTML = d ? `<img src="${d}" alt="Фото ${sel}">` : '<span>+</span>';
+  const day = sel;
+  const d = await phLoad(day);
+  if (sel !== day || tab !== 'photo') return;
+  const r = recOf(day);
+  $('phDate').textContent = 'снимок за ' + fmt(day);
+  $('phT').innerHTML = d ? `<img src="${d}" alt="Фото ${day}">` : '<span>+</span>';
   $('phDel').hidden = !d;
   $('phTxt').textContent = d
     ? 'Снимок сохранён. Нажми «Сравнить», чтобы поставить его рядом с любым другим днём.'
@@ -7114,24 +7167,26 @@ $('phT').addEventListener('click', () => $('phFile').click());
 $('phAdd').addEventListener('click', () => $('phFile').click());
 $('phFile').addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0];
+  const day = sel;
   e.target.value = '';
   if (!f) return;
   try {
     const dat = await compress(f);
-    await phPut(sel, dat);
-    PHCACHE.set(sel, dat);
+    await phPut(day, dat);
+    PHCACHE.set(day, dat);
     await phSync();
-    if (!recOf(sel).bw) { recRW(sel).bw = S.bw; save(); }
+    if (!recOf(day).bw) { recRW(day).bw = S.bw; save(); }
     note('Снимок сохранён');
-    paintPhotoScreen();
+    if (sel === day && tab === 'photo') paintPhotoScreen();
   } catch (err) { note('Не удалось сохранить фото'); }
 });
 $('phDel').addEventListener('click', async () => {
-  if (!await ask('Удалить фото за ' + fmt(sel) + '?')) return;
-  await phDelete(sel);
-  PHCACHE.delete(sel);
+  const day = sel;
+  if (!await ask('Удалить фото за ' + fmt(day) + '?')) return;
+  await phDelete(day);
+  PHCACHE.delete(day);
   await phSync();
-  paintPhotoScreen();
+  if (sel === day && tab === 'photo') paintPhotoScreen();
 });
 $('phW').addEventListener('input', e => {
   // Вес, вписанный рядом со снимком, — тот же самый вес. Раньше он ложился
