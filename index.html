@@ -12,7 +12,14 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" href="./icon-192.png">
-<title>GYM</title>
+<title>GYM — дневник тренировок</title>
+<meta name="description" content="Дневник тренировок с автопрогрессией: веса и повторы растут сами, рацион и добавки в одно нажатие. Работает без интернета, данные остаются в телефоне.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GYM — дневник тренировок">
+<meta property="og:description" content="Веса и повторы растут сами. Работает без интернета, данные остаются в телефоне.">
+<meta property="og:image" content="https://dimaster083-commits.github.io/plan/icon-512.png">
+<meta property="og:url" content="https://dimaster083-commits.github.io/plan/">
+<meta name="twitter:card" content="summary">
 <style>
 /* Шрифты лежат в репозитории: приложение должно открываться в подвале
    без связи, а Rajdhani к тому же не знает кириллицы — весь русский
@@ -2482,6 +2489,14 @@ body.exopen{padding-bottom:calc(var(--tabh) + var(--sb) + 30px)}
 .row .box{border-radius:10px}
 .row.on{background:var(--hot-soft);border-color:var(--hot-ln)}
 .qskip{display:block;width:100%;margin-top:10px}
+.clc{padding:14px 16px;margin-top:10px}
+.clr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;
+  border-bottom:1px solid var(--ln);font-size:13px}
+.clr span{color:var(--ink2);min-width:0}
+.clr b{font-family:var(--fn);font-weight:700;color:var(--ink);white-space:nowrap}
+.clh{margin:10px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink3)}
+.setw p.setnote{font-size:12px;line-height:1.5;color:var(--ink2);padding:10px 12px;border-radius:var(--r-m);
+  border:1px solid var(--ln);background:var(--s2)}
 /* кнопки «одним нажатием»: повторить рацион, принять все добавки */
 .cplast{display:block;width:100%;margin:0 0 9px}
 .spall{display:block;width:100%;margin:6px 0 10px;border-style:solid;border-color:var(--hot-ln);color:var(--hot-tx)}
@@ -2500,6 +2515,84 @@ body.exopen{padding-bottom:calc(var(--tabh) + var(--sb) + 30px)}
 @keyframes rd-ring{from{transform:scale(1);opacity:.9}to{transform:scale(1.35);opacity:0}}
 #boot b{animation:rd-breathe 1.4s ease-in-out infinite}
 @keyframes rd-breathe{50%{opacity:.5;letter-spacing:.55em}}
+
+/* =========================================================================
+   СТИЛЬ ПЕРВОИСТОЧНИКОВ
+   Система — окна Системы из «Поднятия уровня»: тёмное стекло, тонкая
+   светящаяся рамка, уголки-скобки, почти прямые углы; на фоне — Врата,
+   медленно вращающийся сине-фиолетовый вихрь, сканлайны и соты.
+   Клеймо — «Берсерк»: Затмение, чёрное солнце с кровавой короной над
+   гравюрой, кровоточащее Клеймо, железные панели с кровавой кромкой.
+   ========================================================================= */
+:root[data-skin="sl"]{
+  --r-s:3px; --r-m:4px; --r-l:6px; --r-x:8px;
+  --brk:#8BEBFF;
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='40' viewBox='0 0 34 40'%3E%3Cpath d='M17 0l15 8.7v17.6L17 35 2 26.3V8.7z' fill='none' stroke='%235CE1FF' stroke-width='.7'/%3E%3C/svg%3E");
+  --grain-size:34px 40px; --grain-op:.07; --grain-mode:normal;
+  --wall-dim:radial-gradient(60% 30% at 50% 22%,rgba(46,139,255,.22),transparent 70%),
+    radial-gradient(90% 40% at 50% 108%,rgba(110,60,230,.38),transparent 70%),
+    repeating-linear-gradient(0deg,rgba(92,225,255,.035) 0 1px,transparent 1px 3px);
+}
+/* Врата: кольцо-вихрь над экраном */
+:root[data-skin="sl"] #wall::before{content:'';position:absolute;left:50%;top:-6vh;width:118vmin;height:118vmin;
+  margin-left:-59vmin;border-radius:50%;opacity:.8;filter:blur(3px);
+  background:conic-gradient(from var(--a),transparent 0,rgba(46,139,255,.75) 8%,transparent 22%,
+    rgba(92,225,255,.6) 38%,transparent 52%,rgba(138,92,255,.7) 66%,transparent 80%,rgba(46,139,255,.6) 92%,transparent 100%);
+  -webkit-mask:radial-gradient(circle,transparent 44%,#000 50%,#000 54%,transparent 64%);
+  mask:radial-gradient(circle,transparent 44%,#000 50%,#000 54%,transparent 64%);
+  animation:rd-turn 26s linear infinite}
+/* окна Системы, как в кадрах аниме: тёмное стекло, тонкая рамка и две
+   светящиеся голубые «рельсы» — по верхнему и нижнему краю окна */
+:root[data-skin="sl"] .win{background-color:rgba(5,13,32,.9);border-color:rgba(124,200,255,.3);
+  box-shadow:0 0 22px rgba(46,139,255,.18),inset 0 0 30px rgba(46,139,255,.08);
+  background-image:
+    linear-gradient(90deg,transparent,var(--brk) 10%,#FFFFFF 50%,var(--brk) 90%,transparent),
+    linear-gradient(180deg,rgba(46,139,255,.38),transparent),
+    linear-gradient(90deg,transparent,var(--brk) 10%,#FFFFFF 50%,var(--brk) 90%,transparent),
+    linear-gradient(0deg,rgba(46,139,255,.32),transparent),
+    linear-gradient(180deg,rgba(92,225,255,.05),transparent 40%);
+  background-repeat:no-repeat;
+  background-size:100% 2px,100% 16px,100% 2px,100% 16px,100% 100%;
+  background-position:0 0,0 0,0 100%,0 100%,0 0}
+:root[data-skin="sl"] .qhead b{letter-spacing:.05em;font-size:13px;white-space:nowrap}
+/* заголовок уведомления — значок «!» в круге, как у окон Системы */
+:root[data-skin="sl"] .qhead b::before{content:'!';display:inline-grid;place-items:center;width:18px;height:18px;
+  margin-right:8px;border:1.5px solid var(--hot-tx);border-radius:50%;font-size:11px;line-height:1;
+  color:var(--hot-tx);vertical-align:1px;box-shadow:0 0 8px rgba(92,225,255,.6)}
+:root[data-skin="sl"] .exrow,:root[data-skin="sl"] .fin,:root[data-skin="sl"] .pseg,
+:root[data-skin="sl"] .pseg button,:root[data-skin="sl"] .tab,:root[data-skin="sl"] .chip{border-radius:var(--r-m)}
+:root[data-skin="sl"] .tabbar,:root[data-skin="sl"] .tmr{border-radius:var(--r-x);border-color:rgba(124,200,255,.42);
+  box-shadow:0 0 22px rgba(46,139,255,.22),0 18px 44px -14px rgba(0,0,0,.9)}
+:root[data-skin="sl"] .exrow .go{border-radius:var(--r-m)}
+/* заголовок окна статуса, как «STATUS» в аниме */
+:root[data-skin="sl"] .st8{padding-top:32px;background:
+  linear-gradient(rgba(6,16,38,.94),rgba(6,16,38,.94)) padding-box,
+  conic-gradient(from var(--a),var(--edge-a) 0 58%,var(--edge-b) 74%,var(--edge-c) 82%,var(--edge-a) 96%) border-box}
+/* заголовок окна — в своей рамочке по центру, как «STATUS» в аниме */
+:root[data-skin="sl"] .st8::before{content:'СТАТУС';position:absolute;left:50%;right:auto;top:7px;width:auto;height:auto;
+  transform:translateX(-50%);padding:2px 16px;border:1px solid rgba(139,235,255,.75);border-radius:2px;
+  background:rgba(5,13,32,.96);font-family:var(--fn);font-size:10px;letter-spacing:.34em;color:#FFFFFF;
+  text-shadow:0 0 10px rgba(92,225,255,.9);box-shadow:0 0 12px rgba(46,139,255,.55)}
+:root[data-skin="sl"] .qhead b,:root[data-skin="sl"] .wtitle,:root[data-skin="sl"] h2.sec{
+  text-transform:uppercase;letter-spacing:.14em;text-shadow:0 0 12px rgba(92,225,255,.55)}
+
+/* Затмение: чёрное солнце с кровавой короной */
+:root[data-skin="ber"] #wall::before{content:'';position:absolute;top:5vh;right:-14vmin;width:72vmin;height:72vmin;
+  border-radius:50%;
+  background:radial-gradient(circle,#030202 0 34%,rgba(200,24,28,.95) 36%,rgba(150,14,18,.55) 42%,
+    rgba(110,10,14,.22) 52%,transparent 66%);
+  animation:rd-corona 7s ease-in-out infinite}
+@keyframes rd-corona{50%{transform:scale(1.04);filter:brightness(1.25)}}
+/* кровоточащее Клеймо на карточке */
+:root[data-skin="ber"] .st8lv{color:var(--acc)}
+:root[data-skin="ber"] .st8lv .brand{animation:rd-bleed 3.2s ease-in-out infinite}
+@keyframes rd-bleed{0%,100%{filter:drop-shadow(0 0 2px rgba(192,40,45,.5))}
+  50%{filter:drop-shadow(0 0 9px rgba(230,40,45,.95)) drop-shadow(0 0 16px rgba(160,14,18,.6))}}
+/* железо с кровавой кромкой */
+:root[data-skin="ber"] .win{background-color:rgba(18,15,14,.95);
+  box-shadow:inset 0 2px 0 rgba(166,27,31,.55),inset 0 0 0 3px var(--s1),inset 0 0 0 4px rgba(232,220,200,.1),
+    0 22px 50px -34px rgba(0,0,0,.95)}
+:root[data-skin="ber"] .st8{box-shadow:0 0 36px -8px rgba(160,14,18,.45),0 26px 60px -34px rgba(0,0,0,.95)}
 
 /* ---------- появление экрана ----------
    Класс rd-enter ставит код при смене вкладки, дня или упражнения и снимает
@@ -2550,7 +2643,7 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
         <path class="hx" d="M25 2l20 11.5v23L25 48 5 36.5v-23z" fill="none" stroke="currentColor" stroke-width="1.4"/>
       </svg><i class="brand"></i><b id="st8n">1</b></span>
       <span class="st8t">
-        <h1 data-t="hero">Охотник</h1>
+        <h1 id="st8job">Пробуждённый</h1>
         <!-- уровень и ступень стоят в одной строке: раньше номер висел
              абсолютом у знака и на разной ширине экрана расходился
              с плашкой ступени -->
@@ -2687,6 +2780,9 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
       <span class="qgoal">цель <b id="qGoalV">95</b><i>кг</i></span></div>
     <div class="miles" id="miles"></div>
   </div>
+
+  <!-- калькулятор: откуда берутся нормы и коридор темпа, в цифрах этого человека -->
+  <div class="win clc" id="calcBox"></div>
 
   <div class="win cyc">
     <div class="cycTop"><b id="cycW">Неделя 1<i> из 8</i></b><span id="cycPh">ЦИКЛ 1</span></div>
@@ -2864,16 +2960,23 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
 
 <div class="ask" id="setup"><div class="win askw setw">
   <h5>ПЕРВИЧНАЯ НАСТРОЙКА</h5>
-  <p>Цифры уже проставлены под тебя — если согласен, просто нажми «Посчитать»,
-     остальные упражнения программа посчитает сама. Поменять вес можно в любой момент
-     в «Прогрессе», в таблице рабочих весов.</p>
+  <p>Впиши вес, с которым делаешь эти упражнения на 8 повторов, — остальные
+     программа посчитает сама. Не знаешь — оставь пустыми: старт возьмём осторожный,
+     от твоего веса. Поменять можно в любой момент в «Прогрессе».</p>
+  <p class="setnote">Данные хранятся только на этом телефоне и никуда не отправляются —
+     сохраняй копию в «Прогресс → Веса». Нормы еды и добавок — ориентир,
+     а не медицинская рекомендация: при болезнях и травмах сначала к врачу.</p>
   <div id="setupRows"></div>
   <div class="srow" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--edge2)">
-    <span>Рост</span><input id="anH" inputmode="numeric" value="177" aria-label="Рост"><i>см</i></div>
+    <span>Рост</span><input id="anH" inputmode="numeric" value="177" placeholder="175" aria-label="Рост"><i>см</i></div>
+  <!-- пол и возраст нужны формуле обмена: без них нормы еды — грубая оценка -->
+  <div class="srow"><span>Возраст</span>
+    <input id="anAge" inputmode="numeric" placeholder="30" aria-label="Возраст"><i>лет</i></div>
+  <div class="wdir" id="anSex"><button data-sex="m">МУЖЧИНА</button><button data-sex="f">ЖЕНЩИНА</button></div>
   <div class="srow"><span>Вес сейчас</span>
-    <input id="anBw" inputmode="decimal" value="70" aria-label="Вес сейчас"><i>кг</i></div>
+    <input id="anBw" inputmode="decimal" value="70" placeholder="75" aria-label="Вес сейчас"><i>кг</i></div>
   <div class="srow"><span>Цель по весу</span>
-    <input id="anGoal" inputmode="decimal" value="95" aria-label="Цель по весу"><i>кг</i></div>
+    <input id="anGoal" inputmode="decimal" value="95" placeholder="как сейчас" aria-label="Цель по весу"><i>кг</i></div>
   <!-- Раньше режим выводился молча из того, выше цель текущего веса или
        ниже. Спросить прямо честнее: цифра подставится сама. -->
   <div class="wdir" id="anDir"><button data-dir="up">НАБОР</button>
@@ -2962,7 +3065,13 @@ const GROUPS = [['Спина', 'back'], ['Грудь', 'chest'], ['Плечи', 
   ['Руки', 'arms'], ['Пресс', 'abs']];
 // Шесть ступеней. Порог один и тот же в любой теме, меняется только название:
 // буквы принадлежат первой теме, во второй ступени называются словами.
-const RANKS = [[40, 5], [26, 4], [17, 3], [10, 2], [5, 1], [1, 0]];
+const RANKS = [[60, 6], [40, 5], [26, 4], [17, 3], [10, 2], [5, 1], [1, 0]];
+/* Класс (Система) или эпоха (Клеймо) — крупная ступень пути, поверх ранга:
+   новичок не может называться охотником. Система — как в аниме: пробуждённый,
+   охотник, смена класса в некроманта, Монарх теней. Клеймо — путь Гатса. */
+const JOBS = [[40, 3], [17, 2], [5, 1], [1, 0]];
+function jobIdx(l) { for (const [m, r] of JOBS) if (l >= m) return r; return 0; }
+function jobOf(l) { return (DICT[skinNow()] || DICT.sl).jobs[jobIdx(l)]; }
 const zeroVol = () => GROUPS.reduce((a, [n]) => (a[n] = 0, a), {});
 const XP_EX = 12, XP_WO = 60, XP_SP = 4, XP_PR = 30, PER = 500;
 const MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август',
@@ -3005,10 +3114,20 @@ function goalDir() {
   return g > bw + 0.5 ? 1 : (g < bw - 0.5 ? -1 : 0);
 }
 
+/* Поддержание по Миффлину — Сан Жеору: в 71 % случаев попадает в 10 % от
+   измеренного обмена — лучшая из простых формул. Коэффициент 1,45 — три-четыре
+   силовые в неделю при сидячей работе. Набор +12 %: обзор Iraki 2019 советует
+   +10–20 % для начинающих и средних, больше — это в основном жир. Снижение
+   −20 % даёт около 0,5–1 % массы в неделю — коридор, в котором мышцы держатся. */
+function maintOf(bw) {
+  const h = num(S.height) || 175, a = num(S.age) || 30;
+  const bmr = 10 * bw + 6.25 * h - 5 * a + (S.sex === 'f' ? -161 : 5);
+  return bmr * 1.45;
+}
 function nutriFor(t) {
   const bw = num(S.bw) || startW() || 70, g = num(S.goal) || bw, dir = goalDir();
-  const maint = bw * 33;
-  const k = maint * (dir > 0 ? 1.18 : dir < 0 ? 0.82 : 1) - (t === 'rest' ? 200 : 0);
+  const maint = maintOf(bw);
+  const k = maint * (dir > 0 ? 1.12 : dir < 0 ? 0.8 : 1) - (t === 'rest' ? 200 : 0);
   const pr = dir < 0 ? bw * 2.2 : Math.min(Math.max(g, bw), bw * 1.15) * 1.9;
   return { kc: String(Math.round(k / 10) * 10), pr: String(Math.round(pr / 5) * 5) };
 }
@@ -3842,9 +3961,11 @@ function addXp(n, msg) {
 let lvupTimer = null;
 function levelUp(lv) {
   const el = $('lvup');
-  $('lvup').querySelector('b').textContent = T('lvup');
+  // новый класс или эпоха — событие крупнее уровня, и окно говорит об этом
+  const newJob = lv > 1 && jobIdx(lv) !== jobIdx(lv - 1);
+  $('lvup').querySelector('b').textContent = newJob ? T('jobup') : T('lvup');
   $('lvupN').textContent = lv;
-  $('lvupR').textContent = rankTitle(lv);
+  $('lvupR').textContent = newJob ? jobOf(lv).toUpperCase() : rankTitle(lv);
   el.classList.remove('on');
   void el.offsetWidth;              // перезапуск анимации
   el.classList.add('on');
@@ -3977,6 +4098,7 @@ function paintStatus() {
   $('st8n').textContent = lv;
   $('st8n2').textContent = lv;
   $('st8rank').textContent = rankTitle(lv);
+  $('st8job').textContent = jobOf(lv);
   $('st8xp').style.width = (inLv / PER * 100) + '%';
   $('st8xpv').textContent = inLv + '/' + PER;
   const w = planWeek(), ci = cycIdx();
@@ -5249,7 +5371,33 @@ function openBmi() {
 }
 $('bmiRow').addEventListener('click', openBmi);
 
+/* Калькулятор цели: поддержание, норма, белок, коридор темпа и срок —
+   те же функции, что считают нормы и разбор, только показанные цифрами. */
+function paintCalc() {
+  const box = $('calcBox'); if (!box) return;
+  const bw = num(S.bw) || startW() || 70, g = num(S.goal) || bw, dir = goalDir();
+  const m = maintOf(bw), tr = nutriFor('up1'), rs = nutriFor('rest');
+  const [lo, hi] = paceRange(dir);
+  const aLo = Math.min(Math.abs(lo), Math.abs(hi)), aHi = Math.max(Math.abs(lo), Math.abs(hi));
+  const left = Math.abs(g - bw);
+  const mode = dir > 0 ? 'Набор · +12 %' : dir < 0 ? 'Снижение · −20 %' : 'Удержание';
+  const pctTxt = dir > 0 ? '0,25–0,5 %' : dir < 0 ? '0,5–1 %' : '±0,25 %';
+  const pc = paceOf(wlog());
+  const row = (k, v) => '<div class="clr"><span>' + k + '</span><b>' + v + '</b></div>';
+  box.innerHTML = '<div class="wtitle" style="padding:0 0 8px">РАСЧЁТ</div>' +
+    row('Поддержание', rnd(m) + ' ккал') +
+    row(mode, (S.kcManual ? 'вручную' : tr.kc + ' / ' + rs.kc + ' ккал')) +
+    row('Белок', tr.pr + ' г') +
+    row('Темп в неделю', (dir ? (dir > 0 ? '+' : '−') + dec(aLo, 2) + '…' + dec(aHi, 2) : '±' + dec(aHi, 2)) + ' кг') +
+    (dir && left >= 0.5 ? row('До цели ' + kg(g) + ' кг', dec(left) + ' кг · ' +
+      Math.max(1, Math.round(left / aHi)) + '–' + Math.max(1, Math.round(left / aLo)) + ' нед') : '') +
+    row('Сейчас', pc ? (pc.per > 0 ? '+' : '') + dec(pc.per, 2) + ' кг/нед' : 'нужно 2 взвешивания') +
+    '<p class="clh">Поддержание — формула Миффлина — Сан Жеора: вес, рост ' + (num(S.height) || 175) +
+    ' см, возраст ' + (num(S.age) || 30) + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
+    '. Коридор — ' + pctTxt + ' массы в неделю; норма через день тренировки / отдыха.</p>';
+}
 function paintGoal() {
+  paintCalc();
   const a = startW(), b = num(S.bw) || a, g = num(S.goal) || 95;
   const up = g >= a;
   const p = Math.max(0, Math.min(1, (b - a) / ((g - a) || 1)));
@@ -5339,8 +5487,10 @@ function setGoal(v) {
   applyNutri(); save();
   syncBwFields(); paintGoal(); paintTotals(); paintKcSrc();
 }
+let setupFresh = false;     // открыта самая первая настройка — её поля пустые
 function syncBwFields() {
-  const pairs = [['bw', S.bw], ['anBw', S.bw], ['goalIn', S.goal], ['anGoal', S.goal]];
+  const pairs = [['bw', S.bw], ['goalIn', S.goal]];
+  if (!setupFresh) pairs.push(['anBw', S.bw], ['anGoal', S.goal]);
   pairs.forEach(([id, v]) => {
     const el = $(id);
     if (el && document.activeElement !== el) el.value = v ?? '';
@@ -5409,40 +5559,62 @@ function paintChart() {
   pace(pts);
 }
 
-/* Коридор набора берём как 0,25–0,5% массы тела в неделю: при 70 кг это
-   0,18–0,35 кг, а не фиксированные 0,3–0,5, которые для лёгкого человека
-   уже верх коридора и тянут за собой жир. */
-function paceRange() {
+/* Коридоры темпа — в долях массы тела, по исследованиям:
+   набор 0,25–0,5 % в неделю (Iraki 2019, Helms): быстрее мышц почти не
+   прибавляет, а жира заметно больше; снижение 0,5–1,0 % (обзор Ruiz-Castellano
+   2021): медленнее мышцы держатся лучше — 0,7 % сохранило их, 1,4 % нет
+   (Garthe 2011). Удержание — ±0,25 %. Сила коридора: в кг/нед со знаком. */
+function paceRange(dir) {
   const bw = num(S.bw) || startW();
-  return [bw * 0.0025, bw * 0.005];
+  if (dir === undefined) dir = goalDir();
+  return dir > 0 ? [bw * 0.0025, bw * 0.005]
+    : dir < 0 ? [-bw * 0.01, -bw * 0.005] : [-bw * 0.0025, bw * 0.0025];
 }
-
-// темп набора за последние три недели
-function pace(pts) {
-  const el = $('whint'), last = pts[pts.length - 1];
+/* Темп — наклон прямой по всем взвешиваниям за три недели, а не разница двух
+   крайних: утренний вес скачет на 1–2 кг от воды, и два замера врут. */
+function paceOf(pts) {
+  if (!pts.length) return null;
+  const last = pts[pts.length - 1];
   const cut = at(last[0]); cut.setDate(cut.getDate() - 21);
   const win = pts.filter(p => at(p[0]) >= cut);
-  if (win.length < 2) {
+  if (win.length < 2) return null;
+  const days = daysBetween(win[0][0], last[0]);
+  if (!days) return null;
+  const xs = win.map(p => daysBetween(win[0][0], p[0])), ys = win.map(p => num(p[1]));
+  const mx = xs.reduce((a, b) => a + b, 0) / xs.length, my = ys.reduce((a, b) => a + b, 0) / ys.length;
+  let sxy = 0, sxx = 0;
+  xs.forEach((x, i) => { sxy += (x - mx) * (ys[i] - my); sxx += (x - mx) * (x - mx); });
+  return { per: sxx ? sxy / sxx * 7 : 0, days: days };
+}
+/* Поправка калорий по разрыву с серединой коридора: 1 кг/нед ≈ 7700 ккал,
+   то есть ~1100 ккал в день. Шаг не меньше 100 и не больше 400 — дальше
+   проверка через две недели, по среднему весу. */
+function kcalFix(per) {
+  const [lo, hi] = paceRange();
+  const gap = (lo + hi) / 2 - per;
+  const k = Math.min(400, Math.max(100, Math.round(Math.abs(gap) * 1100 / 50) * 50));
+  return { k: k, add: gap > 0 };
+}
+
+// темп за последние три недели — в сторону цели, какой бы она ни была
+function pace(pts) {
+  const el = $('whint'), p = paceOf(pts);
+  if (!p) {
     el.className = 'hint';
     el.textContent = 'Записей мало для оценки темпа — отмечай вес раз в неделю.';
     return;
   }
-  const days = daysBetween(win[0][0], last[0]) || 1;
-  const per = (last[1] - win[0][1]) / days * 7;
-  const v = dec(per, 2);
+  const per = p.per, v = (per > 0 ? '+' : '') + dec(per, 2);
   const [lo, hi] = paceRange();
-  const corridor = dec(lo, 2) + '–' + dec(hi, 2) + ' кг/нед';
-  if (per < lo * 0.6) {
+  const corridor = dec(lo, 2) + '…' + dec(hi, 2) + ' кг/нед';
+  const fx = kcalFix(per);
+  const fix = (fx.add ? 'Добавь ' : 'Убери ') + fx.k + ' ккал в день и проверь через две недели.';
+  if (per < lo - Math.abs(lo) * 0.3 || per > hi + Math.abs(hi) * 0.3) {
     el.className = 'hint warn';
-    el.innerHTML = 'Темп <b>' + v + ' кг/нед</b> при коридоре ' + corridor +
-      ' — мало. Добавь 300 ккал в день и проверь через две недели.';
-  } else if (per > hi * 1.3) {
-    el.className = 'hint warn';
-    el.innerHTML = 'Темп <b>+' + v + ' кг/нед</b> при коридоре ' + corridor +
-      ' — быстро, лишнее уходит в жир. Убери 200–300 ккал.';
+    el.innerHTML = 'Темп <b>' + v + ' кг/нед</b> при коридоре ' + corridor + '. ' + fix;
   } else {
     el.className = 'hint good';
-    el.innerHTML = 'Темп <b>+' + v + ' кг/нед</b> — в коридоре ' + corridor + '. Так и держи.';
+    el.innerHTML = 'Темп <b>' + v + ' кг/нед</b> — в коридоре ' + corridor + '. Так и держи.';
   }
 }
 
@@ -5831,6 +6003,7 @@ $('exp').addEventListener('click', async () => {
     a.download = 'sistema-' + today() + '.json';
     document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    S.bkAt = Date.now(); save();          // от этой даты считается напоминание о копии
     note('Копия готова — сохрани в «Файлы»');
   } catch (e) { note('Не удалось создать копию'); }
 });
@@ -5926,28 +6099,59 @@ function paintPlan() {
 /* =========================================================================
    ПЕРВИЧНАЯ НАСТРОЙКА ВЕСОВ
    ========================================================================= */
+/* Новый человек не должен получить чужие цифры: на самом первом запуске
+   поля пустые, в подсказках — типичные значения. */
+function freshStart() { return !S.setup && !S.anchors && !Object.keys(S.rec || {}).length; }
 function openSetup() {
+  const a = S.anchors || {}, fresh = freshStart();
+  setupFresh = fresh;          // до синхронизации: прошлое окно могли закрыть мимо closeSetup
   syncBwFields();
-  const a = S.anchors || {};
   $('setupRows').innerHTML = ANCHORS.map(([k, label, def]) =>
     `<div class="srow"><span>${label}</span>
-      <input id="an-${k}" inputmode="decimal" value="${esc(a[k] ?? def)}" aria-label="${label}"><i>кг</i></div>`).join('');
-  $('anH').value = S.height || 177;
+      <input id="an-${k}" inputmode="decimal" value="${fresh ? '' : esc(a[k] ?? def)}" placeholder="${def}" aria-label="${label}"><i>кг</i></div>`).join('');
+  $('anH').value = fresh ? '' : (S.height || 177);
+  $('anAge').value = fresh ? '' : (S.age || '');
+  paintSex();
+  // Пока первая настройка открыта, сквозная синхронизация не возвращает
+  // в пустые поля значения по умолчанию. Состояние при этом не трогаем.
+  if (fresh) { $('anBw').value = ''; $('anGoal').value = ''; }
   $('setRet').checked = !!S.returning;
-  paintDir($('anDir'), num($('anGoal').value) >= (num($('anBw').value) || 70));
+  paintDir($('anDir'), fresh || num($('anGoal').value) >= (num($('anBw').value) || 70));
   $('setup').classList.add('on');
 }
-function closeSetup() { $('setup').classList.remove('on'); }
+function closeSetup() { setupFresh = false; $('setup').classList.remove('on'); }
+function paintSex() {
+  $('anSex').querySelectorAll('[data-sex]').forEach(b => b.classList.toggle('on', b.dataset.sex === (S.sex || 'm')));
+}
+$('anSex').addEventListener('click', e => {
+  const b = e.target.closest('[data-sex]'); if (!b) return;
+  S.sex = b.dataset.sex; applyNutri(); save(); paintSex();
+});
+$('anAge').addEventListener('input', e => { S.age = e.target.value; applyNutri(); save(); });
 
 $('setOk').addEventListener('click', async () => {
   const first = !S.setup;          // первый запуск задаёт и точку отсчёта квеста
+  // вес человека обязателен: от него считаются нормы еды и осторожный старт
+  const bw = num($('anBw').value);
+  if (!bw) { note('Впиши свой вес — от него считаются нормы'); $('anBw').focus(); return; }
+  // цель не вписана — значит «держать как есть»
+  if (!num($('anGoal').value)) {
+    $('anGoal').value = String(bw);
+    $('anGoal').dispatchEvent(new Event('input', { bubbles: true }));
+  }
   const a = {};
   ANCHORS.forEach(([k]) => { a[k] = num($('an-' + k).value); });
-  if (!a.b && !a.s && !a.d) { note('Впиши хотя бы один вес'); return; }
+  /* Свои веса не знает — осторожный старт от веса тела: половина на жиме,
+     0,6 на приседе и 0,7 на тяге, по сетке 2,5 кг. */
+  if (!a.b && !a.s && !a.d) {
+    const r25 = v => Math.max(20, Math.round(v / 2.5) * 2.5);
+    a.b = r25(bw * 0.5); a.s = r25(bw * 0.6); a.d = r25(bw * 0.7);
+  }
   S.anchors = a;
   S.height = num($('anH').value) || 177;
+  if (num($('anAge').value)) S.age = $('anAge').value;
+  S.sex = S.sex || 'm';
   // вес и цель уже записаны сквозными полями; здесь остаётся только точка отсчёта
-  const bw = num($('anBw').value);
   // На первом запуске вес из настройки и есть точка отсчёта. Позже её не трогаем:
   // повторный пересчёт весов не должен обнулять пройденный путь квеста.
   if (bw && (first || !num(S.bw0))) S.bw0 = String(bw);
@@ -5996,7 +6200,8 @@ const SKINS = [
 const DICT = {
   sl: {
     hero: 'Охотник', rank: 'РАНГ', level: 'Уровень', xp: 'XP', lvup: 'УРОВЕНЬ ПОВЫШЕН',
-    ranks: ['E', 'D', 'C', 'B', 'A', 'S'],
+    ranks: ['E', 'D', 'C', 'B', 'A', 'S', 'НАЦ. УРОВЕНЬ'],
+    jobs: ['Пробуждённый', 'Охотник', 'Некромант', 'Монарх теней'], jobup: 'СМЕНА КЛАССА',
     quest: 'Квест дня', reward: 'Награда', done: 'Выполнено',
     progress: 'Прогресс', journal: 'Журнал', cycle: 'Цикл',
     gym: 'Зал', food: 'Еда', photo: 'Фото',
@@ -6005,7 +6210,8 @@ const DICT = {
   },
   ber: {
     hero: 'Поход', rank: '', level: 'Ступень', xp: 'Опыт', lvup: 'НОВАЯ СТУПЕНЬ',
-    ranks: ['Новобранец', 'Наёмник', 'Воин', 'Ветеран', 'Капитан', 'Чёрный мечник'],
+    ranks: ['Новобранец', 'Боец', 'Рубака', 'Ветеран', 'Рейдер', 'Клеймённый', 'Берсерк'],
+    jobs: ['Сирота', 'Наёмник', 'Ястреб', 'Чёрный мечник'], jobup: 'НОВАЯ ЭПОХА',
     quest: 'Сегодня', reward: 'Добыто', done: 'Сделано',
     progress: 'Летопись', journal: 'Летопись', cycle: 'Круг',
     gym: 'Зал', food: 'Еда', photo: 'Фото',
@@ -6017,7 +6223,8 @@ const skinNow = () => (document.documentElement.dataset.skin === 'ber' ? 'ber' :
 const T = k => (DICT[skinNow()] || DICT.sl)[k] ?? (DICT.sl[k] ?? k);
 // «РАНГ C» в первой теме и «Ветеран» во второй: приставка там пустая,
 // иначе выходила склейка вроде «КЛЕЙМО E» — слова из разных тем в одной строке
-const rankTitle = lv => (T('rank') ? T('rank') + ' ' : '') + rankOf(lv);
+// «РАНГ E», но «НАЦ. УРОВЕНЬ» без приставки: такой ранг — уже имя, а не буква
+const rankTitle = lv => { const r = rankOf(lv); return (T('rank') && r.length <= 2 ? T('rank') + ' ' : '') + r; };
 
 /* Переключение темы НИЧЕГО не перерисовывает. Это принципиально: сменить
    оформление можно посреди любого незаконченного действия — с набранным
@@ -6042,6 +6249,7 @@ function applyTheme(id) {
    не годится: тема меняется посреди набора, поля трогать нельзя. */
 function paintNamed() {
   try { $('st8rank').textContent = rankTitle(levelOf()); } catch (e) {}
+  try { $('st8job').textContent = jobOf(levelOf()); } catch (e) {}
   try { $('cycPh').textContent = cycLabel(); } catch (e) {}
   try { if (tab === 'prog') cal(); } catch (e) {}
 }
@@ -7975,14 +8183,12 @@ function analyze() {
         ' кг. Разбор считается по старой цифре.',
         'Обнови вес');
     }
-    const cut = at(last[0]); cut.setDate(cut.getDate() - 21);
-    const win = pts.filter(p => at(p[0]) >= cut);
-    if (win.length > 1) {
-      const dd = daysBetween(win[0][0], last[0]) || 1;
-      const per = (last[1] - win[0][1]) / dd * 7;
+    const pc = paceOf(pts);
+    if (pc) {
+      const dd = pc.days, per = pc.per;
       // цель может быть и ниже текущего веса: тогда «правильное» направление
-      // это минус, и коридор темпа тот же, но с обратным знаком
-      const goal = num(S.goal) || 95;
+      // это минус, и коридор — свой, 0,5–1 % массы в неделю
+      const goal = num(S.goal) || num(S.bw) || last[1];
       const left = goal - last[1];
       const dn = goalDir() < 0;
       const toward = dn ? -per : per;              // движение в сторону цели
@@ -7990,29 +8196,29 @@ function analyze() {
       // выходило «Снижение +0,40 кг/нед» — прибавку называли снижением.
       const word = per > 0.005 ? 'Прирост' : per < -0.005 ? 'Снижение' : 'Вес';
       const sh = v => (v > 0 ? '+' : '') + dec(v, 2);
-      if (toward < -0.1) {
+      // коридор в сторону цели, по модулю: набор 0,25–0,5 %, снижение 0,5–1 %
+      const rg = paceRange(dn ? -1 : 1);
+      const cLo = Math.abs(dn ? rg[1] : rg[0]), cHi = Math.abs(dn ? rg[0] : rg[1]);
+      const cor = 'коридора ' + dec(cLo, 2) + '–' + dec(cHi, 2);
+      const fx = kcalFix(per), fixTxt = (fx.add ? 'Добавь ' : 'Убери ') + fx.k + ' ккал в день';
+      if (toward < -cLo * 0.5) {
         // вес не стоит — он уходит от цели, и это разные вещи
         add('bad', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> за ' + dd + ' дн: вес идёт ' +
           'в сторону, обратную цели ' + goal + ' кг.',
-          dn ? 'Убери 400 ккал в день и взвесься через 7 дней'
-             : 'Добавь 400 ккал в день и взвесься через 7 дней');
-      } else if (toward < 0.1) {
+          fixTxt + ' и взвесься через 7 дней');
+      } else if (toward < cLo * 0.5) {
         add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> за ' + dd + ' дн. Вес стоит на месте.',
-          dn ? 'Убери 300 ккал в день, проверка через 14 дней'
-             : 'Добавь 300 ккал в день, проверка через 14 дней');
-      } else if (toward > 0.7) {
-        add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> — быстрее коридора 0,3–0,5. ' +
+          fixTxt + ', проверка через 14 дней');
+      } else if (toward > cHi * 1.4) {
+        add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> — быстрее ' + cor + '. ' +
           (dn ? 'На такой скорости вместе с жиром уходят мышцы.' : 'Избыток уходит в жировую массу.'),
-          dn ? 'Добавь 200–300 ккал в день' : 'Убери 200–300 ккал в день');
+          fixTxt);
       } else {
-        // Коридор называется в соседних ветках — 0,3–0,5. Раньше сюда
-        // попадало и 0,15, и 0,65, и всё это звалось «в границах нормы»,
-        // споря с собственной подписью.
-        const slow = toward < 0.3, fast = toward > 0.5;
+        const slow = toward < cLo, fast = toward > cHi;
         // цель может быть уже позади: «остаётся 1 кг» при перелёте — враньё
         const past = dn ? left > 0 : left < 0;
-        const how = slow ? 'медленнее коридора 0,3–0,5, но вес идёт в нужную сторону'
-          : fast ? 'чуть быстрее коридора 0,3–0,5' : 'в коридоре 0,3–0,5';
+        const how = slow ? 'медленнее ' + cor + ', но вес идёт в нужную сторону'
+          : fast ? 'чуть быстрее ' + cor : 'в ' + cor.replace('коридора', 'коридоре');
         const when = past
           ? 'Цель ' + goal + ' кг уже пройдена на ' + dec(Math.abs(left)) + ' кг.'
           : 'До цели ' + goal + ' кг остаётся ' + dec(Math.abs(left)) + ' кг, расчётный срок <b>' +
@@ -8363,6 +8569,33 @@ render();
 
 // при первом запуске спрашиваем рабочие веса: без них проценты цикла не от чего считать
 if (!S.setup) setTimeout(openSetup, 700);
+
+/* Напоминание о копии. Данные живут только в телефоне, а iOS может их
+   стереть. Есть что терять (три тренировки и больше), копии не было три
+   недели — предлагаем сохранить одним нажатием, не чаще раза в неделю.
+   Условие проверяется сразу при запуске, а не по таймеру. */
+(function () {
+  const DAY = 864e5, now = Date.now();
+  const wos = Object.values(S.rec || {}).filter(r => r && r.wo).length;
+  if (!S.setup || wos < 3) return;
+  if (now - (S.bkAt || 0) < 21 * DAY || now - (S.bkAsk || 0) < 7 * DAY) return;
+  setTimeout(async () => {
+    S.bkAsk = Date.now(); save();
+    if (await ask('Копии прогресса не было больше трёх недель. Данные живут только в этом телефоне — сохранить копию сейчас?', 'СОХРАНИТЬ')) $('exp').click();
+  }, 2500);
+})();
+
+/* Сбой в коде не должен выглядеть как молча сломанное приложение и не
+   должен уносить несохранённое: сначала пишем на диск, потом говорим. */
+let errShown = false;
+function onCrash() {
+  try { flush(); } catch (e) { /* пишем, что успели */ }
+  if (errShown) return;
+  errShown = true;
+  try { note('Что-то пошло не так. Данные сохранены — перезапусти приложение'); } catch (e) { }
+}
+window.addEventListener('error', onCrash);
+window.addEventListener('unhandledrejection', onCrash);
 
 // Программу дописали в обновлении — говорим об этом один раз, а не молча
 if (S.mig15note) {

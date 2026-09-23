@@ -18,8 +18,10 @@ const { LAUNCH, APP } = require('../env');
     ok('в словаре одинаковый набор ключей',
        ka.length===kb.length && ka.every(k=>kb.includes(k)),
        'только sl: '+ka.filter(k=>!kb.includes(k))+' | только ber: '+kb.filter(k=>!ka.includes(k)));
-    ok('ступеней поровну в обеих темах', DICT.sl.ranks.length===6 && DICT.ber.ranks.length===6,
-       DICT.sl.ranks.length+' и '+DICT.ber.ranks.length);
+    // седьмая ступень — «Национальный уровень» / «Берсерк» (сентябрь 2026)
+    ok('ступеней поровну в обеих темах', DICT.sl.ranks.length===RANKS.length && DICT.ber.ranks.length===RANKS.length
+       && DICT.sl.jobs.length===JOBS.length && DICT.ber.jobs.length===JOBS.length,
+       DICT.sl.ranks.length+' и '+DICT.ber.ranks.length+' при '+RANKS.length+' порогах');
     ok('названия ступеней не пересекаются между темами',
        !DICT.sl.ranks.some(r=>DICT.ber.ranks.includes(r)), 'есть общие');
     // ни одно слово первой темы не должно всплыть во второй
@@ -34,7 +36,7 @@ const { LAUNCH, APP } = require('../env');
 
     /* ---------- ступени и опыт ---------- */
     ok('уровень считается от опыта', levelOf()===Math.floor(S.xp/PER)+1, 'levelOf='+levelOf());
-    const thr=[[1,0],[4,0],[5,1],[9,1],[10,2],[16,2],[17,3],[25,3],[26,4],[39,4],[40,5],[99,5]];
+    const thr=[[1,0],[4,0],[5,1],[9,1],[10,2],[16,2],[17,3],[25,3],[26,4],[39,4],[40,5],[59,5],[60,6],[99,6]];
     ok('пороги ступеней не сбились', thr.every(([l,i])=>rankIdx(l)===i),
        thr.filter(([l,i])=>rankIdx(l)!==i).map(([l,i])=>'ур '+l+' даёт '+rankIdx(l)+', ждали '+i).join('; '));
     ok('ступень ниже первой не ломается', rankIdx(0)===0 && rankOf(0)===DICT.sl.ranks[0], 'rankIdx(0)='+rankIdx(0));
