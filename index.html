@@ -2636,7 +2636,8 @@ body.rd-enter .chip:nth-child(7),body.rd-enter #exl>:nth-child(7),body.rd-enter 
 body.rd-enter #exl>:nth-child(n+8),body.rd-enter .scr.on>:nth-child(n+8){animation-delay:.28s}
 body.rd-enter .chip.on{animation:rd-rise .45s cubic-bezier(.2,.8,.2,1) both,rd-glow 2.8s ease-in-out .5s infinite}
 body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7s linear infinite}
-@keyframes rd-rise{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+/* без масштаба: уменьшенная кнопка посреди анимации мерилась как 43×43 */
+@keyframes rd-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
