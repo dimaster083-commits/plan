@@ -2375,6 +2375,8 @@ h2.sec{font-family:var(--fn);font-size:10.5px;letter-spacing:.16em;border-left:0
   background:var(--s1);border:1.5px solid var(--ln)}
 .setr .rbx input:focus{border-color:var(--acc);box-shadow:0 0 0 4px var(--acc-soft);background:var(--s3)}
 .setr .rbx.hit input{background:var(--hot-soft);border-color:var(--hot-ln);color:var(--hot-tx)}
+/* подставленное из прошлого раза — пунктиром, своё — сплошной рамкой */
+.setr .rbx.auto input{border-style:dashed;color:var(--ink2);background:transparent}
 .setr .sg{font-weight:600}
 .setr .sg b{color:var(--hot-tx)}
 
@@ -2479,6 +2481,7 @@ body.exopen{padding-bottom:calc(var(--tabh) + var(--sb) + 30px)}
 .supp .row{border-radius:var(--r-m);transition:background .2s,border-color .2s}
 .row .box{border-radius:10px}
 .row.on{background:var(--hot-soft);border-color:var(--hot-ln)}
+.qskip{display:block;width:100%;margin-top:10px}
 /* кнопки «одним нажатием»: повторить рацион, принять все добавки */
 .cplast{display:block;width:100%;margin:0 0 9px}
 .spall{display:block;width:100%;margin:6px 0 10px;border-style:solid;border-color:var(--hot-ln);color:var(--hot-tx)}
@@ -2594,6 +2597,8 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
       <div class="qprog"><i id="qpf"></i></div>
       <div class="qmeta"><span id="qCnt">—</span><span id="qRew">—</span></div>
       <div class="qpen" id="qPen">Пропуск сбрасывает серию недель</div>
+      <!-- не пошёл в зал — день закрывается одним нажатием, серия недель цела -->
+      <button class="add qskip" id="skipDay" hidden>Пропуск</button>
     </div>
     <div id="exl"></div>
     <button class="add" id="addEx">+ Упражнение</button>
@@ -2775,7 +2780,10 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
     <button class="add" id="recalc" style="margin-top:12px">Пересчитать веса</button>
   </div>
 
-  <input type="file" id="impFile" accept="application/json,.json" hidden>
+  <!-- Без фильтра по типу: на iPhone копия из Telegram или почты часто
+       приходит без типа JSON и в выборе файла была серой. Годится ли файл,
+       проверяет сам разбор копии. -->
+  <input type="file" id="impFile" hidden>
   </div><!-- /prog -->
 </section>
 
@@ -3980,7 +3988,7 @@ function paintStatus() {
 // точка на вкладке «Зал», пока сегодняшняя тренировка не закрыта
 function paintBadge() {
   const t = today();
-  const need = dayOf(t).t !== 'rest' && !recOf(t).wo;
+  const need = dayOf(t).t !== 'rest' && !recOf(t).wo && !recOf(t).skip;
   $('bdg-wo').hidden = !need;
 }
 
@@ -4108,7 +4116,12 @@ function paintWorkout() {
     $('qRew').innerHTML = r.wo ? 'закрыта' : '';
     const pen = $('qPen');
     if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'Тренировка закрыта'; }
+    else if (r.skip) { pen.className = 'qpen done'; pen.textContent = 'День пропущен — серия недель цела'; }
     else { pen.className = 'qpen'; pen.textContent = 'Пропуск сбрасывает серию недель'; }
+    // «Пропуск» есть, пока в дне не закрыто ни одного подхода
+    const sk = $('skipDay');
+    sk.hidden = r.wo || doneCnt > 0 || sel > today() || !d.ex.length;
+    sk.textContent = r.skip ? 'Вернуть день' : 'Пропуск';
     const IN = intOf(sel, d.t);
     // Открытое упражнение занимает весь экран, закрытое — строка списка.
     // Разметка карточки та же самая, поэтому все обработчики ввода,
@@ -4171,6 +4184,14 @@ function paintJournal() {
 }
 
 $('editPast').addEventListener('click', () => { editPast = true; render(); });
+
+// Пропуск дня: без опыта, но и без сброса серии недель. Повторное нажатие возвращает день.
+$('skipDay').addEventListener('click', () => {
+  const r = recRW(sel);
+  if (r.skip) delete r.skip; else r.skip = 1;
+  save(); render();
+  note(r.skip ? 'День пропущен — серия недель цела' : 'День снова в плане');
+});
 
 /* Листание вбок между упражнениями. Порог в 48 px, чтобы не срабатывало
    при обычном нажатии, и проверка на вертикаль — страница должна
@@ -4371,7 +4392,7 @@ function purgeExercise(name) {
     });
     // день без единой отметки и без отметки о тренировке больше не нужен
     const r = S.rec[ds];
-    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw) delete S.rec[ds];
+    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw && !r.skip) delete S.rec[ds];
   });
   delete S.pr[name];
   recomputeStats(1);
@@ -4414,6 +4435,18 @@ $('exl').addEventListener('input', ev => {
   const top = e ? topRep(rF2 && String(rF2.value).trim() ? rF2.value : e.r) : 0;
   const lab = inp.closest('.rbx');
   if (lab) lab.classList.toggle('hit', !!top && num(inp.value) >= top);
+  /* Вписал число сам — клетка своя. Все следующие пустые или подставленные
+     клетки получают то же число: 10 в первом подходе — 10 и в остальных. */
+  inp.dataset.auto = '';
+  if (lab) lab.classList.remove('auto');
+  if (!ev.isTrusted || !String(inp.value).trim()) return;
+  const all = [...card.querySelectorAll('[data-rs]')];
+  all.slice(all.indexOf(inp) + 1).forEach(nx => {
+    if (String(nx.value).trim() && nx.dataset.auto !== '1') return;
+    nx.value = inp.value; nx.dataset.auto = '1';
+    const lb = nx.closest('.rbx');
+    if (lb) { lb.classList.add('auto'); lb.classList.toggle('hit', !!top && num(nx.value) >= top); }
+  });
 });
 
 // Подходы и повторы меняются прямо в карточке: блок под ними должен
@@ -4441,9 +4474,19 @@ function repBoxes(e, g, sets, prev, keep, repsRaw) {
   // пустое поле «ПОДХ» — это ещё не «один подход»: пока человек стирает
   // число, коробки не должны схлопываться в одну. Берём план упражнения.
   const n = Math.max(1, Math.min(12, num(sets) || num(e.s) || 1));
-  const cur = keep || g.rs || null;
   const prs = prev && prev.rs && prev.rs.length ? prev.rs : null;
   const ng = prs ? nextGoal(prs, top, n) : null;
+  /* Упражнение уже делалось — клетки сразу заполнены сегодняшней целью:
+     прошлый результат плюс повтор по двойной прогрессии. Закрыл подход,
+     ничего не трогая, — записано «сделал по плану». Подставленное
+     показано приглушённо, чтобы было видно, где число своё. */
+  let auto = false;
+  let cur = keep || g.rs || null;
+  if (!cur && !g.done && prs && top) {
+    const base = ng || prs.slice(0, n).map(v => Math.min(num(v), top));
+    while (base.length < n) base.push(base.length ? base[base.length - 1] : top);
+    cur = base; auto = true;
+  }
 
   let out = '<div class="sh"><span>ПОВТОРЫ В КАЖДОМ ПОДХОДЕ</span>' +
     (top ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
@@ -4451,8 +4494,8 @@ function repBoxes(e, g, sets, prev, keep, repsRaw) {
   for (let i = 0; i < n; i++) {
     const v = cur && cur[i] !== undefined && cur[i] !== null ? cur[i] : '';
     const hit = top && num(v) >= top ? ' hit' : '';
-    out += '<label class="rbx' + hit + '"><i>' + (i + 1) + '</i>' +
-      '<input inputmode="numeric" data-rs="' + i + '" value="' + esc(v) +
+    out += '<label class="rbx' + hit + (auto ? ' auto' : '') + '"><i>' + (i + 1) + '</i>' +
+      '<input inputmode="numeric" data-rs="' + i + '"' + (auto ? ' data-auto="1"' : '') + ' value="' + esc(v) +
       '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + '"></label>';
   }
   out += '</div>';
@@ -4540,6 +4583,29 @@ function unbumpWorking(log) {
     if (fx) e.fixed = 1; else delete e.fixed;
   });
   delete log.bump;
+  // цель по повторам откатывается тем же журналом
+  (log.rbump || []).slice().reverse().forEach(([di, ei, r0]) => {
+    const e = ((S.days[di] || {}).ex || [])[ei];
+    if (e) e.r = r0;
+  });
+  delete log.rbump;
+}
+
+/* Цель по повторам тоже принадлежит программе. Поменял в карточке 6-8 на 10 —
+   во всех днях с этим упражнением цель становится 10, и двойная прогрессия
+   дальше считается от неё. Прежние значения — в журнал подхода, для отката. */
+const REPS_OK = /^\s*\d{1,3}(\s*[-–]\s*\d{1,3})?\s*$/;
+function setReps(name, r, log) {
+  if (!name || !REPS_OK.test(String(r ?? ''))) return 0;
+  const want = String(r).trim().replace('–', '-').replace(/\s+/g, '');
+  const undo = [];
+  S.days.forEach((d, di) => (d.ex || []).forEach((e, ei) => {
+    if (e.n !== name || String(e.r) === want) return;
+    undo.push([di, ei, e.r]);
+    e.r = want;
+  }));
+  if (undo.length && log) log.rbump = (log.rbump || []).concat(undo);
+  return undo.length;
 }
 
 function toggleSet(j) {
@@ -4584,19 +4650,13 @@ function toggleSet(j) {
   l.sd = 1;                                   // множитель сторон уже учтён
   if (g && S.vol[g] !== undefined) S.vol[g] += l.vol;
 
-  /* Поднял больше, чем стоит в программе, — программа запоминает это сама,
-     во всех следующих днях, без единого нажатия. Но рабочий вес — это вес,
-     с которым сделан весь диапазон, а не разовый подход: 55 кг на три
-     повтора при цели 6-8 раньше становились рабочими, и дальше программа
-     требовала 55 на шесть. Теперь такой подход идёт в рекорды, а рабочий
-     вес остаётся прежним. */
-  const botAim = botRep(pick(l.r, p.r));
-  const rsDone = (l.rs || []).slice(0, sets).map(num);
-  // Пустая клетка повторов — это «не записал», а не «не смог»: судим только
-  // тогда, когда записаны все подходы.
-  const rsKnown = sets > 0 && rsDone.length >= sets && rsDone.every(v => v > 0);
-  const holds = !botAim || !rsKnown || rsDone.every(v => v >= botAim);
-  const raised = holds ? bumpWorking(p.n, w, l) : 0;
+  /* Поднял вес или поменял цель по повторам — программа запоминает это
+     сама, во всех следующих днях с этим упражнением, без единого нажатия.
+     Решение владельца: поднятый вес становится рабочим, даже если низ
+     диапазона в этот раз не добран. Не потянет — через два провала подряд
+     maybeRegress вернёт вес на шаг назад. Снятая отметка откатывает всё. */
+  setReps(p.n, l.r, l);
+  const raised = bumpWorking(p.n, w, l);
 
   const old = num(S.pr[p.n]);
   if (w > 0 && w > old) { l.prevPr = old; S.pr[p.n] = w; }
@@ -4611,6 +4671,7 @@ function toggleSet(j) {
   if (raised) note('Рабочий вес: ' + p.n + ' → ' + kg(w) + ' кг');
 
   if (!r.t0) r.t0 = Date.now();          // засечка начала тренировки
+  delete r.skip;                           // всё-таки пришёл — день больше не пропущен
   // строка только что закрытого подхода вспыхивает — один раз, в этой отрисовке
   justDone = j; save(); render(); justDone = -1;
   syncWake();
@@ -5541,7 +5602,8 @@ $('histMore').addEventListener('click', () => { histLimit += 20; paintHistory();
 function streak() {
   const cnt = {};
   Object.keys(S.rec).forEach(d => {
-    if (!S.rec[d] || !S.rec[d].wo) return;
+    // пропущенный кнопкой день серию не рвёт: он считается как закрытый
+    if (!S.rec[d] || !(S.rec[d].wo || S.rec[d].skip)) return;
     const m = mondayOf(d);
     if (m) cnt[m] = (cnt[m] || 0) + 1;
   });
