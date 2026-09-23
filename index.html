@@ -2127,6 +2127,398 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 .bkb button.hi{background:var(--acc-fill);color:var(--onacc);border-color:var(--acc-fill)}
 .ld .v b{font-family:var(--fn)}
 
+/* =========================================================================
+   РЕДИЗАЙН 2026
+   Последний слой: токены обеих тем, форма карточек и движение. Разметка и
+   логика не тронуты — правила ниже только перекрашивают и оживляют уже
+   существующие элементы. Анимации идут по transform и opacity: их считает
+   видеочип, прокрутку они не тормозят. Имена ключевых кадров начинаются
+   с rd-, чтобы не пересечься с прежними rise, pop и pulse.
+   ========================================================================= */
+@font-face{font-family:'Manrope';font-style:normal;font-weight:500 800;font-display:swap;src:url('./font/manrope-var-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:500 800;font-display:swap;src:url('./font/manrope-var-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Unbounded';font-style:normal;font-weight:500 800;font-display:swap;src:url('./font/unbounded-var-cyrillic.woff2') format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Unbounded';font-style:normal;font-weight:500 800;font-display:swap;src:url('./font/unbounded-var-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+/* угол бегущего контура вокруг главной карточки */
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+
+:root{--tabh:64px}
+
+/* ---------- СИСТЕМА: окна Системы из «Поднятия уровня в одиночку» ----------
+   Электрический синий с голубым свечением на почти чёрной синеве — так
+   выглядят окна Системы в аниме. Второй цвет — фиолетовая аура Монарха
+   теней: пятна фона и вспышка на бегущем контуре. «Сделано» и прогресс
+   светятся голубым, как текст самой Системы. */
+:root, :root[data-skin="sl"]{
+  --s0:#030712; --s1:rgba(7,16,36,.95); --s2:rgba(46,139,255,.1); --s3:rgba(46,139,255,.2);
+  --btn:rgba(9,20,44,.95); --panel-solid:#071024;
+  --ln:rgba(110,190,255,.18); --ln2:rgba(110,190,255,.36);
+  --ink:#EAF6FF; --ink2:#BFD9F2; --ink3:#8FAECF;
+  --acc:#2E8BFF; --acc-2:#7CC8FF; --acc-fill:#1F6FE5; --acc-soft:rgba(46,139,255,.2);
+  --acc-ink:#BFE3FF; --onacc:#FFFFFF;
+  /* второй акцент — «сделано» и прогресс: голубое свечение Системы */
+  --hot:#5CE1FF; --hot-ink:#03101F; --hot-tx:#8BEBFF;
+  --hot-soft:rgba(92,225,255,.09); --hot-ln:rgba(92,225,255,.45);
+  --ok:#8BEBFF; --ok-soft:rgba(92,225,255,.09); --ok-ln:rgba(92,225,255,.4);
+  --mon:#8A5CFF;
+  --glass:rgba(3,7,18,.8); --glass2:rgba(7,16,36,.86);
+  /* дни недели и группы мышц — из той же синевы, руки — аурой Монарха */
+  --c-rest:#26324A; --c-other:#6F8FB8;
+  --c-up:#7CC8FF; --c-up-ink:#03101F; --c-lo:#2E8BFF; --c-lo-ink:#FFFFFF;
+  --c-back:#1F6FE5; --c-chest:#2E8BFF; --c-delts:#7CC8FF; --c-legs:#BFE3FF;
+  --c-arms:#8A5CFF; --c-abs:#5CE1FF;
+  --tint:46,139,255;
+  --r-s:12px; --r-m:18px; --r-l:24px; --r-x:28px;
+  --glow-r:26px; --glow-c:rgba(139,92,246,.26); --glow-t:none;
+  --shacc:0 14px 34px -10px rgba(31,111,229,.7);
+  --f:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --fd:'Unbounded','Manrope',sans-serif;
+  --fn:'JetBrains Mono',ui-monospace,'SF Mono',monospace;
+  --caps:none; --track:0; --wt:600; --wtd:800;
+  --grain-op:.05;
+  --sheen:linear-gradient(160deg,rgba(124,200,255,.07),transparent 42%);
+  --edge-a:rgba(46,139,255,.16); --edge-b:#2E8BFF; --edge-c:#9D7BFF;
+  --bar2:linear-gradient(90deg,#2E8BFF,#5CE1FF);
+  --glow-sys:0 0 18px rgba(46,139,255,.55);
+  --wall:none;
+  --wall-dim:radial-gradient(75% 40% at 50% -4%,rgba(31,111,229,.42),transparent 70%),
+    radial-gradient(60% 36% at 0% 48%,rgba(138,92,255,.16),transparent 70%),
+    radial-gradient(90% 42% at 60% 106%,rgba(88,50,200,.34),transparent 70%);
+  --glow:rgba(31,111,229,.16);
+}
+
+/* ---------- КЛЕЙМО: Клеймо жертвы из «Берсерка» ----------
+   Чёрное железо, кость и запёкшаяся кровь. Акцент — тёмно-красный, как
+   кровоточащее клеймо; угли внизу экрана тлеют красным. */
+:root[data-skin="ber"]{
+  --s0:#0B0A0A; --s1:rgba(20,17,16,.95); --s2:rgba(230,220,204,.06); --s3:rgba(230,220,204,.12);
+  --btn:rgba(26,22,21,.95); --panel-solid:#141110;
+  --ln:rgba(230,220,204,.11); --ln2:rgba(230,220,204,.22);
+  --ink:#ECE4D6; --ink2:#CBC1B2; --ink3:#A3998C;
+  --acc:#C0282D; --acc-2:#E5655A; --acc-fill:#A61B1F; --acc-soft:rgba(192,40,45,.16);
+  --acc-ink:#EC7A6E; --onacc:#F5EDE3;
+  --hot:#C0282D; --hot-ink:#F5EDE3; --hot-tx:#EC7A6E;
+  --hot-soft:rgba(192,40,45,.1); --hot-ln:rgba(192,40,45,.5);
+  --ok:#ECE4D6; --ok-soft:rgba(236,228,214,.08); --ok-ln:rgba(236,228,214,.3);
+  --glass:rgba(11,10,10,.84); --glass2:rgba(20,17,16,.88);
+  --c-up:#ECE4D6; --c-lo:#A61B1F; --c-lo-ink:#F5EDE3;
+  --r-s:8px; --r-m:12px; --r-l:16px; --r-x:18px;
+  --glow-r:0px; --glow-c:transparent; --glow-t:none;
+  --shacc:0 14px 30px -12px rgba(192,40,45,.6);
+  --f:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --fd:'Forum','Times New Roman',Georgia,serif;
+  --fn:'Oswald','Manrope',sans-serif;
+  --caps:uppercase; --track:.1em; --wt:500; --wtd:400;
+  --sheen:linear-gradient(135deg,rgba(192,40,45,.05),transparent 38%);
+  --edge-a:rgba(192,40,45,.12); --edge-b:#A61B1F; --edge-c:#E5655A;
+  --bar2:linear-gradient(90deg,#A61B1F,#E5655A);
+  --wall-dim:linear-gradient(180deg,rgba(11,10,10,.5) 0%,rgba(11,10,10,.88) 42%,rgba(11,10,10,.97) 100%),
+    radial-gradient(90% 38% at 50% 104%,rgba(140,18,20,.55),transparent 70%);
+  --glow:rgba(192,40,45,.06);
+}
+
+/* ---------- фон: плывущие пятна света ---------- */
+#wall::after{animation:rd-drift 16s ease-in-out infinite alternate}
+:root[data-skin="ber"] #wall::after{animation:rd-ember 6s ease-in-out infinite}
+@keyframes rd-drift{to{transform:translate3d(0,-26px,0) scale(1.06)}}
+@keyframes rd-ember{50%{opacity:.82}}
+body{font-family:var(--f);font-weight:var(--wt);padding-bottom:calc(var(--tabh) + var(--sb) + 40px)}
+
+/* ---------- панели ---------- */
+.win{border-radius:var(--r-l);border-color:var(--ln);
+  box-shadow:0 22px 50px -34px rgba(0,0,0,.95)}
+:root[data-skin="sl"] .win::before{content:none}
+:root[data-skin="ber"] .win{box-shadow:inset 0 0 0 3px var(--s1),inset 0 0 0 4px rgba(232,220,200,.12),
+  0 22px 50px -34px rgba(0,0,0,.95)}
+
+/* ---------- заголовки ---------- */
+.shead h2{font-size:clamp(22px,7vw,28px);letter-spacing:var(--track)}
+:root[data-skin="sl"] .shead h2 span::before,
+:root[data-skin="sl"] .shead h2 span::after{content:none}
+.wtitle{font-family:var(--fn);letter-spacing:.14em}
+h2.sec{font-family:var(--fn);font-size:10.5px;letter-spacing:.16em;border-left:0;
+  border:1px solid var(--ln);border-radius:var(--r-p);padding:6px 14px}
+
+/* ---------- главная карточка: уровень, опыт, цикл ---------- */
+.st8{padding:16px;border:1.5px solid transparent;border-radius:var(--r-x);
+  background:linear-gradient(var(--panel-solid),var(--panel-solid)) padding-box,
+    conic-gradient(from var(--a),var(--edge-a) 0 58%,var(--edge-b) 74%,var(--edge-c) 82%,var(--edge-a) 96%) border-box;
+  animation:rd-turn 7s linear infinite;box-shadow:0 26px 60px -34px rgba(0,0,0,.95)}
+:root[data-skin="ber"] .st8{animation-duration:9s;box-shadow:0 26px 60px -34px rgba(0,0,0,.95)}
+@keyframes rd-turn{to{--a:360deg}}
+.st8lv{width:clamp(44px,13vw,52px);height:clamp(44px,13vw,52px)}
+.st8lv svg path{fill:var(--acc-soft);stroke-width:1.8}
+:root[data-skin="sl"] .st8lv svg{filter:drop-shadow(0 0 8px rgba(46,139,255,.7))}
+.st8lv b{font-family:var(--fd);font-weight:800;text-shadow:none}
+.st8t h1{font-size:clamp(15px,4.6vw,18px);letter-spacing:.04em;text-transform:uppercase}
+:root[data-skin="ber"] .st8t h1{font-size:clamp(19px,6vw,24px);letter-spacing:.12em}
+.st8r{font-family:var(--fn);border-color:transparent;background:var(--acc-soft);color:var(--acc-ink)}
+.st8b{gap:9px;margin-top:14px;padding-top:12px;border-top:1px solid var(--ln)}
+.st8row .k,.st8row .v{font-family:var(--fn);font-size:10px;letter-spacing:.1em}
+.st8row .v{color:var(--ink2)}
+.st8row .bar{height:6px;border:0;border-radius:var(--r-p);background:var(--s2)}
+.st8row .bar i{border-radius:var(--r-p);box-shadow:none}
+.st8row+.st8row .bar{background:var(--hot-soft)}
+.st8row+.st8row .bar i{background:var(--hot)}
+:root[data-skin="ber"] .st8row+.st8row .bar i{background:var(--edge-c)}
+:root[data-skin="ber"] .st8row .bar{height:4px;border-radius:0}
+:root[data-skin="ber"] .st8row .bar i{border-radius:0}
+/* отблеск бежит по полоскам в обеих темах */
+.st8row .bar i::after,.qprog i::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);
+  transform:translateX(-100%);animation:sweep 2.8s ease-in-out infinite}
+:root[data-skin="sl"] .st8::after{content:none}
+
+/* ---------- полоса дней недели ---------- */
+.days{background:linear-gradient(var(--s0) 55%,transparent);backdrop-filter:none;border-bottom:0;padding-bottom:10px}
+.chip{min-height:60px;border-radius:var(--r-m);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:6px;background:var(--s1);border:1px solid var(--ln);position:relative;
+  transition:transform .15s ease,background .2s}
+.chip:active{transform:scale(.94)}
+.chip b{font-family:var(--f);font-weight:800;font-size:clamp(10.5px,3.1vw,12.5px);letter-spacing:.04em}
+:root[data-skin="ber"] .chip b{font-family:var(--fn);font-weight:500;letter-spacing:.1em}
+.chip u{width:14px;height:3px;border-radius:2px;margin:0}
+.chip .tk{position:absolute;top:4px;right:6px;color:var(--hot-tx);font-size:10px}
+.chip.on{background:var(--acc-fill);border-color:transparent;color:var(--onacc);
+  box-shadow:0 10px 26px -8px var(--acc);animation:rd-glow 2.8s ease-in-out infinite}
+.chip.on b{color:var(--onacc)}
+.chip.on .tk{color:var(--onacc)}
+@keyframes rd-glow{50%{box-shadow:0 10px 34px -4px var(--acc)}}
+:root[data-skin="ber"] .chip.on{animation:none;box-shadow:var(--shacc)}
+
+/* ---------- шапка выбранного дня ---------- */
+.dh .ln{width:4px;border-radius:2px}
+.dh h3,.dh h3 input{font-size:clamp(26px,8.4vw,34px);line-height:1.05;letter-spacing:0}
+:root[data-skin="ber"] .dh h3,:root[data-skin="ber"] .dh h3 input{font-size:clamp(30px,9.6vw,40px);letter-spacing:.02em}
+.dh p{font-family:var(--f);font-weight:700;letter-spacing:.02em;text-transform:none;font-size:14px}
+.dateline{font-family:var(--fn);color:var(--hot-tx);letter-spacing:.14em}
+.gear{border-radius:50%;background:var(--btn);border:1px solid var(--ln2);color:var(--acc-2);font-size:19px}
+:root[data-skin="ber"] .gear{border-radius:var(--r-s)}
+
+/* ---------- тренировка дня ---------- */
+.qbox{padding:16px}
+.qhead b{font-family:var(--fd);font-size:15px;letter-spacing:.02em;text-transform:none}
+.qprog{height:8px;border-radius:var(--r-p);background:var(--s2)}
+.qprog i{background:var(--bar2);border-radius:var(--r-p)}
+.qmeta{font-family:var(--fn);font-size:12px;letter-spacing:.04em}
+
+/* ---------- строка упражнения ---------- */
+.exrow{border-radius:var(--r-m);padding:14px 12px 14px 16px;background:var(--s1);border:1px solid var(--ln);
+  transition:transform .15s ease,border-color .2s,background .2s}
+:root[data-skin="sl"] .exrow{border-radius:22px}
+.exrow::before{content:none}
+.exrow .n{font-family:var(--f);font-weight:800;font-size:clamp(14.5px,4.4vw,16.5px);letter-spacing:0}
+.exrow .s{font-family:var(--fn);font-size:11px;letter-spacing:.06em;text-transform:none}
+.exrow .kg{font-family:var(--fd);font-weight:700;color:var(--ink);text-shadow:none;white-space:nowrap}
+:root[data-skin="ber"] .exrow .kg{color:var(--ink);font-size:clamp(19px,6vw,23px)}
+.exrow .go{width:48px;height:48px;border-radius:50%;background:transparent;border:1.5px solid var(--ln2);
+  color:var(--ink3);font-size:17px;display:grid;place-items:center}
+.exrow.done{opacity:1}
+.exrow.done .n{color:var(--ink3);text-decoration:line-through;text-decoration-color:var(--hot-ln)}
+.exrow.done .kg{color:var(--ink3)}
+.exrow.done .go{background:var(--hot);border-color:var(--hot);color:var(--hot-ink);font-weight:800}
+:root[data-skin="ber"] .exrow.done .go{background:transparent;border:2px solid var(--acc);color:var(--acc-2)}
+:root[data-skin="ber"] .exrow.done .n::after{content:none}
+/* следующее по очереди упражнение подсвечено: первое, если ничего не
+   сделано, и то, что идёт сразу за закрытым */
+#exl>.exrow:first-child:not(.done),.exrow.done+.exrow:not(.done){border-color:var(--acc);
+  background:linear-gradient(135deg,var(--acc-soft),transparent 72%),var(--s1)}
+#exl>.exrow:first-child:not(.done) .go,.exrow.done+.exrow:not(.done) .go{border:2px solid var(--acc);color:var(--acc-2)}
+/* только что закрытый подход: отметка выпрыгивает, карточка вспыхивает */
+.exrow.rd-just .go{animation:rd-pop .55s cubic-bezier(.3,1.6,.5,1)}
+.exrow.rd-just{animation:rd-flash .8s ease-out}
+@keyframes rd-pop{0%{transform:scale(.3)}65%{transform:scale(1.22)}100%{transform:scale(1)}}
+@keyframes rd-flash{0%{box-shadow:0 0 0 0 var(--hot-ln)}100%{box-shadow:0 0 0 14px transparent}}
+:root[data-skin="ber"] .exrow.rd-just .go{animation:rd-stamp .55s cubic-bezier(.3,1.4,.5,1)}
+@keyframes rd-stamp{0%{transform:scale(1.8) rotate(-14deg);opacity:0}60%{transform:scale(.92) rotate(2deg);opacity:1}100%{transform:none}}
+
+/* ---------- упражнение на весь экран ---------- */
+.exfback{border-radius:var(--r-p);background:var(--btn);border:1px solid var(--ln2);padding:10px 16px;
+  font-family:var(--f);font-weight:700;letter-spacing:.06em}
+.exfcnt{font-family:var(--fn);color:var(--hot-tx)}
+.exf{--pad:clamp(13px,4.4vw,18px);padding:var(--pad);border-radius:var(--r-x)}
+.exf .exname{font-weight:800;line-height:1.12;letter-spacing:0;text-transform:none}
+:root[data-skin="ber"] .exf .exname{font-weight:400;letter-spacing:.02em}
+.exfgrp{font-family:var(--fn);color:var(--hot-tx);letter-spacing:.16em}
+.exfkg{font-family:var(--fd);font-weight:800;font-size:clamp(46px,15vw,68px);letter-spacing:-.03em;
+  border-bottom:2px solid var(--ln2);text-shadow:none;width:clamp(110px,38vw,170px)}
+:root[data-skin="ber"] .exfkg{font-weight:400;letter-spacing:0}
+.exfkg:focus{border-bottom-color:var(--hot)}
+.exfu{font-family:var(--fd);font-size:15px}
+.exfsm .fl input{border-radius:var(--r-s);font-family:var(--fd);font-weight:700;padding:12px 0}
+.pl{font-family:var(--f);font-weight:600;font-size:13px;letter-spacing:0}
+.exfhist .lbl{font-family:var(--fn);letter-spacing:.14em}
+/* фото техники над карточкой: две фазы движения сменяют друг друга */
+.exfpic{position:relative;display:block;width:calc(100% + var(--pad) * 2);
+  margin:calc(var(--pad) * -1) calc(var(--pad) * -1) 16px;aspect-ratio:16/9;overflow:hidden;
+  border-radius:var(--r-x) var(--r-x) 0 0;background:var(--s2);padding:0;border:0}
+/* Без увеличения: снимок, раздутый transform, вылезал за рамку панели */
+.exfpic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  filter:saturate(.55) contrast(1.08)}
+.exfpic img+img{animation:rd-phase 3.2s ease-in-out infinite}
+:root[data-skin="ber"] .exfpic img{filter:grayscale(1) contrast(1.12) brightness(.9)}
+.exfpic::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 35%,transparent 55%,var(--panel-solid))}
+.exfpic span{position:absolute;left:12px;bottom:10px;z-index:1;padding:6px 12px;border-radius:var(--r-p);
+  background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.22);color:#FFFFFF;
+  font-family:var(--fn);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+@keyframes rd-phase{0%,42%{opacity:0}50%,92%{opacity:1}100%{opacity:0}}
+
+/* ---------- повторы по подходам ---------- */
+.setr{border-radius:var(--r-m);background:var(--s2);border-color:var(--ln)}
+.setr .sh span,.setr .rbx i{font-family:var(--fn);letter-spacing:.12em}
+.setr .fillall{background:var(--acc-soft);border:1px solid var(--acc);color:var(--acc-ink);
+  font-family:var(--f);font-weight:800;letter-spacing:.04em;text-transform:none}
+:root[data-skin="ber"] .setr .fillall{font-family:var(--fn);font-weight:500;letter-spacing:.12em;text-transform:uppercase}
+.setr .rbx input{min-height:56px;border-radius:var(--r-m);font-family:var(--fd);font-weight:700;font-size:20px;
+  background:var(--s1);border:1.5px solid var(--ln)}
+.setr .rbx input:focus{border-color:var(--acc);box-shadow:0 0 0 4px var(--acc-soft);background:var(--s3)}
+.setr .rbx.hit input{background:var(--hot-soft);border-color:var(--hot-ln);color:var(--hot-tx)}
+.setr .sg{font-weight:600}
+.setr .sg b{color:var(--hot-tx)}
+
+/* страницы-упражнения внизу раскрытой карточки: сделано, сейчас, впереди */
+.exfdots .dot{padding:20px 4px}
+.exfdots .dot.dn{background-color:var(--hot)}
+.exfdots .dot.on{background-color:var(--acc);
+  background-image:linear-gradient(90deg,transparent 0 35%,rgba(255,255,255,.75) 50%,transparent 65% 100%);
+  background-size:200% 100%;animation:rd-seg 1.8s linear infinite;filter:none}
+@keyframes rd-seg{from{background-position:100% 0}to{background-position:-100% 0}}
+
+/* ---------- главные кнопки ---------- */
+.fin{min-height:60px;border-radius:20px;font-family:var(--fd);font-weight:700;font-size:15px;
+  letter-spacing:.02em;text-transform:none;position:relative;overflow:hidden;isolation:isolate}
+:root[data-skin="ber"] .fin{border-radius:var(--r-m);font-family:var(--fn);font-weight:500;letter-spacing:.14em;text-transform:uppercase}
+.fin:not(.done):not(:disabled){animation:rd-cta 2.4s ease-out infinite}
+.fin:not(.done):not(:disabled)::after{content:'';position:absolute;top:0;bottom:0;left:0;width:34%;z-index:-1;
+  background:rgba(255,255,255,.16);transform:translateX(-120%) skewX(-20deg);animation:rd-sheen 3.4s ease-in-out 1s infinite}
+@keyframes rd-cta{0%{box-shadow:var(--shacc),0 0 0 0 var(--acc)}100%{box-shadow:var(--shacc),0 0 0 14px transparent}}
+@keyframes rd-sheen{0%,40%{transform:translateX(-120%) skewX(-20deg)}100%{transform:translateX(420%) skewX(-20deg)}}
+/* «Завершить тренировку» в «Системе» — голубым свечением, как кнопка
+   принятия квеста в окне Системы */
+:root[data-skin="sl"] #fin:not(.done):not(:disabled){background:var(--hot);color:var(--hot-ink);
+  box-shadow:0 14px 34px -12px rgba(92,225,255,.5);animation-name:rd-cta-hot}
+@keyframes rd-cta-hot{0%{box-shadow:0 14px 34px -12px rgba(92,225,255,.5),0 0 0 0 rgba(92,225,255,.55)}
+  100%{box-shadow:0 14px 34px -12px rgba(92,225,255,.5),0 0 0 14px rgba(92,225,255,0)}}
+/* текст Системы в аниме светится синим */
+:root[data-skin="sl"] .st8t h1,:root[data-skin="sl"] .dh h3 input,:root[data-skin="sl"] .exf .exname,
+:root[data-skin="sl"] .st8lv b,:root[data-skin="sl"] .exfkg,:root[data-skin="sl"] .shead h2{text-shadow:var(--glow-sys)}
+.add{border-radius:var(--r-m);font-family:var(--f);font-weight:700;letter-spacing:.04em;text-transform:none;font-size:14px}
+:root[data-skin="ber"] .add{font-family:var(--fn);font-weight:400;letter-spacing:.14em;text-transform:uppercase}
+.anb,.cpb,.copyb{border-radius:var(--r-m);font-family:var(--f);font-weight:800;letter-spacing:.04em;text-transform:none}
+:root[data-skin="ber"] .anb,:root[data-skin="ber"] .cpb,:root[data-skin="ber"] .copyb{
+  font-family:var(--fn);font-weight:400;letter-spacing:.14em;text-transform:uppercase}
+.rest{border-radius:20px;color:var(--acc-2)}
+.bkb button{border-radius:var(--r-m)}
+
+/* ---------- нижнее меню: плавающая стеклянная полоса ---------- */
+.tabbar{left:12px;right:12px;bottom:calc(var(--sb) + 10px);max-width:636px;margin:0 auto;
+  padding-bottom:0;border:1px solid var(--ln2);border-radius:26px;background:var(--glass2);
+  backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);
+  box-shadow:0 18px 44px -14px rgba(0,0,0,.9)}
+:root[data-skin="ber"] .tabbar{border-radius:16px}
+.tabbar .in{height:var(--tabh);padding:7px;gap:6px}
+.tab{border-radius:19px;font-family:var(--f);font-weight:700;letter-spacing:.03em;text-transform:none;
+  font-size:clamp(9px,2.7vw,10.5px);transition:background .25s,color .25s,transform .15s}
+:root[data-skin="ber"] .tab{border-radius:10px;font-family:var(--fn);font-weight:400;letter-spacing:.14em;text-transform:uppercase}
+.tab:active{transform:scale(.94)}
+.tab.on{background:var(--acc-fill);color:var(--onacc);box-shadow:0 8px 22px -8px var(--acc)}
+.tab.on::after{content:none}
+.tab.on svg{filter:none;animation:rd-hop .45s cubic-bezier(.3,1.6,.5,1)}
+:root[data-skin="ber"] .tab.on{background:var(--acc-soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--acc)}
+@keyframes rd-hop{0%{transform:translateY(4px) scale(.8)}100%{transform:none}}
+.tab .bdg{background:var(--hot);box-shadow:0 0 8px var(--hot);top:6px}
+body.exopen{padding-bottom:calc(var(--tabh) + var(--sb) + 30px)}
+
+/* ---------- таймер отдыха: карточка над меню с тающей полосой ---------- */
+.tmr{left:12px;right:12px;bottom:calc(var(--tabh) + var(--sb) + 20px);max-width:636px;margin:0 auto;
+  border:1px solid var(--ln2);border-radius:var(--r-l);background:var(--glass2);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:12px 14px 15px;overflow:hidden;
+  box-shadow:0 18px 44px -14px rgba(0,0,0,.9)}
+.tmr.on{animation:rd-up .35s cubic-bezier(.2,.9,.3,1.2)}
+.tmr::before{content:'';position:absolute;left:0;bottom:0;height:4px;
+  width:calc(var(--tp,1) * 100%);background:var(--bar2);transition:width .25s linear}
+.tmr b{font-family:var(--fd);font-size:28px;font-weight:800;letter-spacing:-.02em}
+:root[data-skin="ber"] .tmr b{font-weight:400;font-size:32px}
+.tmr .p button{border-radius:var(--r-s);font-family:var(--fn);min-height:44px}
+.tmr .stop{border-radius:var(--r-s);min-height:44px;font-family:var(--fn);letter-spacing:.1em}
+@keyframes rd-up{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+
+/* ---------- «Прогресс» ---------- */
+.pseg{border:1px solid var(--ln);border-radius:20px;padding:4px;gap:4px;background:var(--btn)}
+.pseg button{border:0;border-right:0;border-radius:15px;background:transparent;font-family:var(--f);
+  font-weight:700;letter-spacing:.02em;text-transform:none;font-size:clamp(11px,3.4vw,13px);
+  transition:background .25s,color .25s}
+.pseg button.on{background:var(--acc-fill);color:var(--onacc);box-shadow:var(--shacc)}
+:root[data-skin="ber"] .pseg{border-radius:var(--r-m)}
+:root[data-skin="ber"] .pseg button{border-radius:var(--r-s);font-family:var(--fn);font-weight:400;
+  letter-spacing:.12em;text-transform:uppercase}
+.tiles b{font-family:var(--fd);font-weight:800;letter-spacing:-.02em}
+:root[data-skin="ber"] .tiles b{font-weight:400}
+.tiles s{font-family:var(--fn)}
+/* пятиугольник нагрузки раскрывается из центра */
+.rfill{fill:var(--hot-soft);stroke:var(--hot);transform-box:fill-box;transform-origin:center;
+  animation:rd-grow 1.1s cubic-bezier(.2,1.2,.3,1) both}
+.rdot{fill:var(--hot-tx)}
+:root[data-skin="sl"] .rdot{filter:drop-shadow(0 0 5px var(--hot))}
+@keyframes rd-grow{from{transform:scale(.15);opacity:0}to{transform:none;opacity:1}}
+.cycBar div.now{background:var(--hot)}
+.xpb i,.qb i{background:var(--bar2)}
+
+/* ---------- еда и добавки ---------- */
+.tot b{font-family:var(--fd);font-weight:800;letter-spacing:-.02em}
+:root[data-skin="ber"] .tot b{font-weight:400}
+.tbar{height:10px;border:0;border-radius:var(--r-p)}
+.tbar i{background:var(--bar2);border-radius:var(--r-p);animation:rd-fill 1.2s cubic-bezier(.3,.9,.2,1)}
+.tbar i.pr{background:var(--acc)}
+@keyframes rd-fill{from{transform:scaleX(0)}}
+.tbar i{transform-origin:left center}
+.supph b{text-transform:none;letter-spacing:.02em}
+:root[data-skin="ber"] .supph b{text-transform:uppercase;letter-spacing:.14em}
+.supp .row{border-radius:var(--r-m);transition:background .2s,border-color .2s}
+.row .box{border-radius:10px}
+.row.on{background:var(--hot-soft);border-color:var(--hot-ln)}
+/* кнопки «одним нажатием»: повторить рацион, принять все добавки */
+.cplast{display:block;width:100%;margin:0 0 9px}
+.spall{display:block;width:100%;margin:6px 0 10px;border-style:solid;border-color:var(--hot-ln);color:var(--hot-tx)}
+.row.on .box{background:var(--hot);border-color:var(--hot);color:var(--hot-ink);animation:rd-pop .45s cubic-bezier(.3,1.6,.5,1)}
+
+/* ---------- сообщения, шторки, событие уровня ---------- */
+.note{border-radius:var(--r-p);font-family:var(--f);font-weight:700;box-shadow:0 18px 44px -14px rgba(0,0,0,.9)}
+.askw,.setw{border-radius:var(--r-x)}
+.askw button,.setw .b button{border-radius:var(--r-m)}
+.lvup div{position:relative;border-radius:var(--r-x)}
+.lvup.on div{animation:rd-lvl .7s cubic-bezier(.2,1.4,.4,1) both}
+.lvup div::before{content:'';position:absolute;inset:-2px;border-radius:inherit;border:2px solid var(--hot);
+  animation:rd-ring 1.4s ease-out infinite;pointer-events:none}
+.lvup span{font-family:var(--fd);font-weight:800}
+@keyframes rd-lvl{from{transform:scale(.4) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes rd-ring{from{transform:scale(1);opacity:.9}to{transform:scale(1.35);opacity:0}}
+#boot b{animation:rd-breathe 1.4s ease-in-out infinite}
+@keyframes rd-breathe{50%{opacity:.5;letter-spacing:.55em}}
+
+/* ---------- появление экрана ----------
+   Класс rd-enter ставит код при смене вкладки, дня или упражнения и снимает
+   через секунду. Иначе карточки выезжали бы заново после каждого подхода. */
+body.rd-enter .scr.on>*,body.rd-enter #statusbar .st8,body.rd-enter #dayctx .dh,
+body.rd-enter #exl>*{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both}
+body.rd-enter .chip{animation:rd-rise .45s cubic-bezier(.2,.8,.2,1) both}
+body.rd-enter .chip:nth-child(2),body.rd-enter #exl>:nth-child(2),body.rd-enter .scr.on>:nth-child(2){animation-delay:.04s}
+body.rd-enter .chip:nth-child(3),body.rd-enter #exl>:nth-child(3),body.rd-enter .scr.on>:nth-child(3){animation-delay:.08s}
+body.rd-enter .chip:nth-child(4),body.rd-enter #exl>:nth-child(4),body.rd-enter .scr.on>:nth-child(4){animation-delay:.12s}
+body.rd-enter .chip:nth-child(5),body.rd-enter #exl>:nth-child(5),body.rd-enter .scr.on>:nth-child(5){animation-delay:.16s}
+body.rd-enter .chip:nth-child(6),body.rd-enter #exl>:nth-child(6),body.rd-enter .scr.on>:nth-child(6){animation-delay:.2s}
+body.rd-enter .chip:nth-child(7),body.rd-enter #exl>:nth-child(7),body.rd-enter .scr.on>:nth-child(7){animation-delay:.24s}
+body.rd-enter #exl>:nth-child(n+8),body.rd-enter .scr.on>:nth-child(n+8){animation-delay:.28s}
+body.rd-enter .chip.on{animation:rd-rise .45s cubic-bezier(.2,.8,.2,1) both,rd-glow 2.8s ease-in-out .5s infinite}
+body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7s linear infinite}
+@keyframes rd-rise{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
 </style>
 </head>
 <script>
@@ -2227,6 +2619,8 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
     <div class="win"><input id="pr" inputmode="numeric" aria-label="Цель по белку"><span>ЦЕЛЬ БЕЛКА</span></div>
   </div>
   <div class="kcsrc" id="kcSrc"><span id="kcTxt"></span><button id="kcAuto">ВЕРНУТЬ РАСЧЁТ</button></div>
+  <!-- пустой день заполняется одним нажатием: рацион последнего дня с едой -->
+  <button class="fin cplast" id="cpLast" hidden></button>
   <button class="cpb" id="cpBtn">Скопировать рацион</button>
   <div id="mll"></div>
   <button class="add" id="addMl">+ Приём пищи</button>
@@ -2234,6 +2628,7 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
   <!-- добавки: отдельная рамка, как системная подсказка, а не часть дня -->
   <div class="win supp" id="suppBox">
     <div class="supph"><b data-t="supp">Снаряжение</b><em id="spCnt"></em></div>
+    <button class="add spall" id="spAll" hidden>Принял всё</button>
     <p class="suppn" data-t="suppHint">Приём добавок за день</p>
     <div id="spl"></div>
     <button class="add" id="addSp">+ Добавка</button>
@@ -3521,6 +3916,20 @@ let editPast = false;      // прошедший день открыт на пр
 let exOpen = null;         // раскрытое упражнение; null — список
 let mo = sel.slice(0, 7);
 let edit = false;
+let justDone = -1;         // упражнение, подход которого закрыли в этой отрисовке
+
+/* Смена вкладки, дня или упражнения проигрывает короткое появление карточек.
+   Класс снимается сам: иначе карточки выезжали бы заново на каждой
+   перерисовке — после любого закрытого подхода. */
+let fxT = null;
+function enterFx() {
+  const b = document.body;
+  b.classList.remove('rd-enter');
+  void b.offsetWidth;                    // перезапуск анимации
+  b.classList.add('rd-enter');
+  clearTimeout(fxT);
+  fxT = setTimeout(() => b.classList.remove('rd-enter'), 1000);
+}
 
 $('tabs').innerHTML = SCREENS.map(([k, l, d]) =>
   `<button class="tab" data-tab="${k}"><svg viewBox="0 0 24 24"><path d="${d}"/></svg><i data-t="${l}"></i>
@@ -3531,7 +3940,7 @@ $('tabs').addEventListener('click', e => {
   if (!b || b.dataset.tab === tab) return;
   tab = b.dataset.tab;
   exOpen = null;
-  render();
+  render(); enterFx();
   window.scrollTo(0, 0);
 });
 
@@ -3614,7 +4023,7 @@ function paintDay() {
 
 $('chips').addEventListener('click', e => {
   const b = e.target.closest('[data-d]'); if (!b) return;
-  sel = b.dataset.d; mo = sel.slice(0, 7); edit = false; editPast = false; exOpen = null; render();
+  sel = b.dataset.d; mo = sel.slice(0, 7); edit = false; editPast = false; exOpen = null; render(); enterFx();
 });
 $('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 7); editPast = false; exOpen = null; render(); });
 // Шестерёнка открывает настройки. Раньше она переключала правку дня,
@@ -3728,6 +4137,8 @@ function paintWorkout() {
 function paintSupp() {
   const d = dayOf(sel), r = recOf(sel);
   $('spCnt').textContent = Object.keys(r.sp).length + ' / ' + d.sp.length;
+  // «Принял всё» есть, пока хоть одна добавка не отмечена
+  $('spAll').hidden = !d.sp.length || d.sp.every((_, j) => r.sp[j]);
   $('spl').innerHTML = d.sp.map((x, j) =>
     `<div class="win row${r.sp[j] ? ' on' : ''}" data-sp="${j}">
       <button class="box" data-tog="${j}" aria-label="Отметить приём">✓</button>
@@ -3793,7 +4204,7 @@ function exRow(e, j, r, IN) {
   const sets = setsOf(sel, num(e.s), j);
   const w = num(pick(g.w, sug));
   const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, e.r));
-  return `<div class="win exrow${g.done ? ' done' : ''}" data-j="${j}" data-open="${j}">
+  return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}" data-j="${j}" data-open="${j}">
     <span class="t"><span class="n">${esc(e.n)}</span>
       <span class="s">${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
     <span class="kg">${w ? kg(w) : '—'}</span>
@@ -3809,6 +4220,8 @@ function exFull(e, j, r, IN, d) {
   const sets = setsOf(sel, num(e.s), j);
   const pr = prOf(e.n);
   const hist = exHistory(e.n).slice(-8);
+  // фото техники над карточкой — те же снимки, что в шторке «Техника»
+  const how = EXDB[e.n];
   const dots = d.ex.map((_, k) =>
     `<button class="dot${k === j ? ' on' : ((r.log[k] || {}).done ? ' dn' : '')}" data-jump="${k}"
       aria-label="Упражнение ${k + 1}"></button>`).join('');
@@ -3817,6 +4230,9 @@ function exFull(e, j, r, IN, d) {
       <span class="exfcnt">${String(j + 1).padStart(2, '0')} / ${String(d.ex.length).padStart(2, '0')}</span>
     </div>
     <div class="win ex exf" data-j="${j}">
+      ${how ? `<button class="exfpic" data-how="${esc(e.n)}" aria-label="Техника: ${esc(e.n)}">
+        <img src="img/${how[0]}-0.jpg" alt="" loading="lazy"><img src="img/${how[0]}-1.jpg" alt="" loading="lazy">
+        <span>Техника</span></button>` : ''}
       <div class="exfhead">
         <button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button>
         <span class="exfgrp">${e.g ? esc(e.g) : ''}</span>
@@ -3877,10 +4293,10 @@ $('exl').addEventListener('click', e => {
   if (t) { tStart(+t.dataset.rest); return; }
 
   const cl = e.target.closest('[data-close]');
-  if (cl) { exOpen = null; render(); window.scrollTo(0, 0); return; }
+  if (cl) { exOpen = null; render(); enterFx(); window.scrollTo(0, 0); return; }
 
   const jp = e.target.closest('[data-jump]');
-  if (jp) { exOpen = +jp.dataset.jump; render(); window.scrollTo(0, 0); return; }
+  if (jp) { exOpen = +jp.dataset.jump; render(); enterFx(); window.scrollTo(0, 0); return; }
 
   const hw = e.target.closest('[data-how]');
   if (hw) { openHow(hw.dataset.how); return; }
@@ -3889,7 +4305,7 @@ $('exl').addEventListener('click', e => {
   if (go) { toggleSet(+go.dataset.go); return; }
 
   const op = e.target.closest('[data-open]');
-  if (op) { exOpen = +op.dataset.open; render(); window.scrollTo(0, 0); return; }
+  if (op) { exOpen = +op.dataset.open; render(); enterFx(); window.scrollTo(0, 0); return; }
 
   const x = e.target.closest('[data-del]');
   if (x) {
@@ -4195,7 +4611,8 @@ function toggleSet(j) {
   if (raised) note('Рабочий вес: ' + p.n + ' → ' + kg(w) + ' кг');
 
   if (!r.t0) r.t0 = Date.now();          // засечка начала тренировки
-  save(); render();
+  // строка только что закрытого подхода вспыхивает — один раз, в этой отрисовке
+  justDone = j; save(); render(); justDone = -1;
   syncWake();
 
   // отдых включается сам: в зале лишнее нажатие мокрыми руками ни к чему
@@ -4462,6 +4879,12 @@ async function openDayReport(ds) {
 }
 
 /* ---------- добавки ---------- */
+// Отметить все разом: опыт начисляется только за те, что ещё не отмечены
+$('spAll').addEventListener('click', () => {
+  const d = dayOf(sel), r = recRW(sel);
+  d.sp.forEach((_, j) => { if (!r.sp[j]) { r.sp[j] = 1; addXp(XP_SP); } });
+  save(); paintSupp(); paintStatus(); note('Все добавки отмечены');
+});
 $('spl').addEventListener('click', e => {
   const t = e.target.closest('[data-tog]');
   if (t) {
@@ -5502,8 +5925,8 @@ $('recalc').addEventListener('click', openSetup);
    появляется и не исчезает, у каждого действия свой неизменный ключ.
    ========================================================================= */
 const SKINS = [
-  { id: 'sl',  n: 'Система', sub: 'Solo Leveling · фиолетовая' },
-  { id: 'ber', n: 'Клеймо',  sub: 'Берсерк · тёмная бронза' }
+  { id: 'sl',  n: 'Система', sub: 'Solo Leveling · синее свечение' },
+  { id: 'ber', n: 'Клеймо',  sub: 'Берсерк · кровь и железо' }
 ];
 
 /* Словарь подписей. Слева — смысл, он же ключ и в коде, и в разметке.
@@ -5876,10 +6299,15 @@ $('csv').addEventListener('click', exportCsv);
 /* =========================================================================
    ТАЙМЕР ОТДЫХА
    ========================================================================= */
-let tEnd = 0, tInt = null, tHide = null;
-function tShow(left) { $('tmrV').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'); }
+let tEnd = 0, tInt = null, tHide = null, tDur = 1;
+function tShow(left) {
+  $('tmrV').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+  // полоса под таймером тает вместе с отдыхом
+  $('tmr').style.setProperty('--tp', Math.max(0, Math.min(1, left / tDur)));
+}
 function tStart(sec) {
   tEnd = Date.now() + sec * 1000;
+  tDur = sec > 0 ? sec : 1;
   // окно закрывается через 1,4 с после нуля. Если за это время закрыть
   // следующий подход, старый таймер прятал уже новый отсчёт — гасим его.
   clearTimeout(tHide); tHide = null;
@@ -6880,6 +7308,7 @@ function itemLine(it) {
 
 function paintFood() {
   const d = dayOf(sel);
+  paintCpLast();
   $('kc').value = d.kc;
   $('pr').value = d.pr;
   paintKcSrc();
@@ -6990,6 +7419,22 @@ function openRation() {
   sheet('РАЦИОН', h);
 }
 $('cpBtn').addEventListener('click', openRation);
+
+/* Последний день с едой, кроме выбранного. Для забывчивых: пустой день
+   заполняется одной кнопкой, без шторки и выбора даты. */
+function lastRationDay() {
+  return Object.keys(S.rec).filter(ds => ds !== sel && ds <= today() && sumMeals(mealsOf(ds)).k > 0)
+    .sort().reverse()[0] || null;
+}
+function paintCpLast() {
+  const src = daySum(sel).k > 0 ? null : lastRationDay();
+  $('cpLast').hidden = !src;
+  if (src) $('cpLast').textContent = 'Повторить рацион за ' + fmt(src);
+}
+$('cpLast').addEventListener('click', () => {
+  const src = lastRationDay();
+  if (src) putRation(mealsOf(src), 'Рацион за ' + fmt(src) + ' повторён');
+});
 
 /* ---------- поиск и добавление продукта ---------- */
 let pickMeal = null, picked = [], chainFilter = '';
@@ -7881,6 +8326,7 @@ setTimeout(() => {
   const b = $('boot');
   if (!b) return;
   b.classList.add('off');
+  enterFx();                             // первый экран выезжает из-под заставки
   setTimeout(() => { if (b.parentNode) b.remove(); }, 400);
 }, 220);
 

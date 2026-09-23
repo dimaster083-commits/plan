@@ -1,4 +1,4 @@
-const CACHE = "sys-gym-132";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-133";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
@@ -30,6 +30,10 @@ const FILES = [
   './font/oswald-400-latin.woff2',
   './font/oswald-600-cyrillic.woff2',
   './font/oswald-600-latin.woff2',
+  './font/manrope-var-cyrillic.woff2',
+  './font/manrope-var-latin.woff2',
+  './font/unbounded-var-cyrillic.woff2',
+  './font/unbounded-var-latin.woff2',
   './img/bench-0.jpg',
   './img/bench-1.jpg',
   './img/cablerow-0.jpg',
