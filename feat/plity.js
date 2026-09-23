@@ -40,6 +40,10 @@
   // одна сетка на всё: та же, что у прибавки, показа и стартового веса
   const grid = w => { const g = granOf(w); return Math.max(g, Math.round(num(w) / g) * g); };
   const round2 = w => Math.round(num(w) * 100) / 100;
+  /* Блин пишется как он написан на блине. Общий kg() округляет до одного
+     знака и превращает 1,25 в «1,3» — для веса на штанге это правильно,
+     а для раскладки это враньё: суммы такой раскладки не существует. */
+  const plw = v => String(Math.round(v * 100) / 100).replace('.', ',');
 
   /* Как набрать вес блинами. Возвращает либо список блинов на сторону,
      либо честное объяснение, почему списка нет. */
@@ -50,7 +54,7 @@
     const cents = Math.round((w - BAR) / 2 * 100);   // на сторону, в копейках килограмма
     if (cents % 125 !== 0) {
       const lo = BAR + Math.floor((w - BAR) / 2.5) * 2.5;
-      return { no: 'блинами не набрать: ' + kg(lo) + ' или ' + kg(lo + 2.5) };
+      return { no: 'блинами не набрать: ' + plw(lo) + ' или ' + plw(lo + 2.5) };
     }
     let left = cents; const out = [];
     for (let i = 0; i < PLATES.length; i++) {
@@ -72,7 +76,7 @@
       if (out.length && w <= out[out.length - 1].w) return;  // строго вверх, без повторов
       out.push({ w: w, r: r, k: k });
     };
-    if (bar) push(BAR, '5', 'bar');
+    if (bar && BAR < W) push(BAR, '5', 'bar');   // гриф ровно в рабочий вес — это уже работа
     [[0.5, '5'], [0.7, '3'], [0.85, '2']].forEach(s => {
       const w = grid(W * s[0]);
       if (bar && w <= BAR) return;
@@ -92,7 +96,7 @@
   const plateLine = w => {
     const s = split(w);
     return s.list
-      ? s.list.map(kg).join(' + ') + ' на сторону'
+      ? s.list.map(plw).join(' + ') + ' на сторону'
       : s.no;
   };
 
@@ -119,7 +123,8 @@
       const on = done[keyOf(j, i, x.w)] ? ' pltdn' : '';
       const nm = x.k === 'work' ? 'рабочий' : (x.k === 'bar' ? 'пустой гриф' : 'разминка');
       const cnt = x.k === 'work' ? (x.s + ' × ' + x.r) : ('× ' + x.r);
-      const pl = bar ? plateLine(x.w) : '';
+      // у пустого грифа раскладка уже названа самой строкой
+      const pl = (bar && x.k !== 'bar') ? plateLine(x.w) : '';
       return '<button type="button" class="pltr' + (x.k === 'work' ? ' pltw' : '') + on + '"' +
         ' data-pltr="' + esc(keyOf(j, i, x.w)) + '"' +
         ' aria-pressed="' + (on ? 'true' : 'false') + '">' +

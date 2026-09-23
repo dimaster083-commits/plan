@@ -1,0 +1,48 @@
+/* ---------- ЧТО СЕГОДНЯ ---------- */
+/* Карточка плотная: вердикт крупно, под ним строки «подпись — число».
+   Цвета только переменными — тема меняет их сама, без второго набора правил. */
+.sgd{margin-top:12px;padding:13px 14px 12px}
+.sgd-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:9px}
+.sgd-h b{font-size:10px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink3);white-space:nowrap}
+.sgd-h i{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3);text-align:right;min-width:0;overflow-wrap:anywhere}
+
+.sgd-v{margin-bottom:10px}
+.sgd-vt{font-size:15px;line-height:1.25;color:var(--ink);overflow-wrap:anywhere}
+.sgd-vd{font-size:11.5px;line-height:1.45;color:var(--ink3);margin-top:4px;overflow-wrap:anywhere}
+.sgd-v.ok .sgd-vt{color:var(--up-tx)}
+.sgd-v.bad .sgd-vt{color:var(--down-tx)}
+.sgd-v.wait .sgd-vt{color:var(--ink3)}
+.sgd-v.go .sgd-vt{color:var(--ink)}
+
+/* Полоска показывает только зачёт недели и ничего не обещает: когда неделя
+   уже не вытягивается, она перекрашивается, а не растёт бодрее. */
+.sgd-bar{height:4px;border-radius:4px;background:var(--s2);overflow:hidden;margin-bottom:11px}
+.sgd-bar i{display:block;height:100%;border-radius:4px;background:var(--acc)}
+.sgd-bar.bad i{background:var(--down-tx)}
+
+.sgd-l{display:block}
+.sgd-r{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:7px 0;border-top:1px solid var(--ln);min-width:0}
+.sgd-r:first-child{border-top:0;padding-top:0}
+.sgd-r:last-child{padding-bottom:0}
+.sgd-r>span{flex:0 0 auto;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink3);white-space:nowrap}
+.sgd-r>b{flex:1 1 auto;min-width:0;text-align:right;font-size:13px;font-weight:400;
+  line-height:1.35;color:var(--ink);overflow-wrap:anywhere}
+.sgd-r>b em{font-style:normal;display:block;font-size:10.5px;line-height:1.35;
+  color:var(--ink3);margin-top:2px;overflow-wrap:anywhere}
+.sgd-r>b.sgd-up{color:var(--up-tx)}
+.sgd-r>b.sgd-dn{color:var(--down-tx)}
+.sgd-r>b.sgd-wr{color:var(--warn)}
+.sgd-r>b.sgd-mut{color:var(--ink3)}
+
+/* Узкий телефон: 320 px — это ещё живая ширина, буквы жмутся, а не уезжают. */
+@media (max-width:359px){
+  .sgd{padding:12px 11px 11px}
+  .sgd-vt{font-size:14px}
+  .sgd-r{gap:8px}
+  .sgd-r>span{letter-spacing:.08em}
+  .sgd-r>b{font-size:12.5px}
+}

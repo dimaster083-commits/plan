@@ -50,9 +50,10 @@
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .zm-line b{flex:0 0 auto;font-size:13.5px;color:var(--ink);font-weight:600}
 .zm-line s{text-decoration:none;flex:0 0 auto;font-size:12px;white-space:nowrap}
-.zm-up{color:var(--up-tx)}
-.zm-dn{color:var(--down-tx)}
-.zm-fl{color:var(--ink3)}
+/* цвет — это оценка, а не направление: знак у числа свой, настоящий */
+.zm-row i.zm-up,.zm-line s.zm-up{color:var(--up-tx)}
+.zm-row i.zm-dn,.zm-line s.zm-dn{color:var(--down-tx)}
+.zm-row i.zm-fl,.zm-line s.zm-fl{color:var(--ink3)}
 .zm-old{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;
   box-sizing:border-box;padding:8px 10px;margin-top:6px;text-align:left;
   background:transparent;border:1px solid var(--ln);border-radius:10px;
