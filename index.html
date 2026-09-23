@@ -873,7 +873,8 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
 #boot b{display:block;font-size:11px;letter-spacing:.4em;color:var(--cy2);font-weight:700;
   text-shadow:0 0 16px var(--cy);text-align:center}
 @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
-@keyframes winIn{from{opacity:0;transform:translateY(6px) scale(.985)}to{opacity:1;transform:none}}
+/* без масштаба: на медленном телефоне кнопки в панели посреди анимации были меньше 44 px */
+@keyframes winIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .win{animation:winIn .34s ease both}
 @keyframes lvlPulse{0%,100%{filter:drop-shadow(0 0 10px rgba(var(--tint),.75))}
   50%{filter:drop-shadow(0 0 20px rgba(var(--tint),1))}}
