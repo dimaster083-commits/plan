@@ -829,10 +829,18 @@ h2.sec em{font-style:normal;color:var(--mut);letter-spacing:.06em}
   color:var(--mut)}
 .tmr .stop{border:1px solid var(--edge);padding:7px 12px;font-size:12px;border-radius:2px;color:var(--mut)}
 
+/* Окно поверх экрана. Центрировали гридом — и когда содержимое выше экрана,
+   такой центр обрезает ОБА конца: низ уходит под край, и достать его нечем.
+   Первичная настройка выросла до 908 px и перестала помещаться даже в полный
+   экран телефона: кнопки «позже» и «посчитать» оказались недостижимы, а это
+   единственный экран, через который нельзя перешагнуть.
+   Прокрутка теперь на самом окне, карточка центрируется своим margin:auto —
+   центр сохраняется, но края не срезаются. */
 .ask{position:fixed;inset:0;z-index:200;background:rgba(5,9,18,.9);backdrop-filter:blur(5px);
-  display:none;place-items:center;padding:calc(var(--st) + 20px) 20px calc(20px + var(--sb))}
-.ask.on{display:grid}
-.askw{width:100%;max-width:340px;padding:18px 16px 15px;text-align:center}
+  display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:calc(var(--st) + 20px) 20px calc(20px + var(--sb))}
+.ask.on{display:flex}
+.askw{width:100%;max-width:340px;padding:18px 16px 15px;text-align:center;margin:auto;flex:0 0 auto}
 .askw p{margin:0 0 15px;font-size:14px;line-height:1.5}
 .askw .b{display:flex;gap:8px}
 .askw button{flex:1;border:1px solid var(--edge2);padding:12px;font-size:12.5px;border-radius:2px;
