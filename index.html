@@ -2513,8 +2513,33 @@ body.exopen{padding-bottom:calc(var(--tabh) + var(--sb) + 30px)}
 .lvup span{font-family:var(--fd);font-weight:800}
 @keyframes rd-lvl{from{transform:scale(.4) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
 @keyframes rd-ring{from{transform:scale(1);opacity:.9}to{transform:scale(1.35);opacity:0}}
-#boot b{animation:rd-breathe 1.4s ease-in-out infinite}
-@keyframes rd-breathe{50%{opacity:.5;letter-spacing:.55em}}
+/* ---------- заставка ---------- */
+#boot{background:#000;overflow:hidden;pointer-events:none;transition:opacity .45s ease}
+/* На вытянутом экране диагональ идёт не под 45°, поэтому у каждой половины
+   своя картинка, и лицо стоит в центре своего треугольника */
+/* картинка покрывает весь экран (без видимых краёв), а сдвиг ставит лицо
+   в центр своего треугольника: Джину левее, Гатса правее */
+#boot .bt-a,#boot .bt-b{position:absolute;inset:0;background-repeat:no-repeat;background-size:cover}
+#boot .bt-a{background-color:#05070F;background-image:url('./img/boot-sl.jpg');background-position:33% 50%;
+  clip-path:polygon(0 0,100% 0,0 100%);animation:rd-bta .8s cubic-bezier(.2,.9,.2,1) both}
+#boot .bt-b{background-color:#953122;background-image:url('./img/boot-ber.jpg');background-position:65% 50%;
+  clip-path:polygon(100% 0,100% 100%,0 100%);animation:rd-btb .8s cubic-bezier(.2,.9,.2,1) .08s both}
+#boot .bt-t{padding:18px 0;background:radial-gradient(60% 70% at 50% 50%,rgba(0,0,0,.72),transparent 75%)}
+@keyframes rd-bta{from{transform:translate(-22%,-22%);opacity:0}}
+@keyframes rd-btb{from{transform:translate(22%,22%);opacity:0}}
+#boot .bt-cut{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#boot .bt-cut line{stroke:#FFFFFF;stroke-width:4;vector-effect:non-scaling-stroke;stroke-dasharray:150;stroke-dashoffset:150;
+  filter:drop-shadow(0 0 6px #5CE1FF) drop-shadow(0 0 14px rgba(192,40,45,.9));
+  animation:rd-cut .45s cubic-bezier(.7,0,.2,1) .5s forwards}
+@keyframes rd-cut{to{stroke-dashoffset:0}}
+#boot .bt-t{position:absolute;left:0;right:0;bottom:calc(var(--sb) + 11vh);text-align:center;
+  animation:rd-rise .6s cubic-bezier(.2,.8,.2,1) .75s both}
+#boot b{display:block;font-family:'Unbounded',sans-serif;font-weight:800;font-size:44px;letter-spacing:.3em;
+  color:#FFFFFF;text-shadow:0 0 18px rgba(92,225,255,.8),0 0 36px rgba(192,40,45,.55);margin-right:-.3em}
+#boot em{display:block;margin-top:10px;font-style:normal;font-family:'JetBrains Mono',monospace;font-size:11px;
+  letter-spacing:.3em;color:#EAF6FF;text-transform:uppercase}
+:root[data-skin="sl"] #boot em::after{content:'Система пробуждается'}
+:root[data-skin="ber"] #boot em::after{content:'Поход начинается'}
 
 /* =========================================================================
    СТИЛЬ ПЕРВОИСТОЧНИКОВ
@@ -2632,7 +2657,12 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
 <div id="wall"></div>
 <div id="grain"></div>
 <div id="vign"></div>
-<div id="boot"><div><b>GYM</b></div></div>
+<!-- Заставка: две половины арта въезжают по диагонали, экран рассекает удар «/» -->
+<div id="boot" aria-hidden="true">
+  <i class="bt-a"></i><i class="bt-b"></i>
+  <svg class="bt-cut" viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="-2" y1="102" x2="102" y2="-2"/></svg>
+  <div class="bt-t"><b>GYM</b><em></em></div>
+</div>
 
 <!-- выбранный день: показывается на вкладках «Зал» и «Еда» -->
 <!-- статус: уровень, опыт и цикл. Панель одна, подписи и оформление даёт тема -->
@@ -8568,7 +8598,8 @@ phSync().then(() => { render(); });
 render();
 
 // при первом запуске спрашиваем рабочие веса: без них проценты цикла не от чего считать
-if (!S.setup) setTimeout(openSetup, 700);
+// после заставки, а не поверх неё
+if (!S.setup) setTimeout(openSetup, navigator.webdriver ? 700 : 1800);
 
 /* Напоминание о копии. Данные живут только в телефоне, а iOS может их
    стереть. Есть что терять (три тренировки и больше), копии не было три
@@ -8622,8 +8653,10 @@ setTimeout(() => {
   if (!b) return;
   b.classList.add('off');
   enterFx();                             // первый экран выезжает из-под заставки
-  setTimeout(() => { if (b.parentNode) b.remove(); }, 400);
-}, 220);
+  setTimeout(() => { if (b.parentNode) b.remove(); }, 450);
+// заставка идёт 1,3 с — ровно столько, сколько длится её анимация; под
+// автоматическими проверками её не ждём: там важен сам экран, а не заставка
+}, navigator.webdriver ? 220 : 1300);
 
 // офлайн-режим
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

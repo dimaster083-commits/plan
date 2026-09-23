@@ -1,4 +1,4 @@
-const CACHE = "sys-gym-135";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-136";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
@@ -8,6 +8,8 @@ const FILES = [
   './icon-512.png',
   './img/bg-nebula.jpg',
   './img/bg-ink.jpg',
+  './img/boot-sl.jpg',
+  './img/boot-ber.jpg',
   './font/exo2-400-cyrillic.woff2',
   './font/exo2-400-latin.woff2',
   './font/exo2-500-cyrillic.woff2',
