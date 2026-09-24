@@ -4366,7 +4366,7 @@ function exFull(e, j, r, IN, d) {
         <span class="exfu">КГ</span>
         <span class="exfsm">
           <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(pick(g.s, sets))}" aria-label="Подходы"></span>
-          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, e.r))}" aria-label="Повторы"></span>
+          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, pick(pv && pv.r, e.r)))}" aria-label="Повторы"></span>
         </span>
       </div>
       <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
@@ -5743,14 +5743,13 @@ function pace(pts) {
 /* Раньше здесь висели три отдельные карточки: тоннаж по группам, объём
    за последние семь дней и график веса. Семь дней ничего не говорят о работе
    за год, поэтому счёт идёт за весь журнал и одним списком. */
-/* Шкала тоннажа за всё время — логарифмическая, от 0,1 до 1000 т, каждое
-   деление вдесятеро больше прошлого (решение владельца, сентябрь 2026).
-   Раньше шкала шла до ближайшей круглой отметки над самой большой группой,
-   и ведущая полоса всегда стояла почти залитой — «переполненной». Здесь
-   потолок один на все годы: 8,8 т — середина пути, до края полоса доходит
-   только на тысяче тонн. */
-const VOL_LO = 0.1, VOL_HI = 1000;
-const volFrac = t => (t > VOL_LO ? Math.min(1, Math.log10(t / VOL_LO) / Math.log10(VOL_HI / VOL_LO)) : 0);
+/* Шкала тоннажа за всё время — прямая, потолок в тысячах тонн (решение
+   владельца, сентябрь 2026): полоса заполняется медленно, как ранг, к
+   которому идут годами. Потолок — 1000 т; перешагнул — следующая тысяча.
+   Раньше шкала шла до ближайшей круглой отметки над ведущей группой, и та
+   всегда стояла почти залитой. Ненулевой тоннаж виден хотя бы черточкой. */
+const volCeil = t => Math.max(1, Math.ceil(t / 1000)) * 1000;
+const volFrac = (t, top) => (t > 0 ? Math.min(1, t / top) : 0);
 const tonTxt = t => (t >= 1000 ? dec(t / 1000, 1) + ' тыс. т' : dec(t) + ' т');
 function paintVol() {
   // подходы за всё время — по журналу, тем же счётом, что daySets
@@ -5758,13 +5757,14 @@ function paintVol() {
   Object.keys(S.rec).forEach(ds => dayEntries(ds).forEach(e => {
     if (e.g && sets[e.g] !== undefined) sets[e.g] += e.rs ? e.rs.length : e.s;
   }));
-  $('volTop').textContent = 'шкала до 1000 т';
+  const top = volCeil(Math.max(...GROUPS.map(([n]) => num(S.vol[n]))) / 1000);
+  $('volTop').textContent = 'шкала до ' + (top / 1000) + ' тыс. т';
   $('loadList').innerHTML = GROUPS.map(([n, t]) => {
     const тонн = num(S.vol[n]) / 1000;
     return `<div class="ld"><span class="n">${n}</span>
-      <span class="b"><i style="width:${(volFrac(тонн) * 100).toFixed(1)}%;background:var(--c-${t})"></i></span>
+      <span class="b"><i style="width:${(volFrac(тонн, top) * 100).toFixed(2)}%;min-width:${тонн > 0 ? 3 : 0}px;background:var(--c-${t})"></i></span>
       <span class="v"><b>${tonTxt(тонн)}</b><em>${sets[n]} подх.</em></span></div>`;
-  }).join('') + '<div class="ldax"><span></span><span class="ax"><i>1</i><i>10</i><i>100 т</i></span><span></span></div>';
+  }).join('') + '<div class="ldax"><span></span><span class="ax"><i>' + top / 4 + '</i><i>' + top / 2 + '</i><i>' + top * 3 / 4 + ' т</i></span><span></span></div>';
   paintRadar();
 }
 
