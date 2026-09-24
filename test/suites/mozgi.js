@@ -70,6 +70,11 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     return {raz:f?f.text.replace(/<[^>]+>/g,''):'', bal:document.getElementById('radn').textContent}; });
   chk(!/в норме/.test(rz.raz) && /Грудь/.test(rz.raz),'20. «Разбор» по мышцам: недобор груди видит, как и баланс',rz.raz.slice(0,120));
 
+  // 21. рабочий вес ни разу не поднят — карточка говорит и предлагает рекорд
+  const nt=await p.evaluate(()=>{ S.pr={'Жим лёжа':35}; const h=brainHtml({n:'Жим лёжа',r:'8-10',w:40},{w:35,rs:[9,9,9]},40);
+    const h2=brainHtml({n:'Жим лёжа',r:'8-10',w:35},{w:35,rs:[9,9,9]},35); return {h:/Рабочий ещё не взят/.test(h)&&/data-setw="35"/.test(h), h2:/не взят/.test(h2)}; });
+  chk(nt.h && !nt.h2,'21. рабочий 40 при рекорде 35 — «ещё не взят», кнопка «Поставить 35»; при рабочем = рекорду — молчит',JSON.stringify(nt));
+
   // кнопка «Поставить» только вписывает вес, журнал не трогает
   const btn=await p.evaluate(()=>{
     S.rec={}; const d=dayOf(today()); if(d.t==='rest'){const x=S.days.find(y=>(y.ex||[]).length);d.t=x.t;d.s=x.s;d.ex=x.ex.map(e=>({...e}));}

@@ -2569,6 +2569,20 @@ div.wu .wus{margin:0;padding:0 0 9px}
 .brn .add{margin-top:9px;width:100%}
 .brn.used .add{opacity:.6}
 
+/* ---------- под палец и под iPhone ----------
+   Поле с шрифтом мельче 16 px iPhone при касании увеличивает вместе со всей
+   страницей — в зале потом приходится щипать экран обратно. Поля подходов и
+   повторов — 16 px везде, остальные — на iPhone. Поля ввода и мелкие
+   кнопки — не ниже 44 px. */
+.exfsm .fl input{font-size:16px;min-height:44px}
+@supports (-webkit-touch-callout:none){ input,textarea,select{font-size:max(16px,1em)} }
+#bw,#goalIn,#kc,#pr,#phW,.srow input{min-height:44px}
+#toToday{min-height:44px;padding:0 10px}
+.grpsel button,#exgs button{min-height:44px}
+.wu summary{touch-action:manipulation}
+/* название упражнения в таблице весов переносится по слогам, а не посреди слова */
+.wtab td:first-child,td.lnk{overflow-wrap:normal;word-break:normal;hyphens:manual;-webkit-hyphens:manual}
+
 /* смена экрана — сканирующая полоса сверху вниз */
 body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 #scrfx{position:fixed;left:0;right:0;top:0;height:2px;z-index:60;pointer-events:none;opacity:0;
@@ -2738,11 +2752,11 @@ document.documentElement.dataset.skin = 'sl';
       <div class="wpair">
         <div class="wcell">
           <label for="bw">ВЕС СЕЙЧАС</label>
-          <div class="wval"><input id="bw" type="text" inputmode="decimal" value="70" aria-label="Вес сейчас"><span>кг</span></div>
+          <div class="wval"><input id="bw" type="text" inputmode="decimal" value="" aria-label="Вес сейчас"><span>кг</span></div>
         </div>
         <div class="wcell">
           <label for="goalIn">ЦЕЛЬ</label>
-          <div class="wval"><input id="goalIn" type="text" inputmode="decimal" value="95" aria-label="Цель по весу"><span>кг</span></div>
+          <div class="wval"><input id="goalIn" type="text" inputmode="decimal" value="" aria-label="Цель по весу"><span>кг</span></div>
         </div>
       </div>
       <div class="wdir" id="wdir">
@@ -5015,7 +5029,8 @@ function exPickList() {
 }
 function openExPicker() {
   exQ = ''; exG = '';
-  const chips = ['', 'Грудь', 'Спина', 'Ноги', 'Руки'];
+  // все группы программы: «Плечи» и «Пресс» раньше нельзя было выбрать фильтром
+  const chips = [''].concat(GROUPS.map(([n]) => n));
   sheet('ДОБАВИТЬ УПРАЖНЕНИЕ',
     `<input id="exq" class="exq" placeholder="Поиск упражнения" autocomplete="off" aria-label="Поиск упражнения">
      <div class="chains" id="exgs">${chips.map(g =>
@@ -5348,6 +5363,15 @@ function plateauOf(name) {
 function brainHtml(e, pv, wNow) {
   const adv = weightAdvice(e, pv, wNow);
   let h = '';
+  /* Рабочий вес считался от опорных весов при настройке и бывает выше всего,
+     что человек поднимал (становая 40 при сделанных 35). Тогда «полегче» на
+     лёгкой неделе всё ещё выше рекорда. Говорим прямо и предлагаем рекорд. */
+  const pr = prOf(e.n), work = num(e.w);
+  if (!adv && pr > 0 && work > pr + 1e-6 && num(wNow) > pr + 1e-6) {
+    h += '<div class="brn dn"><p><b>Рабочий ещё не взят</b> — ' + kg(work) + ' кг ни разу не поднимались, рекорд ' +
+      kg(pr) + ' кг. Надёжнее начать с рекорда и прибавлять по двойной прогрессии.</p>' +
+      '<button class="add" data-setw="' + pr + '">Поставить ' + kg(pr) + ' кг</button></div>';
+  }
   if (adv) h += '<div class="brn ' + (adv.up ? 'up' : 'dn') + '"><p><b>' + (adv.up ? 'Вес лёгкий' : 'Вес тяжёлый') +
     '</b> — ' + esc(adv.why) + '. По расчёту на ' + (adv.up ? topRep(e.r) : firstRep(e.r)) + ' повт. — <b>' + kg(adv.w) + ' кг</b>.</p>' +
     '<button class="add" data-setw="' + adv.w + '">Поставить ' + kg(adv.w) + ' кг</button></div>';
@@ -6334,6 +6358,21 @@ $('impFile').addEventListener('change', e => {
    ========================================================================= */
 // Таблица весов собирается из самой программы, чтобы не разъезжаться со вкладкой «Зал».
 // Раньше здесь лежали зашитые ориентиры из первой версии плана, и они врали.
+/* Мягкие переносы в длинных словах: на узкой колонке «горизонтального» рвалось
+   посреди слога («горизонтальног-о»), а словарей переносов для русского в
+   браузере может не быть. Ставим \u00AD после гласной, если дальше идёт
+   согласная и до конца слова остаётся хотя бы три буквы. */
+function softHy(t) {
+  const V = 'аеёиоуыэюяАЕЁИОУЫЭЮЯ';
+  return String(t).replace(/[А-Яа-яЁё]{10,}/g, w => {
+    let out = '', last = 0;
+    for (let i = 0; i < w.length; i++) {
+      out += w[i];
+      if (i - last >= 2 && w.length - i > 3 && V.includes(w[i]) && !V.includes(w[i + 1]) && V.includes(w[i + 2] || '')) { out += '\u00AD'; last = i; }
+    }
+    return out;
+  });
+}
 function paintPlan() {
   const rows = [];
   const seen = {};
@@ -6351,7 +6390,7 @@ function paintPlan() {
     });
   });
   $('wtab').innerHTML = rows.map(([n, k, base, now, pr]) =>
-    `<tr><td class="${EXDB[n] ? 'lnk' : ''}" data-how="${esc(n)}">${esc(n)}</td><td class="s">${k}</td>
+    `<tr><td class="${EXDB[n] ? 'lnk' : ''}" data-how="${esc(n)}">${softHy(esc(n))}</td><td class="s">${k}</td>
       <td class="s">${base ? kg(base) : '—'}</td>
       <td class="g">${now ? kg(now) : '—'}</td>
       <td class="s">${pr ? kg(pr) : '—'}</td></tr>`).join('');
@@ -6742,7 +6781,7 @@ function openProgression() {
         <th>Упражнение</th><th>Раб.</th><th>Лучший</th><th>Месяц</th><th>Всего</th><th>Раз</th>
       </tr></thead><tbody>
       ${rows.map(r => `<tr>
-        <td class="lnk" data-hist="${esc(r.n)}">${esc(r.n)}${r.plan ? '' :
+        <td class="lnk" data-hist="${esc(r.n)}">${softHy(esc(r.n))}${r.plan ? '' :
           ' <i style="font-style:normal;color:var(--mut);font-size:9px">не в плане</i>'}</td>
         <td class="s">${r.work ? kg(r.work) : '—'}</td>
         <td class="s">${r.best ? kg(r.best) : '—'}</td>
