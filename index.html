@@ -3762,8 +3762,11 @@ function recomputeStats(force) {
       if (!l || !l.done) return;
       const e = (day && day.ex[j]) || {};
       const g = l.g || e.g;
+      // без готового объёма — тем же счётом, что dayEntries: по записанным
+      // повторам, иначе плитка «тонн» и журнал расходились
+      const rs = (Array.isArray(l.rs) && l.rs.some(x => num(x) > 0)) ? l.rs.map(num) : null;
       const v = (l.vol !== undefined) ? num(l.vol)
-        : (g ? num(pick(l.s, e.s)) * firstRep(pick(l.r, e.r)) * num(pick(l.w, e.w)) : 0);
+        : (g ? (rs ? rs.reduce((a, x) => a + x, 0) : num(pick(l.s, e.s)) * firstRep(pick(l.r, e.r))) * num(pick(l.w, e.w)) : 0);
       if (g && vol[g] !== undefined) vol[g] += v;
       xp += num(l.xp) || XP_EX;
     });
@@ -3783,7 +3786,7 @@ function load() {
   // Раньше здесь стояло S = build(): состояние без расписания стиралось целиком,
   // вместе с журналом, весами и накопленным тоннажем. Теперь восстанавливаем
   // только расписание, а всё заработанное остаётся на месте.
-  if (!S || typeof S !== 'object') S = build();
+  if (!S || typeof S !== 'object' || Array.isArray(S)) S = build();   // '[]' в хранилище — не состояние
   if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
   scrubKeys();
   migrate();
@@ -3795,11 +3798,43 @@ function load() {
    «Прогресс» валился с «Invalid time value» и вкладка переставала
    открываться. Мусор выбрасываем на входе, остальное не трогаем. */
 function scrubKeys() {
-  const okDate = k => /^\d{4}-\d{2}-\d{2}$/.test(k) && !isNaN(new Date(k + 'T00:00:00').getTime());
+  // дата должна существовать: 2026-09-31 проходила проверку и становилась «1 окт»
+  const okDate = k => /^\d{4}-\d{2}-\d{2}$/.test(k) && !isNaN(new Date(k + 'T00:00:00').getTime())
+    && iso(new Date(k + 'T00:00:00')) === k;
   ['rec', 'map'].forEach(field => {
     const src = S[field];
     if (!src || typeof src !== 'object' || Array.isArray(src)) { S[field] = {}; return; }
     Object.keys(src).forEach(k => { if (!okDate(k)) delete src[k]; });
+  });
+  /* Глубже ключей: копия, правленая руками, приносила строку вместо массива
+     повторов, null вместо записи или приёма пищи — и «Прогресс», «Еда» и
+     карточка падали при каждом запуске. Чиним форму, данные не выдумываем. */
+  const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  ['vol', 'pr'].forEach(k => { if (!plain(S[k])) S[k] = {}; });
+  Object.keys(S.map).forEach(k => { const v = S.map[k]; if (!(Number.isInteger(v) && v >= 0 && v < 7)) delete S.map[k]; });
+  const meals = ml => (Array.isArray(ml) ? ml.filter(plain).map(m => {
+    if (Array.isArray(m.items)) m.items = m.items.filter(plain); else if (m.items !== undefined) m.items = [];
+    return m; }) : ml);
+  (S.days || []).forEach(d => {
+    if (!plain(d)) return;
+    d.ex = Array.isArray(d.ex) ? d.ex.filter(plain) : [];
+    if (d.sp !== undefined && !(Array.isArray(d.sp) && d.sp.every(plain))) d.sp = Array.isArray(d.sp) ? d.sp.filter(plain) : [];
+    if (d.ml !== undefined) d.ml = meals(d.ml) || [];
+  });
+  S.days = (S.days || []).filter(plain);
+  Object.keys(S.rec).forEach(ds => {
+    const r = S.rec[ds];
+    if (!plain(r)) { delete S.rec[ds]; return; }
+    if (!plain(r.log)) r.log = {};
+    Object.keys(r.log).forEach(j => {
+      const l = r.log[j];
+      if (!plain(l)) { delete r.log[j]; return; }
+      if (typeof l.rs === 'string') l.rs = l.rs.split(/[^\d.]+/).filter(Boolean).map(Number);
+      if (l.rs !== undefined && !Array.isArray(l.rs)) delete l.rs;
+      if (Array.isArray(l.rs) && l.rs.some(v => typeof v !== 'number' && typeof v !== 'string')) l.rs = l.rs.map(v => num(v));
+    });
+    if (r.sp !== undefined && !plain(r.sp)) r.sp = {};
+    if (r.ml !== undefined) r.ml = meals(r.ml) || [];
   });
 }
 
@@ -3832,8 +3867,11 @@ function save() {
 function flush() {
   if (!canSave) { setSaveState('failed'); return false; }
   clearTimeout(saveTimer);
-  try { localStorage.setItem(KEY, JSON.stringify(S)); setSaveState('saved'); return true; }
-  catch (e) { canSave = false; setSaveState('failed'); note('Сохранение недоступно — сделай копию данных'); return false; }
+  try { localStorage.setItem(KEY, JSON.stringify(S)); setSaveState('saved'); flush.warned = 0; return true; }
+  /* Одна неудачная запись (переполнено хранилище) раньше выключала сохранение
+     до перезапуска, и все следующие правки терялись, даже когда место было.
+     Теперь каждое сохранение пробует снова; предупреждаем один раз. */
+  catch (e) { setSaveState('failed'); if (!flush.warned) { flush.warned = 1; note('Сохранение недоступно — сделай копию данных'); } return false; }
 }
 
 /* ---------- выборки ---------- */
@@ -5121,7 +5159,7 @@ async function openDayReport(ds) {
   if (ph && $('shB')) {
     const box = document.createElement('div');
     box.innerHTML = `<div class="cph">ФОТО</div>
-      <div class="win" style="padding:10px"><img src="${ph}" alt="" style="width:100%;border-radius:12px"></div>`;
+      <div class="win" style="padding:10px"><img src="${esc(ph)}" alt="" style="width:100%;border-radius:12px"></div>`;
     $('shB').insertBefore(box, $('shB').querySelector('[data-goday]'));
   }
 }
@@ -6082,8 +6120,8 @@ async function monthReport(ym) {
     </div>`;
   if (a) {
     h += `<div class="mopair">
-      <div><div class="pic"><img src="${a}" alt=""></div><i>${fmt(phDays[0])}</i></div>
-      <div><div class="pic">${b ? `<img src="${b}" alt="">` : '<span>второго фото нет</span>'}</div>
+      <div><div class="pic"><img src="${esc(a)}" alt=""></div><i>${fmt(phDays[0])}</i></div>
+      <div><div class="pic">${b ? `<img src="${esc(b)}" alt="">` : '<span>второго фото нет</span>'}</div>
         <i>${b ? fmt(phDays[phDays.length - 1]) : '—'}</i></div></div>`;
   }
   if (days.length) {
@@ -6116,6 +6154,8 @@ async function monthReport(ym) {
       for (let i = 1; i <= last; i++) {
         const ds = ym + '-' + String(i).padStart(2, '0');
         if (ds > today()) break;
+        // до старта плана тренировок не было, а сегодняшняя ещё впереди, пока не закрыта
+        if (ds < planStart() || (ds === today() && !recOf(ds).wo)) continue;
         const dd = dayOf(ds); if (dd && dd.t !== 'rest') c++;
       }
       return c; })();
@@ -6137,9 +6177,13 @@ $('moBtn').addEventListener('click', () => monthReport(mo));
 $('exp').addEventListener('click', async () => {
   try {
     flush();
-    const keys = (await phKeys()) || [], vals = (await phAll()) || [];
-    const photos = {};
-    keys.forEach((k, i) => { photos[k] = vals[i]; });
+    /* Фото не читаются (IndexedDB недоступна) — копия журнала всё равно
+       нужна: раньше сбой чтения фото обрывал всю копию. */
+    let photos = {}, noPh = false;
+    try {
+      const keys = (await phKeys()) || [], vals = (await phAll()) || [];
+      keys.forEach((k, i) => { photos[k] = vals[i]; });
+    } catch (e2) { photos = {}; noPh = true; }
     const blob = new Blob([JSON.stringify({ v: 3, saved: new Date().toISOString(), state: S, photos: photos })],
       { type: 'application/json' });
     const a = document.createElement('a');
@@ -6148,7 +6192,7 @@ $('exp').addEventListener('click', async () => {
     document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
     S.bkAt = Date.now(); save();          // от этой даты считается напоминание о копии
-    note('Копия готова — сохрани в «Файлы»');
+    note(noPh ? 'Копия журнала готова, фото прочитать не вышло' : 'Копия готова — сохрани в «Файлы»');
   } catch (e) { note('Не удалось создать копию'); }
 });
 // Полное обнуление: журнал, веса, рацион, фотографии и настройка.
@@ -6168,6 +6212,8 @@ $('imp').addEventListener('click', () => $('impFile').click());
 /* Копия — внешний ввод. Проверяем форму целиком до вопроса и до записи
    фотографий: старый код принимал любое поле days и только потом «чинил»
    его, из-за чего испорченный файл успевал заменить открытый журнал. */
+// фото — только картинка data:, иначе строка из файла копии попадала в разметку
+const safeImg = v => typeof v === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\s]+$/.test(v);
 function importStateOf(copy) {
   const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
   const state = copy && copy.state;
@@ -6196,14 +6242,26 @@ $('impFile').addEventListener('change', e => {
       // про фотографии говорим отдельно: они не стираются, а доливаются к нынешним
       if (!await ask('Журнал, веса и рацион будут заменены на то, что в копии — нынешние пропадут. '
         + 'Фотографии из копии добавятся к уже снятым.', 'ВОССТАНОВИТЬ')) return;
-      for (const k of Object.keys(o.photos || {})) { await phPut(k, o.photos[k]); PHCACHE.set(k, o.photos[k]); }
       // Восстановление проходит тот же ремонт, что и обычная загрузка:
       // копия может быть старой, правленой руками или испорченной, а
       // мусорный ключ в журнале роняет «Прогресс» целиком.
-      S = next;
-      // Сюда попадает только уже проверенная копия; миграции сохраняют
-      // совместимость со старыми версиями без права на частичную загрузку.
-      scrubKeys(); invalidateFood(); migrate(); recomputeStats(1); flush();
+      /* Ремонт идёт до подмены: раньше S заменялся копией до migrate(), и
+         если ремонт падал, человек читал «Файл не подошёл», а первое же
+         сохранение записывало негодную копию поверх журнала. */
+      const old = S;
+      try { S = next; scrubKeys(); invalidateFood(); migrate(); recomputeStats(1); }
+      catch (err2) { S = old; invalidateFood(); throw err2; }
+      entCache = null;                    // журнал и отчёты не должны показывать прежнее состояние
+      canSave = true;                     // копия починила хранилище — писать снова можно
+      if (!flush()) { note('Копия прочитана, но записать её на устройство не вышло'); render(); return; }
+      // фото — только после удачного восстановления, только картинки и без замены своих
+      for (const k of Object.keys(o.photos || {})) {
+        if (!safeImg(o.photos[k])) continue;
+        let own = PHCACHE.get(k);
+        if (!own) { try { own = await phGet(k); } catch (e2) { own = null; } }
+        if (own) continue;                // свой снимок той же даты не заменяем
+        await phPut(k, o.photos[k]); PHCACHE.set(k, o.photos[k]);
+      }
       await phSync();
       sel = today(); mo = sel.slice(0, 7);
       render(); note('Прогресс восстановлен');
@@ -8035,7 +8093,7 @@ async function paintPhotoScreen() {
   if (sel !== day || tab !== 'photo') return;
   const r = recOf(day);
   $('phDate').textContent = 'снимок за ' + fmt(day);
-  $('phT').innerHTML = d ? `<img src="${d}" alt="Фото ${day}">` : '<span>+</span>';
+  $('phT').innerHTML = d ? `<img src="${esc(d)}" alt="Фото ${day}">` : '<span>+</span>';
   $('phDel').hidden = !d;
   $('phTxt').textContent = d
     ? 'Снимок сохранён. Нажми «Сравнить», чтобы поставить его рядом с любым другим днём.'
@@ -8123,8 +8181,8 @@ async function openCmp() {
 }
 async function paintCmp() {
   const a = await phLoad(A), b = await phLoad(B);
-  $('picA').innerHTML = a ? `<img src="${a}" alt="">` : '<span>нет фото</span>';
-  $('picB').innerHTML = b ? `<img src="${b}" alt="">` : '<span>нет фото</span>';
+  $('picA').innerHTML = a ? `<img src="${esc(a)}" alt="">` : '<span>нет фото</span>';
+  $('picB').innerHTML = b ? `<img src="${esc(b)}" alt="">` : '<span>нет фото</span>';
   $('dtA').textContent = fmt(A);
   $('dtB').textContent = fmt(B);
   const wa = num(recOf(A).bw), wb = num(recOf(B).bw);
@@ -8187,8 +8245,10 @@ function attendance(days) {
     const d = new Date(from); d.setDate(from.getDate() + i);
     const ds = iso(d);
     if (ds > today()) break;
-    if (dayOf(ds).t !== 'rest') planned++;
     if (recOf(ds).wo) done++;
+    // дни до старта плана и сегодняшняя, ещё не закрытая тренировка — не пропуски
+    if (ds < planStart() || (ds === today() && !recOf(ds).wo)) continue;
+    if (dayOf(ds).t !== 'rest') planned++;
   }
   return { planned, done };
 }
