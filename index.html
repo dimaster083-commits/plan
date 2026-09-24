@@ -2477,7 +2477,7 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
 
 /* подписи окон — моноширинные, с «//», как в чертеже */
 .wtitle,h2.sec{font-family:var(--fn)}
-.wtitle::before,h2.sec::before{content:'// ';color:var(--hot-tx);opacity:.7;letter-spacing:0}
+.wtitle::before,h2.sec::before{content:'//';margin-right:.5em;color:var(--hot-tx);opacity:.7;letter-spacing:0}
 /* у заголовков с подписью справа «//» — часть заголовка, а не отдельная колонка */
 .radar .wtitle,.wtscale{justify-content:flex-start}
 .radar .wtitle .bleg,.wtscale em{margin-left:auto}
@@ -2524,6 +2524,50 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
 
 /* главная кнопка — голубая кромка бежит по краю, пока тренировка не закрыта */
 #fin:not(.done):not(:disabled){box-shadow:0 0 0 1px rgba(139,235,255,.5) inset,0 14px 40px -14px var(--hot)}
+
+/* Дни недели на узком телефоне: семь кнопок по 44 px шире 320 минус поля.
+   Ниже 375 px поля по краям уходят, зазор — 2 px, и ряд встаёт ровно. */
+.chip{min-width:44px}
+@media (max-width:374px){
+  #chips{gap:2px;padding:0 max(0px,calc((100vw - 320px) / 2))}
+}
+
+/* шкала тоннажа: деления на 1, 10 и 100 т прямо на дорожке, подписи под ней */
+#loadList .ld .b{background:linear-gradient(90deg,transparent calc(25% - .5px),var(--ln2) calc(25% - .5px) calc(25% + .5px),transparent 0,
+  transparent calc(50% - .5px),var(--ln2) calc(50% - .5px) calc(50% + .5px),transparent 0,
+  transparent calc(75% - .5px),var(--ln2) calc(75% - .5px) calc(75% + .5px),transparent 0),var(--s2)}
+.ldax{display:flex;align-items:center;gap:10px;padding:2px 0 0}
+.ldax>span:first-child{width:64px;flex:0 0 auto}
+.ldax>span:last-child{width:clamp(96px,30vw,118px);flex:0 0 auto}
+.ldax .ax{flex:1;position:relative;height:14px;font-family:var(--fn);font-size:9px;color:var(--ink3)}
+.ldax .ax i{position:absolute;top:0;font-style:normal;transform:translateX(-50%);white-space:nowrap}
+.ldax .ax i:nth-child(1){left:25%}.ldax .ax i:nth-child(2){left:50%}.ldax .ax i:nth-child(3){left:75%}
+
+/* разминка и блины: свёрнуто по умолчанию, раскрывается одним касанием */
+.wu{margin:10px 0 0;border:1px solid var(--ln);border-radius:var(--r-m);background:var(--s2);padding:0 12px}
+.wu summary{min-height:44px;display:flex;align-items:center;cursor:pointer;list-style:none;
+  font-family:var(--fn);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--hot-tx)}
+.wu summary::-webkit-details-marker{display:none}
+.wu summary::before{content:'//';margin-right:.5em;opacity:.7}
+.wu summary::after{content:'▾';margin-left:auto;transition:transform .25s}
+.wu[open] summary::after{transform:rotate(180deg)}
+.wur{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px dashed var(--ln);font-size:13px}
+.wur b{font-family:var(--fn);font-weight:600;color:var(--ink)}
+.wur span{color:var(--ink3);font-size:12px;text-align:right}
+.wup{margin:0;padding:9px 0;font-size:12px;color:var(--ink2);border-top:1px dashed var(--ln)}
+div.wu>.wup:first-child{border-top:0}
+.wus{margin:8px 0 0;font-size:12px;color:var(--ink3)}
+div.wu .wus{margin:0;padding:0 0 9px}
+.pl .e1{color:var(--hot-tx);white-space:nowrap}
+
+/* подсказки «мозгов» в карточке: окно-уведомление Системы */
+.brn{margin:10px 0 0;padding:10px 12px;border:1px solid var(--hot-ln);border-radius:var(--r-m);background:var(--hot-soft)}
+.brn p{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.brn p b{color:var(--hot-tx)}
+.brn.dn{border-color:rgba(138,92,255,.45);background:rgba(138,92,255,.08)}
+.brn.dn p b{color:#C3AEFF}
+.brn .add{margin-top:9px;width:100%}
+.brn.used .add{opacity:.6}
 
 /* смена экрана — сканирующая полоса сверху вниз */
 body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
@@ -4322,14 +4366,16 @@ function exFull(e, j, r, IN, d) {
         <span class="exfu">КГ</span>
         <span class="exfsm">
           <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(pick(g.s, sets))}" aria-label="Подходы"></span>
-          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, pick(pv && pv.r, e.r)))}" aria-label="Повторы"></span>
+          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, e.r))}" aria-label="Повторы"></span>
         </span>
       </div>
       <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
         : (num(e.w) ? 'рабочий вес ' + kg(e.w) + ' кг' : 'без отягощения')}${
         num(e.w) && sug && sug !== num(e.w)
           ? ' · на этой неделе ' + kg(sug) + ' кг' + (sug < num(e.w) ? ', полегче' : '') : ''}${
-        pr ? ' · рекорд ' + kg(pr) + ' кг' : ''}</div>
+        pr ? ' · рекорд ' + kg(pr) + ' кг' : ''}${
+        e1rmOf(pv) ? ' · <span class="e1">≈1ПМ ' + kg(roundW(e1rmOf(pv))) + '</span>' : ''}</div>
+      ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel))}</div>
       ${hist.length > 1 ? `<div class="exfhist"><span class="lbl">Рост по журналу</span>
         ${miniChart(hist.map(x => [x[0], x[1]]), 'var(--acc-2)')}</div>` : ''}
@@ -5085,6 +5131,110 @@ function exHistory(name) {
 }
 
 // последний закрытый подход этого упражнения до выбранной даты
+/* ---------- разминка, блины и оценка максимума ----------
+   Разминка нужна мышце, а не упражнению. Если в этой тренировке та же мышца
+   уже работала раньше, второй раз её не разогревают — так и пишем. Иначе
+   лестница к рабочему весу: у штанги с пустого грифа, для силового
+   диапазона (низ ≤ 6) — 50 %×5, 70 %×3, 85 %×2, для объёмного — 50 %×8,
+   75 %×4; у гантелей и блоков — 50 %×10 и 75 %×5 на первом упражнении дня,
+   на остальных — один подход 50 %×10. Веса — по той же сетке, что и рабочие. */
+const BAR = 20;
+const BARBELL = new Set(['bench', 'benchclose', 'benchinc', 'militarypress', 'row',
+  'squat', 'frontsquat', 'dead', 'rdl', 'stiff', 'goodmorning']);
+const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+const isBarbell = n => BARBELL.has((EXDB[n] || [])[0]);
+// блины на одну сторону грифа, от тяжёлых к лёгким
+function platesFor(w) {
+  let side = (num(w) - BAR) / 2;
+  if (!(side > 0)) return [];
+  const out = [];
+  for (const pl of PLATES) while (side >= pl - 1e-9) { out.push(pl); side -= pl; }
+  return out;
+}
+const plTxt = x => String(x).replace('.', ',');
+const platesTxt = w => { const p = platesFor(w); return p.length ? 'по ' + p.map(plTxt).join(' + ') : 'пустой гриф'; };
+function warmupFor(e, w, d, j) {
+  w = num(w);
+  if (!(w > 0)) return { sets: [] };
+  const m = muscleOf(e.n, e.g);
+  const before = (d.ex || []).slice(0, j).find(x => muscleOf(x.n, x.g) === m);
+  if (before) return { skip: (m || 'мышца').toLowerCase() + ' уже в работе после «' + before.n + '»', sets: [] };
+  const low = firstRep(e.r) || 8, bar = isBarbell(e.n);
+  const plan = bar
+    ? (low <= 6 ? [[0.5, 5], [0.7, 3], [0.85, 2]] : [[0.5, 8], [0.75, 4]])
+    : (j === 0 ? [[0.5, 10], [0.75, 5]] : [[0.5, 10]]);
+  const out = [];
+  if (bar && w > BAR) out.push([BAR, 10]);
+  plan.forEach(([k, r]) => {
+    const g = bar ? 2.5 : granOf(w * k);
+    const x = Math.round(w * k / g) * g;
+    const last = out.length ? out[out.length - 1][0] : 0;
+    if (x > last && x < w && (!bar || x > BAR)) out.push([x, r]);
+  });
+  return { sets: out, bar };
+}
+// оценка разового максимума по Эпли по лучшему подходу — только ориентир, до 12 повторов
+function e1rmOf(l) {
+  if (!l) return 0;
+  const w = num(l.w), rs = (l.rs && l.rs.length ? l.rs : [firstRep(l.r)]).map(num).filter(r => r > 0 && r <= 12);
+  if (!(w > 0) || !rs.length) return 0;
+  return w * (1 + Math.max(...rs) / 30);
+}
+/* Подсказка веса по прошлому разу. Двойная прогрессия прибавляет по шагу
+   сетки, и если вес был заметно не по диапазону — 10 повторов при цели
+   4–6 или 3 при цели 8–10, — к нужному весу пришлось бы идти неделями.
+   Здесь нужный вес считается по оценке максимума (Эпли): вес на верх
+   диапазона, если было легко, и на низ, если было тяжело. Кнопка только
+   вписывает цифру в поле — в журнал уходит, лишь когда подход закрыт. */
+function weightAdvice(e, pv, wNow) {
+  const est = e1rmOf(pv), top = topRep(e.r), low = firstRep(e.r);
+  if (!est || !top || !pv) return null;
+  const rs = (pv.rs && pv.rs.length ? pv.rs : [firstRep(pv.r)]).map(num).filter(r => r > 0);
+  if (!rs.length) return null;
+  const best = Math.max(...rs), worst = Math.min(...rs);
+  const at = r => roundW(est / (1 + r / 30));
+  if (best >= top + 3) {
+    const w = at(top);
+    if (w > num(wNow)) return { w, up: 1, why: 'в прошлый раз ' + rs.join('/') + ' на ' + kg(pv.w) + ' кг при цели ' + e.r };
+  }
+  if (low && worst > 0 && best <= low - 2) {
+    const w = at(low);
+    if (w > 0 && w < num(wNow)) return { w, up: 0, why: 'в прошлый раз ' + rs.join('/') + ' на ' + kg(pv.w) + ' кг при цели ' + e.r };
+  }
+  return null;
+}
+// застой: три последние тренировки не подняли оценку максимума выше прежнего лучшего
+function plateauOf(name) {
+  const h = [];
+  Object.keys(S.rec).sort().forEach(ds => dayEntries(ds).forEach(x => {
+    if (x.n === name) { const v = e1rmOf({ w: x.w, rs: x.rs, r: x.r }); if (v) h.push(v); }
+  }));
+  if (h.length < 4) return false;
+  const last = h.slice(-3), prev = h.slice(0, -3);
+  return Math.max(...last) <= Math.max(...prev) + 0.5;
+}
+function brainHtml(e, pv, wNow) {
+  const adv = weightAdvice(e, pv, wNow);
+  let h = '';
+  if (adv) h += '<div class="brn ' + (adv.up ? 'up' : 'dn') + '"><p><b>' + (adv.up ? 'Вес лёгкий' : 'Вес тяжёлый') +
+    '</b> — ' + esc(adv.why) + '. По расчёту на ' + (adv.up ? topRep(e.r) : firstRep(e.r)) + ' повт. — <b>' + kg(adv.w) + ' кг</b>.</p>' +
+    '<button class="add" data-setw="' + adv.w + '">Поставить ' + kg(adv.w) + ' кг</button></div>';
+  if (plateauOf(e.n)) h += '<div class="brn dn"><p><b>Застой</b> — три тренировки без роста ≈1ПМ. ' +
+    'Смени диапазон повторов в графе ПОВТ или замени упражнение аналогом в «Технике».</p></div>';
+  return h;
+}
+
+function warmupHtml(e, w, d, j) {
+  const wu = warmupFor(e, w, d, j);
+  const plates = isBarbell(e.n) && num(w) > BAR ? '<p class="wup">На грифе ' + kg(w) + ' кг: ' + platesTxt(w) + '</p>' : '';
+  if (wu.skip) return plates ? '<div class="wu">' + plates + '<p class="wus">Разминка не нужна: ' + esc(wu.skip) + '</p></div>' : '<p class="wus">Разминка не нужна: ' + esc(wu.skip) + '</p>';
+  if (!wu.sets.length) return plates ? '<div class="wu">' + plates + '</div>' : '';
+  return '<details class="wu"><summary>Разминка · ' + wu.sets.length + ' подх.</summary>' +
+    wu.sets.map(([x, r]) => '<div class="wur"><b>' + kg(x) + ' кг × ' + r + '</b>' +
+      (wu.bar ? '<span>' + (x === BAR ? 'пустой гриф' : platesTxt(x)) + '</span>' : '') + '</div>').join('') +
+    plates + '</details>';
+}
+
 function lastDone(name, before) {
   const ds = Object.keys(S.rec).filter(d => d < before).sort().reverse();
   for (const d of ds) {
@@ -5593,49 +5743,28 @@ function pace(pts) {
 /* Раньше здесь висели три отдельные карточки: тоннаж по группам, объём
    за последние семь дней и график веса. Семь дней ничего не говорят о работе
    за год, поэтому счёт идёт за весь журнал и одним списком. */
-/* Ступени общей шкалы тоннажа, в тоннах. Полоса упирается в потолок
-   только когда до него дошли, а не потому, что она самая длинная. */
-const VOL_MILES = [0.5, 1, 2.5, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
-
-/* Отметки шкалы. Прежний ряд шёл вдвое-впятеро реже: перешагнув 10 т,
-   ведущая группа падала с почти полной полосы до сорока процентов.
-   Мелкий шаг оставляет её в районе четырёх пятых и не даёт шкале прыгать. */
-const VOL_STEPS = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8];
-function volScale(v) {
-  if (!(v > 0)) return 0.5;
-  for (let k = -3; k <= 6; k++) {
-    const d = Math.pow(10, k);
-    for (const st of VOL_STEPS) { const m = st * d; if (m > v) return Math.round(m * 1000) / 1000; }
-  }
-  return Math.ceil(v);
-}
+/* Шкала тоннажа за всё время — логарифмическая, от 0,1 до 1000 т, каждое
+   деление вдесятеро больше прошлого (решение владельца, сентябрь 2026).
+   Раньше шкала шла до ближайшей круглой отметки над самой большой группой,
+   и ведущая полоса всегда стояла почти залитой — «переполненной». Здесь
+   потолок один на все годы: 8,8 т — середина пути, до края полоса доходит
+   только на тысяче тонн. */
+const VOL_LO = 0.1, VOL_HI = 1000;
+const volFrac = t => (t > VOL_LO ? Math.min(1, Math.log10(t / VOL_LO) / Math.log10(VOL_HI / VOL_LO)) : 0);
+const tonTxt = t => (t >= 1000 ? dec(t / 1000, 1) + ' тыс. т' : dec(t) + ' т');
 function paintVol() {
+  // подходы за всё время — по журналу, тем же счётом, что daySets
   const sets = zeroVol();
-  Object.keys(S.rec).forEach(ds => {
-    const lg = (S.rec[ds] || {}).log || {}, ex = (dayOf(ds) || {}).ex || [];
-    Object.keys(lg).forEach(j => {
-      const l = lg[j];
-      if (!l || !l.done) return;
-      const p = ex[j] || {};
-      const g = l.g || p.g;
-      if (g && sets[g] !== undefined) sets[g] += (l.rs && l.rs.length ? l.rs.length : num(pick(l.s, p.s))) || 0;
-    });
-  });
-  /* Шкала шла до самой большой группы, поэтому та всегда стояла залитой
-     до конца: 8,8 т выглядели так же, как 880 т, и полоса ничего не
-     сообщала. Теперь общая шкала — ближайшая круглая отметка выше самой
-     большой группы. Отметка подписана, полоса упирается в неё только
-     когда до неё действительно дошли, а дальше шкала переезжает на
-     следующую ступень. */
-  const mxT = Math.max(...GROUPS.map(([n]) => num(S.vol[n]))) / 1000;
-  const topT = volScale(mxT);
-  $('volTop').textContent = 'шкала до ' + (topT >= 1 ? kg(topT) + ' т' : rnd(topT * 1000) + ' кг');
+  Object.keys(S.rec).forEach(ds => dayEntries(ds).forEach(e => {
+    if (e.g && sets[e.g] !== undefined) sets[e.g] += e.rs ? e.rs.length : e.s;
+  }));
+  $('volTop').textContent = 'шкала до 1000 т';
   $('loadList').innerHTML = GROUPS.map(([n, t]) => {
     const тонн = num(S.vol[n]) / 1000;
     return `<div class="ld"><span class="n">${n}</span>
-      <span class="b"><i style="width:${Math.min(100, тонн / topT * 100).toFixed(1)}%;background:var(--c-${t})"></i></span>
-      <span class="v"><b>${dec(тонн)} т</b><em>${sets[n]} подх.</em></span></div>`;
-  }).join('');
+      <span class="b"><i style="width:${(volFrac(тонн) * 100).toFixed(1)}%;background:var(--c-${t})"></i></span>
+      <span class="v"><b>${tonTxt(тонн)}</b><em>${sets[n]} подх.</em></span></div>`;
+  }).join('') + '<div class="ldax"><span></span><span class="ax"><i>1</i><i>10</i><i>100 т</i></span><span></span></div>';
   paintRadar();
 }
 
@@ -8546,6 +8675,17 @@ let lastDay = today();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   if (today() !== lastDay) { lastDay = today(); sel = today(); mo = sel.slice(0, 7); render(); }
+});
+
+// «Поставить N кг» из подсказки веса: только вписывает цифру в поле карточки
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-setw]'); if (!b) return;
+  const card = b.closest('.ex'), f = card && card.querySelector('[data-f="w"]');
+  if (!f) return;
+  f.value = kg(num(b.dataset.setw));
+  f.dispatchEvent(new Event('input', { bubbles: true }));
+  b.closest('.brn').classList.add('used');
+  b.textContent = 'Вписано: ' + kg(num(b.dataset.setw)) + ' кг';
 });
 
 /* Вспышка рамки окна под пальцем: координаты касания уходят в --mx/--my,
