@@ -33,9 +33,9 @@ const txt = async (p, t) => p.evaluate(tt => { tab=tt; exOpen=null; render(); re
   await p.evaluate(SEED);
   await p.evaluate(() => { S.setup=1; document.getElementById('setup').classList.remove('on'); });
 
-  for (const skin of ['sl','ber']) {
+  for (const skin of ['sl']) {
     console.log('\n===== ' + (skin==='sl'?'СИСТЕМА':'КЛЕЙМО') + ' =====');
-    await p.evaluate(s => applyTheme(s), skin);
+    await p.evaluate(s => void s, skin);
 
     // 1. четыре вкладки
     const tabs = await p.evaluate(() => [...document.querySelectorAll('.tabbar .tab')].map(t=>t.innerText.trim()));
@@ -213,51 +213,21 @@ const txt = async (p, t) => p.evaluate(tt => { tab=tt; exOpen=null; render(); re
     chk(dirs.goal === 2 && dirs.setup === 2, '21. набор и похудение выбираются в обоих местах',
         JSON.stringify(dirs));
 
-    // 22. диаграмма по пяти группам с числами
+    // 22. баланс недели по всем мышцам программы, включая пресс
     const rad = await p.evaluate(() => {
       tab = 'prog'; pSec = 'load'; render();
-      return { axes: document.querySelectorAll('#rad .rlab').length,
-               nums: document.querySelectorAll('#rad .rnum').length,
-               groups: GROUPS.length,
-               names: [...document.querySelectorAll('#rad .rlab')].map(t => t.textContent).join(' ') };
+      return { rows: document.querySelectorAll('#rad .br').length,
+               want: MUSCLES.filter(m => volTargetM(m) > 0).length,
+               names: [...document.querySelectorAll('#rad .br .bn')].map(t => t.textContent).join(' ') };
     });
-    chk(rad.axes === rad.groups && rad.nums === rad.groups,
-        '22. диаграмма нагрузки по всем группам, включая пресс',
-        rad.names + ' (групп: ' + rad.groups + ')');
+    chk(rad.rows === rad.want && /Пресс/.test(rad.names),
+        '22. баланс нагрузки по всем мышцам, включая пресс',
+        rad.names + ' (мышц: ' + rad.want + ')');
 
     // 23. килограммы пишутся одним знаком после запятой
     chk(await p.evaluate(() => [12.125, 35.625, 70.04, 2.449]
       .every(v => (kg(v).split(',')[1] || '').length <= 1 && kg(v).indexOf('.') < 0)),
       '23. вес пишется одним знаком через запятую');
-
-  // 16. переключение темы посреди работы
-  console.log('\n===== ПЕРЕКЛЮЧЕНИЕ ТЕМЫ =====');
-  await p.evaluate(() => { applyTheme('sl'); tab='wo'; sel=today(); exOpen=0; render(); });
-  await p.waitForTimeout(250);
-  const mid = await p.evaluate(() => {
-    const inp = document.querySelector('.ex [data-rs="0"]');
-    inp.focus(); inp.value='7'; inp.dispatchEvent(new Event('input',{bubbles:true}));
-    const before = { v: inp.value, open: exOpen, tab, sel, json: JSON.stringify(S) };
-    applyTheme('ber');
-    const inp2 = document.querySelector('.ex [data-rs="0"]');
-    return { before, after: { v: inp2 ? inp2.value : null, open: exOpen, tab, sel, json: JSON.stringify(S) },
-             focus: document.activeElement === inp2, skin: document.documentElement.dataset.skin };
-  });
-  chk(mid.after.v===mid.before.v && mid.after.json===mid.before.json && mid.after.open===mid.before.open && mid.skin==='ber',
-      '16. смена темы посреди ввода ничего не сбрасывает', JSON.stringify({v:mid.after.v, open:mid.after.open, skin:mid.skin, focus:mid.focus}));
-
-  // 17. тема выбирается из шестерёнки и держится после перезагрузки
-  // раскрытое упражнение намеренно убирает шапку дня вместе с шестерёнкой
-  await p.evaluate(() => { sheetClose(); tab='wo'; exOpen=null; render(); });
-  await p.waitForTimeout(200);
-  await p.click('#gear'); await p.waitForTimeout(300);
-  const picks = await p.$$('[data-skin-set]');
-  chk(picks.length===2, '17. в настройках два оформления', picks.length+' шт');
-  await p.click('[data-skin-set="sl"]'); await p.waitForTimeout(250);
-  const cur = await p.evaluate(() => document.documentElement.dataset.skin);
-  await p.reload(); await p.waitForTimeout(1300);
-  const after = await p.evaluate(() => document.documentElement.dataset.skin);
-  chk(cur==='sl' && after==='sl', '18. выбранная тема переживает перезагрузку', cur+' → '+after);
 
   console.log('\nошибки JS: ' + (errs.length ? errs.join(' | ') : 'нет'));
   console.log('провалено пунктов: ' + fails);

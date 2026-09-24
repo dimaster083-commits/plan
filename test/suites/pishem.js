@@ -56,14 +56,14 @@ const ПРАВИЛА = () => {
 
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']){
+  for(const skin of ['sl']){
     console.log('\n===== '+skin+' =====');
     const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1300);
     await p.evaluate(f=>{ window.ПРАВИЛА=eval('('+f+')'); },ПРАВИЛА.toString());
     await p.evaluate(s=>{
-      S.setup=1; document.getElementById('setup').classList.remove('on'); applyTheme(s); S.sound=0;
+      S.setup=1; document.getElementById('setup').classList.remove('on'); void s; S.sound=0;
       S.rec={}; S.map={}; S.pr={}; S.bw='72'; S.goal='95'; S.kcManual=0;
       applyNutri();            // иначе нормы остаются от прежнего веса
       for(let k=1;k<=28;k++){

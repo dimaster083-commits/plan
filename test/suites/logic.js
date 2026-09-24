@@ -14,32 +14,23 @@ const { LAUNCH, APP } = require('../env');
     const iso=d=>{const z=new Date(d);z.setMinutes(z.getMinutes()-z.getTimezoneOffset());return z.toISOString().slice(0,10);};
 
     /* ---------- словарь ---------- */
-    const ka=Object.keys(DICT.sl), kb=Object.keys(DICT.ber);
-    ok('в словаре одинаковый набор ключей',
-       ka.length===kb.length && ka.every(k=>kb.includes(k)),
-       'только sl: '+ka.filter(k=>!kb.includes(k))+' | только ber: '+kb.filter(k=>!ka.includes(k)));
-    // седьмая ступень — «Национальный уровень» / «Берсерк» (сентябрь 2026)
-    ok('ступеней поровну в обеих темах', DICT.sl.ranks.length===RANKS.length && DICT.ber.ranks.length===RANKS.length
-       && DICT.sl.jobs.length===JOBS.length && DICT.ber.jobs.length===JOBS.length,
-       DICT.sl.ranks.length+' и '+DICT.ber.ranks.length+' при '+RANKS.length+' порогах');
-    ok('названия ступеней не пересекаются между темами',
-       !DICT.sl.ranks.some(r=>DICT.ber.ranks.includes(r)), 'есть общие');
-    // ни одно слово первой темы не должно всплыть во второй
-    const slWords=['XP','РАНГ','Ранг','Квест','квест','Охотник','Уровень'];
-    applyTheme('ber');
+    // седьмая ступень — «Национальный уровень» (сентябрь 2026)
+    ok('ступеней столько же, сколько порогов', DICT.ranks.length===RANKS.length && DICT.jobs.length===JOBS.length,
+       DICT.ranks.length+' при '+RANKS.length+' порогах');
+    // от второй темы не осталось ни слова
+    const berWords=['Клеймо','Летопись','Ступень','Поход','Припасы','Сирота','Наёмник','Ястреб'];
     const leak=[];
     ['wo','prog','food','photo'].forEach(t=>{tab=t;sel=today();exOpen=null;render();
       const txt=document.body.innerText;
-      slWords.forEach(w=>{if(txt.includes(w)) leak.push(t+':'+w);});});
-    ok('во второй теме нет слов из первой', leak.length===0, [...new Set(leak)].join(', '));
-    applyTheme('sl');
+      berWords.forEach(w=>{if(txt.includes(w)) leak.push(t+':'+w);});});
+    ok('от «Клейма» не осталось подписей', leak.length===0, [...new Set(leak)].join(', '));
 
     /* ---------- ступени и опыт ---------- */
     ok('уровень считается от опыта', levelOf()===Math.floor(S.xp/PER)+1, 'levelOf='+levelOf());
     const thr=[[1,0],[4,0],[5,1],[9,1],[10,2],[16,2],[17,3],[25,3],[26,4],[39,4],[40,5],[59,5],[60,6],[99,6]];
     ok('пороги ступеней не сбились', thr.every(([l,i])=>rankIdx(l)===i),
        thr.filter(([l,i])=>rankIdx(l)!==i).map(([l,i])=>'ур '+l+' даёт '+rankIdx(l)+', ждали '+i).join('; '));
-    ok('ступень ниже первой не ломается', rankIdx(0)===0 && rankOf(0)===DICT.sl.ranks[0], 'rankIdx(0)='+rankIdx(0));
+    ok('ступень ниже первой не ломается', rankIdx(0)===0 && rankOf(0)===DICT.ranks[0], 'rankIdx(0)='+rankIdx(0));
 
     /* ---------- даты ---------- */
     ok('неделя начинается с понедельника', wdOf('2026-09-21')===0 && wdOf('2026-09-27')===6,
@@ -143,7 +134,8 @@ const { LAUNCH, APP } = require('../env');
     ok('норма калорий растёт вместе с весом', nutriFor('wo').kc > 0 && nutriFor('wo').kc > nutriFor('rest').kc,
        nutriFor('wo').kc+' vs '+nutriFor('rest').kc);
     ok('направление режима считается от текущего веса',
-       (num(S.goal)>bw ? goalDir()>0 : num(S.goal)<bw ? goalDir()<0 : goalDir()===0), 'goalDir='+goalDir());
+       // пустая цель — «держать как есть» (первый запуск без чужих 95 кг)
+       (!num(S.goal) ? goalDir()===0 : num(S.goal)>bw ? goalDir()>0 : num(S.goal)<bw ? goalDir()<0 : goalDir()===0), 'goalDir='+goalDir());
 
     /* ---------- серия недель ---------- */
     ok('серия недель не отрицательная и не абсурдная', streak()>=0 && streak()<1000, streak());

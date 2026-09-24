@@ -12,13 +12,13 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   // маленькая высота — как на телефоне с поднятой клавиатурой
-  for(const skin of ['sl','ber']) for(const [W,H] of [[390,844],[390,560],[320,480]]){
+  for(const skin of ['sl']) for(const [W,H] of [[390,844],[390,560],[320,480]]){
     console.log('\n===== '+skin+' '+W+'×'+H+' =====');
     const p=await(await b.newContext({viewport:{width:W,height:H}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1200);
     const r=await p.evaluate(s=>{
-      applyTheme(s); S.sound=0;
+      void s; S.sound=0;
       delete S.setup; openSetup();
       const окно=document.getElementById('setup');
       const карта=окно.querySelector('.setw');

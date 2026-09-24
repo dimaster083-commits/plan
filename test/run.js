@@ -21,7 +21,7 @@ const OUT = path.join(__dirname, 'out');
 const SERIAL = ['tmr', 'tmr2'];
 // Самопроверки ломают уже исправленное и убеждаются, что сторож это видит.
 // По умолчанию не гоняем: они намеренно воспроизводят старые ошибки.
-const SELF = ['selftest', 'selftest2', 'selftest3', 'selftest4'];
+const SELF = ['selftest', 'selftest3', 'selftest4'];
 
 const argv = process.argv.slice(2);
 let jobs = 3, withSelf = false;

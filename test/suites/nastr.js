@@ -84,7 +84,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     const base=S.days.flatMap(d=>(d.ex||[])).filter(e=>e.n===name).map(e=>num(e.w))[0];
     bumpWorking(name, base+10, []); save();
     const raised=S.days.flatMap(d=>(d.ex||[])).filter(e=>e.n===name).map(e=>num(e.w))[0];
-    openSetup(); await new Promise(r=>setTimeout(r,250));
+    S.bw='75'; openSetup(); await new Promise(r=>setTimeout(r,250));   // у человека есть свой вес: без него настройка не проходит
     document.getElementById('setOk').click();
     await new Promise(r=>setTimeout(r,250));
     const asked=document.getElementById('ask').classList.contains('on');

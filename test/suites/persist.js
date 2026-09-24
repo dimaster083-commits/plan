@@ -30,11 +30,12 @@ const out=[]; const ok=(n,c,d)=>out.push((c?'  ✓ ':'  ✗ ')+n+(c?'':'   → '
      before.w===after.w && before.done===after.done && before.vol===after.vol && before.xp===after.xp,
      JSON.stringify(before)+' → '+JSON.stringify(after));
 
-  // тема тоже
-  await p.evaluate(()=>applyTheme('ber'));
+  // тема одна: у кого в хранилище осталась «Клеймо», всё равно открывается Система
+  await p.evaluate(()=>localStorage.setItem('sys-gym-skin','ber'));
   await p.reload(); await p.waitForTimeout(1700);
-  const sk=await p.evaluate(()=>skinNow());
-  ok('выбранная тема переживает перезагрузку', sk==='ber', sk);
+  const sk=await p.evaluate(()=>({skin:document.documentElement.dataset.skin,
+    acc:getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()}));
+  ok('старая «Клеймо» в хранилище не включает чужую тему', sk.skin==='sl' && sk.acc!=='#C0282D', JSON.stringify(sk));
 
   // Ошибка записи не должна выглядеть как успешно сохранённые данные.
   const saveFailure=await p.evaluate(()=>{

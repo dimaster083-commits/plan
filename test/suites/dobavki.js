@@ -12,14 +12,14 @@ const да=p=>p.evaluate(()=>{const b=[...document.querySelectorAll('.askw butto
   .find(x=>!/отмен|нет/i.test(x.textContent)); if(b) b.click();});
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']){
+  for(const skin of ['sl']){
     console.log('\n===== '+skin+' =====');
     const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1300);
 
     const seed=await p.evaluate(s=>{
-      S.setup=1; document.getElementById('setup').classList.remove('on'); applyTheme(s); S.sound=0;
+      S.setup=1; document.getElementById('setup').classList.remove('on'); void s; S.sound=0;
       S.rec={};
       const d=dayOf(today());
       d.sp=[{w:'утро',n:'А',h:''},{w:'утро',n:'Б',h:''},{w:'обед',n:'В',h:''},

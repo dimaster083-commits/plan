@@ -139,27 +139,14 @@ const ok = (n, c, d) => out.push((c ? '  ✓ ' : '  ✗ ') + n + (c ? '' : '   �
   ok('плечи — отдельная группа, махи и жим сидя не «Грудь»',
      delts.inGroups && delts.mahi === 'Плечи' && delts.zhim === 'Плечи' && delts.inVol, JSON.stringify(delts));
 
-  // ---- 10. тема переключается и запоминается ----
-  const t1 = await page.evaluate(() => { applyTheme('sl'); return { s: skinNow(),
-    meta: document.querySelector('meta[name="theme-color"]').content, q: T('quest') }; });
-  const t2 = await page.evaluate(() => { applyTheme('ber'); return { s: skinNow(),
-    meta: document.querySelector('meta[name="theme-color"]').content, q: T('quest'),
-    stored: localStorage.getItem('sys-gym-skin') }; });
-  ok('тема переключается, мета-цвет и словарь меняются',
-     t1.s === 'sl' && t2.s === 'ber' && t1.meta !== t2.meta && t1.q !== t2.q && t2.stored === 'ber',
-     JSON.stringify([t1, t2]));
-
-  // выбор темы доступен из шестерёнки
+  // ---- 10. тема одна — «Система», выбора оформления нет ----
   const gear = await page.evaluate(() => { openSettings();
     return { open: document.getElementById('sh').classList.contains('on'),
-             picks: document.querySelectorAll('[data-skin-set]').length }; });
-  ok('тема выбирается в настройках под шестерёнкой', gear.open && gear.picks === 2, JSON.stringify(gear));
+             picks: document.querySelectorAll('[data-skin-set]').length,
+             skin: document.documentElement.dataset.skin, q: T('quest') }; });
+  ok('настройки открываются, выбора темы в них нет, тема — Система',
+     gear.open && gear.picks === 0 && gear.skin === 'sl' && gear.q === 'Квест дня', JSON.stringify(gear));
   await page.evaluate(() => sheetClose());
-
-  await page.reload(); await page.waitForTimeout(1400); await closeSetup();
-  const persisted = await page.evaluate(() => ({ attr: document.documentElement.dataset.skin,
-    acc: getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() }));
-  ok('выбранная тема переживает перезагрузку', persisted.attr === 'ber' && persisted.acc === '#C0282D', JSON.stringify(persisted));
 
   // ---- 11. закрытие тренировки ----
   await page.evaluate(() => { S.setup=1; save(); document.getElementById('setup').classList.remove('on');

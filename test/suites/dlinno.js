@@ -33,12 +33,12 @@ const SCAN=()=>{
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   for(const w of [320,390]){
-    for(const skin of ['sl','ber']){
+    for(const skin of ['sl']){
       const p=await(await b.newContext({viewport:{width:w,height:844}})).newPage();
       const errs=[]; p.on('pageerror',e=>errs.push(e.message));
       await p.goto(APP); await p.waitForTimeout(1300);
       await p.evaluate(([skin,LONG,LONGWORD])=>{
-        S.setup=1; document.getElementById('setup').classList.remove('on'); applyTheme(skin);
+        S.setup=1; document.getElementById('setup').classList.remove('on'); void skin;
         S.anchors={b:70,s:50,d:60};
         const d=dayOf(today());
         if(d.t==='rest'){const x=S.days.find(y=>(y.ex||[]).length);d.t=x.t;d.s=x.s;d.ex=x.ex.map(e=>({...e}));}

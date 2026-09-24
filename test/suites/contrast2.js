@@ -28,7 +28,7 @@ async function audit(skin, secs) {
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto(APP); await p.waitForTimeout(1900);
   await p.evaluate(SEED);
-  await p.evaluate(s=>{applyTheme(s);S.setup=1;document.getElementById('setup').classList.remove('on');},skin);
+  await p.evaluate(s=>{void s;S.setup=1;document.getElementById('setup').classList.remove('on');},skin);
   await p.waitForTimeout(500);
 
   const found = [];
@@ -86,7 +86,7 @@ async function audit(skin, secs) {
 
 (async () => {
   const secs = [['wo',null],['prog','log'],['prog','load'],['prog','goal'],['prog','prog'],['food',null],['photo',null]];
-  for (const skin of ['sl','ber']) {
+  for (const skin of ['sl']) {
     const { found, errs } = await audit(skin, secs);
     console.log(`\n===== ${skin.toUpperCase()} =====`);
     if (errs.length) console.log('ОШИБКИ JS:', [...new Set(errs)].join(' | '));

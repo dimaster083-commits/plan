@@ -146,8 +146,6 @@ const ПРАВИЛА = () => {
     `let ds=today(); for(let k=0;k<14;k++){const x=new Date();x.setDate(x.getDate()-k); if(dayOf(iso(x)).t!=='rest'){ds=iso(x);break;}}
      sel=ds; tab='wo'; edit=true; editPast=true; exOpen=0; render();
      toggleSet(0); toggleSet(0); save();`);
-  await шаг('13. сменили тему посреди всего',
-    `applyTheme(skinNow()==='sl'?'ber':'sl');`);
 
   // 14. перезагрузка: всё, что накопили, переживает уход со страницы
   await p.evaluate(()=>flush());

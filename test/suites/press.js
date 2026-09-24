@@ -9,12 +9,12 @@ const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
 const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']){
+  for(const skin of ['sl']){
     console.log('\n===== '+skin+' =====');
     const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1300);
-    await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');applyTheme(s);S.sound=0;save();},skin);
+    await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');void s;S.sound=0;save();},skin);
 
     const cat=await p.evaluate(()=>{
       const abs=['Пресс','Подъём ног в висе','Планка','Скручивания на блоке','Русский твист'];
@@ -48,22 +48,16 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     chk(vol.метка==='Пресс','6. в программе он помечен своей группой',String(vol.метка));
     chk(vol.пресс===3&&vol.ноги===0,'7. три подхода легли в пресс, а не в ноги',JSON.stringify(vol));
 
-    // 8-10. диаграмма рисуется по числу групп, а не пятиугольником
+    // 8-10. пресс — своя строка баланса со своей нормой
     const rad=await p.evaluate(()=>{
       tab='prog'; pSec='load'; render(); paintSections(); paintRadar();
-      const sv=document.getElementById('rad');
-      const gr=sv.querySelector('polygon.rgrid');
-      const pts=gr.getAttribute('points').trim().split(/\s+/).length;
-      const подписи=[...sv.querySelectorAll('text.rlab')].map(t=>t.textContent);
-      // спиц нет, а кольца по четвертям нормы — есть
-      const спиц=sv.querySelectorAll('line, .rspoke').length;
-      const колец=sv.querySelectorAll('polygon.rstep').length;
-      return {углов:pts, подписи:подписи, спиц:спиц, колец:колец, групп:GROUPS.length};
+      const row=document.querySelector('#rad .br[data-g="Пресс"]');
+      return {есть:!!row, норма:volTargetM('Пресс'), мышца:muscleOf('Подъём ног в висе','Пресс'),
+        подпись:row?row.querySelector('.bv').textContent:''};
     });
-    chk(rad.углов===rad.групп,'8. у фигуры столько углов, сколько групп',rad.углов+' при '+rad.групп+' группах');
-    chk(rad.спиц===0&&rad.колец===9,'9. внутри девять колец шкалы и ни одной спицы',
-        'колец '+rad.колец+', спиц '+rad.спиц);
-    chk(rad.подписи.indexOf('ПРЕСС')>=0,'10. «ПРЕСС» подписан на диаграмме',rad.подписи.join(' · '));
+    chk(rad.есть,'8. у пресса своя строка в балансе недели',JSON.stringify(rad));
+    chk(rad.норма===8,'9. норма пресса — 8 подходов из программы',String(rad.норма));
+    chk(rad.мышца==='Пресс','10. подъём ног в висе засчитывается в пресс',rad.мышца);
 
     chk(errs.length===0,'11. без ошибок в консоли',errs.join(' | ')||'чисто');
     await p.context().close();

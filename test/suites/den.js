@@ -8,12 +8,12 @@ const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
 const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']){
+  for(const skin of ['sl']){
     console.log('\n===== '+skin+' =====');
     const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1300);
-    await p.evaluate(s2=>{S.setup=1;document.getElementById('setup').classList.remove('on');applyTheme(s2);
+    await p.evaluate(s2=>{S.setup=1;document.getElementById('setup').classList.remove('on');void s2;
       S.anchors={b:70,s:50,d:60};S.sound=0;deriveWeights();
       const d=dayOf(today()); if(d.t==='rest'){const x=S.days.find(y=>(y.ex||[]).length);d.t=x.t;d.s=x.s;d.ex=x.ex.map(e=>({...e}));}
       save();recomputeStats(1);tab='wo';sel=today();exOpen=null;render();},skin);
@@ -64,12 +64,12 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       document.querySelectorAll('#exl [data-rs]').forEach(i2=>{ i2.value='8';
         i2.dispatchEvent(new Event('input',{bubbles:true})); });
       document.querySelector('#exl [data-go]').click();
-      const after=S.xp;
-      exOpen=2; render();
-      document.querySelector('#exl [data-go]').click();
-      const back=S.xp;
-      return { before, after, back };
+      return { before, after:S.xp };
     });
+    // отмена — отдельным касанием, не двойным тапом (двойной тап защищён 200 мс)
+    await p.waitForTimeout(260);
+    xp.back=await p.evaluate(()=>{ exOpen=2; render();
+      document.querySelector('#exl [data-go]').click(); return S.xp; });
     chk(xp.after>xp.before && xp.back===xp.before,
         '5. опыт начисляется за подход и снимается при отмене', JSON.stringify(xp));
 

@@ -16,12 +16,12 @@ const SEED=()=>{
 };
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const sk of ['sl','ber']){
+  for(const sk of ['sl']){
     const p=await(await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2})).newPage();
     p.on('pageerror',e=>console.log('PAGEERROR',e.message));
     await p.goto(APP);await p.waitForTimeout(1900);
     await p.evaluate(SEED);
-    await p.evaluate(s2=>{applyTheme(s2);S.setup=1;document.getElementById('setup').classList.remove('on');
+    await p.evaluate(s2=>{void s2;S.setup=1;document.getElementById('setup').classList.remove('on');
       tab='prog';pSec='log';render();},sk);
     await p.waitForTimeout(600);
     await p.screenshot({path:D+'prog-'+sk+'-log.png'});

@@ -44,12 +44,12 @@ const CHECK = () => {
 
 (async () => {
   const b = await chromium.launch(LAUNCH);
-  for (const skin of ['sl','ber']) {
+  for (const skin of ['sl']) {
     const p = await (await b.newContext({ viewport:{width:390,height:844} })).newPage();
     const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1400);
     await p.evaluate(SEED);
-    await p.evaluate(s => { S.setup=1; document.getElementById('setup').classList.remove('on'); applyTheme(s); render(); }, skin);
+    await p.evaluate(s => { S.setup=1; document.getElementById('setup').classList.remove('on'); void s; render(); }, skin);
 
     let clicks = 0, typed = 0; const seen = new Set();
     for (let i = 0; i < STEPS; i++) {

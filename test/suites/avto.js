@@ -1,7 +1,7 @@
 /* Автопрогрессия для ленивых: подходы подхватывают вписанное число,
    прошлый раз подставляется сам, поднятый вес и новая цель по повторам
    уходят во все дни с упражнением и откатываются снятием отметки,
-   «Пропуск» закрывает день без сброса серии недель. */
+   «Пропуск» помечает день без опыта и тренировкой в серии не считается. */
 const { chromium } = require('playwright-core');
 const { LAUNCH, APP } = require('../env');
 let fails = 0;
@@ -43,23 +43,31 @@ const chk = (ok, name, info = '') => { console.log((ok ? '  ✓ ' : '  ✗ ') + 
 
   // поднимаем вес и цель по повторам, закрываем подход с недобором низа
   const before = await page.evaluate(n => S.days.flatMap(d => d.ex).filter(e => e.n === n).map(e => [num(e.w), e.r]), name);
-  await page.evaluate(() => {
+  const закрыть = повт => page.evaluate(повт => {
     const c = document.querySelector('.ex[data-j="0"]');
     const w = c.querySelector('[data-f="w"]'); w.value = String(num(dayOf(sel).ex[0].w) + 10);
-    c.querySelector('[data-f="r"]').value = '10';
-    c.querySelectorAll('[data-rs]').forEach(x => { x.value = '4'; });
+    c.querySelector('[data-f="r"]').value = '10-12';
+    c.querySelectorAll('[data-rs]').forEach(x => { x.value = String(повт); });
     toggleSet(0);
-  });
-  const after = await page.evaluate(n => S.days.flatMap(d => d.ex).filter(e => e.n === n).map(e => [num(e.w), e.r]), name);
-  chk(after.every((x, i) => x[0] === before[i][0] + 10), 'поднятый вес стал рабочим во всех днях, хоть низ и не добран',
+  }, повт);
+  const веса = () => page.evaluate(n => S.days.flatMap(d => d.ex).filter(e => e.n === n).map(e => [num(e.w), e.r]), name);
+  await закрыть(4);
+  const short = await веса();
+  chk(short.every((x, i) => x[0] === before[i][0]), 'вес с недобором низа не становится рабочим',
+    JSON.stringify(before) + ' → ' + JSON.stringify(short));
+  chk(short.every(x => x[1] === '10-12'), 'новая цель по повторам ушла во все дни', JSON.stringify(short));
+  await page.evaluate(() => toggleSet(0));
+
+  await закрыть(10);
+  const after = await веса();
+  chk(after.every((x, i) => x[0] === before[i][0] + 10), 'поднятый вес с добранным низом стал рабочим во всех днях',
     JSON.stringify(before) + ' → ' + JSON.stringify(after));
-  chk(after.every(x => x[1] === '10'), 'новая цель по повторам ушла во все дни', JSON.stringify(after));
 
   await page.evaluate(() => toggleSet(0));
-  const undo = await page.evaluate(n => S.days.flatMap(d => d.ex).filter(e => e.n === n).map(e => [num(e.w), e.r]), name);
+  const undo = await веса();
   chk(JSON.stringify(undo) === JSON.stringify(before), 'снятая отметка возвращает вес и цель', JSON.stringify(undo));
 
-  // пропуск: день закрыт, опыт не начислен, серия считает его
+  // пропуск: день помечен, опыт не начислен
   const sk = await page.evaluate(() => {
     exOpen = null; render();
     const vis = !$('skipDay').hidden, xp = S.xp;
@@ -71,15 +79,15 @@ const chk = (ok, name, info = '') => { console.log((ok ? '  ✓ ' : '  ✗ ') + 
   const ser = await page.evaluate(() => {
     const m = mondayOf(today()), base = at(m);
     const was = S.rec; S.rec = {};
-    // прошлая неделя: три тренировки и один пропуск кнопкой
+    // прошлая неделя: две тренировки и два пропуска кнопкой
     for (let i = 0; i < 4; i++) {
       const d = new Date(base); d.setDate(d.getDate() - 7 + i);
       const z = new Date(d); z.setMinutes(z.getMinutes() - z.getTimezoneOffset());
-      S.rec[z.toISOString().slice(0, 10)] = i < 3 ? { log: {}, sp: {}, wo: 1 } : { log: {}, sp: {}, skip: 1 };
+      S.rec[z.toISOString().slice(0, 10)] = i < 2 ? { log: {}, sp: {}, wo: 1 } : { log: {}, sp: {}, skip: 1 };
     }
     const n = streak(); S.rec = was; return n;
   });
-  chk(ser === 1, 'пропущенный кнопкой день не рвёт серию недель', String(ser));
+  chk(ser === 0, 'пропуск кнопкой тренировкой не считается: две тренировки и два пропуска — не серия', String(ser));
   chk(!errs.length, 'без ошибок страницы', errs.join('; '));
   await browser.close();
   process.exit(fails ? 1 : 0);

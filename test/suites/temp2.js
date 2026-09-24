@@ -15,11 +15,14 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   await p.goto(APP); await p.waitForTimeout(1300);
   await p.evaluate(()=>{S.setup=1;document.getElementById('setup').classList.remove('on');S.sound=0;save();});
 
-  // темп задаётся двумя взвешиваниями: 14 дней назад и сегодня
+  // темп задаётся тремя взвешиваниями по прямой: 14 и 7 дней назад и сегодня
+  // (по двум точкам темп больше не оценивается — вода даёт ложные +7 кг/нед)
   const tempo=(from,to,goal)=>p.evaluate(([from,to,goal])=>{
-    S.rec={}; S.goal=String(goal); S.bw=String(to);
+    S.rec={}; S.goal=String(goal); S.bw=String(to); S.bw0='80';   // путь набора: старт 80
     const d=new Date(); d.setDate(d.getDate()-14);
     recRW(iso(d)).bw=String(from);
+    const m=new Date(); m.setDate(m.getDate()-7);
+    recRW(iso(m)).bw=String(Math.round((from+to)/2*100)/100);
     recRW(today()).bw=String(to);
     save();
     const f=analyze().find(x=>x.title==='ТЕМП');

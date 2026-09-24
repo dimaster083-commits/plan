@@ -11,13 +11,13 @@ const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
 const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']) for(const W of [320,390]){
+  for(const skin of ['sl']) for(const W of [320,390]){
     console.log('\n===== '+skin+' '+W+'px =====');
     const p=await(await b.newContext({viewport:{width:W,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1300);
     const r=await p.evaluate(s=>{
-      S.setup=1; document.getElementById('setup').classList.remove('on'); applyTheme(s); S.sound=0;
+      S.setup=1; document.getElementById('setup').classList.remove('on'); void s; S.sound=0;
       // самый длинный день программы и сегодняшняя дата под него
       const день=S.days.reduce((a,d)=>((d.ex||[]).length>(a.ex||[]).length?d:a), S.days[0]);
       const ds=today();

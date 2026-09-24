@@ -72,8 +72,8 @@ const SCAN=()=>{
     await p.goto(APP); await p.waitForTimeout(1200);
     await p.evaluate(SEED);
     await p.evaluate(()=>{S.setup=1;document.getElementById('setup').classList.remove('on');});
-    for(const skin of ['sl','ber']){
-      await p.evaluate(s=>applyTheme(s),skin);
+    for(const skin of ['sl']){
+      await p.evaluate(s=>void s,skin);
       for(const t of ['wo','prog','food','photo']){
         await p.evaluate(tt=>{tab=tt;exOpen=null;sel=today();render();window.scrollTo(0,0);},t);
         await p.waitForTimeout(160);

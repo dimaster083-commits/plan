@@ -19,12 +19,12 @@ const SEED=()=>{
 };
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const sk of ['sl','ber']){
+  for(const sk of ['sl']){
     const p=await(await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2})).newPage();
     p.on('pageerror',e=>console.log('PAGEERROR',e.message));
     await p.goto(APP);await p.waitForTimeout(2000);
     await p.evaluate(SEED);
-    await p.evaluate(s2=>{applyTheme(s2);S.setup=1;document.getElementById('setup').classList.remove('on');
+    await p.evaluate(s2=>{void s2;S.setup=1;document.getElementById('setup').classList.remove('on');
       tab='prog';calView='year';render();},sk);
     await p.waitForTimeout(600);
     const cal=await p.$('.cal'); await cal.screenshot({path:D+'year-'+sk+'.png'});

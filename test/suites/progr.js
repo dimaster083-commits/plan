@@ -27,13 +27,13 @@ const WS = n => S.days.flatMap(d => (d.ex || [])).filter(x => x.n === n).map(x =
 
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for (const skin of ['sl','ber']) {
+  for (const skin of ['sl']) {
     console.log('\n===== '+skin+' =====');
     const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1400);
     await p.evaluate(s2=>{ S.setup=1; document.getElementById('setup').classList.remove('on');
-      applyTheme(s2); S.anchors={b:70,s:50,d:60}; S.sound=0;
+      void s2; S.anchors={b:70,s:50,d:60}; S.sound=0;
       const d=dayOf(today()); if(d.t==='rest'){const x=S.days.find(y=>(y.ex||[]).length);d.t=x.t;d.s=x.s;d.ex=x.ex.map(e=>({...e}));}
       S.start=today(); save(); recomputeStats(1); tab='wo'; sel=today(); exOpen=0; render(); }, skin);
     await p.waitForTimeout(350);

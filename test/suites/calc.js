@@ -12,11 +12,11 @@ const ratio = (a,b) => { const l1=Math.max(lum(a),lum(b)), l2=Math.min(lum(a),lu
 let fails=0;
 (async () => {
   const b = await chromium.launch(LAUNCH);
-  for (const skin of ['sl','ber']) {
+  for (const skin of ['sl']) {
     const p = await (await b.newContext({ viewport:{width:390,height:900}, deviceScaleFactor:2 })).newPage();
     await p.goto(APP); await p.waitForTimeout(1400);
     await p.evaluate(SEED);
-    await p.evaluate(s => { S.setup=1; document.getElementById('setup').classList.remove('on'); applyTheme(s);
+    await p.evaluate(s => { S.setup=1; document.getElementById('setup').classList.remove('on'); void s;
       tab='prog'; calView='month'; mo=today().slice(0,7); render(); cal(); }, skin);
     await p.waitForTimeout(400);
     // прогон по всем шестнадцати сочетаниям «тип дня × ступень тоннажа»:
