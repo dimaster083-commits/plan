@@ -26,8 +26,14 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     // застой: 4 записи одного веса и повторов — застой; растущие — нет
     const mk=(ws)=>{S.rec={}; ws.forEach((w,i)=>{const z=new Date(); z.setDate(z.getDate()-30+i*7); const ds=iso(z);
       const dd=dayOf(ds); const r=recRW(ds); r.wo=1; r.log={0:{done:1,n:'Жим лёжа',g:'Грудь',s:'3',r:'6',w,rs:[6,6,6],vol:1,xp:1}};}); entCache=null;};
+    const st0=S.start; const fut=new Date(); fut.setFullYear(fut.getFullYear()+1); S.start=iso(fut);   // цикл не идёт — интенсивность 1
     mk([60,60,60,60]); o.plat=plateauOf('Жим лёжа');
     mk([55,57.5,60,62.5]); o.grow=plateauOf('Жим лёжа');
+    // идеальная прогрессия по циклу: лёгкие недели ниже по плану — это не застой
+    const past=new Date(); past.setDate(past.getDate()-35); S.start=iso(past);
+    S.rec={}; [60,62.5,65,67.5].forEach((W,i)=>{ const z=new Date(); z.setDate(z.getDate()-30+i*7); const ds=iso(z);
+      const w=roundW(W*intFactor(ds)); const r=recRW(ds); r.wo=1; r.log={0:{done:1,n:'Жим лёжа',g:'Грудь',s:'3',r:'6',w,rs:[6,6,6],vol:1,xp:1}}; });
+    entCache=null; o.cyc=plateauOf('Жим лёжа'); S.start=st0;
     return o;
   });
   chk(JSON.stringify(r.pl[0])==='[15,2.5,1.25]' && r.pl[1].length===0 && JSON.stringify(r.pl[2])==='[25,25,10]',
@@ -43,6 +49,26 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(r.none===null,'8. по диапазону — подсказки нет',String(r.none));
   chk(r.e1===117 && r.e1big===0,'9. ≈1ПМ по Эпли: 100×5 → 117; больше 12 повторов не оцениваем',r.e1+' / '+r.e1big);
   chk(r.plat===true && r.grow===false,'10. застой — три тренировки без роста; рост застоем не считается',r.plat+' / '+r.grow);
+  chk(r.cyc===false,'10б. лёгкие недели, назначенные циклом, застоем не считаются',String(r.cyc));
+
+  // 15-20. найдено агентом-«тренером»
+  const t=await p.evaluate(()=>({
+    far:weightAdvice({n:'Присед со штангой',r:'4-6',w:60},{w:60,rs:[13,13,13]},60),
+    light:weightAdvice({n:'Присед со штангой',r:'4-6',w:40},{w:30,rs:[8,8,8]},36),
+    p21:platesTxt(21), p23:platesTxt(23),
+    mus:[muscleOf('Подъёмы на носки','Ноги'),muscleOf('Сгибание ног лёжа','Ноги'),muscleOf('Мёртвая тяга','Ноги'),muscleOf('Кикбэк','Руки')],
+    ton:[tonTxt(999.96),tonTxt(0.04)] }));
+  chk(t.far&&t.far.up,'15. 13/13/13 при цели 4–6 — тоже «вес лёгкий» (раньше тишина выше 12 повторов)',JSON.stringify(t.far));
+  chk(!t.light,'16. «вес лёгкий» не спорит с облегчённой неделей: расчёт ниже рабочего — совета нет',JSON.stringify(t.light));
+  chk(/ровно не собрать/.test(t.p21)&&/ровно не собрать/.test(t.p23),'17. 21 и 23 кг блинами не собрать — так и сказано',t.p21+' · '+t.p23);
+  chk(t.mus.join()==='Икры,Бицепс бедра,Бицепс бедра,Трицепс','18. свои названия: носки → икры, сгибание ног и мёртвая → бицепс бедра, кикбэк → трицепс',t.mus.join());
+  chk(t.ton[0]==='1,0 тыс. т'&&t.ton[1]==='40 кг','19. 999,96 т — «1,0 тыс. т», 40 кг — не «0,0 т»',t.ton.join(' · '));
+  const rz=await p.evaluate(()=>{ S.rec={}; const z=new Date(); z.setDate(z.getDate()-1); const ds=iso(z); const d=dayOf(ds);
+    d.t='up2'; d.ex=[{n:'Жим гантелей на наклонной',s:4,r:'6-8',w:12,g:'Грудь'}]; const r=recRW(ds); r.wo=1;
+    r.log={0:{done:1,n:'Жим гантелей на наклонной',g:'Грудь',s:'4',r:'6-8',w:12,rs:[8,8,8,8],vol:1,xp:1}}; entCache=null; save();
+    const f=analyze().find(x=>x.title==='РАСПРЕДЕЛЕНИЕ НАГРУЗКИ'); tab='prog'; pSec='load'; render(); paintRadar();
+    return {raz:f?f.text.replace(/<[^>]+>/g,''):'', bal:document.getElementById('radn').textContent}; });
+  chk(!/в норме/.test(rz.raz) && /Грудь/.test(rz.raz),'20. «Разбор» по мышцам: недобор груди видит, как и баланс',rz.raz.slice(0,120));
 
   // кнопка «Поставить» только вписывает вес, журнал не трогает
   const btn=await p.evaluate(()=>{

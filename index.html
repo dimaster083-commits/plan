@@ -3107,7 +3107,12 @@ function maintOf(bw) {
 function nutriFor(t) {
   const bw = num(S.bw) || startW() || 70, g = num(S.goal) || bw, dir = goalDir();
   const maint = maintOf(bw);
-  const k = maint * (dir > 0 ? 1.12 : dir < 0 ? 0.8 : 1) - (t === 'rest' ? 200 : 0);
+  /* Разница тренировка/отдых — 200 ккал, но средняя за неделю ровно цель
+     (+12 %, −20 % или поддержание). Раньше из дней отдыха вычитали 200,
+     ничего не добавляя дням тренировок, и неделя выходила +8,7 % вместо +12. */
+  const target = maint * (dir > 0 ? 1.12 : dir < 0 ? 0.8 : 1);
+  const woDays = Math.min(7, Math.max(1, (S.days || []).filter(d => d.t !== 'rest').length)), restDays = 7 - woDays;
+  const k = target + (t === 'rest' ? -200 * woDays / 7 : 200 * restDays / 7);
   const pr = dir < 0 ? bw * 2.2 : Math.min(Math.max(g, bw), bw * 1.15) * 1.9;
   return { kc: String(Math.round(k / 10) * 10), pr: String(Math.round(pr / 5) * 5) };
 }
@@ -5270,7 +5275,12 @@ function platesFor(w) {
   return out;
 }
 const plTxt = x => String(x).replace('.', ',');
-const platesTxt = w => { const p = platesFor(w); return p.length ? 'по ' + p.map(plTxt).join(' + ') : 'пустой гриф'; };
+const platesTxt = w => {
+  const p = platesFor(w), got = BAR + 2 * p.reduce((a, x) => a + x, 0);
+  // 21 или 23 кг блинами не собрать: говорим, какой вес выйдет на самом деле
+  const rest = Math.abs(num(w) - got) > 0.01 ? ' (ровно не собрать — выйдет ' + plTxt(got) + ' кг)' : '';
+  return (p.length ? 'по ' + p.map(plTxt).join(' + ') : 'пустой гриф') + rest;
+};
 function warmupFor(e, w, d, j) {
   w = num(w);
   if (!(w > 0)) return { sets: [] };
@@ -5292,9 +5302,10 @@ function warmupFor(e, w, d, j) {
   return { sets: out, bar };
 }
 // оценка разового максимума по Эпли по лучшему подходу — только ориентир, до 12 повторов
-function e1rmOf(l) {
+function e1rmOf(l, maxReps) {
   if (!l) return 0;
-  const w = num(l.w), rs = (l.rs && l.rs.length ? l.rs : [firstRep(l.r)]).map(num).filter(r => r > 0 && r <= 12);
+  const lim = maxReps || 12;
+  const w = num(l.w), rs = (Array.isArray(l.rs) && l.rs.length ? l.rs : [firstRep(l.r)]).map(num).filter(r => r > 0 && r <= lim);
   if (!(w > 0) || !rs.length) return 0;
   return w * (1 + Math.max(...rs) / 30);
 }
@@ -5305,7 +5316,8 @@ function e1rmOf(l) {
    диапазона, если было легко, и на низ, если было тяжело. Кнопка только
    вписывает цифру в поле — в журнал уходит, лишь когда подход закрыт. */
 function weightAdvice(e, pv, wNow) {
-  const est = e1rmOf(pv), top = topRep(e.r), low = firstRep(e.r);
+  // для совета — до 20 повторов: 13/13/13 при цели 4–6 тоже «вес лёгкий»
+  const est = e1rmOf(pv, 20), top = topRep(e.r), low = firstRep(e.r);
   if (!est || !top || !pv) return null;
   const rs = (pv.rs && pv.rs.length ? pv.rs : [firstRep(pv.r)]).map(num).filter(r => r > 0);
   if (!rs.length) return null;
@@ -5313,7 +5325,9 @@ function weightAdvice(e, pv, wNow) {
   const at = r => roundW(est / (1 + r / 30));
   if (best >= top + 3) {
     const w = at(top);
-    if (w > num(wNow)) return { w, up: 1, why: 'в прошлый раз ' + rs.join('/') + ' на ' + kg(pv.w) + ' кг при цели ' + e.r };
+    // «лёгкий» — относительно рабочего веса, а не облегчённого веса недели:
+    // иначе карточка говорила «30, полегче» и «вес лёгкий» одновременно
+    if (w > num(wNow) && w > num(e.w)) return { w, up: 1, why: 'в прошлый раз ' + rs.join('/') + ' на ' + kg(pv.w) + ' кг при цели ' + e.r };
   }
   if (low && worst > 0 && best <= low - 2) {
     const w = at(low);
@@ -5325,7 +5339,7 @@ function weightAdvice(e, pv, wNow) {
 function plateauOf(name) {
   const h = [];
   Object.keys(S.rec).sort().forEach(ds => dayEntries(ds).forEach(x => {
-    if (x.n === name) { const v = e1rmOf({ w: x.w, rs: x.rs, r: x.r }); if (v) h.push(v); }
+    if (x.n === name) { const v = e1rmOf({ w: x.w, rs: x.rs, r: x.r }); if (v) h.push(v / intFactor(ds)); }
   }));
   if (h.length < 4) return false;
   const last = h.slice(-3), prev = h.slice(0, -3);
@@ -5907,7 +5921,9 @@ function pace(pts) {
    всегда стояла почти залитой. Ненулевой тоннаж виден хотя бы черточкой. */
 const volCeil = t => Math.max(1, Math.ceil(t / 1000)) * 1000;
 const volFrac = (t, top) => (t > 0 ? Math.min(1, t / top) : 0);
-const tonTxt = t => (t >= 1000 ? dec(t / 1000, 1) + ' тыс. т' : dec(t) + ' т');
+// 999,96 т — это уже «1,0 тыс. т», а 40 кг — не «0,0 т»
+const tonTxt = t => (Math.round(t * 10) / 10 >= 1000 ? dec(t / 1000, 1) + ' тыс. т'
+  : t > 0 && t < 0.1 ? rnd(t * 1000) + ' кг' : dec(t) + ' т');
 function paintVol() {
   // подходы за всё время — по журналу, тем же счётом, что daySets
   const sets = zeroVol();
@@ -8305,9 +8321,17 @@ $('ovX').addEventListener('click', () => { $('ov').classList.remove('on'); docum
    ========================================================================= */
 
 // максимальный вес по датам для упражнения: [[дата, вес], ...]
-function bestByDate(name) {
+/* Доля рабочего веса, которую план дал на эту дату (лёгкая неделя — 0,8,
+   разгрузка — 0,6). Застой и рост силы считаются по весу, приведённому к
+   полной интенсивности: иначе лёгкая неделя, назначенная самим циклом,
+   читалась как «вес не растёт». */
+function intFactor(ds) {
+  const IN = intOf(ds, (dayOf(ds) || {}).t);
+  return Math.max(0.3, (IN ? IN[0] : 1) * rampOf(ds));
+}
+function bestByDate(name, norm) {
   const m = {};
-  exHistory(name).forEach(([ds, w]) => { m[ds] = Math.max(m[ds] || 0, w); });
+  exHistory(name).forEach(([ds, w]) => { const v = norm ? w / intFactor(ds) : w; m[ds] = Math.max(m[ds] || 0, v); });
   return Object.keys(m).sort().map(ds => [ds, m[ds]]);
 }
 
@@ -8362,9 +8386,9 @@ const MUSCLE_KEY = {
 function muscleOf(name, g) {
   const k = (EXDB[name] || [])[0];
   if (k && MUSCLE_KEY[k]) return MUSCLE_KEY[k];
-  if (g === 'Руки') return /разгиб|трицепс|француз|брус|узк/i.test(name || '') ? 'Трицепс' : 'Бицепс';
-  if (g === 'Ноги') return /икр/i.test(name || '') ? 'Икры'
-    : /сгибания ног|румын|станов|мост|наклон|гиперэкст/i.test(name || '') ? 'Бицепс бедра' : 'Квадрицепс';
+  if (g === 'Руки') return /разгиб|трицепс|француз|брус|узк|кикбэк|kickback/i.test(name || '') ? 'Трицепс' : 'Бицепс';
+  if (g === 'Ноги') return /икр|носк|голен/i.test(name || '') ? 'Икры'
+    : /сгибан\S* ног|румын|станов|мёртв|мертв|мост|наклон|гиперэкст|ягодич/i.test(name || '') ? 'Бицепс бедра' : 'Квадрицепс';
   return MUSCLES.indexOf(g) >= 0 ? g : null;
 }
 // недельная норма мышцы — сумма подходов, которые на неё ставит сама программа
@@ -8437,7 +8461,7 @@ function regularity(days) {
 
 // изменение лучшего веса в упражнении за период
 function strengthShift(name, days) {
-  const h = bestByDate(name);
+  const h = bestByDate(name, true);
   if (h.length < 2) return null;
   const from = new Date(); from.setDate(from.getDate() - days + 1);
   const win = h.filter(x => x[0] >= iso(from));
@@ -8446,7 +8470,7 @@ function strengthShift(name, days) {
   // разгрузки веса ниже по самому плану, и «последнее минус первое»
   // рисовало минус там, где рекорд как раз вырос.
   const best = Math.max(...win.map(x => x[1]));
-  return { from: win[0][1], to: best, diff: best - win[0][1] };
+  return { from: roundW(win[0][1]), to: roundW(best), diff: roundW(best) - roundW(win[0][1]) };
 }
 
 function analyze() {
@@ -8538,24 +8562,45 @@ function analyze() {
     }
   }
 
-  /* --- объём по группам --- */
-  const acc = vol7();
-  const low = [], high = [];
-  GROUPS.forEach(([n]) => {
-    const tg = volTarget(n);
-    if (acc[n] < tg * 0.6) low.push(n + ' ' + acc[n] + '/' + tg);
-    else if (acc[n] > tg * 1.4) high.push(n + ' ' + acc[n] + '/' + tg);
+  /* --- объём по мышцам: тот же счёт и та же норма, что в «Балансе недели» ---
+     Раньше «Разбор» считал по группам с порогом 60 % и писал «все группы в
+     норме», пока баланс на соседней вкладке просил добрать грудь. */
+  const acc = vol7m();
+  const mus = MUSCLES.filter(m => volTargetM(m) > 0);
+  const low = [], short = [], high = [];
+  mus.forEach(m => {
+    const tg = volTargetM(m), v = acc[m] || 0;
+    if (v < tg * 0.6) low.push(m + ' ' + v + '/' + tg);
+    else if (v < tg) short.push(m + ' ' + (tg - v));
+    else if (v > tg * 1.4) high.push(m + ' ' + v + '/' + tg);
   });
-  if (Object.values(acc).some(v => v > 0)) {
+  if (mus.some(m => acc[m] > 0)) {
     if (low.length) {
-      add('warn', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Недобор подходов: <b>' + low.join(', ') + '</b>. ' +
+      add('warn', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Недобор подходов за 7 дней: <b>' + low.join(', ') + '</b>. ' +
         (high.length ? 'Перебор: ' + high.join(', ') + '. ' : '') +
-        'Группа, которая недобирает, встаёт первой.',
-        'Добавь подходы на отстающие группы');
+        'Мышца, которая недобирает, встаёт первой.',
+        'Добавь подходы на отстающие мышцы');
+    } else if (short.length) {
+      add('ok', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Почти ровно. Добрать подходов: <b>' + short.join(', ') + '</b>.',
+        'Закрой их на ближайшей тренировке');
     } else {
-      add('ok', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Все группы в норме: ' +
-        GROUPS.map(([n]) => n.toLowerCase() + ' ' + acc[n]).join(', ') + ' подходов.',
+      add('ok', 'РАСПРЕДЕЛЕНИЕ НАГРУЗКИ', 'Все мышцы добраны по норме программы.',
         'Продолжай в том же объёме');
+    }
+  }
+
+  /* --- реальность цели по весу ---
+     Цель выше ИМТ ~27,5 при наборе — это уже не мышцы: у естественно
+     тренирующегося потолок безжировой массы около индекса 25. Не спорим с
+     целью, а предлагаем промежуточную веху. */
+  {
+    const h2 = num(S.height) / 100, gl = num(S.goal), bwn = num(S.bw);
+    if (h2 && gl && bwn && goalDir() > 0 && gl / (h2 * h2) > 27.5) {
+      const mid = Math.min(gl, Math.round((bwn + 6) / 5) * 5);
+      add('warn', 'ЦЕЛЬ ПО ВЕСУ', 'Цель <b>' + kg(gl) + ' кг</b> при росте ' + num(S.height) + ' см — ИМТ ' +
+        dec(gl / (h2 * h2)) + '. Столько мышц без заметного жира набирают единицы: потолок безжировой ' +
+        'массы у естественно тренирующихся — около индекса 25.',
+        'Поставь промежуточную цель ' + kg(mid) + ' кг и оцени форму по фото');
     }
   }
 
@@ -8565,11 +8610,11 @@ function analyze() {
   S.days.forEach(d => d.ex.forEach(e => {
     if (seen[e.n] || !num(e.w)) return;
     seen[e.n] = 1;
-    const h = bestByDate(e.n);
+    const h = bestByDate(e.n, true);
     if (h.length < 3) return;
     const tail = h.slice(-3);
-    if (tail[0][1] >= tail[2][1] && daysBetween(tail[0][0], today()) <= 35) {
-      stuck.push(e.n + ' — ' + kg(tail[2][1]) + ' кг');
+    if (tail[0][1] >= tail[2][1] - 0.01 && daysBetween(tail[0][0], today()) <= 35) {
+      stuck.push(e.n + ' — ' + kg(roundW(tail[2][1])) + ' кг');
     }
   }));
   if (stuck.length) {
