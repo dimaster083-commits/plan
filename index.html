@@ -4322,12 +4322,18 @@ $('skipDay').addEventListener('click', () => {
 
 
 /* Строка списка: имя, схема, вес и отметка. Нажатие раскрывает упражнение. */
+/* Графа ПОВТ по умолчанию — повторы прошлой тренировки этого упражнения
+   (решение владельца): там человек сам задаёт рабочую цель. Если прошлого
+   раза нет — цель программы. Клетки, «Все по N», подсказки и кнопка ○ в
+   списке берут цель отсюда же: раньше графа показывала 10, а клетки — 6. */
+function repsDefault(e) { const pv = lastDone(e.n, sel); return String(pick(pv && pv.r, e.r) ?? ''); }
+
 function exRow(e, j, r, IN) {
   const g = r.log[j] || {};
   const sug = weightFor(e, IN);
   const sets = setsOf(sel, num(e.s), j);
   const w = num(pick(g.w, sug));
-  const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, e.r));
+  const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, repsDefault(e)));
   return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}" data-j="${j}" data-open="${j}">
     <span class="t"><span class="n">${esc(e.n)}</span>
       <span class="s">${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
@@ -4366,7 +4372,7 @@ function exFull(e, j, r, IN, d) {
         <span class="exfu">КГ</span>
         <span class="exfsm">
           <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(pick(g.s, sets))}" aria-label="Подходы"></span>
-          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, pick(pv && pv.r, e.r)))}" aria-label="Повторы"></span>
+          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, repsDefault(e)))}" aria-label="Повторы"></span>
         </span>
       </div>
       <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
@@ -4376,7 +4382,7 @@ function exFull(e, j, r, IN, d) {
         pr ? ' · рекорд ' + kg(pr) + ' кг' : ''}${
         e1rmOf(pv) ? ' · <span class="e1">≈1ПМ ' + kg(roundW(e1rmOf(pv))) + '</span>' : ''}</div>
       ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
-      <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel))}</div>
+      <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
       ${hist.length > 1 ? `<div class="exfhist"><span class="lbl">Рост по журналу</span>
         ${miniChart(hist.map(x => [x[0], x[1]]), 'var(--acc-2)')}</div>` : ''}
       <div class="exfact">
@@ -4561,16 +4567,30 @@ $('exl').addEventListener('input', ev => {
   const card = f.closest('.ex'); if (!card) return;
   const j = num(card.dataset.j), box = card.querySelector('.setr');
   const e = (dayOf(sel).ex || [])[j]; if (!box || !e) return;
-  const sF = card.querySelector('[data-f="s"]'), rF = card.querySelector('[data-f="r"]');
-  const keep = [...box.querySelectorAll('[data-rs]')].map(x => x.value);
+  const sF = card.querySelector('[data-f="s"]'), rF = card.querySelector('[data-f="r"]'), wF = card.querySelector('[data-f="w"]');
+  // свои числа сохраняем, подставленные пересчитываются под новую цель
+  const keep = [...box.querySelectorAll('[data-rs]')].map(x => (x.dataset.auto === '1' ? '' : x.value));
   box.innerHTML = repBoxes(e, recOf(sel).log[j] || {}, sF ? sF.value : undefined,
-    lastDone(e.n, sel), keep, rF ? rF.value : undefined);
+    lastDone(e.n, sel), keep.some(v => String(v).trim()) ? keep : null, rF ? rF.value : undefined, wF ? wF.value : undefined);
 });
 
 /* Повторы по каждому подходу. Без них правило «закрепить 4x10» непроверяемо:
    10/12/12/12 и 12/12/12/12 — это разные результаты, а одно общее число
    их не различает и молча разрешает прибавку. */
-function repBoxes(e, g, sets, prev, keep, repsRaw) {
+/* Подставленные клетки: сегодняшняя цель по прошлому разу. Если вес с
+   прошлого раза вырос, цель — низ диапазона: иначе клетки снова стояли
+   верхом, и закрытый без правок подход поднимал вес каждую тренировку.
+   Нули в прошлой записи — «не записал», по ним цель не строится. */
+function autoCells(prev, n, top, low, wNow) {
+  const prs = prev && Array.isArray(prev.rs) && prev.rs.some(v => num(v) > 0) ? prev.rs.map(num) : null;
+  if (!prs || !top) return null;
+  if (num(wNow) > num(prev.w) + 1e-9 && num(prev.w) > 0) return Array(n).fill(low || top);
+  const base = nextGoal(prs, top, n) || prs.slice(0, n).map(v => Math.min(v, top));
+  while (base.length < n) base.push(base.length ? base[base.length - 1] : top);
+  return base.slice(0, n);
+}
+
+function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
   // Цель берём из поля ПОВТ, если там что-то стоит: поменял 8 на 10 —
   // и кнопка «все по N», и подсказки под полями меняются сразу.
   const rv = repsRaw !== undefined && repsRaw !== null && String(repsRaw).trim() !== ''
@@ -4579,18 +4599,19 @@ function repBoxes(e, g, sets, prev, keep, repsRaw) {
   // пустое поле «ПОДХ» — это ещё не «один подход»: пока человек стирает
   // число, коробки не должны схлопываться в одну. Берём план упражнения.
   const n = Math.max(1, Math.min(12, num(sets) || num(e.s) || 1));
-  const prs = prev && prev.rs && prev.rs.length ? prev.rs : null;
-  const ng = prs ? nextGoal(prs, top, n) : null;
+  const prs = prev && Array.isArray(prev.rs) && prev.rs.some(v => num(v) > 0) ? prev.rs.map(num) : null;
+  const raised = prs && num(wNow) > num(prev.w) + 1e-9 && num(prev.w) > 0;
+  const low = firstRep(rv) || top;
+  const ng = prs && !raised ? nextGoal(prs, top, n) : null;
   /* Упражнение уже делалось — клетки сразу заполнены сегодняшней целью:
      прошлый результат плюс повтор по двойной прогрессии. Закрыл подход,
      ничего не трогая, — записано «сделал по плану». Подставленное
      показано приглушённо, чтобы было видно, где число своё. */
   let auto = false;
   let cur = keep || g.rs || null;
-  if (!cur && !g.done && prs && top) {
-    const base = ng || prs.slice(0, n).map(v => Math.min(num(v), top));
-    while (base.length < n) base.push(base.length ? base[base.length - 1] : top);
-    cur = base; auto = true;
+  if (!cur && !g.done) {
+    const a = autoCells(prev, n, top, low, wNow);
+    if (a) { cur = a; auto = true; }
   }
 
   let out = '<div class="sh"><span>ПОВТОРЫ В КАЖДОМ ПОДХОДЕ</span>' +
@@ -4606,7 +4627,9 @@ function repBoxes(e, g, sets, prev, keep, repsRaw) {
   out += '</div>';
 
   // Подсказка словами: что делаем сегодня и когда вырастет вес.
-  if (ng) out += '<div class="sg">Прошлый раз <u>' + prs.join('/') + '</u>. Сегодня цель <b>' +
+  if (raised && top) out += '<div class="sg">Вес вырос: было ' + kg(prev.w) + ' кг, сейчас ' + kg(wNow) +
+    '. Начни с низа — <b>' + n + '×' + low + '</b>, дальше повторы растут до ' + top + '.</div>';
+  else if (ng) out += '<div class="sg">Прошлый раз <u>' + prs.join('/') + '</u>. Сегодня цель <b>' +
     ng.join('/') + '</b> — вес поднимем, когда все подходы пойдут по ' + top + '.</div>';
   else if (prs && top) out += '<div class="sg">Прошлый раз <u>' + prs.join('/') +
     '</u> — верх закрыт. Повтори <b>' + n + '×' + top + '</b>, и приложение предложит прибавку.</div>';
@@ -4728,10 +4751,21 @@ function toggleSet(j) {
   // Записываем ровно то, что стоит в полях карточки. Иначе в журнал уходил бы
   // рабочий вес из программы, а на экране всё это время висел вес по интенсивности.
   const card = $('exl').querySelector('.ex[data-j="' + j + '"]');
+  const rDef = repsDefault(p);
   if (card) {
     l.s = card.querySelector('[data-f="s"]').value;
     l.r = card.querySelector('[data-f="r"]').value;
     l.w = card.querySelector('[data-f="w"]').value;
+  } else {
+    /* Кнопка ○ в строке списка записывает то, что показано в строке: вес
+       недели, подходы недели, цель из графы ПОВТ и подставленные клетки.
+       Раньше карточки не было, и в журнал уходил рабочий вес программы
+       без повторов — прогрессия с этой кнопки не срабатывала никогда. */
+    const IN = intOf(sel, d.t), prev = lastDone(p.n, sel);
+    const wSh = pick(l.w, weightFor(p, IN)), sSh = num(pick(l.s, setsOf(sel, num(p.s), j)));
+    l.w = kg(num(wSh)); l.s = String(sSh); l.r = String(pick(l.r, rDef));
+    const a = autoCells(prev, Math.max(1, sSh), topRep(l.r), firstRep(l.r) || topRep(l.r), num(wSh));
+    if (a) l.rs = a;
   }
   const w = num(pick(l.w, p.w)), sets = num(pick(l.s, p.s)), reps = firstRep(pick(l.r, p.r));
   const g = p.g || l.g || null;
@@ -4762,7 +4796,10 @@ function toggleSet(j) {
      одиночка на два повтора при плане 6–8, и следующая тренировка начиналась
      с веса, на котором не выходит и низ. Пустые клетки — «не записал»,
      провалом они не считаются. Снятая отметка откатывает всё. */
-  setReps(p.n, l.r, l);
+  /* Цель уходит во все дни, только если человек сам исправил графу ПОВТ.
+     Подставленные прошлые повторы программу не переписывают: иначе одно
+     закрытие силового дня делало «по 10» и объёмный день (решение владельца). */
+  if (String(l.r ?? '').trim() !== rDef.trim()) setReps(p.n, l.r, l);
   const low = firstRep(pick(l.r, p.r));
   const got = (l.rs || []).map(num).filter(v => v > 0);
   const short = low > 0 && got.some(v => v < low);
