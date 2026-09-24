@@ -31,7 +31,7 @@ async function audit(theme) {
   await page.goto(APP);
   await page.waitForTimeout(400);
   await page.evaluate(SEED);
-  await page.evaluate(t => { applyTheme(t); S.setup=1; document.getElementById('setup').classList.remove('on'); }, theme);
+  await page.evaluate(t => { void t; S.setup=1; document.getElementById('setup').classList.remove('on'); }, theme);
   await page.waitForTimeout(300);
 
   const findings = [];
@@ -83,7 +83,7 @@ async function audit(theme) {
 }
 
 (async () => {
-  for (const th of ['sl','ber']) {
+  for (const th of ['sl']) {
     const { findings, errs } = await audit(th);
     console.log(`\n===== ${th.toUpperCase()} =====`);
     if (errs.length) console.log('ОШИБКИ JS:', errs.join('\n'));

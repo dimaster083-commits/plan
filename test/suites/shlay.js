@@ -58,12 +58,12 @@ const SCAN=()=>{
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   for(const w of [320,390,768]){
-    for(const skin of ['sl','ber']){
+    for(const skin of ['sl']){
       const p=await(await b.newContext({viewport:{width:w,height:844}})).newPage();
       const errs=[]; p.on('pageerror',e=>errs.push(e.message));
       await p.goto(APP); await p.waitForTimeout(1500);
       await p.evaluate(SEED);
-      await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');applyTheme(s);},skin);
+      await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');void s;},skin);
       for(const [name,fn] of SHEETS){
         await p.evaluate(f=>{try{sheetClose()}catch(e){} ['fp','ov'].forEach(id=>document.getElementById(id).classList.remove('on'));
           tab='wo';sel=today();exOpen=null;render(); (0,eval)('('+f+')()');}, fn.toString());

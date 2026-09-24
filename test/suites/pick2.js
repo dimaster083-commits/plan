@@ -8,12 +8,12 @@ const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
 const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']) for(const W of [320,390]){
+  for(const skin of ['sl']) for(const W of [320,390]){
     console.log('\n===== '+skin+' '+W+'px =====');
     const p=await(await b.newContext({viewport:{width:W,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1200);
-    await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');applyTheme(s);S.sound=0;
+    await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');void s;S.sound=0;
       S.myFood=[{n:'Шаурма у дома на углу возле остановки',k:250,p:12,f:10,c:25},
                 {n:'Творог',k:120,p:18,f:5,c:3}];
       invalidateFood(); save(); tab='food'; sel=today(); render(); openPick(0);},skin);

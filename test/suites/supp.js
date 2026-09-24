@@ -4,11 +4,11 @@ const { LAUNCH, APP } = require('../env');
 const D=require('path').join(__dirname, '..', 'out') + require('path').sep;
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const sk of ['sl','ber']){
+  for(const sk of ['sl']){
     const p=await(await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2})).newPage();
     p.on('pageerror',e=>console.log('PAGEERROR',e.message));
     await p.goto(APP);await p.waitForTimeout(1800);
-    await p.evaluate(s2=>{S.setup=1;document.getElementById('setup').classList.remove('on');applyTheme(s2);
+    await p.evaluate(s2=>{S.setup=1;document.getElementById('setup').classList.remove('on');void s2;
       const m=mealsRW(today()); m[0].items=[{p:'Овсянка на воде готовая',g:'250'}];
       m[1]&&(m[1].items=[{p:'Рис отварной',g:'200'}]); save();
       tab='food';sel=today();render();},sk);

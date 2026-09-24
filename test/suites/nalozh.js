@@ -54,8 +54,8 @@ const SCAN = () => {
     await p.goto(APP); await p.waitForTimeout(1400);
     await p.evaluate(SEED);
     await p.evaluate(() => { S.setup=1; document.getElementById('setup').classList.remove('on'); });
-    for (const skin of ['sl','ber']) {
-      await p.evaluate(s => applyTheme(s), skin);
+    for (const skin of ['sl']) {
+      await p.evaluate(s => void s, skin);
       const states = [
         ['зал', "()=>{tab='wo';sel=today();exOpen=null;render();}"],
         ['упражнение', "()=>{tab='wo';sel=today();exOpen=0;render();}"],

@@ -24,7 +24,7 @@ const SEED=()=>{
     await p.goto(APP);
     await p.waitForTimeout(1100);
     await p.evaluate(SEED);
-    await p.evaluate(t=>{applyTheme(t);S.setup=1;document.getElementById('setup').classList.remove('on');},th);
+    await p.evaluate(t=>{void t;S.setup=1;document.getElementById('setup').classList.remove('on');},th);
     await p.evaluate(()=>{tab='prog';render();});
     await p.waitForTimeout(500);
     const el=await p.$('.cal');

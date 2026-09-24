@@ -18,8 +18,7 @@ const SHEETS = [
 ];
 // слова, которые принадлежат только одной теме
 const ONLY = {
-  sl:  [/поход/i, /ступен/i, /клейм/i, /летопис/i, /припас/i, /круг\b/i, /новобранец/i, /наёмник/i, /чёрный мечник/i],
-  ber: [/охотник/i, /квест/i, /\bранг/i, /\bXP\b/, /снаряжени/i, /цикл/i, /игрок/i, /подземель/i]
+  sl:  [/поход/i, /ступен/i, /клейм/i, /летопис/i, /припас/i, /круг\b/i, /новобранец/i, /наёмник/i, /чёрный мечник/i]
 };
 let fails = 0;
 (async () => {
@@ -28,8 +27,8 @@ let fails = 0;
   await p.goto(APP); await p.waitForTimeout(1400);
   await p.evaluate(SEED);
   await p.evaluate(() => { S.setup=1; document.getElementById('setup').classList.remove('on'); });
-  for (const skin of ['sl','ber']) {
-    await p.evaluate(s => applyTheme(s), skin);
+  for (const skin of ['sl']) {
+    await p.evaluate(s => void s, skin);
     const bad = ONLY[skin];
     const hits = [];
     const look = (where, txt) => bad.forEach(rx => { const m = txt.match(rx);

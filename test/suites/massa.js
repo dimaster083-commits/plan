@@ -48,19 +48,16 @@ const chk = (ok, name, info = '') => { console.log((ok ? '  ✓ ' : '  ✗ ') + 
   // новичок не зовётся охотником; классы и ранги как в первоисточниках
   const lv = await page.evaluate(() => {
     const out = { sl1: jobOf(1), sl5: jobOf(5), sl17: jobOf(17), sl40: jobOf(40), r60: rankTitle(60), r1: rankTitle(1) };
-    applyTheme('ber');
-    Object.assign(out, { ber1: jobOf(1), ber40: jobOf(40), b60: rankTitle(60) });
     S.xp = 16 * PER; render(); levelUp(17);
     out.up = $('lvup').querySelector('b').textContent; out.upR = $('lvupR').textContent;
-    applyTheme('sl'); render();
+    void 0; render();
     out.h1 = $('st8job').textContent;
     return out;
   });
   chk(lv.sl1 === 'Пробуждённый' && lv.sl5 === 'Охотник' && lv.sl17 === 'Некромант' && lv.sl40 === 'Монарх теней',
     'Система: пробуждённый → охотник → некромант → Монарх теней', JSON.stringify(lv));
   chk(lv.r1 === 'РАНГ E' && lv.r60 === 'НАЦ. УРОВЕНЬ', 'ранги E…S и национальный уровень');
-  chk(lv.ber1 === 'Сирота' && lv.ber40 === 'Чёрный мечник' && lv.b60 === 'Берсерк', 'Клеймо: путь Гатса');
-  chk(lv.up === 'НОВАЯ ЭПОХА' && lv.upR === 'ЯСТРЕБ', 'смена эпохи — своё окно', lv.up + ' / ' + lv.upR);
+  chk(lv.up === 'СМЕНА КЛАССА' && lv.upR === 'НЕКРОМАНТ', 'смена класса — своё окно', lv.up + ' / ' + lv.upR);
   chk(lv.h1 === 'Некромант', 'заголовок карточки — класс по уровню', lv.h1);
   chk(!errs.length, 'без ошибок страницы', errs.join('; '));
   await browser.close();

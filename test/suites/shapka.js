@@ -9,9 +9,9 @@ let fails=0;
     const p = await (await b.newContext({ viewport:{width:w,height:844} })).newPage();
     await p.goto(APP); await p.waitForTimeout(1200);
     await p.evaluate(() => { S.setup=1; document.getElementById('setup').classList.remove('on'); save(); });
-    for (const skin of ['sl','ber']) {
+    for (const skin of ['sl']) {
       const rows = await p.evaluate(sk => {
-        applyTheme(sk); tab='wo'; sel=today(); exOpen=null;
+        void sk; tab='wo'; sel=today(); exOpen=null;
         const out=[];
         for (const xp of [0, 5*500, 12*500, 20*500, 30*500, 45*500]) {
           S.xp = xp; render();

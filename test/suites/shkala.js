@@ -13,14 +13,14 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 const seed = доля => (доля) => {};
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']){
+  for(const skin of ['sl']){
     console.log('\n===== '+skin+' =====');
     const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1300);
 
     const засеять = доля => p.evaluate(([s,доля])=>{
-      S.setup=1; document.getElementById('setup').classList.remove('on'); applyTheme(s); S.sound=0;
+      S.setup=1; document.getElementById('setup').classList.remove('on'); void s; S.sound=0;
       S.rec={};
       for(let k=0;k<=6;k++){ const d=new Date(); d.setDate(d.getDate()-k); const ds=iso(d);
         const dd=dayOf(ds); if(dd.t==='rest') continue;

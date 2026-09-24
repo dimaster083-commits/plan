@@ -12,35 +12,15 @@ const out=[]; const ok=(n,c,d)=>out.push((c?'  ✓ ':'  ✗ ')+n+(c?'':'   → '
   await p.evaluate(()=>{S.setup=1;save();document.getElementById('setup').classList.remove('on');tab='wo';render();});
   await p.waitForTimeout(400);
 
-  const start=await p.evaluate(()=>skinNow());
   // как человек: жмём шестерёнку
   await p.click('#gear'); await p.waitForTimeout(600);
   const opened=await p.evaluate(()=>({sheet:document.getElementById('sh').classList.contains('on'),
     title:document.getElementById('shT').textContent,
-    picks:[...document.querySelectorAll('[data-skin-set]')].map(e=>e.dataset.skinSet)}));
-  ok('шестерёнка открывает настройки', opened.sheet && opened.picks.length===2,
+    picks:document.querySelectorAll('[data-skin-set]').length}));
+  ok('шестерёнка открывает настройки, выбора оформления нет', opened.sheet && opened.picks===0,
      JSON.stringify(opened));
   await p.screenshot({path:D+'settings.png'});
-
-  // жмём вторую тему
-  await p.click('[data-skin-set="ber"]'); await p.waitForTimeout(700);
-  const after=await p.evaluate(()=>({skin:skinNow(), acc:getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(),
-    stored:localStorage.getItem('sys-gym-skin'),
-    marked:!!document.querySelector('[data-skin-set="ber"].on')}));
-  ok('вторая тема включается нажатием', after.skin==='ber' && after.acc==='#C0282D' && after.stored==='ber',
-     JSON.stringify(after));
-  ok('выбранная тема отмечена в списке', after.marked, 'отметка не встала');
-  await p.screenshot({path:D+'settings-ber.png'});
-
-  // и обратно
-  await p.click('[data-skin-set="sl"]'); await p.waitForTimeout(700);
-  const back=await p.evaluate(()=>skinNow());
-  ok('первая тема возвращается', back==='sl', back);
-
-  // переживает перезагрузку
-  await p.click('[data-skin-set="ber"]'); await p.waitForTimeout(500);
-  await p.reload(); await p.waitForTimeout(1700);
-  ok('выбор держится после перезагрузки', (await p.evaluate(()=>skinNow()))==='ber', 'сбросился');
+  await p.evaluate(()=>sheetClose());
 
   // настройка дня из настроек
   await p.evaluate(()=>{S.setup=1;document.getElementById('setup').classList.remove('on');tab='wo';render();});

@@ -8,12 +8,12 @@ const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
 const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']){
+  for(const skin of ['sl']){
     console.log('\n===== '+skin+' =====');
     const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1300);
-    await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');applyTheme(s);S.sound=0;
+    await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');void s;S.sound=0;
       const d=dayOf(today()); if(d.t==='rest'){const x=S.days.find(y=>(y.ex||[]).length);d.t=x.t;d.s=x.s;d.ex=x.ex.map(e=>({...e}));}
       save(); tab='wo'; sel=today(); exOpen=0; render();},skin);
     await p.waitForTimeout(300);
@@ -37,13 +37,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       const t3=await p.evaluate(()=>({on:document.getElementById('tmr').classList.contains('on'),
         t:document.getElementById('tmr').innerText.match(/\d+:\d\d/)?.[0]}));
       chk(t3.on, '3. перерисовка не гасит таймер', JSON.stringify(t3));
-      // смена темы не сбивает
-      await p.evaluate(s=>applyTheme(s), skin==='sl'?'ber':'sl');
-      await p.waitForTimeout(300);
-      const t4=await p.evaluate(()=>({on:document.getElementById('tmr').classList.contains('on'),
-        t:document.getElementById('tmr').innerText.match(/\d+:\d\d/)?.[0]}));
-      chk(t4.on, '4. смена темы не гасит таймер', JSON.stringify(t4));
-      await p.evaluate(s=>applyTheme(s), skin);
+      await p.evaluate(s=>void s, skin);
       // длительность задаётся готовыми кнопками 60/90/120/180
       const plus=await p.evaluate(()=>{
         const before=document.getElementById('tmr').innerText.match(/\d+:\d\d/)?.[0];

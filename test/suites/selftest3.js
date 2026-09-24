@@ -10,7 +10,7 @@ const SCAN = eval('(' + src.match(/const SCAN\s*=\s*(\(\)\s*=>\s*\{[\s\S]*?\n\};
   await p.goto(APP); await p.waitForTimeout(1400);
   await p.evaluate(() => { S.setup=1; document.getElementById('setup').classList.remove('on');
     const d=dayOf(today()); if(d.t==='rest'){const x=S.days.find(y=>(y.ex||[]).length);d.t=x.t;d.s=x.s;d.ex=x.ex.map(e=>({...e}));}
-    save(); applyTheme('ber'); tab='wo'; sel=today(); exOpen=null; render(); levelUp(7); });
+    save(); tab='wo'; sel=today(); exOpen=null; render(); levelUp(7); });
   await p.waitForTimeout(400);
   const clean = await p.evaluate(SCAN);
   console.log('как сейчас:', clean.length ? clean.slice(0,3).join('; ') : 'чисто');

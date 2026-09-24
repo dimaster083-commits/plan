@@ -9,7 +9,7 @@ const chk = (c,n,d)=>c?ok(n,d):bad(n,d);
 
 (async () => {
   const b = await chromium.launch(LAUNCH);
-  for (const skin of ['sl','ber']) {
+  for (const skin of ['sl']) {
     console.log('\n===== ' + skin + ' =====');
     const p = await (await b.newContext({ viewport:{width:390,height:844} })).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
@@ -22,7 +22,7 @@ const chk = (c,n,d)=>c?ok(n,d):bad(n,d);
     }));
     chk(first.setupOn && first.rows > 0, '1. на чистом устройстве открывается настройка', JSON.stringify(first));
 
-    await p.evaluate(s => { S.setup=1; document.getElementById('setup').classList.remove('on'); applyTheme(s);
+    await p.evaluate(s => { S.setup=1; document.getElementById('setup').classList.remove('on'); void s;
       tab='food'; sel=today(); render(); }, skin);
     await p.waitForTimeout(250);
 

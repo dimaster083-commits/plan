@@ -36,12 +36,12 @@ const SHEETS = [
 
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for (const skin of ['sl','ber']) {
+  for (const skin of ['sl']) {
     const p=await(await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:1})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1800);
     await p.evaluate(SEED);
-    await p.evaluate(s=>{applyTheme(s);S.setup=1;document.getElementById('setup').classList.remove('on');},skin);
+    await p.evaluate(s=>{void s;S.setup=1;document.getElementById('setup').classList.remove('on');},skin);
     const found=[];
     for (const [name, fn] of SHEETS) {
       await p.evaluate(`(${fn.toString()})()`).catch(e=>errs.push(name+': '+e.message));

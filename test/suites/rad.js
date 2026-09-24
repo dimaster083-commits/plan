@@ -16,8 +16,8 @@ const SEED=eval('('+src.match(/const SEED\s*=\s*(\(\)=>\{[\s\S]*?\n\};)/)[1].rep
     await p.waitForTimeout(300);
     if(w===390) await p.locator('.radar').screenshot({path:DIR+'rad-empty.png'});
     await p.evaluate(SEED);
-    for(const sk of ['sl','ber']){
-      await p.evaluate(s=>{applyTheme(s);tab='prog';pSec='load';render();},sk);
+    for(const sk of ['sl']){
+      await p.evaluate(s=>{void s;tab='prog';pSec='load';render();},sk);
       await p.waitForTimeout(350);
       await p.locator('.radar').screenshot({path:DIR+`rad-${sk}-${w}.png`});
       // ничего не выходит за рамку карточки

@@ -11,13 +11,13 @@ const click=(p,re)=>p.evaluate(r=>{
   if(!b) return false; b.click(); return true;},re);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  for(const skin of ['sl','ber']){
+  for(const skin of ['sl']){
     console.log('\n===== '+skin+' =====');
     const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
     const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     await p.goto(APP); await p.waitForTimeout(1300);
     // вчера — полный рацион, сегодня — свой
-    await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');applyTheme(s);S.sound=0;
+    await p.evaluate(s=>{S.setup=1;document.getElementById('setup').classList.remove('on');void s;S.sound=0;
       const y=iso(new Date(Date.now()-864e5));
       recRW(y).ml=[{n:'Завтрак',note:'',items:[{p:'Рис белый отварной',g:'300'}]}];
       recRW(today()).ml=[{n:'Обед',note:'',items:[{p:'Гречка отварная',g:'200'}]}];
