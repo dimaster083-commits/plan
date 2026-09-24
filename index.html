@@ -2451,6 +2451,94 @@ body.rd-enter .st8{animation:rd-rise .5s cubic-bezier(.2,.8,.2,1) both,rd-turn 7
 /* без масштаба: уменьшенная кнопка посреди анимации мерилась как 43×43 */
 @keyframes rd-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 
+/* =========================================================================
+   КИБЕР-СИСТЕМА — последний слой, действующий
+   Окна Системы из «Поднятия уровня» плюс инженерный «Чертёж» с сайта
+   методики: сетка-ватман под интерфейсом, линии прорисовываются штрихом,
+   рамка окна вспыхивает там, где её коснулся палец, подписи — моноширинные
+   с «//», у активного — пульсирующее кольцо, за заголовком дня — контурная
+   цифра. Всё по transform, opacity и заранее готовым слоям: прокрутку
+   это не тормозит. Кнопки не масштабируются — 44 px держатся всегда.
+   ========================================================================= */
+:root{
+  --grad:linear-gradient(90deg,#2E8BFF,#5CE1FF 60%,#8A5CFF);
+  --grad-v:linear-gradient(180deg,#5CE1FF,#8A5CFF);
+  --cy-ease:cubic-bezier(.22,.8,.24,1);
+}
+/* сетка-ватман: мелкая клетка 24 px и крупная 96 px, гаснет к краям экрана */
+#grain{background:
+  linear-gradient(rgba(92,225,255,.045) 1px,transparent 1px) 0 0/24px 24px,
+  linear-gradient(90deg,rgba(92,225,255,.045) 1px,transparent 1px) 0 0/24px 24px,
+  linear-gradient(rgba(92,225,255,.08) 1px,transparent 1px) 0 0/96px 96px,
+  linear-gradient(90deg,rgba(92,225,255,.08) 1px,transparent 1px) 0 0/96px 96px;
+  opacity:1;mix-blend-mode:normal;
+  -webkit-mask:radial-gradient(120% 80% at 50% 30%,#000 35%,transparent 90%);
+  mask:radial-gradient(120% 80% at 50% 30%,#000 35%,transparent 90%)}
+
+/* подписи окон — моноширинные, с «//», как в чертеже */
+.wtitle,h2.sec{font-family:var(--fn)}
+.wtitle::before,h2.sec::before{content:'// ';color:var(--hot-tx);opacity:.7;letter-spacing:0}
+/* у заголовков с подписью справа «//» — часть заголовка, а не отдельная колонка */
+.radar .wtitle,.wtscale{justify-content:flex-start}
+.radar .wtitle .bleg,.wtscale em{margin-left:auto}
+
+/* вспышка рамки под пальцем: слой готов заранее, меняется только прозрачность */
+.win::after{content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;opacity:0;
+  background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(92,225,255,.16),transparent 70%) padding-box,
+    radial-gradient(200px circle at var(--mx,50%) var(--my,50%),#8BEBFF,rgba(138,92,255,.55) 45%,transparent 75%) border-box;
+  border:1px solid transparent;
+  -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
+  transition:opacity .6s var(--cy-ease)}
+.win.lit::after{opacity:1;transition-duration:.08s}
+.st8::after{display:none}
+
+/* полосы прогресса — градиент Системы: синий → голубой → аура */
+.st8row .bar i,.qprog i,#boot .bt-bar i{background:var(--grad)}
+.st8row+.st8row .bar i{background:linear-gradient(90deg,#5CE1FF,#8BEBFF)}
+.br .bb i{transform-origin:left;animation:cy-grow .9s var(--cy-ease) both}
+.br:nth-child(2) .bb i{animation-delay:.05s}.br:nth-child(3) .bb i{animation-delay:.1s}
+.br:nth-child(4) .bb i{animation-delay:.15s}.br:nth-child(5) .bb i{animation-delay:.2s}
+.br:nth-child(6) .bb i{animation-delay:.25s}.br:nth-child(7) .bb i{animation-delay:.3s}
+.br:nth-child(n+8) .bb i{animation-delay:.35s}
+.br.full .bb i{background:linear-gradient(90deg,#5CE1FF,#8BEBFF)}
+@keyframes cy-grow{from{transform:scaleX(0)}}
+
+/* кривая веса и шестигранник уровня прорисовываются штрихом */
+.wline{stroke-dasharray:1;stroke-dashoffset:1;animation:cy-draw 1.4s var(--cy-ease) .15s forwards}
+.wnow{opacity:0;animation:cy-fade .4s ease 1.3s forwards}
+.st8lv svg .hx{stroke-dasharray:1;stroke-dashoffset:1;animation:cy-draw 1.2s var(--cy-ease) .2s forwards}
+@keyframes cy-draw{to{stroke-dashoffset:0}}
+@keyframes cy-fade{to{opacity:1}}
+
+/* активный день недели — кольцо-пульс, как метка на чертеже */
+.chip.on{position:relative;overflow:visible}
+.chip.on::after{content:'';position:absolute;inset:-1px;border-radius:inherit;border:1.5px solid var(--hot);
+  pointer-events:none;will-change:transform,opacity;animation:cy-ring 2.6s ease-out 1s infinite}
+@keyframes cy-ring{0%{transform:scale(1);opacity:.9}70%,100%{transform:scale(1.28);opacity:0}}
+
+/* контурная цифра даты за заголовком дня */
+.dh{position:relative;isolation:isolate}
+.dh::after{content:attr(data-n);position:absolute;right:58px;top:50%;transform:translateY(-50%);z-index:-1;
+  font:800 clamp(64px,22vw,96px)/1 var(--fd);color:transparent;-webkit-text-stroke:1.2px rgba(92,225,255,.22);
+  pointer-events:none;letter-spacing:-.04em}
+
+/* главная кнопка — голубая кромка бежит по краю, пока тренировка не закрыта */
+#fin:not(.done):not(:disabled){box-shadow:0 0 0 1px rgba(139,235,255,.5) inset,0 14px 40px -14px var(--hot)}
+
+/* смена экрана — сканирующая полоса сверху вниз */
+body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
+#scrfx{position:fixed;left:0;right:0;top:0;height:2px;z-index:60;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,transparent,#8BEBFF 30%,#FFFFFF 50%,#8BEBFF 70%,transparent);
+  box-shadow:0 0 16px #5CE1FF}
+@keyframes cy-scan{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(100vh)}}
+/* без движения — сразу конечный вид: штрих прорисован, текст напечатан */
+@media (prefers-reduced-motion:reduce){
+  .wline,.st8lv svg .hx,#boot .bt-hx path{stroke-dashoffset:0}
+  .wnow,#boot .bt-hx text,#boot .bt-s{opacity:1}
+  #boot .bt-m{width:auto}
+  #boot .bt-bar i{transform:none}
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
@@ -2467,6 +2555,7 @@ document.documentElement.dataset.skin = 'sl';
 <div id="wall"></div>
 <div id="grain"></div>
 <div id="vign"></div>
+<div id="scrfx" aria-hidden="true"></div>
 <!-- Заставка: окно Системы с уведомлением о пробуждении -->
 <div id="boot" aria-hidden="true">
   <div class="bt-w">
@@ -2485,7 +2574,7 @@ document.documentElement.dataset.skin = 'sl';
   <div class="win st8">
     <div class="st8h">
       <span class="st8lv"><svg viewBox="0 0 50 50" aria-hidden="true">
-        <path class="hx" d="M25 2l20 11.5v23L25 48 5 36.5v-23z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <path class="hx" pathLength="1" d="M25 2l20 11.5v23L25 48 5 36.5v-23z" fill="none" stroke="currentColor" stroke-width="1.4"/>
       </svg><b id="st8n">1</b></span>
       <span class="st8t">
         <h1 id="st8job">Пробуждённый</h1>
@@ -3976,6 +4065,7 @@ function paintDay() {
   $('dnm').value = d.n;
   $('dsb').textContent = d.s;
   const dd = at(sel);
+  document.querySelector('#dayctx .dh').dataset.n = String(+sel.slice(8, 10));
   $('dt').textContent = (sel === today() ? 'СЕГОДНЯ · ' : '') +
     dd.getDate() + ' ' + MONG[dd.getMonth()] + ' ' + dd.getFullYear();
   $('toToday').hidden = sel === today();
@@ -5430,7 +5520,7 @@ function paintChart() {
     `<text x="${R}" y="${f1(Y(goal) - 4)}" text-anchor="end" class="wgl">цель ${kg(goal)}</text>`;
   h += `<path d="${line} L ${f1(X(avg[avg.length - 1][0]))} ${B} L ${f1(X(avg[0][0]))} ${B} Z" fill="url(#wg)"/>`;
   h += pts.map(p => `<circle cx="${f1(X(p[0]))}" cy="${f1(Y(p[1]))}" r="2" class="wpt"/>`).join('');
-  h += `<path d="${line}" class="wline"/>`;
+  h += `<path d="${line}" class="wline" pathLength="1"/>`;
   const last = avg[avg.length - 1];
   h += `<circle cx="${f1(X(last[0]))}" cy="${f1(Y(last[1]))}" r="4" class="wnow"/>`;
   h += `<text x="${L}" y="132" class="wax">${dm(pts[0][0])}</text>` +
@@ -8457,6 +8547,19 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   if (today() !== lastDay) { lastDay = today(); sel = today(); mo = sel.slice(0, 7); render(); }
 });
+
+/* Вспышка рамки окна под пальцем: координаты касания уходят в --mx/--my,
+   класс lit держится, пока палец на экране, и гаснет плавно. */
+document.addEventListener('pointerdown', e => {
+  const w = e.target.closest && e.target.closest('.win');
+  if (!w) return;
+  const r = w.getBoundingClientRect();
+  w.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+  w.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  w.classList.add('lit');
+  const off = () => { w.classList.remove('lit'); document.removeEventListener('pointerup', off); document.removeEventListener('pointercancel', off); };
+  document.addEventListener('pointerup', off); document.addEventListener('pointercancel', off);
+}, { passive: true });
 
 // Снимаем заставку по таймеру, а не по кадру отрисовки: если приложение открыли
 // в фоновой вкладке, кадр не рисуется и логотип висит, пока туда не переключишься.

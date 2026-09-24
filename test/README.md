@@ -85,7 +85,7 @@ CHROME=/путь/к/chrome node test/run.js
 `layout`, `shlay` — «дешевизна» глазами машины · `nalozh` — текст поверх
 текста · `ovf`, `fit`, `dlinno` — влезает ли всё в телефон ·
 `contrast`, `contrast2`, `sheets`, `calc` — контраст по настоящим пикселям ·
-`slova` — чужие слова в теме · `paltsy`,
+`slova` — чужие слова в теме · `kiber` — прорисовка штрихом и вспышка рамки · `paltsy`,
 `tochki` — размер кнопок под палец · `shapka` — шапка на всех ширинах ·
 `rad`, `shkala` — диаграмма и её шкала
 
