@@ -210,7 +210,15 @@ input,select{font-size:16px}
 
 /* график и объём */
 .chart{margin-top:10px;padding:12px 12px 10px}
-.chart svg{width:100%;height:120px;display:block}
+.chart svg{width:100%;height:auto;display:block}
+.wgrid{stroke:var(--ln);stroke-width:1;stroke-dasharray:2 3}
+.wax{fill:var(--ink3);font-family:var(--fn);font-size:9px}
+.wleg{opacity:.8}
+.wgoal{stroke:var(--ok);stroke-width:1.2;stroke-dasharray:5 4;opacity:.8}
+.wgl{fill:var(--ok);font-family:var(--fn);font-size:9px}
+.wpt{fill:var(--acc-ink);opacity:.45}
+.wline{fill:none;stroke:var(--acc);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round;filter:drop-shadow(0 0 4px var(--acc))}
+.wnow{fill:var(--s0);stroke:var(--acc-ink);stroke-width:2}
 .chart .hint{font-size:10.5px;color:var(--mut);margin-top:8px;line-height:1.5}
 .chart .hint b{color:var(--cy2);font-weight:700}
 .chart .hint.warn b{color:var(--chest)}
@@ -1303,24 +1311,25 @@ input,textarea,select{color:var(--ink)}
 .jrow i{display:block;font-style:normal;font-size:12px;color:var(--ink3);margin-top:3px}
 .jrow em.ok{font-style:normal;color:var(--ok)}
 .hrow:active{background:var(--s2)}
-/* ---------- пятиугольник нагрузки ---------- */
+/* ---------- баланс недели: полосы по группам ---------- */
 .radar{padding:14px clamp(11px,3.6vw,15px) 13px}
-.radar svg{width:100%;height:auto;display:block;margin:2px 0 4px}
-/* Граница — недельная норма. Внутри пусто: ни колец, ни спиц, ни пунктира —
-   разметка перетягивала взгляд на себя. */
-.rgrid{fill:none;stroke:var(--ln2);stroke-width:1.5}
-/* десятые доли нормы: по ним фигура читается числом, а не на глаз */
-.rstep{fill:none;stroke:var(--ln);stroke-width:1;opacity:.55}
-.rstep.half{stroke:var(--ln2);opacity:.9}
-.rfill{fill:var(--acc-soft);stroke:var(--acc);stroke-width:2;stroke-linejoin:round}
-.rdot{fill:var(--acc-2)}
-/* группа добрана — точка сидит на границе и видна ярче */
-.rdot.full{fill:var(--acc)}
-.rnum.full{fill:var(--acc-2)}
-:root[data-skin="sl"] .rdot{filter:drop-shadow(0 0 5px var(--acc))}
-.rlab{fill:var(--ink2);font-family:var(--f);font-size:10px;letter-spacing:.1em}
-.rnum{fill:var(--ink3);font-family:var(--fn);font-size:9px;letter-spacing:.04em}
-.radn{margin:0;font-size:11.5px;color:var(--ink3);line-height:1.5}
+.radar .wtitle{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.bleg{font-style:normal;font-size:10px;letter-spacing:.06em;color:var(--ink3);text-transform:none}
+.bal{display:grid;gap:9px;margin:2px 0 10px}
+.br{display:grid;grid-template-columns:minmax(56px,68px) 1fr auto;align-items:center;gap:10px}
+.br .bn{font-size:13px;color:var(--ink2)}
+.br .bb{position:relative;height:10px;border-radius:5px;background:var(--s2);overflow:visible}
+.br .bb i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--acc);
+  box-shadow:0 0 10px -2px var(--acc);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.br .bb s{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink);opacity:.75;border-radius:1px}
+.br .bv{font-family:var(--fn);font-size:12px;color:var(--ink3);min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+.br .bv b{color:var(--ink);font-weight:600}
+.br.full .bb i{background:var(--ok)}
+.br.full .bv{color:var(--ok)}
+.br.low .bb i{background:var(--warn)}
+.br.zero .bn{color:var(--ink3)}
+.radn{margin:0;font-size:12px;color:var(--ink3);line-height:1.5}
+.radn b{color:var(--ink2);font-weight:600}
 
 .ld{display:flex;align-items:center;gap:10px;padding:7px 0}
 .ld .n{width:64px;flex:0 0 auto;font-size:13px;color:var(--ink2)}
@@ -2279,12 +2288,10 @@ body.exopen{padding-bottom:calc(var(--tabh) + var(--sb) + 30px)}
 .pseg button.on{background:var(--acc-fill);color:var(--onacc);box-shadow:var(--shacc)}
 .tiles b{font-family:var(--fd);font-weight:800;letter-spacing:-.02em}
 .tiles s{font-family:var(--fn)}
-/* пятиугольник нагрузки раскрывается из центра */
-.rfill{fill:var(--hot-soft);stroke:var(--hot);transform-box:fill-box;transform-origin:center;
-  animation:rd-grow 1.1s cubic-bezier(.2,1.2,.3,1) both}
-.rdot{fill:var(--hot-tx)}
-:root[data-skin="sl"] .rdot{filter:drop-shadow(0 0 5px var(--hot))}
-@keyframes rd-grow{from{transform:scale(.15);opacity:0}to{transform:none;opacity:1}}
+/* полосы баланса светятся цветом Системы */
+.br .bb i{background:var(--hot);box-shadow:0 0 12px -2px var(--hot)}
+.br.full .bb i{background:var(--ok);box-shadow:0 0 12px -2px var(--ok)}
+.br.low .bb i{background:var(--warn);box-shadow:none}
 .cycBar div.now{background:var(--hot)}
 .xpb i,.qb i{background:var(--bar2)}
 
@@ -2637,19 +2644,16 @@ document.documentElement.dataset.skin = 'sl';
   <div class="psec" data-s="load" hidden>
   <div class="win rem" id="rem"><p id="remT"></p></div>
 
-  <!-- Баланс по группам за неделю: пятиугольник по числу групп.
-       Столбики показывают, сколько сделано, но не показывают перекоса —
-       а он виден сразу, как только фигура перестаёт быть ровной. -->
+  <!-- Баланс недели: подходы по группам за 7 дней против нормы программы -->
   <div class="win radar">
-    <div class="wtitle" style="padding:0 0 2px">БАЛАНС ЗА НЕДЕЛЮ</div>
-    <svg id="rad" viewBox="0 0 300 252" role="img"
-      aria-label="Подходы по группам мышц за последние семь дней"></svg>
-    <p class="radn"></p>
+    <div class="wtitle" style="padding:0 0 8px">ПОДХОДЫ ЗА 7 ДНЕЙ<em class="bleg">риска — норма</em></div>
+    <div id="rad" class="bal" role="img" aria-label="Подходы по группам мышц за последние семь дней"></div>
+    <p class="radn" id="radn"></p>
   </div>
 
   <div class="win chart">
-    <div class="wtitle" style="padding:0 0 8px">ВЕС И НАГРУЗКА</div>
-    <svg id="wchart" viewBox="0 0 300 120" preserveAspectRatio="none"></svg>
+    <div class="wtitle" style="padding:0 0 8px">ВЕС ТЕЛА</div>
+    <svg id="wchart" viewBox="0 0 300 140"></svg>
     <div class="hint" id="whint">Отметь вес несколько раз, и здесь появится кривая.</div>
     <div class="lsplit"></div>
     <div class="wtitle wtscale" style="padding:0 0 9px">ЗА ВСЁ ВРЕМЯ<em id="volTop"></em></div>
@@ -5362,6 +5366,12 @@ function paintRem() {
   } else el.classList.remove('on');
 }
 
+/* График веса. Раньше это была кривая без осей и дат, растянутая по
+   ширине (preserveAspectRatio="none" сплющивал и цифры). Теперь: сетка
+   с подписями кг, даты по краям, бледные точки — сами взвешивания,
+   яркая линия — среднее за 7 дней (утренний вес скачет от воды на
+   1–2 кг, тренд виден только по среднему), пунктир — цель, если она
+   в пределах графика. Темп под графиком считает paceOf, как и раньше. */
 function paintChart() {
   const pts = wlog(), sv = $('wchart');
   if (pts.length < 2) {
@@ -5370,26 +5380,47 @@ function paintChart() {
     $('whint').textContent = 'Отметь вес хотя бы в двух разных днях, и здесь появится кривая.';
     return;
   }
+  const W = 300, L = 34, R = 294, T = 10, B = 114;
+  const goal = num(S.goal);
   const vs = pts.map(p => p[1]);
-  const lo = Math.min(...vs) - 1, hi = Math.max(...vs) + 1, span = (hi - lo) || 1;
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  const near = goal && goal >= lo - 3 && goal <= hi + 3;   // цель рядом — показываем линией
+  if (near) { lo = Math.min(lo, goal); hi = Math.max(hi, goal); }
+  const pad = Math.max(0.5, (hi - lo) * 0.12);
+  lo = Math.floor((lo - pad) * 2) / 2; hi = Math.ceil((hi + pad) * 2) / 2;
+  const span = (hi - lo) || 1;
   const t0 = at(pts[0][0]), t1 = at(pts[pts.length - 1][0]);
   const dt = Math.max(1, (t1 - t0) / 864e5);
-  const X = d => 10 + ((at(d) - t0) / 864e5) / dt * 280;
-  const Y = v => 110 - ((v - lo) / span) * 100;
-  const line = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
-  // цвет графика берётся из темы: раньше он был сиреневым независимо от оформления
-  // цвета в стилях, а не в атрибутах: тогда они следуют за темой без перерисовки
-  const acc = 'var(--acc)', dot = 'var(--acc-ink)', mut = 'var(--ink3)';
-  sv.innerHTML = `<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" style="stop-color:var(--acc)" stop-opacity=".28"/>
-      <stop offset="1" style="stop-color:var(--acc)" stop-opacity="0"/></linearGradient></defs>
-    <path d="${line} L ${X(pts[pts.length - 1][0]).toFixed(1)} 115 L ${X(pts[0][0]).toFixed(1)} 115 Z" fill="url(#wg)"/>
-    <path d="${line}" fill="none" style="stroke:var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" style="fill:var(--acc-ink)"/>`).join('')}
-    <rect x="6" y="3" width="34" height="13" style="fill:var(--s0)" opacity=".85"/>
-    <text x="9" y="13" style="fill:var(--ink)" font-size="9">${kg(hi.toFixed(1))}</text>
-    <rect x="6" y="108" width="34" height="13" style="fill:var(--s0)" opacity=".85"/>
-    <text x="9" y="118" style="fill:var(--ink)" font-size="9">${kg(lo.toFixed(1))}</text>`;
+  const X = d => L + ((at(d) - t0) / 864e5) / dt * (R - L);
+  const Y = v => B - ((v - lo) / span) * (B - T);
+  const f1 = v => v.toFixed(1);
+  // среднее за 7 дней по каждой точке: все взвешивания в окне [d-6, d]
+  const avg = pts.map(p => {
+    const from = at(p[0]); from.setDate(from.getDate() - 6);
+    const w = pts.filter(q => at(q[0]) >= from && q[0] <= p[0]);
+    return [p[0], w.reduce((a, q) => a + q[1], 0) / w.length];
+  });
+  const line = avg.map((p, i) => (i ? 'L' : 'M') + f1(X(p[0])) + ' ' + f1(Y(p[1]))).join(' ');
+  const ticks = [lo, (lo + hi) / 2, hi];
+  const dm = d => d.slice(8, 10) + '.' + d.slice(5, 7);
+  let h = `<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color:var(--acc)" stop-opacity=".26"/>
+      <stop offset="1" style="stop-color:var(--acc)" stop-opacity="0"/></linearGradient></defs>`;
+  ticks.forEach(v => {
+    h += `<line x1="${L}" x2="${R}" y1="${f1(Y(v))}" y2="${f1(Y(v))}" class="wgrid"/>` +
+      `<text x="${L - 5}" y="${f1(Y(v) + 3.5)}" text-anchor="end" class="wax">${kg(Math.round(v * 10) / 10)}</text>`;
+  });
+  if (near) h += `<line x1="${L}" x2="${R}" y1="${f1(Y(goal))}" y2="${f1(Y(goal))}" class="wgoal"/>` +
+    `<text x="${R}" y="${f1(Y(goal) - 4)}" text-anchor="end" class="wgl">цель ${kg(goal)}</text>`;
+  h += `<path d="${line} L ${f1(X(avg[avg.length - 1][0]))} ${B} L ${f1(X(avg[0][0]))} ${B} Z" fill="url(#wg)"/>`;
+  h += pts.map(p => `<circle cx="${f1(X(p[0]))}" cy="${f1(Y(p[1]))}" r="2" class="wpt"/>`).join('');
+  h += `<path d="${line}" class="wline"/>`;
+  const last = avg[avg.length - 1];
+  h += `<circle cx="${f1(X(last[0]))}" cy="${f1(Y(last[1]))}" r="4" class="wnow"/>`;
+  h += `<text x="${L}" y="132" class="wax">${dm(pts[0][0])}</text>` +
+    `<text x="${R}" y="132" text-anchor="end" class="wax">${dm(pts[pts.length - 1][0])}</text>` +
+    `<text x="${(L + R) / 2}" y="132" text-anchor="middle" class="wax wleg">линия — среднее за 7 дней</text>`;
+  sv.innerHTML = h;
   pace(pts);
 }
 
@@ -5502,75 +5533,36 @@ function paintVol() {
   paintRadar();
 }
 
-/* Пятиугольник по пяти группам. Радиус вершины — доля недельной нормы
-   подходов, обрезанная сверху: перебор в три нормы иначе раздувал бы
-   фигуру и прятал остальные оси. Цвета берутся из темы, поэтому
-   переключение оформления перекрашивает диаграмму на месте. */
+/* Баланс недели — полосы по группам, а не многоугольник.
+   Шестиугольник дважды переделывали, и он всё равно врал глазу: ноги с
+   нормой 34 подхода рядом с прессом на 8 давали кривую фигуру даже при
+   ровной неделе, а «сколько осталось» нужно было высчитывать в уме.
+   Так, как в приложениях для зала (Hevy, RP Hypertrophy): у каждой группы
+   своя строка, риска — недельная норма из программы, полоса — сделанное
+   за 7 дней по журналу. Шкала строки — полторы нормы, поэтому перебор тоже
+   виден. Под полосами одной строкой — что добрать. */
+const BAL_SPAN = 1.5;
 function paintRadar() {
-  const sv = $('rad'); if (!sv) return;
+  const box = $('rad'); if (!box) return;
   const acc = vol7();
-  const cx = 150, cy = 114, R = 78;
-  const step = 360 / GROUPS.length;        // не зашитый пятиугольник: групп стало шесть
-  const pt = (i, k) => {
-    const a = (i * step - 90) * Math.PI / 180;
-    return [cx + Math.cos(a) * R * k, cy + Math.sin(a) * R * k];
-  };
-  const poly = k => GROUPS.map((_, i) => pt(i, k).map(v => v.toFixed(1)).join(',')).join(' ');
-
-  /* Граница фигуры — недельная норма, а не двойная норма. Раньше шкала шла
-     до двух норм, и полностью закрытая группа рисовалась ровно на середине
-     радиуса: цифры говорили «14 из 14», а картинка — «сделана половина».
-     Перебор упирается в край: сколько именно набрано, написано под осью. */
-  const done = GROUPS.map(([n]) => (acc[n] || 0) / volTarget(n));
-  /* Пока всё в пределах нормы, граница — норма, и добранная группа стоит
-     по краю. Как только какая-то группа норму перебрала, вся фигура
-     сжимается под этот перебор: норма остаётся отмеченным кольцом, а
-     превышение видно. Раньше перебор упирался в край, и после двух верхних
-     дней диаграмма превращалась в залитый шестиугольник без смысла. */
-  const over = Math.max(1, ...done);
-  const vals = done.map(v => v / over);
-  const shape = vals.map((v, i) => pt(i, Math.max(0.04, v))
-    .map(x => x.toFixed(1)).join(',')).join(' ');
-
-  /* Шкала внутри: кольцо на каждую десятую долю нормы, девять штук.
-     Четырёх ступеней не хватало — фигура всё равно читалась на глаз.
-     Половина выделена сильнее, чтобы было от чего считать. Спиц нет:
-     они делят фигуру, но ничего не меряют. */
-  let h = '';
-  for (let k = 1; k <= 9; k++) {
-    h += `<polygon points="${poly(k / 10 / over)}" class="rstep${k === 5 ? ' half' : ''}"/>`;
-  }
-  // кольцо нормы: при переборе оно уходит внутрь, и видно, насколько перебрано
-  h += `<polygon points="${poly(1 / over)}" class="rgrid"/>`;
-  if (over > 1) h += `<polygon points="${poly(1)}" class="rstep"/>`;
-  const any = done.some(v => v > 0);
-  if (any) {
-    h += `<polygon points="${shape}" class="rfill"/>`;
-    vals.forEach((v, i) => { if (!v) return;
-      const q = pt(i, v);
-      h += `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="3.4" ` +
-           `class="rdot${done[i] >= 1 ? ' full' : ''}"/>`; });
-  }
-  GROUPS.forEach(([n], i) => {
-    const q = pt(i, 1.26);
-    const anchor = i === 0 ? 'middle' : (Math.abs(q[0] - cx) < 2 ? 'middle' : (q[0] > cx ? 'start' : 'end'));
-    const dy = (Math.abs(q[0] - cx) < 2 && q[1] < cy) ? -8 : (q[1] > cy + 2 ? 11 : 2);
-    h += `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy).toFixed(1)}" text-anchor="${anchor}" class="rlab">${n.toUpperCase()}</text>` +
-         `<text x="${q[0].toFixed(1)}" y="${(q[1] + dy + 13).toFixed(1)}" text-anchor="${anchor}" ` +
-         `class="rnum${done[i] >= 1 ? ' full' : ''}">${acc[n] || 0}/${volTarget(n)}</text>`;
+  const rows = GROUPS.map(([n, t]) => {
+    const v = acc[n] || 0, goal = volTarget(n), k = v / goal;
+    const st = v === 0 ? 'zero' : k >= 1 ? 'full' : k >= 0.5 ? 'mid' : 'low';
+    return { n, t, v, goal, k, st };
   });
-  sv.innerHTML = h;
-  const note2 = sv.parentNode.querySelector('.radn');
-  const closed = done.filter(v => v >= 1).length;
-  if (note2) note2.textContent = any
-    ? (closed === GROUPS.length
-      ? 'Все группы добраны: фигура вышла на границу. Так выглядит полностью закрытая неделя.'
-      : (over > 1
-        ? 'Яркое кольцо — недельная норма подходов, каждое кольцо внутри — её десятая часть. ' +
-          'Что вышло за него, набрано сверх нормы; закрыто ' + closed + ' из ' + GROUPS.length + '.'
-        : 'Граница — недельная норма подходов, каждое кольцо внутри — её десятая часть. ' +
-          'Фигура по краю значит, что группа добрана; закрыто ' + closed + ' из ' + GROUPS.length + '.'))
-    : 'Закрой первую тренировку за неделю — и здесь появится фигура по всем группам.';
+  box.innerHTML = rows.map(r => `<div class="br ${r.st}" data-g="${r.n}">
+      <span class="bn">${r.n}</span>
+      <span class="bb"><i style="width:${(Math.min(r.k, BAL_SPAN) / BAL_SPAN * 100).toFixed(1)}%"></i>
+        <s style="left:${(100 / BAL_SPAN).toFixed(1)}%"></s></span>
+      <span class="bv"><b>${r.v}</b>/${r.goal}${r.st === 'full' ? ' ✓' : ''}</span></div>`).join('');
+  const note = $('radn');
+  const closed = rows.filter(r => r.st === 'full').length;
+  const left = rows.filter(r => r.st !== 'full').map(r => r.n + ' ' + (r.goal - r.v));
+  if (note) note.innerHTML = rows.some(r => r.v > 0)
+    ? (closed === rows.length
+      ? '<b>Все группы добраны.</b> Неделя закрыта по объёму.'
+      : 'Закрыто <b>' + closed + ' из ' + rows.length + '</b>. Добрать подходов: ' + left.join(', ') + '.')
+    : 'Закрой первую тренировку за неделю — и здесь появятся подходы по группам.';
 }
 
 /* Список прошедших дней: нажатие открывает, что и как прошло. */
@@ -7864,7 +7856,7 @@ function attendance(days) {
   return { planned, done };
 }
 
-// подходы по группам за последние 7 дней
+// подходы по группам за последние 7 дней — по журналу, тем же счётом, что daySets
 function vol7() {
   const acc = {};
   GROUPS.forEach(([n]) => { acc[n] = 0; });
@@ -7872,12 +7864,8 @@ function vol7() {
   const f7 = iso(from);
   Object.keys(S.rec).forEach(ds => {
     if (ds < f7 || ds > today()) return;
-    const day = dayOf(ds), lg = S.rec[ds].log || {};
-    Object.keys(lg).forEach(j => {
-      if (!lg[j].done) return;
-      const p = day.ex[j] || {};
-      const g = lg[j].g || p.g;
-      if (g && acc[g] !== undefined) acc[g] += num(pick(lg[j].s, p.s)) || 0;
+    dayEntries(ds).forEach(e => {
+      if (e.g && acc[e.g] !== undefined) acc[e.g] += e.rs ? e.rs.length : e.s;
     });
   });
   return acc;
