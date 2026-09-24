@@ -6504,6 +6504,19 @@ $('shB').addEventListener('click', async e => {
     (logged ? ' Записанный за этот день подход сотрётся: он относился к другому движению.' : ''),
     'ЗАМЕНИТЬ');
   if (!okGo) return;
+  /* Прошлые записи этого места — про старое движение. Раньше замена их не
+     трогала: «Править» прошлого дня показывало новое упражнение, повторная
+     отметка переписывала запись на него, а рекорд старого пропадал.
+     Подписываем записи старым именем и переставляем по названию — так же,
+     как при удалении. Стираемый сегодняшний подход сначала откатываем. */
+  const di = S.days.indexOf(d);
+  Object.keys(S.rec).forEach(ds => {
+    if (dayIdx(ds) !== di) return;
+    const l0 = ((S.rec[ds] || {}).log || {})[j];
+    if (l0 && !l0.n) l0.n = was;
+  });
+  const cur = (recOf(sel).log || {})[j];
+  if (cur && cur.done) rollback(cur);
   const src = EXDB[name] || [];
   e2.n = name;
   e2.g = src[1] || e2.g;
@@ -6511,6 +6524,7 @@ $('shB').addEventListener('click', async e => {
   delete e2.fixed;                 // вес у нового движения свой, не перенесённый
   const r = recRW(sel);
   if (r.log && r.log[j]) delete r.log[j];
+  Object.keys(S.rec).forEach(ds => { if (ds !== sel && dayIdx(ds) === di) remapLog(ds); });
   save(); recomputeStats(1); sheetClose(); render();
   note(was + ' → ' + name);
 });
