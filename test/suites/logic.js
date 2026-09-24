@@ -134,7 +134,8 @@ const { LAUNCH, APP } = require('../env');
     ok('норма калорий растёт вместе с весом', nutriFor('wo').kc > 0 && nutriFor('wo').kc > nutriFor('rest').kc,
        nutriFor('wo').kc+' vs '+nutriFor('rest').kc);
     ok('направление режима считается от текущего веса',
-       (num(S.goal)>bw ? goalDir()>0 : num(S.goal)<bw ? goalDir()<0 : goalDir()===0), 'goalDir='+goalDir());
+       // пустая цель — «держать как есть» (первый запуск без чужих 95 кг)
+       (!num(S.goal) ? goalDir()===0 : num(S.goal)>bw ? goalDir()>0 : num(S.goal)<bw ? goalDir()<0 : goalDir()===0), 'goalDir='+goalDir());
 
     /* ---------- серия недель ---------- */
     ok('серия недель не отрицательная и не абсурдная', streak()>=0 && streak()<1000, streak());

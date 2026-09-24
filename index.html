@@ -3069,8 +3069,8 @@ function milesOf() {
   const a = startW(), g = num(S.goal) || a, diff = g - a;
   if (Math.abs(diff) < 1) return [];
   const dir = diff > 0 ? 1 : -1;
-  let step = 5;
-  while (Math.abs(diff) / step > 6) step += 5;
+  // шаг сразу, без перебора: цель 1e10 перебирала шаги по +5 секундами
+  const step = Math.max(5, Math.ceil(Math.abs(diff) / 6 / 5) * 5);
   const out = [];
   // отметки круглые: 75, 80, 85 читаются лучше, чем 77, 82, 87 от дробного веса
   let v = dir > 0 ? Math.ceil((a + 0.5) / step) * step : Math.floor((a - 0.5) / step) * step;
@@ -3157,7 +3157,7 @@ const SP_TR = [
   ['за 45 мин', 'Цитруллина малат 8 г', 'натощак, запить 300-400 мл воды'],
   ['за 45 мин', 'Кофеин 200 мг', 'только в дни тренировок, не позже 16:00'],
   ['после зала', 'Протеин 30 г', 'в течение часа после последнего подхода']];
-const SP_RE = [['днём', 'Протеин 30 г', 'только если не добираешь 200 г белка едой']];
+const SP_RE = [['днём', 'Протеин 30 г', 'только если не добираешь норму белка едой']];
 const ML_TR = [['Завтрак', 'Овсянка 100 г, банан, 2 яйца, паста 20 г'],
   ['Перекус', 'Творог 200 г, мёд, орехи 30 г'], ['Обед', 'Рис 100 г, курица 200 г, овощи'],
   ['После зала', 'Протеин и банан'], ['Ужин', 'Гречка 80 г, мясо 200 г, салат']];
@@ -3463,7 +3463,7 @@ let S = null, canSave = true;
 
 function build() {
   return {
-    xp: 0, wo: 0, bw: '70',
+    xp: 0, wo: 0, bw: '',
     vol: zeroVol(),
     days: TPL.map(d => ({
       k: d.k, n: d.n, t: d.t, s: d.s,
@@ -3537,8 +3537,10 @@ function migrate() {
         t.e.forEach((e, j) => { if (d.ex[j] && d.ex[j].n === e[0]) d.ex[j].w = e[3]; });
       });
     }
-    if (!S.goal || num(S.goal) === 100) S.goal = '95';
-    if (!S.height) S.height = 177;
+    // старым состояниям — прежние значения по умолчанию; новому человеку чужих цифр не пишем
+    const old7 = trained || Object.keys(S.rec).length > 0 || num(S.bw) > 0;
+    if (old7 && (!S.goal || num(S.goal) === 100)) S.goal = '95';
+    if (old7 && !S.height) S.height = 177;
     S.days.forEach(d => {
       if (d.kc === '3300' || d.kc === '3100') d.kc = '2900';
       else if (d.kc === '3000' || d.kc === '2800') d.kc = '2700';
@@ -3557,7 +3559,8 @@ function migrate() {
   if (!S.mig9) {
     if (!num(S.bw0)) {
       const w = wlog();
-      S.bw0 = String(w.length ? w[0][1] : (num(S.bw) || 70));
+      const v = w.length ? w[0][1] : num(S.bw);
+      if (v > 0) S.bw0 = String(v);          // своего веса ещё нет — точки отсчёта тоже нет
     }
     // прежние нормы 2900/2700 и 155/145 считаем расчётными, а не ручными
     const old = ['2900', '2700', '3300', '3100', '3000', '2800'];
@@ -4200,6 +4203,7 @@ $('types').addEventListener('click', async e => {
   } else if (nt !== 'rest' && d.ex.length) {
     note('Упражнения оставлены прежними');
   }
+  applyNutri();                         // норма калорий — по новому типу дня (тренировка / отдых)
   save(); render();
 });
 /* Перенос дня подставляет под уже закрытые подходы другой набор
@@ -5533,7 +5537,8 @@ function bmiOf() {
   const cls = v < 18.5 ? 'lo' : v < 25 ? 'ok' : v < 30 ? 'hi' : 'vhi';
   const name = v < 18.5 ? 'недостаток' : v < 25 ? 'норма' : v < 30 ? 'избыток' : 'ожирение';
   const age = num(S.age);
-  const fat = age ? 1.20 * v + 0.23 * age - 10.8 - 5.4 : null;
+  // Дойренберг: 10,8 умножается на пол (мужчина 1, женщина 0) — раньше у женщин жир занижался на 10,8 пункта
+  const fat = age ? 1.20 * v + 0.23 * age - 10.8 * (S.sex === 'f' ? 0 : 1) - 5.4 : null;
   return { v: v, cls: cls, name: name, fat: fat,
     lo: 18.5 * h * h, hi: 24.9 * h * h, h: h, w: w, age: age };
 }
@@ -5570,7 +5575,7 @@ function openBmi() {
     'Deurenberg и даёт погрешность около 4 %, то есть годится для отслеживания изменений, а не как точное число. ' +
     'Всё считается на устройстве, никуда не отправляется.</p></div>');
   $('bmiAge').addEventListener('input', e => {
-    S.age = e.target.value; save(); paintBmi();
+    S.age = e.target.value; applyNutri(); save(); paintBmi(); paintCalc();
     const b2 = bmiOf();
     const cell = [...document.querySelectorAll('.bmisheet .row')].pop();
     if (cell) cell.querySelector('b').textContent = b2 && b2.fat !== null ? '~' + dec(b2.fat) + ' %' : 'нужен возраст';
@@ -5594,7 +5599,7 @@ function paintCalc() {
   box.innerHTML = '<div class="wtitle" style="padding:0 0 8px">РАСЧЁТ</div>' +
     row('Поддержание', rnd(m) + ' ккал') +
     row(mode, (S.kcManual ? 'вручную' : tr.kc + ' / ' + rs.kc + ' ккал')) +
-    row('Белок', tr.pr + ' г') +
+    row('Белок', (S.kcManual && num(dayOf(sel).pr) ? num(dayOf(sel).pr) + ' г · вручную' : tr.pr + ' г')) +
     row('Темп в неделю', (dir ? (dir > 0 ? '+' : '−') + dec(aLo, 2) + '…' + dec(aHi, 2) : '±' + dec(aHi, 2)) + ' кг') +
     (dir && left >= 0.5 ? row('До цели ' + kg(g) + ' кг', dec(left) + ' кг · ' +
       Math.max(1, Math.round(left / aHi)) + '–' + Math.max(1, Math.round(left / aLo)) + ' нед') : '') +
@@ -5606,11 +5611,14 @@ function paintCalc() {
 }
 function paintGoal() {
   paintCalc();
-  const a = startW(), b = num(S.bw) || a, g = num(S.goal) || 95;
+  // пустая цель — «держать как есть», а не чужие 95 кг
+  const a = startW(), b = num(S.bw) || a, g = num(S.goal) || b;
   const up = g >= a;
   const p = Math.max(0, Math.min(1, (b - a) / ((g - a) || 1)));
-  $('bw').value = S.bw;
-  $('goalIn').value = S.goal || 95;
+  // поле под пальцем не переписываем: стёр цифру — в поле сразу вставало 95,
+  // и набор «85» давал «9585»
+  if (document.activeElement !== $('bw')) $('bw').value = S.bw || '';
+  if (document.activeElement !== $('goalIn')) $('goalIn').value = S.goal || '';
   $('qGoalV').textContent = kg(g);
   $('qStart').textContent = kg(Math.round(a * 10) / 10);
   paintBmi();
@@ -5619,11 +5627,11 @@ function paintGoal() {
   const next = ms.find(m => up ? m > b : m < b);
   const hit = m => up ? b >= m : b <= m;
   $('qleft').textContent = (up ? b >= g : b <= g) ? 'ЦЕЛЬ ДОСТИГНУТА'
-    : (next ? 'до ' + next + ' кг — ещё ' + kg(Math.round(Math.abs(next - b) * 10) / 10) + ' кг'
+    : (next ? 'до ' + kg(next) + ' кг — ещё ' + kg(Math.round(Math.abs(next - b) * 10) / 10) + ' кг'
             : 'до цели ещё ' + kg(Math.round(Math.abs(g - b) * 10) / 10) + ' кг');
   paintDir($('wdir'), g >= (num(S.bw) || a));
   $('miles').innerHTML = ms.map(m =>
-    `<div class="${hit(m) ? 'hit' : (m === next ? 'now' : '')}">${m}</div>`).join('');
+    `<div class="${hit(m) ? 'hit' : (m === next ? 'now' : '')}">${kg(m)}</div>`).join('');
 }
 
 function paintCycle() {
@@ -5661,7 +5669,10 @@ function paintCycle() {
    чтобы не разъезжались две копии одного числа. */
 function setBw(v) {
   S.bw = v;
-  if (num(v)) recRW(today()).bw = String(v);
+  /* Стёр вес — сегодняшняя запись убирается. Раньше при стирании «85» в
+     журнале оставалось промежуточное «8», и на графике и в темпе была точка 8 кг. */
+  if (num(v) > 0) recRW(today()).bw = String(v);
+  else if (S.rec[today()]) delete S.rec[today()].bw;
   applyNutri(); save();
   syncBwFields(); paintGoal(); paintChart(); paintRem(); paintTotals(); paintKcSrc();
 }
@@ -5675,7 +5686,9 @@ function paintDir(box, up) {
 }
 function dirClick(e, getBw, getGoal, setVal) {
   const b2 = e.target.closest('[data-dir]'); if (!b2) return;
-  const cur = getBw() || 70, want = b2.dataset.dir === 'up', goal = getGoal();
+  const cur = getBw(), want = b2.dataset.dir === 'up', goal = getGoal();
+  // без своего веса сторону цели не от чего считать (было: от чужих 70 кг)
+  if (!cur) { note('Сначала впиши свой вес'); return; }
   // Цель уже стоит с этой стороны — второе нажатие ничего не меняет.
   // Раньше оно переписывало вписанную цель: 95 превращалось в «вес + 15».
   if (goal && Math.abs(goal - cur) > 0.5 && (goal > cur) === want) return;
@@ -5812,9 +5825,11 @@ function paceOf(pts) {
   const last = pts[pts.length - 1];
   const cut = at(last[0]); cut.setDate(cut.getDate() - 21);
   const win = pts.filter(p => at(p[0]) >= cut);
-  if (win.length < 2) return null;
+  /* Хотя бы 3 взвешивания за 7+ дней: по двум точкам за сутки 70 → 71 (вода)
+     график писал «+7 кг/нед, убери 400 ккал». */
+  if (win.length < 3) return null;
   const days = daysBetween(win[0][0], last[0]);
-  if (!days) return null;
+  if (days < 7) return null;
   const xs = win.map(p => daysBetween(win[0][0], p[0])), ys = win.map(p => num(p[1]));
   const mx = xs.reduce((a, b) => a + b, 0) / xs.length, my = ys.reduce((a, b) => a + b, 0) / ys.length;
   let sxy = 0, sxx = 0;
@@ -5825,12 +5840,35 @@ function paceOf(pts) {
    то есть ~1100 ккал в день. Шаг не меньше 100 и не больше 400 — дальше
    проверка через две недели, по среднему весу. */
 function kcalFix(per) {
-  const [lo, hi] = paceRange();
+  const [lo, hi] = paceRange(paceDir());
   const gap = (lo + hi) / 2 - per;
   const k = Math.min(400, Math.max(100, Math.round(Math.abs(gap) * 1100 / 50) * 50));
   return { k: k, add: gap > 0 };
 }
 
+/* Один вердикт по темпу для графика и «Разбора» — раньше у каждого был свой
+   допуск, и один писал «в коридоре, так и держи», а другой — «быстрее
+   коридора». toward — движение в сторону цели; при удержании коридор ±0,25 %. */
+/* Направление для темпа — замысел, а не последние полкило: шёл с 70 к 95 —
+   это набор и у самой цели; «удержание» — когда цель и была весом старта. */
+function paceDir() {
+  const cur = goalDir(); if (cur) return cur;
+  const g = num(S.goal), a = startW();
+  return g && a && Math.abs(g - a) > 0.5 ? (g > a ? 1 : -1) : 0;
+}
+function paceClass(per, dir) {
+  if (dir === undefined) dir = paceDir();
+  const rg = paceRange(dir);
+  if (!dir) {
+    const tier = per >= rg[0] && per <= rg[1] ? 'ok' : 'drift';
+    return { dir, tier, cLo: rg[0], cHi: rg[1], toward: per };
+  }
+  const cLo = Math.abs(dir < 0 ? rg[1] : rg[0]), cHi = Math.abs(dir < 0 ? rg[0] : rg[1]);
+  const toward = dir < 0 ? -per : per;
+  const tier = toward < -cLo * 0.5 ? 'away' : toward < cLo * 0.5 ? 'stall' : toward < cLo ? 'slow'
+    : toward <= cHi ? 'ok' : toward <= cHi * 1.4 ? 'fast' : 'toofast';
+  return { dir, tier, cLo, cHi, toward };
+}
 // темп за последние три недели — в сторону цели, какой бы она ни была
 function pace(pts) {
   const el = $('whint'), p = paceOf(pts);
@@ -5840,16 +5878,21 @@ function pace(pts) {
     return;
   }
   const per = p.per, v = (per > 0 ? '+' : '') + dec(per, 2);
-  const [lo, hi] = paceRange();
+  const [lo, hi] = paceRange(paceDir());
   const corridor = dec(lo, 2) + '…' + dec(hi, 2) + ' кг/нед';
   const fx = kcalFix(per);
   const fix = (fx.add ? 'Добавь ' : 'Убери ') + fx.k + ' ккал в день и проверь через две недели.';
-  if (per < lo - Math.abs(lo) * 0.3 || per > hi + Math.abs(hi) * 0.3) {
-    el.className = 'hint warn';
-    el.innerHTML = 'Темп <b>' + v + ' кг/нед</b> при коридоре ' + corridor + '. ' + fix;
-  } else {
+  const pc = paceClass(per);
+  if (pc.tier === 'ok') {
     el.className = 'hint good';
     el.innerHTML = 'Темп <b>' + v + ' кг/нед</b> — в коридоре ' + corridor + '. Так и держи.';
+  } else if (pc.tier === 'slow' || pc.tier === 'fast') {
+    el.className = 'hint';
+    el.innerHTML = 'Темп <b>' + v + ' кг/нед</b> — чуть ' + (pc.tier === 'slow' ? 'медленнее' : 'быстрее') +
+      ' коридора ' + corridor + '. Пока держи, проверь через неделю.';
+  } else {
+    el.className = 'hint warn';
+    el.innerHTML = 'Темп <b>' + v + ' кг/нед</b> при коридоре ' + corridor + '. ' + fix;
   }
 }
 
@@ -6335,12 +6378,30 @@ $('anSex').addEventListener('click', e => {
   S.sex = b.dataset.sex; applyNutri(); save(); paintSex();
 });
 $('anAge').addEventListener('input', e => { S.age = e.target.value; applyNutri(); save(); });
+// рост держится и при «Позже» (раньше сохранялось всё, кроме роста)
+$('anH').addEventListener('input', e => {
+  let h = num(e.target.value); if (h > 0 && h < 3) h = Math.round(h * 100);
+  if (h >= 120 && h <= 230) { S.height = h; applyNutri(); save(); }
+});
+// кнопки НАБОР/ПОХУДЕНИЕ показывают сторону, где стоит цель, — при любом вводе
+['anBw', 'anGoal'].forEach(id => $(id).addEventListener('input', () => {
+  const b0 = num($('anBw').value), g0 = num($('anGoal').value);
+  if (b0 && g0) paintDir($('anDir'), g0 >= b0);
+}));
 
 $('setOk').addEventListener('click', async () => {
   const first = !S.setup;          // первый запуск задаёт и точку отсчёта квеста
   // вес человека обязателен: от него считаются нормы еды и осторожный старт
   const bw = num($('anBw').value);
   if (!bw) { note('Впиши свой вес — от него считаются нормы'); $('anBw').focus(); return; }
+  // без проверки рост «1,80» давал ИМТ 246 913, а вес 99 999 — «цель достигнута»
+  if (bw < 30 || bw > 300) { note('Вес — от 30 до 300 кг'); $('anBw').focus(); return; }
+  let hIn = num($('anH').value); if (hIn > 0 && hIn < 3) hIn = Math.round(hIn * 100);   // 1,80 м → 180 см
+  if (hIn && (hIn < 120 || hIn > 230)) { note('Рост — от 120 до 230 см'); $('anH').focus(); return; }
+  const ageIn = num($('anAge').value);
+  if (ageIn && (ageIn < 12 || ageIn > 100)) { note('Возраст — от 12 до 100 лет'); $('anAge').focus(); return; }
+  const gIn = num($('anGoal').value);
+  if (gIn && (gIn < 30 || gIn > 300)) { note('Цель — от 30 до 300 кг'); $('anGoal').focus(); return; }
   // цель не вписана — значит «держать как есть»
   if (!num($('anGoal').value)) {
     $('anGoal').value = String(bw);
@@ -6355,7 +6416,7 @@ $('setOk').addEventListener('click', async () => {
     a.b = r25(bw * 0.5); a.s = r25(bw * 0.6); a.d = r25(bw * 0.7);
   }
   S.anchors = a;
-  S.height = num($('anH').value) || 177;
+  S.height = hIn || num(S.height) || 175;
   if (num($('anAge').value)) S.age = $('anAge').value;
   S.sex = S.sex || 'm';
   // вес и цель уже записаны сквозными полями; здесь остаётся только точка отсчёта
@@ -7796,8 +7857,10 @@ function paintKcSrc() {
 }
 
 // вписал норму руками — расчёт от веса и цели больше её не перебивает
-$('kc').addEventListener('input', e => { dayOf(sel).kc = e.target.value; S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
-$('pr').addEventListener('input', e => { dayOf(sel).pr = e.target.value; S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
+// в нормы — только цифры: раньше принимались «abc», «-500» и «1e9»
+const digits = el => { const v = String(el.value).replace(/[^\d]/g, '').slice(0, 4); if (v !== el.value) el.value = v; return v; };
+$('kc').addEventListener('input', e => { dayOf(sel).kc = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
+$('pr').addEventListener('input', e => { dayOf(sel).pr = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
 $('kcAuto').addEventListener('click', () => {
   S.kcManual = 0; applyNutri(); save(); render();
   note('Нормы пересчитаны от веса и цели');
@@ -7994,6 +8057,15 @@ $('fpl').addEventListener('click', e => {
     if (at < 0 && FOOD.concat(REST).some(f => String(f[0]).toLowerCase() === n.toLowerCase())) {
       note('Такое название уже есть в базе — назови иначе'); return;
     }
+    /* Имя — ключ продукта в записях. Поменяли в нём хоть регистр — старые
+       записи дней и шаблонов переименовываются вслед, иначе продукт выпадал
+       из всех записей («нет в базе», итог дня 0). */
+    const oldN = at >= 0 ? String(S.myFood[at].n) : null;
+    if (oldN && oldN !== n) {
+      const walk = o => { if (Array.isArray(o)) o.forEach(walk);
+        else if (o && typeof o === 'object') { if (o.p === oldN) o.p = n; Object.values(o).forEach(walk); } };
+      walk(S.rec); walk(S.days); walk(S.tpl);
+    }
     if (at >= 0) S.myFood[at] = rec; else S.myFood.push(rec);
     invalidateFood(); save();
     note(at >= 0 ? 'Продукт обновлён' : 'Продукт добавлен в базу');
@@ -8134,7 +8206,8 @@ $('phFile').addEventListener('change', async e => {
     await phPut(day, dat);
     PHCACHE.set(day, dat);
     await phSync();
-    if (!recOf(day).bw) { recRW(day).bw = S.bw; save(); }
+    // вес подписываем только к сегодняшнему снимку: прошлому дню сегодняшний вес чужой
+    if (day === today() && !recOf(day).bw && num(S.bw)) { recRW(day).bw = S.bw; save(); }
     note('Снимок сохранён');
     if (sel === day && tab === 'photo') paintPhotoScreen();
   } catch (err) { note('Не удалось сохранить фото'); }
@@ -8152,7 +8225,8 @@ $('phW').addEventListener('input', e => {
   // в журнал мимо общего пути: нормы по калориям и белку от него не
   // пересчитывались, и «Еда» продолжала считать от старой цифры.
   if (sel === today()) { setBw(e.target.value); return; }
-  recRW(sel).bw = e.target.value;
+  if (sel > today()) { e.target.value = ''; note('Этот день ещё впереди — взвешивания нет'); return; }
+  if (num(e.target.value) > 0) recRW(sel).bw = e.target.value; else if (S.rec[sel]) delete S.rec[sel].bw;
   save(); paintChart(); paintGoal();
 });
 
@@ -8401,26 +8475,31 @@ function analyze() {
       // это минус, и коридор — свой, 0,5–1 % массы в неделю
       const goal = num(S.goal) || num(S.bw) || last[1];
       const left = goal - last[1];
-      const dn = goalDir() < 0;
+      const dn = paceDir() < 0;
       const toward = dn ? -per : per;              // движение в сторону цели
       // Слово берётся по знаку самой цифры, а не по стороне цели: иначе
       // выходило «Снижение +0,40 кг/нед» — прибавку называли снижением.
       const word = per > 0.005 ? 'Прирост' : per < -0.005 ? 'Снижение' : 'Вес';
       const sh = v => (v > 0 ? '+' : '') + dec(v, 2);
       // коридор в сторону цели, по модулю: набор 0,25–0,5 %, снижение 0,5–1 %
-      const rg = paceRange(dn ? -1 : 1);
-      const cLo = Math.abs(dn ? rg[1] : rg[0]), cHi = Math.abs(dn ? rg[0] : rg[1]);
+      const pcl = paceClass(per), cLo = pcl.cLo, cHi = pcl.cHi;
       const cor = 'коридора ' + dec(cLo, 2) + '–' + dec(cHi, 2);
       const fx = kcalFix(per), fixTxt = (fx.add ? 'Добавь ' : 'Убери ') + fx.k + ' ккал в день';
-      if (toward < -cLo * 0.5) {
+      if (!pcl.dir) {
+        // цель — удержать вес: коридор ±0,25 % массы, а не коридор набора
+        if (pcl.tier === 'ok') add('ok', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> — вес держится в коридоре ' +
+          dec(cLo, 2) + '…' + dec(cHi, 2) + '.', 'Так и держи');
+        else add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> при цели удержать вес: коридор ' +
+          dec(cLo, 2) + '…' + dec(cHi, 2) + '.', fixTxt);
+      } else if (pcl.tier === 'away') {
         // вес не стоит — он уходит от цели, и это разные вещи
         add('bad', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> за ' + dd + ' дн: вес идёт ' +
           'в сторону, обратную цели ' + goal + ' кг.',
           fixTxt + ' и взвесься через 7 дней');
-      } else if (toward < cLo * 0.5) {
+      } else if (pcl.tier === 'stall') {
         add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> за ' + dd + ' дн. Вес стоит на месте.',
           fixTxt + ', проверка через 14 дней');
-      } else if (toward > cHi * 1.4) {
+      } else if (pcl.tier === 'toofast') {
         add('warn', 'ТЕМП', word + ' <b>' + sh(per) + ' кг/нед</b> — быстрее ' + cor + '. ' +
           (dn ? 'На такой скорости вместе с жиром уходят мышцы.' : 'Избыток уходит в жировую массу.'),
           fixTxt);
@@ -8447,15 +8526,15 @@ function analyze() {
   if (a14.planned) {
     if (a7.done === 0 && a7.planned > 0) {
       add('bad', 'ПРОСТОЙ', 'За 7 дней закрыто <b>0 из ' + a7.planned + '</b> тренировок. ' +
-        'При простое свыше 14 дней рабочие веса снижаются.', 'Закрой ближайшую тренировку');
+        'После долгого перерыва начни с веса полегче: два провала подряд сами опустят рабочий вес.', 'Закрой ближайшую тренировку');
     } else if (a14.done < a14.planned * 0.7) {
       add('warn', 'ПОСЕЩАЕМОСТЬ', 'За 14 дней закрыто <b>' + a14.done + ' из ' + a14.planned +
-        '</b>. Норма — четыре в неделю.', 'Не пропускай следующую');
+        '</b>. Для серии нужно ' + weekNeed() + ' в неделю.', 'Не пропускай следующую');
     } else {
       const st = streak();
       add('ok', 'ПОСЕЩАЕМОСТЬ', 'За 14 дней закрыто <b>' + a14.done + ' из ' + a14.planned + '</b>' +
         (st > 1 ? '. Серия: <b>' + st + ' нед</b> подряд' : '') + '.',
-        st > 1 ? 'Серия активна — не разрывай' : 'Держи четыре в неделю');
+        st > 1 ? 'Серия активна — не разрывай' : 'Держи от ' + weekNeed() + ' в неделю');
     }
   }
 
@@ -8628,15 +8707,17 @@ function analyze() {
   const bw = num(S.bw);
   if (bw && filled) {
     const perDay = prSum / filled, perKg = perDay / bw;
-    if (perKg < 1.6) {
-      add('warn', 'БЕЛОК НА КГ', 'Выходит <b>' + dec(perKg, 1) + ' г на кг</b>. Норма для набора 1,6–2,2, ' +
-        'то есть ' + Math.round(bw * 1.6) + '–' + Math.round(bw * 2.2) + ' г в день.',
-        'Добавь ' + Math.round(bw * 1.6 - perDay) + ' г белка в день');
+    // норма — та же, что в «Еде» и «Ресурсе»; свой коридор 1,6–2,2 давал два вывода на одном экране
+    const prNorm = num(dayOf(today()).pr) || Math.round(bw * 2);
+    if (perDay < prNorm * 0.95) {
+      add('warn', 'БЕЛОК НА КГ', 'Выходит <b>' + dec(perKg, 1) + ' г на кг</b> — ' + Math.round(perDay) +
+        ' г в день при норме ' + prNorm + ' г (' + dec(prNorm / bw, 1) + ' г на кг).',
+        'Добавь ' + Math.round(prNorm - perDay) + ' г белка в день');
     } else if (perKg > 2.6) {
-      add('ok', 'БЕЛОК НА КГ', '<b>' + dec(perKg, 1) + ' г на кг</b> — выше нормы 1,6–2,2. Вреда нет, ' +
+      add('ok', 'БЕЛОК НА КГ', '<b>' + dec(perKg, 1) + ' г на кг</b> — заметно выше нормы ' + prNorm + ' г. Вреда нет, ' +
         'но эти калории выгоднее отдать углеводам.', 'Можно сместить в сторону углеводов');
     } else {
-      add('ok', 'БЕЛОК НА КГ', '<b>' + dec(perKg, 1) + ' г на кг</b> массы — в норме 1,6–2,2.',
+      add('ok', 'БЕЛОК НА КГ', '<b>' + dec(perKg, 1) + ' г на кг</b> массы — норма ' + prNorm + ' г добрана.',
         'Держи этот уровень');
     }
   }
