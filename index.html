@@ -3867,7 +3867,7 @@ const started = ds => weekOfDate(ds || today()) >= 1;
    Пропустил неделю — план не убегает вперёд на «Пик», а повторяет текущую
    и ждёт. Для перехода достаточно WEEK_MIN тренировок из четырёх:
    человек не станок, одна пропущенная неделю не обнуляет. */
-const WEEK_MIN = 3;
+const WEEK_MIN = 3;   // для шаблона из четырёх дней; сам порог — weekNeed()
 let wkCache = null;
 function weekCounts() {
   if (wkCache) return wkCache;
@@ -3884,7 +3884,7 @@ function planWeek(ds) {
   const c = at(start);
   let w = 1, guard = 0;
   while (iso(c) < target) {
-    if ((cnt[iso(c)] || 0) >= WEEK_MIN) w++;      // неделя засчитана — идём дальше
+    if ((cnt[iso(c)] || 0) >= weekNeed()) w++;      // неделя засчитана — идём дальше
     c.setDate(c.getDate() + 7);
     if (++guard > 5200) break;                   // сто лет плана — дальше только петля
   }
@@ -4289,12 +4289,12 @@ function paintJournal() {
 $('editPast').addEventListener('click', () => { editPast = true; render(); });
 
 // Пропуск дня: день помечен, опыта нет, в серию не идёт. Повторное нажатие возвращает день.
-$('skipDay').addEventListener('click', () => {
+$('skipDay').addEventListener('click', () => runOnce('skip', () => {
   const r = recRW(sel);
   if (r.skip) delete r.skip; else r.skip = 1;
   save(); render();
   note(r.skip ? 'День пропущен — тренировкой не считается' : 'День снова в плане');
-});
+}, 200));
 
 /* Листание вбок между упражнениями. Порог в 48 px, чтобы не срабатывало
    при обычном нажатии, и проверка на вертикаль — страница должна
@@ -4368,11 +4368,11 @@ function exFull(e, j, r, IN, d) {
         <span class="exfgrp">${e.g ? esc(e.g) : ''}</span>
       </div>
       <div class="exfw">
-        <input class="exfkg" inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}" aria-label="Вес">
+        <input class="exfkg" inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}"${g.done ? ' readonly' : ''} aria-label="Вес">
         <span class="exfu">КГ</span>
         <span class="exfsm">
-          <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(pick(g.s, sets))}" aria-label="Подходы"></span>
-          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, repsDefault(e)))}" aria-label="Повторы"></span>
+          <span class="fl"><label>ПОДХ</label><input inputmode="numeric" data-f="s" value="${esc(pick(g.s, sets))}"${g.done ? ' readonly' : ''} aria-label="Подходы"></span>
+          <span class="fl"><label>ПОВТ</label><input inputmode="numeric" data-f="r" value="${esc(pick(g.r, repsDefault(e)))}"${g.done ? ' readonly' : ''} aria-label="Повторы"></span>
         </span>
       </div>
       <div class="pl">${pv ? ('в прошлый раз ' + (pv.s ?? e.s) + '×' + (pv.r ?? e.r) + ' · ' + kg(pv.w ?? e.w) + ' кг')
@@ -4404,6 +4404,8 @@ $('exl').addEventListener('input', e => {
   const f = inp.dataset.f;
   if (!f) return;                      // коробки повторов живут своей жизнью, ниже
   const j = +inp.closest('.ex').dataset.j;
+  // закрытый подход не правится на месте: тоннаж и рекорд уже посчитаны
+  if (f !== 'n' && ((recOf(sel).log || {})[j] || {}).done) return;
   if (f === 'n') dayOf(sel).ex[j].n = inp.value;
   else { const r = recRW(sel); r.log[j] = r.log[j] || {}; r.log[j][f] = inp.value; }
   save();
@@ -4434,7 +4436,8 @@ $('exl').addEventListener('click', e => {
   if (hw) { openHow(hw.dataset.how); return; }
 
   const go = e.target.closest('[data-go]');
-  if (go) { toggleSet(+go.dataset.go); return; }
+  // двойной тап приходит быстрее 200 мс: без защиты подход закрывался и сразу снимался
+  if (go) { runOnce('go' + go.dataset.go, () => toggleSet(+go.dataset.go), 200); return; }
 
   const op = e.target.closest('[data-open]');
   if (op) { exOpen = +op.dataset.open; render(); enterFx(); window.scrollTo(0, 0); return; }
@@ -4477,13 +4480,30 @@ $('exl').addEventListener('click', e => {
 
 // Возврат всего, что начислил закрытый подход: объём, опыт и рекорд.
 // Рекорд тоже откатываем — иначе случайное нажатие навсегда впишет чужую цифру.
+function prFromLog(name) {
+  let best = 0;
+  Object.keys(S.rec).forEach(ds => {
+    const day = dayOf(ds) || {}, lg = (S.rec[ds] || {}).log || {};
+    Object.keys(lg).forEach(j => {
+      const x = lg[j];
+      if (!x || !x.done || (x.n || ((day.ex || [])[j] || {}).n) !== name) return;
+      best = Math.max(best, num(pick(x.w, ((day.ex || [])[j] || {}).w)));
+    });
+  });
+  return best;
+}
 function rollback(l) {
   unbumpWorking(l);
   delete l.prog;
   if (l.vol && l.g && S.vol[l.g] !== undefined) S.vol[l.g] = Math.max(0, S.vol[l.g] - l.vol);
   if (l.xp) addXp(-l.xp);
+  /* Рекорд после снятой отметки — лучший вес из оставшегося журнала, а не
+     снимок на момент закрытия: снимок стирал рекорд, поставленный позже. */
   if (l.prevPr !== undefined && l.n) {
-    if (l.prevPr) S.pr[l.n] = l.prevPr; else delete S.pr[l.n];
+    const was = l.done; l.done = 0;
+    const best = prFromLog(l.n);
+    l.done = was;
+    if (best > 0) S.pr[l.n] = best; else delete S.pr[l.n];
   }
   l.vol = 0; l.xp = 0; l.prog = 0;
   delete l.down;
@@ -4615,13 +4635,13 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
   }
 
   let out = '<div class="sh"><span>ПОВТОРЫ В КАЖДОМ ПОДХОДЕ</span>' +
-    (top ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
+    (top && !g.done ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
     '</div><div class="rb">';
   for (let i = 0; i < n; i++) {
     const v = cur && cur[i] !== undefined && cur[i] !== null ? cur[i] : '';
     const hit = top && num(v) >= top ? ' hit' : '';
     out += '<label class="rbx' + hit + (auto ? ' auto' : '') + '"><i>' + (i + 1) + '</i>' +
-      '<input inputmode="numeric" data-rs="' + i + '"' + (auto ? ' data-auto="1"' : '') + ' value="' + esc(v) +
+      '<input inputmode="numeric" data-rs="' + i + '"' + (auto ? ' data-auto="1"' : '') + (g.done ? ' readonly' : '') + ' value="' + esc(v) +
       '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + '"></label>';
   }
   out += '</div>';
@@ -4693,7 +4713,7 @@ function setWorking(name, w, log, dir) {
     if (e.n !== name) return;
     if (dir > 0 && num(e.w) >= w) return;   // подъём идёт только вверх
     if (dir < 0 && num(e.w) <= w) return;   // снижение — только вниз
-    undo.push([di, ei, e.w, e.fixed || 0]);
+    undo.push([di, ei, e.w, e.fixed || 0, w]);
     e.w = w;
     e.fixed = 1;                 // дальше пересчёт от опорных весов его не трогает
   }));
@@ -4703,18 +4723,29 @@ function setWorking(name, w, log, dir) {
 }
 const bumpWorking = (name, w, log) => setWorking(name, w, log, 1);
 const dropWorking = (name, w, log) => setWorking(name, w, log, -1);
+/* Откат ищет упражнение по имени, а не по старой позиции: после удаления
+   или перестановки упражнений позиция указывала на чужое, и вес уходил в
+   него. И откатывает, только если значение с тех пор никто не менял:
+   снятая отметка старого дня затирала прогресс, сделанный позже. */
+function exAt(di, ei, name) {
+  const ex = (S.days[di] || {}).ex || [];
+  if (ex[ei] && (!name || ex[ei].n === name)) return ex[ei];
+  return name ? ex.find(x => x.n === name) || null : null;
+}
 function unbumpWorking(log) {
-  (log.bump || []).slice().reverse().forEach(([di, ei, w, fx]) => {
-    const e = ((S.days[di] || {}).ex || [])[ei];
+  (log.bump || []).slice().reverse().forEach(([di, ei, w, fx, wNew]) => {
+    const e = exAt(di, ei, log.n);
     if (!e) return;
+    if (wNew !== undefined && num(e.w) !== num(wNew)) return;
     e.w = w;
     if (fx) e.fixed = 1; else delete e.fixed;
   });
   delete log.bump;
   // цель по повторам откатывается тем же журналом
-  (log.rbump || []).slice().reverse().forEach(([di, ei, r0]) => {
-    const e = ((S.days[di] || {}).ex || [])[ei];
-    if (e) e.r = r0;
+  (log.rbump || []).slice().reverse().forEach(([di, ei, r0, rNew]) => {
+    const e = exAt(di, ei, log.n);
+    if (!e || (rNew !== undefined && String(e.r) !== String(rNew))) return;
+    e.r = r0;
   });
   delete log.rbump;
 }
@@ -4729,7 +4760,7 @@ function setReps(name, r, log) {
   const undo = [];
   S.days.forEach((d, di) => (d.ex || []).forEach((e, ei) => {
     if (e.n !== name || String(e.r) === want) return;
-    undo.push([di, ei, e.r]);
+    undo.push([di, ei, e.r, want]);
     e.r = want;
   }));
   if (undo.length && log) log.rbump = (log.rbump || []).concat(undo);
@@ -4746,7 +4777,12 @@ function toggleSet(j) {
 
   // Повторное нажатие снимает отметку и возвращает начисленное.
   // В первой версии объём и опыт при этом не откатывались и накручивались заново.
-  if (l.done) { rollback(l); l.done = 0; save(); render(); return; }
+  if (l.done) {
+    rollback(l); l.done = 0;
+    // снята последняя отметка закрытой тренировки — день перестаёт быть тренировкой
+    if (r.wo && !Object.values(r.log).some(x => x && x.done)) { r.wo = 0; delete r.t1; addXp(-XP_WO); }
+    save(); render(); return;
+  }
 
   // Записываем ровно то, что стоит в полях карточки. Иначе в журнал уходил бы
   // рабочий вес из программы, а на экране всё это время висел вес по интенсивности.
@@ -4851,7 +4887,7 @@ function failStreak(name, base, upTo) {
       const bot = botRep(pick(l.r, p.r));
       const sets = num(pick(l.s, p.s));
       const rs = (l.rs || []).slice(0, sets).map(num);
-      if (w >= base && bot && sets && rs.length >= sets &&
+      if (Math.abs(w - base) < 1e-6 && bot && sets && rs.length >= sets &&
           rs.every(v => v > 0) && rs.some(v => v < bot)) failed = true;
     });
     if (!seen) continue;
@@ -4872,14 +4908,16 @@ function failStreak(name, base, upTo) {
 function maybeRegress(l, p, w) {
   if (l.prog || l.down || !w) return;
   const base = num(p.w);
-  if (!base || w < base) return;          // облегчённая неделя провалом не считается
+  // провал считается только на рабочем весе: облегчённая неделя — не провал,
+  // и пробный подход тяжелее рабочего рабочий вес не снижает
+  if (!base || Math.abs(w - base) > 1e-6) return;
   const bot = botRep(p.r), sets = num(pick(l.s, p.s));
   const rs = (l.rs || []).slice(0, sets).map(num);
   if (!bot || !sets || rs.length < sets) return;
   if (!rs.every(v => v > 0)) return;      // повторы не записаны — судить не о чем
   if (rs.every(v => v >= bot)) return;    // низ добран — всё в порядке
   if (failStreak(p.n, base, sel) < 2) return;
-  const next = base - stepFor({ g: p.g, w: base });
+  const next = roundW(base - stepFor({ g: p.g, w: base }));   // на сетку: было 20 − 2,5 = 17,5 при шаге 1 кг
   if (!(next > 0) || next >= base) return;
   l.down = 1;
   if (!dropWorking(p.n, next, l)) { delete l.down; return; }
@@ -4902,7 +4940,8 @@ function maybeProgress(l, p, w) {
   // считаем от того, что реально поднято: если вес был выше рабочего,
   // прибавка от старого числа отбросила бы человека назад
   const from = Math.max(num(p.w), w);
-  const next = from + stepFor({ g: p.g, w: from });
+  let next = roundW(from + stepFor({ g: p.g, w: from }));     // с веса вне сетки (13,5) — обратно на сетку
+  if (next <= from) next = from + granOf(from);
   // раньше здесь стоял вопрос «поднимать?» — лишнее нажатие в зале мокрыми руками.
   // Закрепил верх диапазона во всех подходах — вес растёт сам.
   bumpWorking(p.n, next, l);

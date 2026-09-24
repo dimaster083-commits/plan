@@ -64,12 +64,12 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       document.querySelectorAll('#exl [data-rs]').forEach(i2=>{ i2.value='8';
         i2.dispatchEvent(new Event('input',{bubbles:true})); });
       document.querySelector('#exl [data-go]').click();
-      const after=S.xp;
-      exOpen=2; render();
-      document.querySelector('#exl [data-go]').click();
-      const back=S.xp;
-      return { before, after, back };
+      return { before, after:S.xp };
     });
+    // отмена — отдельным касанием, не двойным тапом (двойной тап защищён 200 мс)
+    await p.waitForTimeout(260);
+    xp.back=await p.evaluate(()=>{ exOpen=2; render();
+      document.querySelector('#exl [data-go]').click(); return S.xp; });
     chk(xp.after>xp.before && xp.back===xp.before,
         '5. опыт начисляется за подход и снимается при отмене', JSON.stringify(xp));
 
