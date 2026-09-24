@@ -1316,13 +1316,13 @@ input,textarea,select{color:var(--ink)}
 .radar .wtitle{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .bleg{font-style:normal;font-size:10px;letter-spacing:.06em;color:var(--ink3);text-transform:none}
 .bal{display:grid;gap:9px;margin:2px 0 10px}
-.br{display:grid;grid-template-columns:minmax(56px,68px) 1fr auto;align-items:center;gap:10px}
+.br{display:grid;grid-template-columns:clamp(78px,26vw,96px) 1fr auto;align-items:center;gap:clamp(7px,2.4vw,10px)}
 .br .bn{font-size:13px;color:var(--ink2)}
 .br .bb{position:relative;height:10px;border-radius:5px;background:var(--s2);overflow:visible}
 .br .bb i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--acc);
   box-shadow:0 0 10px -2px var(--acc);transition:width .5s cubic-bezier(.2,.8,.2,1)}
 .br .bb s{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink);opacity:.75;border-radius:1px}
-.br .bv{font-family:var(--fn);font-size:12px;color:var(--ink3);min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+.br .bv{font-family:var(--fn);font-size:12px;color:var(--ink3);min-width:48px;text-align:right;font-variant-numeric:tabular-nums}
 .br .bv b{color:var(--ink);font-weight:600}
 .br.full .bb i{background:var(--ok)}
 .br.full .bv{color:var(--ok)}
@@ -1641,6 +1641,7 @@ h2.sec{font-family:var(--f);font-size:10px;font-weight:400;letter-spacing:.26em;
 .pseg button{min-height:44px}
 .phbtns button,.exfback,.rd,.calback,.altb,.mladd,.add,.anb,.cpb,.copyb,
 .bmi,.wdir button{min-height:44px}
+#anAct button{letter-spacing:.06em;padding:9px 4px}
 #rd,.gh{min-height:44px;min-width:44px;padding-left:16px;padding-right:16px}
 /* Кружок отметки в строке упражнения — то, во что жмут чаще всего */
 .exrow .go{min-width:48px}
@@ -1954,7 +1955,9 @@ h2.sec{display:inline-flex;background:var(--glass);padding:5px 12px;
 /* закрытое упражнение получает печать «сделано» */
 
 /* ---------- кнопки под нажатием ---------- */
-.fin,.add,.anb,.cpb,.pseg button,.fin:active,.add:active,.anb:active,.cpb:active,.go:active,.rest:active{transform:scale(.94)}
+.fin,.add,.anb,.cpb,.pseg button,.go,.rest{transition:transform .1s ease,background .15s}
+.fin:active,.add:active,.anb:active,.cpb:active{transform:scale(.98)}
+.go:active,.rest:active{transform:scale(.94)}
 .tab{transition:color .2s}
 
 /* ---------- заголовки ---------- */
@@ -2531,8 +2534,8 @@ document.documentElement.dataset.skin = 'sl';
       <div class="qhead"><b>ТРЕНИРОВКА ДНЯ</b><i id="qType">—</i></div>
       <div class="qprog"><i id="qpf"></i></div>
       <div class="qmeta"><span id="qCnt">—</span><span id="qRew">—</span></div>
-      <div class="qpen" id="qPen">Пропуск сбрасывает серию недель</div>
-      <!-- не пошёл в зал — день закрывается одним нажатием, серия недель цела -->
+      <div class="qpen" id="qPen">Для серии недель — 3 тренировки в неделю</div>
+      <!-- не пошёл в зал — день помечается пропущенным; тренировкой он не считается -->
       <button class="add qskip" id="skipDay" hidden>Пропуск</button>
     </div>
     <div id="exl"></div>
@@ -2812,6 +2815,8 @@ document.documentElement.dataset.skin = 'sl';
   <div class="srow"><span>Возраст</span>
     <input id="anAge" inputmode="numeric" placeholder="30" aria-label="Возраст"><i>лет</i></div>
   <div class="wdir" id="anSex"><button data-sex="m">МУЖЧИНА</button><button data-sex="f">ЖЕНЩИНА</button></div>
+  <!-- активность вне зала: от неё зависит норма калорий -->
+  <div class="wdir" id="anAct"><button data-act="sit">СИДЯ</button><button data-act="feet">НА НОГАХ</button><button data-act="hard">ФИЗ. ТРУД</button></div>
   <div class="srow"><span>Вес сейчас</span>
     <input id="anBw" inputmode="decimal" value="70" placeholder="75" aria-label="Вес сейчас"><i>кг</i></div>
   <div class="srow"><span>Цель по весу</span>
@@ -2953,14 +2958,18 @@ function goalDir() {
 }
 
 /* Поддержание по Миффлину — Сан Жеору: в 71 % случаев попадает в 10 % от
-   измеренного обмена — лучшая из простых формул. Коэффициент 1,45 — три-четыре
-   силовые в неделю при сидячей работе. Набор +12 %: обзор Iraki 2019 советует
+   измеренного обмена — лучшая из простых формул. Коэффициент активности
+   выбирает человек: 1,45 — три-четыре силовые в неделю при сидячей работе,
+   1,6 — работа на ногах, 1,75 — физический труд. Раньше стояло 1,45 для
+   всех, и у грузчика норма выходила на 400–600 ккал ниже нужной. Набор +12 %: обзор Iraki 2019 советует
    +10–20 % для начинающих и средних, больше — это в основном жир. Снижение
    −20 % даёт около 0,5–1 % массы в неделю — коридор, в котором мышцы держатся. */
+const ACT = { sit: [1.45, 'сидячая работа'], feet: [1.6, 'работа на ногах'], hard: [1.75, 'физический труд'] };
+const actOf = () => ACT[S.act] || ACT.sit;
 function maintOf(bw) {
   const h = num(S.height) || 175, a = num(S.age) || 30;
   const bmr = 10 * bw + 6.25 * h - 5 * a + (S.sex === 'f' ? -161 : 5);
-  return bmr * 1.45;
+  return bmr * actOf()[0];
 }
 function nutriFor(t) {
   const bw = num(S.bw) || startW() || 70, g = num(S.goal) || bw, dir = goalDir();
@@ -4076,8 +4085,8 @@ function paintWorkout() {
     $('qRew').innerHTML = r.wo ? 'закрыта' : '';
     const pen = $('qPen');
     if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'Тренировка закрыта'; }
-    else if (r.skip) { pen.className = 'qpen done'; pen.textContent = 'День пропущен — серия недель цела'; }
-    else { pen.className = 'qpen'; pen.textContent = 'Пропуск сбрасывает серию недель'; }
+    else if (r.skip) { pen.className = 'qpen'; pen.textContent = 'День пропущен — тренировкой не считается'; }
+    else { pen.className = 'qpen'; pen.textContent = 'Для серии недель — ' + weekNeed() + ' тренировки в неделю'; }
     // «Пропуск» есть, пока в дне не закрыто ни одного подхода
     const sk = $('skipDay');
     sk.hidden = r.wo || doneCnt > 0 || sel > today() || !d.ex.length;
@@ -4145,12 +4154,12 @@ function paintJournal() {
 
 $('editPast').addEventListener('click', () => { editPast = true; render(); });
 
-// Пропуск дня: без опыта, но и без сброса серии недель. Повторное нажатие возвращает день.
+// Пропуск дня: день помечен, опыта нет, в серию не идёт. Повторное нажатие возвращает день.
 $('skipDay').addEventListener('click', () => {
   const r = recRW(sel);
   if (r.skip) delete r.skip; else r.skip = 1;
   save(); render();
-  note(r.skip ? 'День пропущен — серия недель цела' : 'День снова в плане');
+  note(r.skip ? 'День пропущен — тренировкой не считается' : 'День снова в плане');
 });
 
 /* Листание вбок между упражнениями. Порог в 48 px, чтобы не срабатывало
@@ -4612,11 +4621,17 @@ function toggleSet(j) {
 
   /* Поднял вес или поменял цель по повторам — программа запоминает это
      сама, во всех следующих днях с этим упражнением, без единого нажатия.
-     Решение владельца: поднятый вес становится рабочим, даже если низ
-     диапазона в этот раз не добран. Не потянет — через два провала подряд
-     maybeRegress вернёт вес на шаг назад. Снятая отметка откатывает всё. */
+     Вес становится рабочим, только если низ диапазона добран в каждом
+     записанном подходе. Раньше рабочим становился любой поднятый вес, даже
+     одиночка на два повтора при плане 6–8, и следующая тренировка начиналась
+     с веса, на котором не выходит и низ. Пустые клетки — «не записал»,
+     провалом они не считаются. Снятая отметка откатывает всё. */
   setReps(p.n, l.r, l);
-  const raised = bumpWorking(p.n, w, l);
+  const low = firstRep(pick(l.r, p.r));
+  const got = (l.rs || []).map(num).filter(v => v > 0);
+  const short = low > 0 && got.some(v => v < low);
+  const raised = short ? 0 : bumpWorking(p.n, w, l);
+  if (short && w > num(p.w)) note('Рабочий вес не поднят: низ ' + low + ' повт. на ' + kg(w) + ' кг не добран');
 
   const old = num(S.pr[p.n]);
   if (w > 0 && w > old) { l.prevPr = old; S.pr[p.n] = w; }
@@ -4795,8 +4810,8 @@ function workoutSummary(ds) {
         font-size:11px;color:var(--mut)">было ${kg(old)}</i></span></div>`).join('');
   }
   h += `<div class="win pln" style="margin-top:10px"><p style="margin:0">
-    ${st > 1 ? 'Серия: <b>' + st + '</b> недель подряд по четыре тренировки. Не рви её.'
-      : 'Четыре тренировки за неделю складываются в серию — она видна в шапке.'}</p></div>`;
+    ${st > 1 ? 'Серия: <b>' + st + '</b> недель подряд, от ' + weekNeed() + ' тренировок в каждой. Не рви её.'
+      : weekNeed() + ' тренировки за неделю засчитывают её в серию — она видна в «Прогрессе».'}</p></div>`;
   sheet('ТРЕНИРОВКА ЗАКРЫТА', h);
 }
 
@@ -5232,6 +5247,7 @@ function paintCalc() {
     row('Сейчас', pc ? (pc.per > 0 ? '+' : '') + dec(pc.per, 2) + ' кг/нед' : 'нужно 2 взвешивания') +
     '<p class="clh">Поддержание — формула Миффлина — Сан Жеора: вес, рост ' + (num(S.height) || 175) +
     ' см, возраст ' + (num(S.age) || 30) + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
+    ', ' + actOf()[1] + ' (×' + dec(actOf()[0], 2) + ')' +
     '. Коридор — ' + pctTxt + ' массы в неделю; норма через день тренировки / отдыха.</p>';
 }
 function paintGoal() {
@@ -5544,11 +5560,12 @@ function paintVol() {
 const BAL_SPAN = 1.5;
 function paintRadar() {
   const box = $('rad'); if (!box) return;
-  const acc = vol7();
-  const rows = GROUPS.map(([n, t]) => {
-    const v = acc[n] || 0, goal = volTarget(n), k = v / goal;
+  const acc = vol7m();
+  // мышцы, на которые программа ничего не ставит, не показываем: норма 0 — не норма
+  const rows = MUSCLES.filter(m => volTargetM(m) > 0).map(n => {
+    const v = acc[n] || 0, goal = volTargetM(n), k = v / goal;
     const st = v === 0 ? 'zero' : k >= 1 ? 'full' : k >= 0.5 ? 'mid' : 'low';
-    return { n, t, v, goal, k, st };
+    return { n, v, goal, k, st };
   });
   box.innerHTML = rows.map(r => `<div class="br ${r.st}" data-g="${r.n}">
       <span class="bn">${r.n}</span>
@@ -5596,19 +5613,25 @@ $('hist').addEventListener('click', e => {
 });
 $('histMore').addEventListener('click', () => { histLimit += 20; paintHistory(); });
 
-/* ---------- серия недель ---------- */
+/* ---------- серия недель ----------
+   Неделя идёт в серию, если закрыто на одну тренировку меньше плана или
+   больше (при четырёх днях — три). Одна пропущенная тренировка —
+   это жизнь, а не повод обнулять месяцы работы. «Пропуск» тренировкой
+   не считается: раньше он засчитывался как закрытый день, и серию можно
+   было держать, не заходя в зал вовсе. */
+const weekNeed = () => Math.max(1, (S.days || []).filter(d => d.t !== 'rest' && (d.ex || []).length).length - 1);
 function streak() {
   const cnt = {};
   Object.keys(S.rec).forEach(d => {
-    // пропущенный кнопкой день серию не рвёт: он считается как закрытый
-    if (!S.rec[d] || !(S.rec[d].wo || S.rec[d].skip)) return;
+    if (!S.rec[d] || !S.rec[d].wo) return;
     const m = mondayOf(d);
     if (m) cnt[m] = (cnt[m] || 0) + 1;
   });
+  const need = weekNeed();
   let n = 0;
   const c = at(mondayOf(today()));
-  if ((cnt[iso(c)] || 0) < 4) c.setDate(c.getDate() - 7);   // текущую считаем только закрытой
-  while ((cnt[iso(c)] || 0) >= 4) { n++; c.setDate(c.getDate() - 7); }
+  if ((cnt[iso(c)] || 0) < need) c.setDate(c.getDate() - 7);   // текущую считаем только закрытой
+  while ((cnt[iso(c)] || 0) >= need) { n++; c.setDate(c.getDate() - 7); }
   return n;
 }
 
@@ -5948,7 +5971,12 @@ function openSetup() {
 function closeSetup() { setupFresh = false; $('setup').classList.remove('on'); }
 function paintSex() {
   $('anSex').querySelectorAll('[data-sex]').forEach(b => b.classList.toggle('on', b.dataset.sex === (S.sex || 'm')));
+  $('anAct').querySelectorAll('[data-act]').forEach(b => b.classList.toggle('on', b.dataset.act === (ACT[S.act] ? S.act : 'sit')));
 }
+$('anAct').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  S.act = b.dataset.act; applyNutri(); save(); paintSex();
+});
 $('anSex').addEventListener('click', e => {
   const b = e.target.closest('[data-sex]'); if (!b) return;
   S.sex = b.dataset.sex; applyNutri(); save(); paintSex();
@@ -7866,6 +7894,53 @@ function vol7() {
     if (ds < f7 || ds > today()) return;
     dayEntries(ds).forEach(e => {
       if (e.g && acc[e.g] !== undefined) acc[e.g] += e.rs ? e.rs.length : e.s;
+    });
+  });
+  return acc;
+}
+
+/* Мышцы для баланса недели. Группы «Руки» и «Ноги» — это по нескольку
+   мышц: в «Руки» входили и бицепс, и трицепс, и норма 12 подходов на
+   «руки» означала по 6 на каждую — вдвое ниже коридора. Баланс считается
+   по мышцам; мышца берётся по ключу упражнения из каталога, для своих
+   упражнений — по названию. Тоннаж по группам остаётся как был. */
+const MUSCLES = ['Грудь', 'Спина', 'Плечи', 'Бицепс', 'Трицепс', 'Квадрицепс', 'Бицепс бедра', 'Икры', 'Пресс'];
+const MUSCLE_KEY = {
+  curl: 'Бицепс', curldb: 'Бицепс', hammer: 'Бицепс', preacher: 'Бицепс', cablecurl: 'Бицепс',
+  conc: 'Бицепс', revcurl: 'Бицепс', wrist: 'Бицепс',
+  benchclose: 'Трицепс', skull: 'Трицепс', pushdown: 'Трицепс', overhead: 'Трицепс',
+  dipstri: 'Трицепс', benchdip: 'Трицепс',
+  squat: 'Квадрицепс', frontsquat: 'Квадрицепс', smithsquat: 'Квадрицепс', hack: 'Квадрицепс',
+  legpress: 'Квадрицепс', lunge: 'Квадрицепс', split: 'Квадрицепс', stepup: 'Квадрицепс', legext: 'Квадрицепс',
+  dead: 'Бицепс бедра', rdl: 'Бицепс бедра', stiff: 'Бицепс бедра', goodmorning: 'Бицепс бедра',
+  glute: 'Бицепс бедра', legcurl: 'Бицепс бедра', legcurlseat: 'Бицепс бедра',
+  calfstand: 'Икры', calfseat: 'Икры'
+};
+function muscleOf(name, g) {
+  const k = (EXDB[name] || [])[0];
+  if (k && MUSCLE_KEY[k]) return MUSCLE_KEY[k];
+  if (g === 'Руки') return /разгиб|трицепс|француз|брус|узк/i.test(name || '') ? 'Трицепс' : 'Бицепс';
+  if (g === 'Ноги') return /икр/i.test(name || '') ? 'Икры'
+    : /сгибания ног|румын|станов|мост|наклон|гиперэкст/i.test(name || '') ? 'Бицепс бедра' : 'Квадрицепс';
+  return MUSCLES.indexOf(g) >= 0 ? g : null;
+}
+// недельная норма мышцы — сумма подходов, которые на неё ставит сама программа
+function volTargetM(m) {
+  let t = 0;
+  (S.days || []).forEach(d => (d.ex || []).forEach(e => { if (muscleOf(e.n, e.g) === m) t += num(e.s) || 0; }));
+  return t;
+}
+// подходы по мышцам за 7 дней — по журналу, тем же счётом, что daySets
+function vol7m() {
+  const acc = {};
+  MUSCLES.forEach(m => { acc[m] = 0; });
+  const from = new Date(); from.setDate(from.getDate() - 6);
+  const f7 = iso(from);
+  Object.keys(S.rec).forEach(ds => {
+    if (ds < f7 || ds > today()) return;
+    dayEntries(ds).forEach(e => {
+      const m = muscleOf(e.n, e.g);
+      if (m && acc[m] !== undefined) acc[m] += e.rs ? e.rs.length : e.s;
     });
   });
   return acc;

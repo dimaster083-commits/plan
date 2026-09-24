@@ -79,33 +79,25 @@ const chk = (c,n,d)=>c?ok(n,d):bad(n,d);
     return Math.abs(mine-app) < 0.5 ? true : JSON.stringify({mine, app});
   }) === true, '6. калории равны сумме по продуктам');
 
-  // 7. диаграмма показывает ровно то, что считает vol7()
+  // 7. баланс недели показывает ровно то, что считает vol7m()
   chk(await p.evaluate(() => {
     tab='prog'; pSec='load'; render();
-    const acc = vol7();
-    const txt = [...document.querySelectorAll('#rad .rnum')].map(t=>t.textContent);
-    const mine = GROUPS.map(([n]) => (acc[n]||0)+'/'+volTarget(n));
+    const acc = vol7m();
+    const txt = [...document.querySelectorAll('#rad .br .bv')].map(t=>t.textContent.replace(' ✓',''));
+    const mine = MUSCLES.filter(m=>volTargetM(m)>0).map(m => (acc[m]||0)+'/'+volTargetM(m));
     return JSON.stringify(txt)===JSON.stringify(mine) ? true : JSON.stringify({txt, mine});
-  }) === true, '7. подписи диаграммы равны недельному счёту');
+  }) === true, '7. числа баланса равны недельному счёту по мышцам');
 
-  // 8. вершина диаграммы пропорциональна доле нормы
+  // 8. длина полосы — доля нормы на шкале в полторы нормы
   chk(await p.evaluate(() => {
-    const acc = vol7();
-    const pts = document.querySelector('#rad .rfill');
-    if (!pts) return 'фигуры нет';
-    const xy = pts.getAttribute('points').split(' ').map(s2=>s2.split(',').map(Number));
-    // Граница — одна недельная норма: добранная группа стоит на краю,
-    // а не на половине радиуса, как было при шкале до двух норм.
-    const cx=150, cy=114, R=78;
-    const bad2=[];
-    GROUPS.forEach(([n],i)=>{
-      const want = Math.min(1, (acc[n]||0)/volTarget(n));
-      if (!want) return;
-      const d = Math.hypot(xy[i][0]-cx, xy[i][1]-cy) / R;
-      if (Math.abs(d-want) > 0.02) bad2.push(n+': '+d.toFixed(2)+' вместо '+want.toFixed(2));
+    const acc = vol7m(), bad2=[];
+    document.querySelectorAll('#rad .br').forEach(r=>{
+      const m=r.dataset.g, want=Math.min(1.5,(acc[m]||0)/volTargetM(m))/1.5*100;
+      const w=parseFloat(r.querySelector('.bb i').style.width);
+      if (Math.abs(w-want) > 0.2) bad2.push(m+': '+w+' вместо '+want.toFixed(1));
     });
     return bad2.join('; ') || true;
-  }) === true, '8. длина луча равна доле нормы');
+  }) === true, '8. длина полосы равна доле нормы');
 
   // 9. смена режима пересчитывает норму калорий
   chk(await p.evaluate(() => {

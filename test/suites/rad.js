@@ -1,5 +1,5 @@
-/* Диаграмма нагрузки: шкала, подписи, фигура по данным
-   и пустое состояние. Со снимками. */
+/* Баланс недели: подписи не вылезают из карточки на 320 и 390 px,
+   пустое состояние. Со снимками. */
 const { chromium } = require('playwright-core');
 const { LAUNCH, APP } = require('../env');
 const DIR=require('path').join(__dirname, '..', 'out') + require('path').sep;
@@ -24,7 +24,7 @@ const SEED=eval('('+src.match(/const SEED\s*=\s*(\(\)=>\{[\s\S]*?\n\};)/)[1].rep
       const bad=await p.evaluate(()=>{
         const card=document.querySelector('.radar').getBoundingClientRect();
         const out=[];
-        document.querySelectorAll('#rad text').forEach(t=>{
+        document.querySelectorAll('#rad .bn, #rad .bv').forEach(t=>{
           const r=t.getBoundingClientRect();
           if(r.left<card.left-1||r.right>card.right+1) out.push(t.textContent+' ['+Math.round(r.left)+'..'+Math.round(r.right)+']');
         });

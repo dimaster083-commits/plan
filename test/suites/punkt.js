@@ -213,17 +213,16 @@ const txt = async (p, t) => p.evaluate(tt => { tab=tt; exOpen=null; render(); re
     chk(dirs.goal === 2 && dirs.setup === 2, '21. набор и похудение выбираются в обоих местах',
         JSON.stringify(dirs));
 
-    // 22. диаграмма по пяти группам с числами
+    // 22. баланс недели по всем мышцам программы, включая пресс
     const rad = await p.evaluate(() => {
       tab = 'prog'; pSec = 'load'; render();
-      return { axes: document.querySelectorAll('#rad .rlab').length,
-               nums: document.querySelectorAll('#rad .rnum').length,
-               groups: GROUPS.length,
-               names: [...document.querySelectorAll('#rad .rlab')].map(t => t.textContent).join(' ') };
+      return { rows: document.querySelectorAll('#rad .br').length,
+               want: MUSCLES.filter(m => volTargetM(m) > 0).length,
+               names: [...document.querySelectorAll('#rad .br .bn')].map(t => t.textContent).join(' ') };
     });
-    chk(rad.axes === rad.groups && rad.nums === rad.groups,
-        '22. диаграмма нагрузки по всем группам, включая пресс',
-        rad.names + ' (групп: ' + rad.groups + ')');
+    chk(rad.rows === rad.want && /Пресс/.test(rad.names),
+        '22. баланс нагрузки по всем мышцам, включая пресс',
+        rad.names + ' (мышц: ' + rad.want + ')');
 
     // 23. килограммы пишутся одним знаком после запятой
     chk(await p.evaluate(() => [12.125, 35.625, 70.04, 2.449]
