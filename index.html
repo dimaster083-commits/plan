@@ -2764,6 +2764,27 @@ body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
   .srow .stick{width:44px}
 }
 
+/* крупная цифра тренировки дня */
+.whead{display:flex;align-items:flex-end;gap:12px;margin:10px 0 2px;flex-wrap:wrap}
+.wbig{display:flex;align-items:baseline;gap:5px;line-height:1}
+.wbig b{font-family:var(--fd,inherit);font-size:40px;font-weight:800;letter-spacing:-.02em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.wbig i{font-style:normal;font-size:13px;color:var(--ink3);letter-spacing:.04em}
+.wsub{display:flex;gap:12px;flex:1 1 auto;justify-content:flex-end;flex-wrap:wrap}
+.wsub span{display:flex;flex-direction:column;align-items:flex-end;
+  font-size:10px;letter-spacing:.04em;color:var(--ink3);line-height:1.25}
+.wsub b{font-size:15px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums}
+@media (max-width:359px){
+  .wbig b{font-size:34px}
+  .wsub{gap:9px}
+}
+
+/* постоянная кнопка тренировки с часами */
+.wobar{position:sticky;bottom:calc(var(--tabh) + var(--sb) + 6px);z-index:11;
+  margin-top:12px;padding:6px 0}
+.wobar .fin{margin-top:0}
+.wobar .fin[disabled]{opacity:1}
+body.exopen .wobar{margin-top:8px}
 </style>
 </head>
 <script>
@@ -2842,6 +2863,16 @@ document.documentElement.dataset.skin = 'sl';
   <div id="tw">
     <div class="win qbox">
       <div class="qhead"><b>ТРЕНИРОВКА ДНЯ</b><i id="qType">—</i></div>
+      <!-- крупная цифра дня: поднятое за тренировку, рядом — подходы,
+           упражнения и время. Сразу видно, что сделано, без счёта в уме. -->
+      <div class="whead">
+        <div class="wbig"><b id="woBig">0</b><i id="woBigU">кг</i></div>
+        <div class="wsub">
+          <span><b id="woEx">0/0</b>упражнений</span>
+          <span><b id="woSets">0</b>подходов</span>
+          <span><b id="woTime">—</b>время</span>
+        </div>
+      </div>
       <div class="qprog"><i id="qpf"></i></div>
       <div class="qmeta"><span id="qCnt">—</span><span id="qRew">—</span></div>
       <div class="qpen" id="qPen">Для серии недель — 3 тренировки в неделю</div>
@@ -2850,7 +2881,9 @@ document.documentElement.dataset.skin = 'sl';
     </div>
     <div id="exl"></div>
     <button class="add" id="addEx">+ Упражнение</button>
-    <button class="fin" id="fin">Завершить тренировку</button>
+    <!-- Кнопка тренировки постоянная: держится внизу и на списке, и на
+         раскрытом упражнении. Пока идёт — на ней часы. -->
+    <div class="wobar" id="wobar"><button class="fin" id="fin">Начать тренировку</button></div>
     <button class="add" id="editPast" hidden>Править этот день</button>
   </div>
 
@@ -4451,6 +4484,59 @@ $('movedX').addEventListener('click', () => { delete S.map[sel]; remapLog(sel); 
 /* =========================================================================
    ВКЛАДКА «ЗАЛ»
    ========================================================================= */
+/* Часы тренировки. Засечка начала — `r.t0`, конца — `r.t1`; обе уже были
+   в журнале и считали минуты в итогах. Кнопка делает начало явным: раньше
+   отсчёт стартовал молча с первым закрытым подходом. */
+const woMins = r => (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
+function woClock(t0) {
+  const sec = Math.max(0, Math.floor((Date.now() - t0) / 1000));
+  const m = Math.floor(sec / 60), ss = sec % 60;
+  return (m < 60 ? m : Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0')) +
+    (m < 60 ? ':' + String(ss).padStart(2, '0') : '');
+}
+let woInt = null;
+function woTick() {
+  const r = recOf(sel), f = $('fin');
+  if (!f || r.wo || !r.t0) { clearInterval(woInt); woInt = null; return; }
+  f.textContent = 'Завершить · ' + woClock(r.t0);
+  const t = $('woTime'); if (t) t.textContent = woClock(r.t0);
+}
+
+/* Крупная цифра дня и кнопка тренировки. Числа — те же, что во всей
+   статистике: `dayTon` и `daySets`, ничего отдельно не хранится. */
+function paintWoHead(d, r) {
+  const ton = dayTon(sel), sets = daySets(sel);
+  const doneCnt = d.ex.filter((_, j) => (r.log[j] || {}).done).length;
+  const big = $('woBig'); if (!big) return;
+  // до тысячи показываем килограммы, дальше тонны: 12 400 кг не читаются
+  if (ton >= 1000) { big.textContent = dec(ton / 1000); $('woBigU').textContent = 'т поднято'; }
+  else { big.textContent = rnd(ton); $('woBigU').textContent = 'кг поднято'; }
+  $('woEx').textContent = doneCnt + '/' + d.ex.length;
+  $('woSets').textContent = sets;
+  $('woTime').textContent = r.wo ? (woMins(r) + ' мин') : (r.t0 ? woClock(r.t0) : '—');
+}
+
+function paintWoBar(d, r, jr) {
+  const bar = $('wobar'), f = $('fin'); if (!bar || !f) return;
+  const hide = jr || sel > today() || d.t === 'rest' || !d.ex.length;
+  // прячем и полосу, и саму кнопку: в будущем дне отмечать нечего
+  bar.hidden = hide; f.hidden = hide;
+  f.disabled = false; f.classList.remove('wodone');
+  f.classList.toggle('done', !!r.wo);
+  if (hide) { clearInterval(woInt); woInt = null; return; }
+  if (r.wo) {
+    f.textContent = 'Тренировка закрыта' + (woMins(r) ? ' · ' + woMins(r) + ' мин' : '');
+    f.disabled = true; f.classList.add('wodone');
+    clearInterval(woInt); woInt = null;
+  } else if (r.t0) {
+    f.textContent = 'Завершить · ' + woClock(r.t0);
+    if (!woInt) woInt = setInterval(woTick, 1000);
+  } else {
+    f.textContent = 'Начать тренировку';
+    clearInterval(woInt); woInt = null;
+  }
+}
+
 function paintWorkout() {
   const d = dayOf(sel), r = recOf(sel), tr = d.t !== 'rest';
   if (!tr) { exOpen = null; document.body.classList.remove('exopen'); }
@@ -4459,8 +4545,8 @@ function paintWorkout() {
   const jr = sel < today() && !editPast && dayEntries(sel).length > 0;
   $('tw').hidden = !tr && !jr;
   $('addEx').hidden = jr;
-  $('fin').hidden = jr || sel > today();
   $('editPast').hidden = !jr;
+  paintWoBar(d, r, jr);
 
   if (jr) { exOpen = null; document.body.classList.remove('exopen'); paintJournal(); }
   else if (tr) {
@@ -4475,6 +4561,7 @@ function paintWorkout() {
     if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'Тренировка закрыта'; }
     else if (r.skip) { pen.className = 'qpen'; pen.textContent = 'День пропущен — тренировкой не считается'; }
     else { pen.className = 'qpen'; pen.textContent = 'Для серии недель — ' + weekNeed() + ' тренировки в неделю'; }
+    paintWoHead(d, r);
     // «Пропуск» есть, пока в дне не закрыто ни одного подхода
     const sk = $('skipDay');
     sk.hidden = r.wo || doneCnt > 0 || sel > today() || !d.ex.length;
@@ -4489,15 +4576,12 @@ function paintWorkout() {
       : exFull(d.ex[exOpen], exOpen, r, IN, d);
     $('exl').classList.toggle('full', exOpen !== null);
     $('addEx').hidden = exOpen !== null;
-    $('fin').hidden = exOpen !== null || sel > today();
     // раскрытое упражнение занимает экран целиком: всё остальное уходит
     document.body.classList.toggle('exopen', exOpen !== null);
 
-    const all = d.ex.length > 0 && d.ex.every((_, j) => (r.log[j] || {}).done);
-    const f = $('fin');
-    f.classList.toggle('done', !!r.wo);
-    f.textContent = r.wo ? 'Тренировка закрыта' : 'Завершить тренировку';
-    f.disabled = !all || !!r.wo;
+    /* Подпись и доступность кнопки тренировки — в paintWoBar: она одна
+       знает про начало, часы и закрытие. Раньше здесь кнопка была заперта,
+       пока не закрыты все упражнения, — начать тренировку было нечем. */
   }
 
 }
@@ -5455,6 +5539,15 @@ $('fin').addEventListener('click', () => {
   if (sel > today()) { note('Этот день ещё впереди'); return; }
   const r = recRW(sel);
   if (r.wo) return;
+  /* Первое нажатие начинает тренировку: часы пошли, подходы ещё не закрыты.
+     Раньше отсчёт стартовал молча с первым закрытым подходом, и разминка
+     в него не попадала. */
+  if (!r.t0) {
+    r.t0 = Date.now();
+    save(); render(); keepAwake(true);
+    note('Тренировка пошла');
+    return;
+  }
   r.wo = 1;
   r.t1 = Date.now();
   addXp(XP_WO, 'Тренировка закрыта');
