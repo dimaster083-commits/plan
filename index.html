@@ -2629,6 +2629,50 @@ svg.mch{width:100%;height:auto;display:block;aspect-ratio:300/110}
 .recg span{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
 .recg b{display:block;font-size:16px;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .recg i{display:block;font-style:normal;font-size:11px;color:var(--mut)}
+/* ранги силы */
+.srank{display:flex;gap:10px;align-items:center;margin-top:8px;min-width:0}
+.srank>span{flex:1;min-width:0;font-size:12px;color:var(--ink2)}
+.srank em,.rkall em{display:block;font-style:normal;font-family:var(--fn);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.srank i{display:block;font-style:normal;font-size:11px;color:var(--mut)}
+.rkl{flex:0 0 44px;width:44px;height:44px;display:grid;place-items:center;font:700 22px/1 var(--fn);color:var(--ink);
+  clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%);background:var(--s2)}
+.rkl.rkD{background:rgba(120,200,255,.28)}.rkl.rkC{background:rgba(46,139,255,.45)}.rkl.rkB{background:rgba(140,90,255,.55)}
+.rkl.rkA{background:rgba(255,120,200,.55)}.rkl.rkS{background:var(--warn);color:#111}
+.rkbar{display:block;height:4px;margin-top:5px;background:var(--s2);border-radius:2px;overflow:hidden;text-decoration:none}
+.rkbar u{display:block;height:100%;background:var(--acc-2);transform-origin:0 50%}
+.rkall{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ink2)}
+.rkrow{padding:4px 10px 10px;cursor:pointer}
+/* итоги недели */
+.wknav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.wknav b{font-family:var(--fn);font-size:15px;color:var(--ink);text-align:center;flex:1}
+.wknav button{width:44px;height:44px;border:1px solid var(--ln);border-radius:var(--r-s);background:var(--s2);color:var(--ink);font-size:22px}
+.wknav button:disabled{opacity:.35}
+.wksum{grid-template-columns:repeat(2,minmax(0,1fr))}
+.wksum b small{font-size:.6em;color:var(--ink3)}
+.wksum i{display:block;font-style:normal;font-size:10.5px;color:var(--ink3);margin-top:2px}
+.wkdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:10px 0}
+.wkdays div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.wkdays s{display:block;width:100%;height:40px;background:var(--s2);border-radius:3px;overflow:hidden;position:relative;text-decoration:none}
+.wkdays u{position:absolute;inset:0;background:var(--acc-2);transform-origin:50% 100%;opacity:.55}
+.wkdays .wo u{opacity:1}
+.wkdays span{font-family:var(--fn);font-size:10px;color:var(--ink3)}
+.wkdays .td span{color:var(--ink)}
+.bmap{width:100%;height:auto;display:block;max-width:340px;margin:0 auto;aspect-ratio:200/172}
+.bmap .bmo{fill:none;stroke:var(--ink3);stroke-width:1;opacity:.6}
+.bmap .mm0,.bmap .mm1,.bmap .mm2,.bmap .mm3{stroke:var(--acc-2);stroke-width:1}
+.bmap text{fill:var(--ink3);font-size:7px;text-anchor:middle;font-family:var(--fn);letter-spacing:.1em}
+.mm0{fill:transparent}.mm1{fill:rgba(90,127,208,.45)}.mm2{fill:rgba(122,109,255,.7)}.mm3{fill:var(--acc-2)}
+.mmleg{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:11px;color:var(--ink3);margin-top:6px}
+.mmleg i{display:inline-block;width:12px;height:12px;border:1px solid var(--acc-2);border-radius:2px;margin-right:-6px}
+.mmleg i.mm0{background:transparent}.mmleg i.mm1{background:rgba(90,127,208,.45)}.mmleg i.mm2{background:rgba(122,109,255,.7)}.mmleg i.mm3{background:var(--acc-2)}
+.wkm{display:grid;grid-template-columns:minmax(0,7.5em) 1fr auto;gap:8px;align-items:center;font-size:12px;color:var(--ink2);padding:3px 0}
+.wkm s{display:block;height:8px;background:var(--s2);border-radius:4px;overflow:hidden;text-decoration:none}
+.wkm u{display:block;height:100%;transform-origin:0 50%}
+.wkm u.mm1{background:rgba(90,127,208,.8)}.wkm u.mm2{background:rgba(122,109,255,.9)}
+.wkm b{font-family:var(--fn);font-size:12px;color:var(--ink);min-width:3em;text-align:right}
+.wkmin{margin:8px 0}
+.wkmap,.wkdist{padding:12px 14px}
+.wkmap .wtitle,.wkdist .wtitle{display:flex;justify-content:space-between;gap:8px;padding:0 0 8px}
 /* смена экрана — сканирующая полоса сверху вниз */
 body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 #scrfx{position:fixed;left:0;right:0;top:0;height:2px;z-index:60;pointer-events:none;opacity:0;
@@ -2884,7 +2928,9 @@ document.documentElement.dataset.skin = 'sl';
 
   <div class="psec" data-s="prog" hidden>
   <button class="anb" id="anBtn">Разбор</button>
+  <button class="anb" id="wkBtn" style="margin-top:7px">Итоги недели</button>
   <button class="anb" id="progBtn" style="margin-top:7px">Прогресс по упражнениям</button>
+  <button class="anb" id="rankBtn" style="margin-top:7px">Ранги силы</button>
   <h2 class="sec">АРХИВ</h2>
   <div class="win bk">
     <h4>РЕЗЕРВНАЯ КОПИЯ</h4>
@@ -5060,6 +5106,8 @@ function toggleSet(j) {
   });
   if (!l.recs.length) delete l.recs;
   const wRec = w > 0 && w > old && old > 0;
+  const rk0 = beforeRec.e1 && strRank(p.n, beforeRec.e1.e1), rk1 = nowS && strRank(p.n, nowS.e1);
+  const rankUp = rk0 && rk1 && rk1.i > rk0.i ? rk1.l : '';
 
   if (wRec || l.recs) {
     l.xp = XP_PR; addXp(XP_PR); dingPR();
@@ -5070,6 +5118,7 @@ function toggleSet(j) {
   }
 
   if (raised) note('Рабочий вес: ' + p.n + ' → ' + kg(w) + ' кг');
+  if (rankUp) note('РАНГ СИЛЫ ПОВЫШЕН: ' + p.n + ' → ' + rankUp);
 
   if (!r.t0) r.t0 = Date.now();          // засечка начала тренировки
   delete r.skip;                           // всё-таки пришёл — день больше не пропущен
@@ -5633,8 +5682,64 @@ function recHtml(name) {
   const cell = (k, v) => b[k] ? '<div><span>' + REC_L[k] + '</span><b>' + v + '</b><i>' + fmt(b[k].ds, 1) + '</i></div>' : '';
   return '<div class="recs"><span class="lbl">Рекорды по журналу</span><div class="recg">' +
     cell('w', kg(b.w.w) + ' кг') + cell('e1', b.e1 ? kg(roundW(b.e1.e1)) + ' кг' : '') +
-    cell('set', b.set ? kg(b.set.sw) + '×' + b.set.sr : '') + cell('vol', b.vol ? kgTon(b.vol.vol) : '') + '</div></div>';
+    cell('set', b.set ? kg(b.set.sw) + '×' + b.set.sr : '') + cell('vol', b.vol ? kgTon(b.vol.vol) : '') + '</div>' +
+    (b.e1 ? rankHtml(name, b.e1.e1) : '') + '</div>';
 }
+/* ---------- ранги силы ----------
+   Стандарты силы — ≈1ПМ, делённый на вес тела, по пяти порогам (новичок,
+   начинающий, средний, продвинутый, элита) для жима, приседа и становой,
+   отдельно для мужчин и женщин — по обычным таблицам силовых стандартов.
+   Другие базовые движения приводятся к своему опорному через ту же долю,
+   что задаёт их стартовый вес (EXDB). Изоляции ранга нет: её стартовая доля
+   осторожная, и махи на 13 кг выходили в S. Порогов пять — рангов Системы
+   шесть: ниже первого порога — E, выше последнего — S. */
+const SRANKS = ['E', 'D', 'C', 'B', 'A', 'S'];
+const STD = {
+  b: { m: [0.5, 0.75, 1, 1.5, 2], f: [0.25, 0.5, 0.75, 1, 1.5] },
+  s: { m: [0.75, 1.25, 1.5, 2.25, 2.75], f: [0.5, 0.75, 1.25, 1.5, 2] },
+  d: { m: [1, 1.5, 2, 2.5, 3], f: [0.5, 1, 1.25, 1.75, 2.5] }
+};
+const SRANKED = new Set(['Жим лёжа', 'Жим лёжа узким хватом', 'Жим штанги на наклонной', 'Жим гантелей лёжа',
+  'Жим гантелей на наклонной', 'Жим в тренажёре', 'Жим штанги стоя', 'Присед со штангой', 'Фронтальный присед',
+  'Присед в Смите', 'Гакк-присед', 'Жим ногами', 'Становая тяга', 'Румынская тяга', 'Становая на прямых ногах',
+  'Тяга штанги в наклоне', 'Тяга Т-грифа', 'Тяга верхнего блока', 'Тяга верхнего блока узким хватом',
+  'Тяга горизонтального блока', 'Тяга гантели одной рукой']);
+function strRank(name, e1) {
+  const r = EXDB[name], bw = num(S.bw);
+  if (!SRANKED.has(name) || !r || !STD[r[2]] || !(num(r[3]) > 0) || !(bw > 0) || !(e1 > 0)) return null;
+  const t = STD[r[2]][S.sex === 'f' ? 'f' : 'm'], ratio = e1 / r[3] / bw;
+  const i = t.filter(x => ratio >= x - 1e-9).length;
+  const lo = i ? t[i - 1] : 0, hi = t[i];
+  // порог — вверх по сетке весов: округлённый вниз давал «до B — 70 кг (+0)» при ≈1ПМ 69,6
+  const need = hi ? hi * bw * r[3] : 0, g = need ? granOf(need) : 1;
+  return { i, l: SRANKS[i], ratio: e1 / bw, pct: hi ? Math.min(1, (ratio - lo) / (hi - lo)) : 1,
+    next: need ? Math.ceil(need / g - 1e-9) * g : 0 };
+}
+function rankHtml(name, e1) {
+  const k = strRank(name, e1);
+  if (!k) return '';
+  return '<div class="srank"><b class="rkl rk' + k.l + '">' + k.l + '</b><span><em>Ранг силы</em>' +
+    '≈1ПМ ' + kg(roundW(e1)) + ' кг — ' + dec(k.ratio, 2) + '× вес тела' +
+    '<i>' + (k.next ? 'до ' + SRANKS[k.i + 1] + ' — ≈1ПМ ' + kg(k.next) + ' кг (+' + kg(Math.max(0.1, k.next - e1)) + ')' : 'высший ранг') + '</i>' +
+    '<s class="rkbar"><u style="transform:scaleX(' + k.pct.toFixed(3) + ')"></u></s></span></div>';
+}
+// все упражнения из журнала с рангом; общий ранг — средняя позиция по ним
+function openRanks() {
+  const names = [...new Set(Object.keys(S.rec).flatMap(ds => dayEntries(ds).map(e => e.n)))];
+  const rows = names.map(n => { const b = recordsOf(exSessions(n)).e1; const k = b && strRank(n, b.e1); return k ? { n, e1: b.e1, k } : null; })
+    .filter(Boolean).sort((a, b) => (b.k.i + b.k.pct) - (a.k.i + a.k.pct));
+  let html;
+  if (!num(S.bw)) html = '<div class="win howb"><p>Ранг считается от веса тела — впиши его в «Цели».</p></div>';
+  else if (!rows.length) html = '<div class="win howb"><p>Закрой базовое упражнение с весом на 1–12 повторов — появится ранг силы. Изоляции ранга нет.</p></div>';
+  else {
+    const avg = rows.reduce((a, x) => a + x.k.i + x.k.pct, 0) / rows.length, all = SRANKS[Math.min(5, Math.floor(avg))];
+    html = '<div class="win rkall"><b class="rkl rk' + all + '">' + all + '</b><span><em>Общий ранг силы</em>по ' + rows.length +
+      ' упр. при весе тела ' + kg(num(S.bw)) + ' кг. Пороги: E → S — новичок, начинающий, средний, продвинутый, элита.</span></div>' +
+      rows.map(x => '<div class="win rkrow" data-hist="' + esc(x.n) + '">' + rankHtml(x.n, x.e1).replace('<em>Ранг силы</em>', '<em>' + esc(x.n) + '</em>') + '</div>').join('');
+  }
+  sheet('РАНГИ СИЛЫ', html);
+}
+
 /* График упражнения с переключателем: ≈1ПМ, вес или объём. ≈1ПМ — по
    умолчанию: он растёт и когда прибавились повторы, а не только вес. */
 let chMode = 'e1';
@@ -5693,6 +5798,10 @@ function openHistory(name) {
 
 // одна точка входа для всех кнопок внутри шторки
 $('shB').addEventListener('click', e => {
+  const wk = e.target.closest('[data-wk]');
+  if (wk) { if (!wk.disabled) openWeek(wk.dataset.wk); return; }
+  const ws = e.target.closest('[data-wkshare]');
+  if (ws) { shareWeek(ws.dataset.wkshare); return; }
   const g = e.target.closest('[data-exg]');
   if (g) {
     exG = g.dataset.exg;
@@ -7036,6 +7145,7 @@ function openProgression() {
   $('csvSheet').addEventListener('click', exportCsv);
 }
 $('progBtn').addEventListener('click', openProgression);
+$('rankBtn').addEventListener('click', openRanks);
 
 /* Выгрузка журнала в CSV: точка с запятой и метка BOM, чтобы Excel открыл
    кириллицу и разложил по столбцам без мастера импорта. */
@@ -8229,10 +8339,10 @@ $('cpLast').addEventListener('click', () => {
 });
 
 /* ---------- поиск и добавление продукта ---------- */
-let pickMeal = null, picked = [], chainFilter = '';
+let pickMeal = null, pickDs = null, picked = [], chainFilter = '';
 
 function openPick(j) {
-  pickMeal = j; picked = []; chainFilter = '';
+  pickMeal = j; pickDs = sel; picked = []; chainFilter = '';
   $('fq').value = '';
   drawPick('');
   $('fp').classList.add('on');
@@ -8307,7 +8417,12 @@ $('fq').addEventListener('input', e => drawPick(e.target.value));
 $('fpX').addEventListener('click', closePick);
 $('fpAdd').addEventListener('click', () => {
   if (!picked.length) return;
-  const items = mealsRW(sel)[pickMeal].items;
+  /* Позиции идут в тот приём и тот день, откуда открыт подбор. Раньше брался
+     текущий день: сменил день или убрал приём — и кнопка падала. */
+  const m = mealsRW(pickDs || sel)[pickMeal];
+  if (!m) { closePick(); paintFood(); note('Этого приёма пищи уже нет — позиции не добавлены'); return; }
+  if (!Array.isArray(m.items)) m.items = [];
+  const items = m.items;
   picked.forEach(x => items.push({ p: x.p, g: x.g }));
   const cnt = picked.length;
   save(); closePick(); paintFood(); note('Добавлено позиций: ' + cnt);
@@ -8688,6 +8803,132 @@ function vol7m() {
     });
   });
   return acc;
+}
+
+/* ---------- итоги недели ----------
+   Неделя с понедельника: тренировки, подходы, тоннаж и рекорды — по журналу,
+   мышцы — тем же счётом, что баланс (подходы против нормы программы).
+   Сравнение — с прошлой неделей. Картинку для друзей рисует canvas. */
+function weekData(mon) {
+  const w = { mon, days: [], ton: 0, sets: 0, wo: 0, recs: 0, mins: 0, m: {} };
+  MUSCLES.forEach(m => { w.m[m] = 0; });
+  const d0 = at(mon);
+  for (let i = 0; i < 7; i++) {
+    const x = new Date(d0); x.setDate(d0.getDate() + i);
+    const ds = iso(x), r = S.rec[ds] || {}, es = S.rec[ds] ? dayEntries(ds) : [];
+    const ton = es.reduce((a, e) => a + e.vol, 0), sets = es.reduce((a, e) => a + (e.rs ? e.rs.length : e.s), 0);
+    es.forEach(e => { const m = muscleOf(e.n, e.g); if (m && w.m[m] !== undefined) w.m[m] += e.rs ? e.rs.length : e.s; if (e.pr) w.recs++; });
+    if (r.wo) w.wo++;
+    if (r.t0 && r.t1 && r.t1 > r.t0) w.mins += Math.round((r.t1 - r.t0) / 60000);
+    w.ton += ton; w.sets += sets;
+    w.days.push({ ds, ton, sets, wo: !!r.wo, skip: !!r.skip, tr: (dayOf(ds) || {}).t !== 'rest' });
+  }
+  return w;
+}
+const addDays = (ds, n) => { const x = at(ds); x.setDate(x.getDate() + n); return iso(x); };
+const wkLabel = mon => { const a = at(mon), b = at(addDays(mon, 6));
+  return a.getMonth() === b.getMonth() ? a.getDate() + '–' + fmt(iso(b), 1) : fmt(mon, 1) + ' – ' + fmt(iso(b), 1); };
+// уровень заливки мышцы: 0 — не работала, 1 — меньше половины нормы, 2 — почти, 3 — норма
+function mmLevel(m, sets) {
+  const t = volTargetM(m);
+  if (!sets) return 0;
+  if (!t) return 3;
+  return sets >= t ? 3 : sets >= t / 2 ? 2 : 1;
+}
+/* Карта мышц — два силуэта, спереди и сзади, прорисованные штрихом, как
+   чертёж. Фигуры свои, простые: важна не анатомия, а где пусто. */
+function bodyMap(ms) {
+  const L = m => 'mm' + mmLevel(m, ms[m] || 0);
+  const E = (m, cx, cy, rx, ry) => `<ellipse class="${L(m)}" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>`;
+  const R = (m, x, y, w, h) => `<rect class="${L(m)}" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/>`;
+  const fig = (x) => `<g class="bmo"><circle cx="${x}" cy="13" r="9"/><path d="M${x - 4} 22v4M${x + 4} 22v4"/>
+    <path d="M${x - 17} 28h34l6 50-5 1-4-40-3 38h-22l-3-38-4 40-5-1z"/><path d="M${x - 14} 78l-2 88h10l6-80 6 80h10l-2-88z"/></g>`;
+  return `<svg class="bmap" viewBox="0 0 200 172" role="img" aria-label="Карта мышц за неделю">
+    ${fig(50)}${fig(150)}
+    ${E('Плечи', 33, 32, 6, 6)}${E('Плечи', 67, 32, 6, 6)}
+    ${R('Грудь', 38, 30, 11, 15)}${R('Грудь', 51, 30, 11, 15)}
+    ${E('Бицепс', 29, 50, 4, 10)}${E('Бицепс', 71, 50, 4, 10)}
+    ${R('Пресс', 43, 48, 14, 26)}
+    ${E('Квадрицепс', 43, 102, 6, 20)}${E('Квадрицепс', 57, 102, 6, 20)}
+    ${E('Плечи', 133, 32, 6, 6)}${E('Плечи', 167, 32, 6, 6)}
+    <path class="${L('Спина')}" d="M137 30h26l-4 42h-18z"/>
+    ${E('Трицепс', 129, 50, 4, 10)}${E('Трицепс', 171, 50, 4, 10)}
+    ${E('Бицепс бедра', 143, 104, 6, 18)}${E('Бицепс бедра', 157, 104, 6, 18)}
+    ${E('Икры', 142, 143, 5, 13)}${E('Икры', 158, 143, 5, 13)}
+    <text x="50" y="171">СПЕРЕДИ</text><text x="150" y="171">СЗАДИ</text></svg>`;
+}
+const pctTxt = (a, b) => (b > 0 ? (a >= b ? '+' : '−') + Math.round(Math.abs(a - b) / b * 100) + ' %' : '');
+function openWeek(mon) {
+  const cur = mondayOf(today());
+  mon = mon && mon <= cur ? mondayOf(mon) : cur;
+  const w = weekData(mon), pw = weekData(addDays(mon, -7));
+  const plan = (S.days || []).filter(d => d.t !== 'rest').length;
+  const tile = (v, l, d) => `<div class="win"><b>${v}</b><span>${l}</span>${d ? '<i>' + d + ' к прошлой</i>' : ''}</div>`;
+  const WD = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+  const mx = Math.max(1, ...w.days.map(x => x.ton));
+  const html = `<div class="wknav"><button data-wk="${addDays(mon, -7)}" aria-label="Прошлая неделя">‹</button>
+      <b>${wkLabel(mon)}</b><button data-wk="${addDays(mon, 7)}" aria-label="Следующая неделя"${mon >= cur ? ' disabled' : ''}>›</button></div>
+    <div class="sum wksum">
+      ${tile(w.wo + '<small>/' + plan + '</small>', 'ТРЕНИРОВОК')}
+      ${tile(w.sets, 'ПОДХОДОВ', pctTxt(w.sets, pw.sets))}
+      ${tile(kgTon(w.ton), 'ТОННАЖ', pctTxt(w.ton, pw.ton))}
+      ${tile(w.recs, 'РЕКОРДОВ')}
+    </div>
+    <div class="wkdays">${w.days.map((x, i) => `<div class="${x.wo ? 'wo' : x.ton ? 'part' : ''}${x.ds === today() ? ' td' : ''}">
+      <s><u style="transform:scaleY(${(x.ton / mx).toFixed(3)})"></u></s><span>${WD[i]}</span></div>`).join('')}</div>
+    <div class="win wkmap"><div class="wtitle">КАРТА МЫШЦ<em class="bleg">по норме программы</em></div>${bodyMap(w.m)}
+      <div class="mmleg"><i class="mm0"></i>не было<i class="mm1"></i>мало<i class="mm2"></i>почти<i class="mm3"></i>норма</div></div>
+    <div class="win wkdist"><div class="wtitle">ПОДХОДЫ ПО МЫШЦАМ</div>
+      ${MUSCLES.map(m => { const t = volTargetM(m), v = w.m[m] || 0;
+        return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v)}" style="transform:scaleX(${Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3)})"></u></s><b>${v}${t ? '/' + t : ''}</b></div>`; }).join('')}
+    </div>
+    ${w.mins ? '<p class="s wkmin">В зале — ' + w.mins + ' мин за неделю.</p>' : ''}
+    <button class="copyb" data-wkshare="${mon}">Поделиться картинкой</button>`;
+  sheet('ИТОГИ НЕДЕЛИ', html);
+}
+/* Картинка итогов 1080×1350 — в стиле окна Системы: синева, сетка, штрих. */
+function wkPng(mon) {
+  const w = weekData(mon), c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+  const x = c.getContext('2d'), F = getComputedStyle(document.body).fontFamily || 'sans-serif';
+  const g = x.createLinearGradient(0, 0, 0, 1350); g.addColorStop(0, '#07122b'); g.addColorStop(1, '#0b0a24');
+  x.fillStyle = g; x.fillRect(0, 0, 1080, 1350);
+  x.strokeStyle = 'rgba(80,160,255,.08)'; x.lineWidth = 1;
+  for (let i = 0; i <= 1080; i += 45) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 1350); x.stroke(); }
+  for (let i = 0; i <= 1350; i += 45) { x.beginPath(); x.moveTo(0, i); x.lineTo(1080, i); x.stroke(); }
+  x.strokeStyle = 'rgba(90,180,255,.85)'; x.lineWidth = 3; x.strokeRect(60, 60, 960, 1230);
+  x.fillStyle = '#9fd4ff'; x.font = '600 34px ' + F; x.fillText('// СИСТЕМА · ИТОГИ НЕДЕЛИ', 100, 135);
+  x.fillStyle = '#ffffff'; x.font = '700 72px ' + F; x.fillText(wkLabel(mon), 100, 225);
+  const tiles = [[w.wo, 'ТРЕНИРОВОК'], [w.sets, 'ПОДХОДОВ'], [kgTon(w.ton), 'ТОННАЖ'], [w.recs, 'РЕКОРДОВ']];
+  tiles.forEach(([v, l], i) => {
+    const tx = 100 + (i % 2) * 450, ty = 290 + Math.floor(i / 2) * 190;
+    x.strokeStyle = 'rgba(90,180,255,.5)'; x.lineWidth = 2; x.strokeRect(tx, ty, 430, 165);
+    x.fillStyle = '#ffffff'; x.font = '700 64px ' + F; x.fillText(String(v), tx + 30, ty + 85);
+    x.fillStyle = '#8fb8e8'; x.font = '500 28px ' + F; x.fillText(l, tx + 30, ty + 135);
+  });
+  x.fillStyle = '#9fd4ff'; x.font = '600 30px ' + F; x.fillText('ПОДХОДЫ ПО МЫШЦАМ', 100, 720);
+  MUSCLES.forEach((m, i) => {
+    const y = 760 + i * 52, t = volTargetM(m), v = w.m[m] || 0, k = Math.min(1, t ? v / t : (v ? 1 : 0));
+    x.fillStyle = '#d8e8ff'; x.font = '500 28px ' + F; x.fillText(m, 100, y + 26);
+    x.fillStyle = 'rgba(90,180,255,.15)'; x.fillRect(400, y + 6, 470, 24);
+    x.fillStyle = ['#2a3a5a', '#5a7fd0', '#7a6dff', '#3fb8ff'][mmLevel(m, v)]; x.fillRect(400, y + 6, 470 * k, 24);
+    x.fillStyle = '#ffffff'; x.fillText(v + (t ? '/' + t : ''), 895, y + 28);
+  });
+  const st = streak(), plan = (S.days || []).filter(d => d.t !== 'rest').length;
+  x.fillStyle = '#8fb8e8'; x.font = '500 26px ' + F;
+  x.fillText('план недели — ' + plan + ' трен.' + (st > 0 ? ' · серия ' + st + ' нед. подряд' : ''), 100, 1255);
+  return new Promise(res => c.toBlob(res, 'image/png'));
+}
+async function shareWeek(mon) {
+  const blob = await wkPng(mon);
+  if (!blob) { note('Картинка не собралась'); return; }
+  const name = 'itogi-' + mon + '.png';
+  try {
+    const f = new File([blob], name, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: 'Итоги недели' }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  note('Картинка сохранена');
 }
 
 /* ---------- данные, на которые опирается тренер ---------- */
@@ -9167,6 +9408,7 @@ async function copySummary() {
 }
 
 $('anBtn').addEventListener('click', openAnalysis);
+$('wkBtn').addEventListener('click', () => openWeek());
 
 /* =========================================================================
    ЗАПУСК
