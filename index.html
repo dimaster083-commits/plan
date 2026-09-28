@@ -4009,6 +4009,8 @@ function scrubKeys() {
       if (Array.isArray(l.rs) && l.rs.some(v => typeof v !== 'number' && typeof v !== 'string')) l.rs = l.rs.map(v => num(v));
     });
     if (r.sp !== undefined && !plain(r.sp)) r.sp = {};
+    if (r.dt !== undefined && !TYPES.some(([k]) => k === r.dt)) { delete r.dt; delete r.dn; }
+    if (r.dn !== undefined && typeof r.dn !== 'string') delete r.dn;
     if (r.ml !== undefined) r.ml = meals(r.ml) || [];
   });
 }
@@ -4059,6 +4061,11 @@ function dayIdx(ds) {
   return (w >= 0 && w < S.days.length) ? w : 0;
 }
 const dayOf = ds => S.days[dayIdx(ds)];
+/* Тип и подпись прошедшего дня — снимок на момент смены шаблона (r.dt, r.dn).
+   Раньше смена «Низ · сила» на «Верх · объём» во всех неделях переписывала
+   и прошлые тренировки в журнале и календаре. */
+const dayLook = ds => { const r = S.rec[ds], d = dayOf(ds) || {};
+  return r && r.dt ? { t: r.dt, s: r.dn || d.s } : { t: d.t, s: d.s }; };
 const recOf = ds => {                                         // чтение — без создания пустышек
   const r = S.rec[ds];
   if (!r) return EMPTY;
@@ -4365,6 +4372,8 @@ $('types').addEventListener('click', async e => {
   const ok = await ask('Поменять ' + wdName + ' во всех неделях плана? ' +
     'Если нужно только на этой дате — отмени и выбери тренировку в строке «Только эта дата».', 'ПОМЕНЯТЬ');
   if (!ok) return;
+  Object.keys(S.rec).forEach(ds => { const r = S.rec[ds];
+    if (ds < today() && dayOf(ds) === d && r && !r.dt) { r.dt = was; r.dn = d.s; } });
   d.t = nt;
   // подпись дня идёт следом за типом, иначе «Низ тела» висит над жимом лёжа
   const src = TPL.find(x => x.t === nt);
@@ -4484,7 +4493,7 @@ function paintJournal() {
   const ton = dayTon(sel), st = daySets(sel);
   const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
 
-  $('qType').textContent = (d.s || '').toUpperCase();
+  $('qType').textContent = (dayLook(sel).s || '').toUpperCase();
   $('qpf').style.width = '100%';
   $('qCnt').innerHTML = '<b>' + st + '</b> ' + plural(st, 'подход', 'подхода', 'подходов') +
     ' · ' + (ton >= 1000 ? dec(ton / 1000) + ' т' : rnd(ton) + ' кг');
@@ -5438,7 +5447,7 @@ function historyDays() {
 }
 
 async function openDayReport(ds) {
-  const r = recOf(ds), d = dayOf(ds), ent = dayEntries(ds);
+  const r = recOf(ds), d = dayLook(ds), ent = dayEntries(ds);
   const ton = dayTon(ds), st = daySets(ds), food = sumMeals(mealsOf(ds));
   const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
 
@@ -6472,7 +6481,7 @@ function paintHistory() {
     return;
   }
   $('hist').innerHTML = shown.map(ds => {
-    const ton = dayTon(ds), st = daySets(ds), d = dayOf(ds), r = recOf(ds);
+    const ton = dayTon(ds), st = daySets(ds), d = dayLook(ds), r = recOf(ds);
     const food = sumMeals(mealsOf(ds)).k;
     const bits = [];
     if (st) bits.push(st + ' ' + plural(st, 'подход', 'подхода', 'подходов'));
@@ -6559,7 +6568,7 @@ function cal() {
       while (mc.length < 42) mc.push(null);   // одна высота у всех месяцев
       const cells = mc.map(ds => {
         if (!ds) return '<i class="mc"></i>';
-        const t = (dayOf(ds) || {}).t || 'rest';
+        const t = dayLook(ds).t || 'rest';
         const lv = lvlOf(L.tons[ds], L.mx);
         return `<i class="mc t-${t} l${lv}${ds === today() ? ' now' : ''}"></i>`;
       }).join('');
@@ -6591,7 +6600,7 @@ function cal() {
       const cur = row.some(c => c === curWk);
       const html = row.map(ds => {
         if (!ds) return '<span class="cd"></span>';
-        const r = recOf(ds), t = dayOf(ds).t;
+        const r = recOf(ds), t = dayLook(ds).t;
         const cls = ['cd', 'in', 't-' + t, 'l' + lvlOf(L.tons[ds], L.mx)];
         if (ds === today()) cls.push('today');
         if (ds === sel) cls.push('sel');
