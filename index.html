@@ -2613,6 +2613,22 @@ div.wu .wus{margin:0;padding:0 0 9px}
 .exnote textarea{width:100%;margin:0 0 10px;min-height:64px;resize:vertical;background:var(--s1);color:var(--ink);
   border:1px solid var(--ln);border-radius:var(--r-s);padding:9px 10px;font:500 16px var(--f);line-height:1.4}
 
+/* рекорды по видам и график упражнения */
+svg.mch{width:100%;height:auto;display:block;aspect-ratio:300/110}
+.exfhist svg.mch,.shb svg.mch{height:auto}
+.exchh{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.exchh .lbl{margin:0}
+.exchb{display:flex;gap:4px}
+.exchb button{min-width:44px;min-height:44px;padding:0 8px;border:1px solid var(--ln);border-radius:var(--r-s);
+  background:var(--s2);color:var(--ink2);font-family:var(--fn);font-size:12px}
+.exchb button.on{background:var(--acc-fill);border-color:var(--acc-fill);color:var(--onacc)}
+.recs{margin-top:14px}
+.recs .lbl{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;font-family:var(--fn)}
+.recg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.recg div{border:1px solid var(--ln);border-radius:var(--r-s);background:var(--s2);padding:6px 8px;min-width:0}
+.recg span{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.recg b{display:block;font-size:16px;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recg i{display:block;font-style:normal;font-size:11px;color:var(--mut)}
 /* смена экрана — сканирующая полоса сверху вниз */
 body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 #scrfx{position:fixed;left:0;right:0;top:0;height:2px;z-index:60;pointer-events:none;opacity:0;
@@ -4440,7 +4456,6 @@ function exFull(e, j, r, IN, d) {
   const sug = weightFor(e, IN);
   const sets = setsOf(sel, num(e.s), j);
   const pr = prOf(e.n);
-  const hist = exHistory(e.n).slice(-8);
   // фото техники над карточкой — те же снимки, что в шторке «Техника»
   const how = EXDB[e.n];
   const dots = d.ex.map((_, k) =>
@@ -4476,8 +4491,8 @@ function exFull(e, j, r, IN, d) {
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
       ${rpeHtml(g)}
       ${noteHtml(e.n)}
-      ${hist.length > 1 ? `<div class="exfhist"><span class="lbl">Рост по журналу</span>
-        ${miniChart(hist.map(x => [x[0], x[1]]), 'var(--acc-2)')}</div>` : ''}
+      ${recHtml(e.n)}
+      ${exChartHtml(e.n)}
       <div class="exfact">
         <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
         <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
@@ -4601,6 +4616,7 @@ function rollback(l) {
   l.vol = 0; l.xp = 0; l.prog = 0;
   delete l.down;
   delete l.prevPr;
+  delete l.recs;
 }
 
 /* Стирает все записи по упражнению из журнала — точечно, без сброса всего.
@@ -4671,6 +4687,12 @@ $('exl').addEventListener('click', ev => {
   if (num(l.rpe) === v) delete l.rpe; else l.rpe = v;
   save();
   b.closest('.rpew').outerHTML = rpeHtml(l);
+});
+$('exl').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-exch]'); if (!b) return;
+  const box = b.closest('.exfhist');
+  chMode = b.dataset.exch;
+  box.outerHTML = exChartHtml(box.dataset.exchN);
 });
 $('exl').addEventListener('input', ev => {
   const t = ev.target.closest('[data-exnote]'); if (!t) return;
@@ -4991,6 +5013,8 @@ function toggleSet(j) {
     }
   }
   sets = num(pick(l.s, p.s));                  // после разбора типов — число рабочих подходов
+  entCache = null;
+  const beforeRec = recordsOf(exSessions(p.n));   // лучшее до этого закрытия
 
   l.done = 1; l.n = p.n; l.g = g;
   // объём считаем по фактическим повторам, если они есть: 10/12/12/12 это 46,
@@ -5023,9 +5047,24 @@ function toggleSet(j) {
   const old = num(S.pr[p.n]);
   if (w > 0 && w > old) { l.prevPr = old; S.pr[p.n] = w; }
 
-  if (w > 0 && w > old && old > 0) {
+  /* Рекорды по видам: ≈1ПМ, лучший подход и объём сравниваются с лучшим из
+     журнала до этого закрытия. Первая запись упражнения рекордом не считается
+     (как и у веса) — не с чем сравнить. */
+  entCache = null;
+  const nowS = exSessions(p.n).find(s => s.ds === sel);
+  l.recs = [];
+  if (nowS) ['e1', 'set', 'vol'].forEach(k => {
+    const b = beforeRec[k];
+    if (b && nowS[k] > b[k] + 1e-9) l.recs.push(k === 'set'
+      ? { k, v: nowS.set, o: b.set, w: nowS.sw, r: nowS.sr } : { k, v: nowS[k], o: b[k] });
+  });
+  if (!l.recs.length) delete l.recs;
+  const wRec = w > 0 && w > old && old > 0;
+
+  if (wRec || l.recs) {
     l.xp = XP_PR; addXp(XP_PR); dingPR();
-    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + kg(w) + ' кг');
+    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + [wRec ? kg(w) + ' кг' : ''].concat((l.recs || []).map(recTxt))
+      .filter(Boolean).join(' · '));
   } else {
     l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); dingSet();
   }
@@ -5187,7 +5226,9 @@ function workoutSummary(ds) {
   d.ex.forEach((e, j) => {
     const l = r.log[j];
     if (!l || !l.done) return;
-    if (l.prevPr !== undefined && l.prevPr > 0) records.push([l.n || e.n, num(pick(l.w, e.w)), l.prevPr]);
+    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(num(pick(l.w, e.w))) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
+      .concat((Array.isArray(l.recs) ? l.recs : []).map(recTxt)).filter(Boolean);
+    if (parts.length) records.push([l.n || e.n, parts]);
   });
   const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
   const st = streak();
@@ -5198,9 +5239,8 @@ function workoutSummary(ds) {
     <div class="win"><b>${mins ? mins + ' мин' : '—'}</b><span>ДЛИТЕЛЬНОСТЬ</span></div>
   </div>`;
   if (records.length) {
-    h += '<div class="cph">НОВЫЕ РЕКОРДЫ</div>' + records.map(([n, w, old]) =>
-      `<div class="win prl"><b>${esc(n)}</b><span>${kg(w)} кг <i style="font-style:normal;
-        font-size:11px;color:var(--mut)">было ${kg(old)}</i></span></div>`).join('');
+    h += '<div class="cph">НОВЫЕ РЕКОРДЫ</div>' + records.map(([n, parts]) =>
+      `<div class="win prl"><b>${esc(n)}</b><span>${parts.map(esc).join('<br>')}</span></div>`).join('');
   }
   h += `<div class="win pln" style="margin-top:10px"><p style="margin:0">
     ${st > 1 ? 'Серия: <b>' + st + '</b> недель подряд, от ' + weekNeed() + ' тренировок в каждой. Не рви её.'
@@ -5233,7 +5273,7 @@ function dayEntries(ds) {
     const vol = (l.vol !== undefined) ? num(l.vol)
       : (rs ? rs.reduce((a, b) => a + b, 0) : sets * firstRep(reps)) * w;
     out.push({ n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs,
-      vol: vol, g: l.g || p.g || null, pr: l.prevPr !== undefined && l.prevPr > 0,
+      vol: vol, g: l.g || p.g || null, pr: (l.prevPr !== undefined && l.prevPr > 0) || (Array.isArray(l.recs) && l.recs.length > 0),
       wu: Array.isArray(l.wu) ? l.wu : null, dr: Array.isArray(l.dr) ? l.dr : null,
       fl: Array.isArray(l.fl) ? l.fl : null, rpe: num(l.rpe) || 0 });
   });
@@ -5548,7 +5588,69 @@ function lastDone(name, before) {
   return null;
 }
 
-function miniChart(pts, color) {
+/* ---------- рекорды по видам ----------
+   Считаются по журналу, как и всё остальное: отдельно ничего не хранится,
+   поэтому снятая отметка или стёртая запись меняют их сами. Четыре вида:
+   вес, ≈1ПМ (Эпли, до 12 повторов), лучший подход (вес × повторы одного
+   подхода) и объём упражнения за тренировку. */
+const REC_K = ['w', 'e1', 'set', 'vol'];
+function exSessions(name) {
+  const out = [];
+  Object.keys(S.rec).sort().forEach(ds => {
+    const es = dayEntries(ds).filter(e => e.n === name);
+    if (!es.length) return;
+    const s = { ds, w: 0, e1: 0, set: 0, sw: 0, sr: 0, vol: 0 };
+    es.forEach(e => {
+      s.w = Math.max(s.w, e.w); s.vol += e.vol;
+      (e.rs || [firstRep(e.r)]).forEach(r => {
+        if (!(e.w > 0 && r > 0)) return;
+        if (r <= 12) s.e1 = Math.max(s.e1, r === 1 ? e.w : e.w * (1 + r / 30));
+        if (e.w * r > s.set) { s.set = e.w * r; s.sw = e.w; s.sr = r; }
+      });
+    });
+    out.push(s);
+  });
+  return out;
+}
+// лучшая тренировка по каждому виду; раньше поставленный рекорд не уступает равному
+function recordsOf(ss) {
+  const b = {};
+  ss.forEach(s => REC_K.forEach(k => { if (s[k] > 0 && (!b[k] || s[k] > b[k][k] + 1e-9)) b[k] = s; }));
+  return b;
+}
+const kgTon = v => (v >= 1000 ? dec(v / 1000) + ' т' : rnd(v) + ' кг');
+const REC_L = { w: 'вес', e1: '≈1ПМ', set: 'подход', vol: 'объём' };
+// запись о побитом рекорде: {k, v, o} (+ w и r у подхода); битую копию показываем пустой строкой
+function recTxt(x) {
+  if (!x || !REC_L[x.k]) return '';
+  const v = x.k === 'set' ? kg(num(x.w)) + '×' + num(x.r) : x.k === 'vol' ? kgTon(num(x.v)) : kg(num(x.v)) + ' кг';
+  const o = x.k === 'vol' ? kgTon(num(x.o)) : x.k === 'set' ? rnd(num(x.o)) + ' кг за подход' : kg(num(x.o)) + ' кг';
+  return REC_L[x.k] + ' ' + v + ' (было ' + o + ')';
+}
+function recHtml(name) {
+  const b = recordsOf(exSessions(name));
+  if (!b.w) return '';
+  const cell = (k, v) => b[k] ? '<div><span>' + REC_L[k] + '</span><b>' + v + '</b><i>' + fmt(b[k].ds, 1) + '</i></div>' : '';
+  return '<div class="recs"><span class="lbl">Рекорды по журналу</span><div class="recg">' +
+    cell('w', kg(b.w.w) + ' кг') + cell('e1', b.e1 ? kg(roundW(b.e1.e1)) + ' кг' : '') +
+    cell('set', b.set ? kg(b.set.sw) + '×' + b.set.sr : '') + cell('vol', b.vol ? kgTon(b.vol.vol) : '') + '</div></div>';
+}
+/* График упражнения с переключателем: ≈1ПМ, вес или объём. ≈1ПМ — по
+   умолчанию: он растёт и когда прибавились повторы, а не только вес. */
+let chMode = 'e1';
+const CH = { e1: ['≈1ПМ', s => s.e1], w: ['Вес', s => s.w], vol: ['Объём', s => s.vol] };
+function exChartHtml(name) {
+  const ss = exSessions(name).slice(-12);
+  if (ss.filter(s => s.w > 0).length < 2) return '';
+  const m = CH[chMode] && ss.filter(s => CH[chMode][1](s) > 0).length > 1 ? chMode : 'w';
+  const pts = ss.filter(s => CH[m][1](s) > 0).map(s => [s.ds, CH[m][1](s)]);
+  return '<div class="exfhist" data-exch-n="' + esc(name) + '"><div class="exchh"><span class="lbl">Рост по журналу</span>' +
+    '<div class="exchb">' + Object.keys(CH).map(k => '<button data-exch="' + k + '" class="' + (k === m ? 'on' : '') +
+      '" aria-pressed="' + (k === m) + '">' + CH[k][0] + '</button>').join('') + '</div></div>' +
+    miniChart(pts, 'var(--acc-2)', m === 'vol' ? kgTon : null) + '</div>';
+}
+
+function miniChart(pts, color, fv) {
   if (pts.length < 2) return '<p class="s">Отметь это упражнение хотя бы дважды — появится график.</p>';
   const vs = pts.map(p => p[1]);
   const lo = Math.min(...vs), hi = Math.max(...vs), sp = (hi - lo) || 1;
@@ -5556,13 +5658,15 @@ function miniChart(pts, color) {
   const X = d => 10 + ((at(d) - t0) / 864e5) / dt * 280;
   const Y = v => 100 - ((v - lo) / sp) * 80;
   const line = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
-  return `<svg viewBox="0 0 300 110" preserveAspectRatio="none">
+  /* Масштаб одинаковый по обеим осям: при растянутом viewBox подписи
+     сплющивались, а точки становились эллипсами. */
+  const f = fv || (v => kg(roundW(v)) + ' кг'), tHi = f(hi), tLo = f(lo);
+  const lab = (t, y) => `<rect x="4" y="${y - 12}" width="${t.length * 7 + 8}" height="16" style="fill:var(--s0)" opacity=".85"/>
+    <text x="8" y="${y}" style="fill:var(--ink)" font-size="12">${t}</text>`;
+  return `<svg class="mch" viewBox="0 0 300 110">
     <path d="${line}" fill="none" style="stroke:${color}" stroke-width="2" stroke-linejoin="round"/>
-    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" style="fill:${color}"/>`).join('')}
-    <rect x="6" y="3" width="42" height="13" style="fill:var(--s0)" opacity=".85"/>
-    <text x="9" y="13" style="fill:var(--ink)" font-size="9">${kg(hi)} кг</text>
-    <rect x="6" y="97" width="42" height="13" style="fill:var(--s0)" opacity=".85"/>
-    <text x="9" y="107" style="fill:var(--ink)" font-size="9">${kg(lo)} кг</text></svg>`;
+    ${pts.map(p => `<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="3" style="fill:${color}"/>`).join('')}
+    ${lab(tHi, 14)}${lab(tLo, 107)}</svg>`;
 }
 
 function openHistory(name) {
@@ -5575,18 +5679,8 @@ function openHistory(name) {
     html += `<div class="s" style="margin-top:8px">с ${fmt(h[0][0])}:
       <b style="color:${df >= 0 ? 'var(--up-tx)' : 'var(--down-tx)'}">${df > 0 ? '+' : ''}${dec(df)} кг</b></div>`;
   }
-  // расчётный разовый максимум по формуле Эпли: вес × (1 + повторы / 30)
-  if (h.length) {
-    const best = h.reduce((a, x) => {
-      const e1 = x[1] * (1 + firstRep(x[3]) / 30);
-      return e1 > a[0] ? [e1, x] : a;
-    }, [0, null]);
-    if (best[1]) {
-      html += `<div class="s" style="margin-top:8px">разовый максимум по расчёту:
-        <b style="color:var(--gold)">${Math.round(best[0])} кг</b>
-        <span style="color:var(--mut)"> — из ${kg(best[1][1])} кг на ${best[1][3]}</span></div>`;
-    }
-  }
+  // рекорды по видам — тем же счётом, что и в карточке (≈1ПМ по записанным повторам)
+  html += recHtml(name);
   html += '</div>';
   const rows = h.slice().reverse().slice(0, 25).map(x =>
     `<div class="win prl"><b>${fmt(x[0])}</b><span style="color:var(--cy2)">${x[2]}×${x[3]} · ${kg(x[1])} кг</span></div>`).join('');
