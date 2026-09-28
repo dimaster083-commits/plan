@@ -2673,6 +2673,41 @@ svg.mch{width:100%;height:auto;display:block;aspect-ratio:300/110}
 .wkmin{margin:8px 0}
 .wkmap,.wkdist{padding:12px 14px}
 .wkmap .wtitle,.wkdist .wtitle{display:flex;justify-content:space-between;gap:8px;padding:0 0 8px}
+/* свои упражнения и суперсеты */
+.myex{padding:12px 14px;margin-bottom:10px}
+.myex b{display:block;color:var(--ink);font-size:14px}
+.myex span{display:block;font-size:12px;color:var(--ink3);margin:4px 0 8px}
+.myex .chains button{min-height:44px}
+.exrow.ss,.exrow.ss2{border-left:3px solid var(--acc-2)}
+.exrow.ss{margin-bottom:2px}
+.sstag{font-style:normal;font-family:var(--fn);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc-2)}
+.ssb{display:block;width:100%;min-height:44px;margin-top:10px;padding:8px 12px;border:1px dashed var(--ln);border-radius:var(--r-s);
+  background:transparent;color:var(--ink2);font-size:13px;text-align:left;overflow-wrap:anywhere}
+.ssb.on{border-style:solid;border-color:var(--acc-2);color:var(--ink)}
+/* квесты месяца и замеры */
+.qmon,.meas{padding:12px 14px}
+.qmon .wtitle,.meas .wtitle{padding:0 0 8px}
+.qmon .wtitle em,.meas .wtitle em{display:block;margin-top:3px;font-style:normal;font-size:11px;color:var(--ink3);letter-spacing:.02em;text-transform:none}
+.qrow{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:6px 0;font-size:13px;color:var(--ink2)}
+.qrow b{font-family:var(--fn);font-size:12px;color:var(--ink);white-space:nowrap}
+.qrow s{grid-column:1/-1;display:block;height:5px;background:var(--s2);border-radius:3px;overflow:hidden;text-decoration:none}
+.qrow u{display:block;height:100%;background:var(--acc-2);transform-origin:0 50%}
+.qrow.ok span{color:var(--ink)}
+.qrow.ok u{background:var(--warn)}
+.mhint{margin:0 0 10px;font-size:12px;color:var(--ink3);line-height:1.45}
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.mgrid div{border:1px solid var(--ln);border-radius:var(--r-s);background:var(--s2);padding:6px 8px;min-width:0}
+.mgrid span{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.mgrid b{display:block;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+.mgrid i{display:block;font-style:normal;font-size:11px;color:var(--mut)}
+.mform{padding:12px 14px}
+.mform label{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;padding:3px 0;font-size:14px;color:var(--ink2)}
+.mform input{min-height:44px;font-size:16px;text-align:right;padding:0 10px;border:1px solid var(--ln);border-radius:var(--r-s);background:var(--s2);color:var(--ink);width:100%}
+.mform i{font-style:normal;font-size:12px;color:var(--ink3)}
+.mhist{padding:12px 14px;margin-top:10px}
+.mhist .exchb{flex-wrap:wrap;margin-bottom:8px}
+.wklag{padding:10px 14px;margin-top:8px;font-size:12.5px;color:var(--ink2);line-height:1.45}
+.wklag b{color:var(--warn)}
 /* смена экрана — сканирующая полоса сверху вниз */
 body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 #scrfx{position:fixed;left:0;right:0;top:0;height:2px;z-index:60;pointer-events:none;opacity:0;
@@ -2878,6 +2913,9 @@ document.documentElement.dataset.skin = 'sl';
       <span class="dpick"><b id="startTxt">—</b>
         <input id="startIn" type="date" aria-label="Дата старта плана"></span></div>
   </div>
+
+  <div class="win qmon" id="questBox"></div>
+  <div class="win meas" id="measBox"></div>
 
   </div><!-- /goal -->
 
@@ -3155,7 +3193,7 @@ const JOBS = [[40, 3], [17, 2], [5, 1], [1, 0]];
 function jobIdx(l) { for (const [m, r] of JOBS) if (l >= m) return r; return 0; }
 function jobOf(l) { return DICT.jobs[jobIdx(l)]; }
 const zeroVol = () => GROUPS.reduce((a, [n]) => (a[n] = 0, a), {});
-const XP_EX = 12, XP_WO = 60, XP_SP = 4, XP_PR = 30, PER = 500;
+const XP_EX = 12, XP_WO = 60, XP_SP = 4, XP_PR = 30, XP_Q = 100, PER = 500;
 const MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август',
   'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 // для строки «14 сентября», а не «14 сентябрь»
@@ -3891,6 +3929,9 @@ function recomputeStats(force) {
   const vb = S.volBase || {};
   GROUPS.forEach(([n]) => { vol[n] += num(vb[n]); });
   S.vol = vol;
+  // квесты месяца — тоже опыт; без них пересчёт отнимал его обратно
+  const qs = S.quest && typeof S.quest === 'object' && !Array.isArray(S.quest) ? S.quest : {};
+  Object.keys(qs).forEach(ym => { if (Array.isArray(qs[ym])) xp += qs[ym].length * XP_Q; });
   S.xp = xp + num(S.xpBase);
 }
 
@@ -3925,6 +3966,19 @@ function scrubKeys() {
      карточка падали при каждом запуске. Чиним форму, данные не выдумываем. */
   const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
   ['vol', 'pr'].forEach(k => { if (!plain(S[k])) S[k] = {}; });
+  if (S.meas !== undefined) {
+    if (!plain(S.meas)) S.meas = {};
+    Object.keys(S.meas).forEach(ds => {
+      const row = S.meas[ds];
+      if (!okDate(ds) || !plain(row)) { delete S.meas[ds]; return; }
+      Object.keys(row).forEach(k => { const v = num(row[k]); if (v > 0) row[k] = v; else delete row[k]; });
+    });
+  }
+  if (S.quest !== undefined && !plain(S.quest)) S.quest = {};
+  if (S.myEx !== undefined) {
+    if (!plain(S.myEx)) S.myEx = {};
+    Object.keys(S.myEx).forEach(n => { if (!GROUPS.some(([g]) => g === S.myEx[n]) || !n.trim()) delete S.myEx[n]; });
+  }
   Object.keys(S.map).forEach(k => { const v = S.map[k]; if (!(Number.isInteger(v) && v >= 0 && v < 7)) delete S.map[k]; });
   const meals = ml => (Array.isArray(ml) ? ml.filter(plain).map(m => {
     if (Array.isArray(m.items)) m.items = m.items.filter(plain); else if (m.items !== undefined) m.items = [];
@@ -4487,9 +4541,10 @@ function exRow(e, j, r, IN) {
   const sets = setsOf(sel, num(e.s), j);
   const w = num(pick(g.w, sug));
   const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, repsDefault(e)));
-  return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}" data-j="${j}" data-open="${j}">
+  const ex = dayOf(sel).ex, ss = !!(e.ss && ex[j + 1]), ss2 = !!(j > 0 && ex[j - 1] && ex[j - 1].ss);
+  return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}">
     <span class="t"><span class="n">${esc(e.n)}</span>
-      <span class="s">${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
+      <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
     <span class="kg">${w ? kg(w) : '—'}</span>
     <button class="go" data-go="${j}" aria-label="${g.done ? 'Отменить подход' : 'Закрыть подход'}">${g.done ? '✓' : '○'}</button>
   </div>`;
@@ -4536,6 +4591,8 @@ function exFull(e, j, r, IN, d) {
       ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
       ${rpeHtml(g)}
+      ${d.ex[j + 1] ? `<button class="ssb${e.ss ? ' on' : ''}" data-ss="${j}" aria-pressed="${!!e.ss}">${e.ss
+        ? 'Суперсет с «' + esc(d.ex[j + 1].n) + '» — снять' : 'Суперсет со следующим: «' + esc(d.ex[j + 1].n) + '»'}</button>` : ''}
       ${noteHtml(e.n)}
       ${recHtml(e.n)}
       ${exChartHtml(e.n)}
@@ -4733,6 +4790,15 @@ $('exl').addEventListener('click', ev => {
   if (num(l.rpe) === v) delete l.rpe; else l.rpe = v;
   save();
   b.closest('.rpew').outerHTML = rpeHtml(l);
+});
+/* Суперсет — связка с упражнением ниже: закрыл это — карточка сразу
+   переходит к следующему, таймер отдыха ждёт конца пары. Связка — часть
+   программы и живёт в дне, как подходы и повторы. */
+$('exl').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-ss]'); if (!b) return;
+  const d = dayOf(sel), e = d.ex[num(b.dataset.ss)]; if (!e) return;
+  if (e.ss) delete e.ss; else e.ss = 1;
+  save(); render();
 });
 $('exl').addEventListener('click', ev => {
   const b = ev.target.closest('[data-exch]'); if (!b) return;
@@ -5122,16 +5188,20 @@ function toggleSet(j) {
 
   if (!r.t0) r.t0 = Date.now();          // засечка начала тренировки
   delete r.skip;                           // всё-таки пришёл — день больше не пропущен
+  // суперсет: следующее упражнение пары — сразу, без отдыха
+  const ssNext = p.ss && d.ex[j + 1] && !(r.log[j + 1] || {}).done ? j + 1 : -1;
+  if (ssNext >= 0) { if (exOpen === j) exOpen = ssNext; note('Суперсет: дальше «' + d.ex[ssNext].n + '», без отдыха'); }
   // строка только что закрытого подхода вспыхивает — один раз, в этой отрисовке
   justDone = j; save(); render(); justDone = -1;
   syncWake();
 
   // отдых включается сам: в зале лишнее нажатие мокрыми руками ни к чему
   const allDone = d.ex.length > 0 && d.ex.every((_, k) => (r.log[k] || {}).done);
-  if (!allDone) tStart(restFor(p.n));      // база отдыхает дольше изоляции
+  if (!allDone && ssNext < 0) tStart(restFor(p.n));      // база отдыхает дольше изоляции
 
   maybeProgress(l, p, w);
   maybeRegress(l, p, w);
+  checkQuests();
 }
 
 /* Сколько тренировок подряд, считая эту, низ диапазона не добран на рабочем
@@ -5220,18 +5290,28 @@ function maybeProgress(l, p, w) {
 /* Добавление идёт выбором из каталога: пустая безымянная строка толку не давала,
    а вручную вписанное название не попадало ни в технику, ни в расчёт весов. */
 let exQ = '', exG = '';
+/* Своё упражнение: чего нет в справочнике, человек заводит сам — название
+   и группа. Хранится в S.myEx и дальше живёт как любое другое: журнал,
+   рекорды, баланс по мышцам (мышца — по группе и названию, muscleOf). */
+const myEx = () => (S.myEx && typeof S.myEx === 'object' && !Array.isArray(S.myEx) ? S.myEx : {});
+const grpOf = n => (EXDB[n] ? EXDB[n][1] : myEx()[n] || null);
 function exPickList() {
   const q = exQ.trim().toLowerCase();
   const have = dayOf(sel).ex.map(e => e.n);
-  const list = Object.keys(EXDB)
-    .filter(n => !exG || EXDB[n][1] === exG)
+  const all = Object.keys(EXDB).concat(Object.keys(myEx()).filter(n => !EXDB[n]));
+  const list = all
+    .filter(n => !exG || grpOf(n) === exG)
     .filter(n => !q || n.toLowerCase().includes(q));
-  if (!list.length) return '<p style="color:var(--mut);font-size:12px">Ничего не найдено</p>';
-  return list.map(n => {
-    const r = EXDB[n], w = startWeight(n), used = have.indexOf(n) >= 0;
+  const exact = all.some(n => n.toLowerCase() === q);
+  const mine = q && !exact ? `<div class="win myex"><b>Своё упражнение: «${esc(exQ.trim().slice(0, 60))}»</b>
+      <span>Выбери группу — и оно встанет в день:</span>
+      <div class="chains">${GROUPS.map(([g]) => `<button data-myex="${g}">${g}</button>`).join('')}</div></div>` : '';
+  if (!list.length) return mine || '<p style="color:var(--mut);font-size:12px">Ничего не найдено</p>';
+  return mine + list.map(n => {
+    const w = startWeight(n), used = have.indexOf(n) >= 0, own = !EXDB[n];
     return `<button class="cpi" data-addex="${esc(n)}">
       <b>${esc(n)}${used ? ' <i style="font-style:normal;color:var(--mut);font-size:10px">уже в дне</i>' : ''}</b>
-      <span>${r[1]}${w ? ' · старт ' + kg(w) + ' кг' : ' · свой вес'}</span></button>`;
+      <span>${esc(grpOf(n) || '')}${own ? ' · своё' : w ? ' · старт ' + kg(w) + ' кг' : ' · свой вес'}</span></button>`;
   }).join('');
 }
 function openExPicker() {
@@ -5261,6 +5341,7 @@ $('fin').addEventListener('click', () => {
   keepAwake(false);
   clearInterval(tInt); $('tmr').classList.remove('on');
   workoutSummary(sel);
+  checkQuests();
 });
 
 /* Итоги сразу после тренировки: сколько поднято, сколько заняло, что за рекорды.
@@ -5798,6 +5879,17 @@ function openHistory(name) {
 
 // одна точка входа для всех кнопок внутри шторки
 $('shB').addEventListener('click', e => {
+  const mc = e.target.closest('[data-measch]');
+  if (mc) { measK = mc.dataset.measch; openMeas(); return; }
+  const ms = e.target.closest('[data-measave]');
+  if (ms) {
+    const row = {};
+    $('shB').querySelectorAll('[data-mk]').forEach(inp => { const v = num(inp.value); if (v >= 10 && v <= 300) row[inp.dataset.mk] = Math.round(v * 10) / 10; });
+    if (!Object.keys(row).length) { note('Впиши хотя бы один обхват, в сантиметрах'); return; }
+    S.meas = measAll(); S.meas[today()] = row;
+    save(); sheetClose(); paintMeas(); note('Замеры записаны');
+    return;
+  }
   const wk = e.target.closest('[data-wk]');
   if (wk) { if (!wk.disabled) openWeek(wk.dataset.wk); return; }
   const ws = e.target.closest('[data-wkshare]');
@@ -5810,11 +5902,24 @@ $('shB').addEventListener('click', e => {
     return;
   }
 
+  const mx = e.target.closest('[data-myex]');
+  if (mx) {
+    const n = exQ.trim().replace(/\s+/g, ' ').slice(0, 60), g = mx.dataset.myex;
+    if (!n) return;
+    const name = n[0].toUpperCase() + n.slice(1);
+    runOnce('myex:' + sel + ':' + name, () => {
+      S.myEx = myEx(); S.myEx[name] = g;
+      dayOf(sel).ex.push({ n: name, s: 3, r: '8-10', w: 0, g: g });
+      save(); sheetClose(); render(); note('Своё упражнение добавлено: ' + name);
+    });
+    return;
+  }
+
   const ax = e.target.closest('[data-addex]');
   if (ax) {
     const n = ax.dataset.addex;
     runOnce('addex:' + sel + ':' + n, () => {
-      dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: EXDB[n][1] });
+      dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: grpOf(n) });
       save(); sheetClose(); render(); note('Добавлено: ' + n);
     });
     return;
@@ -5903,6 +6008,8 @@ function paintProgress() {
 
   paintGoal();
   paintCycle();
+  paintQuests();
+  paintMeas();
 
   paintRem();
   paintChart();
@@ -6060,6 +6167,7 @@ function setBw(v) {
   else if (S.rec[today()]) delete S.rec[today()].bw;
   applyNutri(); save();
   syncBwFields(); paintGoal(); paintChart(); paintRem(); paintTotals(); paintKcSrc();
+  if (num(v) > 0) checkQuests();
 }
 /* Набор или похудение — это не отдельная настройка, а то, с какой
    стороны стоит цель. Кнопки только двигают цель в нужную сторону,
@@ -8858,6 +8966,17 @@ function bodyMap(ms) {
     <text x="50" y="171">СПЕРЕДИ</text><text x="150" y="171">СЗАДИ</text></svg>`;
 }
 const pctTxt = (a, b) => (b > 0 ? (a >= b ? '+' : '−') + Math.round(Math.abs(a - b) / b * 100) + ' %' : '');
+/* Что добрать: на текущей неделе — мышцы меньше половины нормы, и сколько
+   тренировок по плану ещё впереди. Своих дней нет (шаблон владельца),
+   поэтому это подсказка к оставшимся тренировкам, а не новая тренировка. */
+function lagHtml(w, mon) {
+  if (mon !== mondayOf(today())) return '';
+  const lag = MUSCLES.filter(m => { const t = volTargetM(m); return t > 0 && (w.m[m] || 0) < t / 2; });
+  if (!lag.length) return '';
+  const left = w.days.filter(x => x.ds > today() && x.tr).length + (w.days.some(x => x.ds === today() && x.tr && !x.wo) ? 1 : 0);
+  return '<div class="win wklag"><b>Отстаёт:</b> ' + lag.map(m => m.toLowerCase() + ' ' + (w.m[m] || 0) + '/' + volTargetM(m)).join(', ') +
+    '. ' + (left ? 'Впереди ' + left + ' ' + plural(left, 'тренировка', 'тренировки', 'тренировок') + ' по плану — там и доберёшь.' : 'Тренировок на этой неделе больше нет — начни следующую с них.') + '</div>';
+}
 function openWeek(mon) {
   const cur = mondayOf(today());
   mon = mon && mon <= cur ? mondayOf(mon) : cur;
@@ -8883,6 +9002,7 @@ function openWeek(mon) {
         return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v)}" style="transform:scaleX(${Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3)})"></u></s><b>${v}${t ? '/' + t : ''}</b></div>`; }).join('')}
     </div>
     ${w.mins ? '<p class="s wkmin">В зале — ' + w.mins + ' мин за неделю.</p>' : ''}
+    ${lagHtml(w, mon)}
     <button class="copyb" data-wkshare="${mon}">Поделиться картинкой</button>`;
   sheet('ИТОГИ НЕДЕЛИ', html);
 }
@@ -8929,6 +9049,89 @@ async function shareWeek(mon) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   note('Картинка сохранена');
+}
+
+/* ---------- квесты месяца ----------
+   Вызовы месяца из Lyfta в виде квестов Системы. Цели считаются из своего же
+   журнала: тренировок — по недельной норме серии, тоннаж — на 5 % больше
+   прошлого месяца, рекорды, взвешивания раз в неделю. Выполненный квест
+   даёт опыт один раз за месяц (S.quest[месяц] — список выполненных). */
+function questsOf(ym) {
+  const days = Object.keys(S.rec).filter(ds => ds.slice(0, 7) === ym);
+  const dim = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+  const ton = days.reduce((a, ds) => a + dayTon(ds), 0);
+  const pton = Object.keys(S.rec).filter(ds => ds.slice(0, 7) === shiftMonth(ym, -1)).reduce((a, ds) => a + dayTon(ds), 0);
+  const tonNeed = pton > 0 ? Math.ceil(pton * 1.05 / 100) * 100 : 20000;
+  return [
+    { id: 'wo', t: 'Закрыть ' + Math.round(weekNeed() * dim / 7) + ' тренировок', v: days.filter(ds => S.rec[ds].wo).length, need: Math.round(weekNeed() * dim / 7) },
+    { id: 'ton', t: pton > 0 ? 'Поднять на 5 % больше прошлого месяца' : 'Поднять за месяц 20 т', v: ton, need: tonNeed, f: kgTon },
+    { id: 'pr', t: 'Побить 3 рекорда', v: days.reduce((a, ds) => a + dayEntries(ds).filter(e => e.pr).length, 0), need: 3 },
+    { id: 'bw', t: 'Взвеситься 4 раза', v: days.filter(ds => num(S.rec[ds].bw) > 0).length, need: 4 }
+  ];
+}
+const questDone = ym => { const q = S.quest && typeof S.quest === 'object' && !Array.isArray(S.quest) ? S.quest[ym] : null; return Array.isArray(q) ? q : []; };
+function checkQuests() {
+  const ym = today().slice(0, 7), got = questDone(ym).slice();
+  let n = 0;
+  questsOf(ym).forEach(q => {
+    if (q.v >= q.need && got.indexOf(q.id) < 0) { got.push(q.id); n++; note('КВЕСТ ВЫПОЛНЕН: ' + q.t + ' · +' + XP_Q + ' XP'); }
+  });
+  if (!n) return;
+  if (!S.quest || typeof S.quest !== 'object' || Array.isArray(S.quest)) S.quest = {};
+  S.quest[ym] = got;
+  addXp(XP_Q * n);
+  save();
+}
+function paintQuests() {
+  const box = $('questBox'); if (!box) return;
+  const ym = today().slice(0, 7), got = questDone(ym);
+  box.innerHTML = '<div class="wtitle">КВЕСТЫ МЕСЯЦА<em>' + MON[+ym.slice(5, 7) - 1].toLowerCase() + ' · +' + XP_Q + ' XP за каждый</em></div>' +
+    questsOf(ym).map(q => {
+      const done = got.indexOf(q.id) >= 0 || q.v >= q.need, f = q.f || (v => String(v));
+      return '<div class="qrow' + (done ? ' ok' : '') + '"><span>' + (done ? '✓ ' : '') + esc(q.t) + '</span><b>' + f(q.v) + ' / ' + f(q.need) + '</b>' +
+        '<s><u style="transform:scaleX(' + Math.min(1, q.need ? q.v / q.need : 0).toFixed(3) + ')"></u></s></div>';
+    }).join('');
+}
+
+/* ---------- замеры тела ----------
+   Обхваты сантиметровой лентой: весы не отличат жир от мышц, талия и
+   бицепс — отличат. Хранятся по датам в S.meas, сравнение — с первым замером. */
+const MEAS = [['waist', 'Талия'], ['chest', 'Грудь'], ['arm', 'Бицепс'], ['hips', 'Бёдра'], ['thigh', 'Бедро'], ['calf', 'Голень'], ['neck', 'Шея']];
+const measAll = () => (S.meas && typeof S.meas === 'object' && !Array.isArray(S.meas) ? S.meas : {});
+function measSeries(k) {
+  const m = measAll();
+  return Object.keys(m).sort().filter(ds => num((m[ds] || {})[k]) > 0).map(ds => [ds, num(m[ds][k])]);
+}
+function paintMeas() {
+  const box = $('measBox'); if (!box) return;
+  const m = measAll(), ds = Object.keys(m).sort();
+  const head = '<div class="wtitle">ЗАМЕРЫ<em>' + (ds.length ? 'последний ' + fmt(ds[ds.length - 1], 1) : 'сантиметровой лентой') + '</em></div>';
+  if (!ds.length) {
+    box.innerHTML = head + '<p class="mhint">Весы не отличат жир от мышц, а талия и бицепс — отличат. Утром, раз в 2–4 недели.</p>' +
+      '<button class="anb" data-meas="1">Внести замеры</button>';
+    return;
+  }
+  const cells = MEAS.map(([k, l]) => {
+    const sr = measSeries(k); if (!sr.length) return '';
+    const d = sr[sr.length - 1][1] - sr[0][1];
+    return '<div><span>' + l + '</span><b>' + kg(sr[sr.length - 1][1]) + '</b>' +
+      (sr.length > 1 ? '<i>' + (d > 0 ? '+' : d < 0 ? '−' : '±') + kg(Math.abs(d)) + ' с ' + fmt(sr[0][0], 1) + '</i>' : '<i>первый</i>') + '</div>';
+  }).join('');
+  box.innerHTML = head + '<div class="mgrid">' + cells + '</div><button class="anb" data-meas="1">Внести замеры</button>';
+}
+let measK = 'waist';
+function openMeas() {
+  const m = measAll(), last = {}, td = m[today()] || {};
+  Object.keys(m).sort().forEach(ds => MEAS.forEach(([k]) => { if (num((m[ds] || {})[k]) > 0) last[k] = num(m[ds][k]); }));
+  const have = MEAS.filter(([k]) => measSeries(k).length > 1);
+  if (have.length && !have.some(([k]) => k === measK)) measK = have[0][0];
+  const sr = measSeries(measK);
+  sheet('ЗАМЕРЫ', '<div class="win mform"><p class="mhint">Сегодня, ' + fmt(today(), 1) + ', в сантиметрах. Пустое поле — не мерил.</p>' +
+    MEAS.map(([k, l]) => '<label><span>' + l + '</span><input data-mk="' + k + '" inputmode="decimal" value="' + (td[k] ? esc(kg(td[k])) : '') +
+      '" placeholder="' + (last[k] ? kg(last[k]) : '') + '" aria-label="' + l + ', см"><i>см</i></label>').join('') +
+    '<button class="copyb" data-measave="1">Записать</button></div>' +
+    (have.length ? '<div class="win mhist"><div class="exchb">' + have.map(([k, l]) => '<button data-measch="' + k + '" class="' + (k === measK ? 'on' : '') + '">' + l + '</button>').join('') + '</div>' +
+      miniChart(sr, 'var(--acc-2)', v => kg(v) + ' см') + '</div>' : ''));
 }
 
 /* ---------- данные, на которые опирается тренер ---------- */
@@ -9409,6 +9612,7 @@ async function copySummary() {
 
 $('anBtn').addEventListener('click', openAnalysis);
 $('wkBtn').addEventListener('click', () => openWeek());
+$('measBox').addEventListener('click', e => { if (e.target.closest('[data-meas]')) openMeas(); });
 
 /* =========================================================================
    ЗАПУСК
