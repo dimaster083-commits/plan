@@ -2583,6 +2583,36 @@ div.wu .wus{margin:0;padding:0 0 9px}
 /* название упражнения в таблице весов переносится по слогам, а не посреди слова */
 .wtab td:first-child,td.lnk{overflow-wrap:normal;word-break:normal;hyphens:manual;-webkit-hyphens:manual}
 
+/* ---------- типы подходов, RPE, заметка ---------- */
+.setr .sh{gap:8px}
+.kindb{min-height:44px;padding:0 12px;border:1px solid var(--ln);border-radius:var(--r-p);background:var(--s2);
+  color:var(--ink2);font-family:var(--fn);font-size:10.5px;letter-spacing:.14em;margin-left:auto}
+.kindmode .kindb{background:var(--acc-fill);border-color:var(--acc-fill);color:var(--onacc)}
+.kindmode .rbx{cursor:pointer}
+.kindmode .rbx input{caret-color:transparent;pointer-events:none}
+.rbx.k-w input{border-style:dashed;color:var(--ink3);background:transparent}
+.rbx.k-f input{border-color:#FF6B8A;box-shadow:inset 0 0 0 1px rgba(255,107,138,.35)}
+.rbx.k-d input{border-color:#C3AEFF;background:rgba(138,92,255,.12)}
+.rbx.k-w i,.rbx.k-f i,.rbx.k-d i{font-weight:700;color:var(--hot-tx)}
+.rbx.k-f i{color:#FF8FA6}.rbx.k-d i{color:#C3AEFF}
+.kindh{display:none;margin:8px 0 0;font-size:11.5px;line-height:1.45;color:var(--ink3)}
+.kindmode .kindh{display:block}                 /* подсказка — только пока выбираешь типы */
+.kindh b{color:var(--ink2)}
+.rpew{margin:12px 0 0}
+.rpe{display:flex;align-items:center;gap:6px}
+.rpe span{font-family:var(--fn);font-size:10.5px;letter-spacing:.14em;color:var(--ink3);margin-right:2px}
+.rpe button{flex:1;min-height:44px;min-width:0;border:1px solid var(--ln);border-radius:var(--r-s);background:var(--s2);
+  color:var(--ink2);font-family:var(--fn);font-size:15px}
+.rpe button.on{background:var(--acc-fill);border-color:var(--acc-fill);color:var(--onacc)}
+.rpeh{margin:6px 0 0;font-size:11.5px;color:var(--ink3)}
+.exnote{margin:12px 0 0;border:1px solid var(--ln);border-radius:var(--r-m);background:var(--s2);padding:0 12px}
+.exnote summary{min-height:44px;display:flex;align-items:center;list-style:none;cursor:pointer;touch-action:manipulation;
+  font-family:var(--fn);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.exnote summary::-webkit-details-marker{display:none}
+.exnote summary::before{content:'//';margin-right:.5em;color:var(--hot-tx);opacity:.7}
+.exnote textarea{width:100%;margin:0 0 10px;min-height:64px;resize:vertical;background:var(--s1);color:var(--ink);
+  border:1px solid var(--ln);border-radius:var(--r-s);padding:9px 10px;font:500 16px var(--f);line-height:1.4}
+
 /* смена экрана — сканирующая полоса сверху вниз */
 body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 #scrfx{position:fixed;left:0;right:0;top:0;height:2px;z-index:60;pointer-events:none;opacity:0;
@@ -4444,6 +4474,8 @@ function exFull(e, j, r, IN, d) {
         e1rmOf(pv) ? ' · <span class="e1">≈1ПМ ' + kg(roundW(e1rmOf(pv))) + '</span>' : ''}</div>
       ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
+      ${rpeHtml(g)}
+      ${noteHtml(e.n)}
       ${hist.length > 1 ? `<div class="exfhist"><span class="lbl">Рост по журналу</span>
         ${miniChart(hist.map(x => [x[0], x[1]]), 'var(--acc-2)')}</div>` : ''}
       <div class="exfact">
@@ -4607,6 +4639,46 @@ function restFor(name) {
 
 // одно нажатие проставляет все подходы по верхней границе: в зале это
 // самый частый случай, а вбивать одно и то же число рукой по четыре раза — лишнее
+/* «ТИП»: пока кнопка нажата, касание клетки меняет её тип по кругу
+   (обычный → Р → О → Д → обычный), а клавиатура не выезжает.
+   Типы черновика лежат в журнале дня (l.kinds) и переживают перерисовку. */
+$('exl').addEventListener('click', ev => {
+  const km = ev.target.closest('[data-kindmode]');
+  if (km) {
+    const box = km.closest('.setr'), on = !box.classList.contains('kindmode');
+    box.classList.toggle('kindmode', on); km.setAttribute('aria-pressed', on ? 'true' : 'false');
+    box.querySelectorAll('[data-rs]').forEach(x => { x.readOnly = on; if (on) x.blur(); });
+    return;
+  }
+  const cell = ev.target.closest('.kindmode .rbx');
+  if (cell) {
+    ev.preventDefault();
+    const inp = cell.querySelector('[data-rs]'), card = cell.closest('.ex');
+    const k = KIND_NEXT[inp.dataset.kind || ''];
+    inp.dataset.kind = k;
+    cell.className = 'rbx' + (k ? ' k-' + k : '');
+    cell.querySelector('i').textContent = k ? KIND[k][0] : (num(inp.dataset.rs) + 1);
+    const j = num(card.dataset.j), r = recRW(sel); r.log[j] = r.log[j] || {};
+    r.log[j].kinds = [...card.querySelectorAll('[data-rs]')].map(x => x.dataset.kind || '');
+    save();
+    return;
+  }
+});
+$('exl').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-rpe]'); if (!b) return;
+  const card = b.closest('.ex'), j = num(card.dataset.j), r = recRW(sel);
+  const l = r.log[j] = r.log[j] || {}, v = num(b.dataset.rpe);
+  if (num(l.rpe) === v) delete l.rpe; else l.rpe = v;
+  save();
+  b.closest('.rpew').outerHTML = rpeHtml(l);
+});
+$('exl').addEventListener('input', ev => {
+  const t = ev.target.closest('[data-exnote]'); if (!t) return;
+  S.exNote = S.exNote && typeof S.exNote === 'object' ? S.exNote : {};
+  const v = t.value.trim();
+  if (v) S.exNote[t.dataset.exnote] = t.value.slice(0, 300); else delete S.exNote[t.dataset.exnote];
+  save();
+});
 $('exl').addEventListener('click', ev => {
   const b = ev.target.closest('[data-fill]'); if (!b) return;
   ev.preventDefault();
@@ -4658,6 +4730,14 @@ $('exl').addEventListener('input', ev => {
 /* Повторы по каждому подходу. Без них правило «закрепить 4x10» непроверяемо:
    10/12/12/12 и 12/12/12/12 — это разные результаты, а одно общее число
    их не различает и молча разрешает прибавку. */
+/* Типы подходов, как в продвинутых дневниках: разминочный, до отказа,
+   дроп-сет. Разминочные и дроп-подходы хранятся отдельно от рабочих
+   (l.wu, l.dr), поэтому тоннаж, прогрессия, рекорды и баланс продолжают
+   считать только рабочие подходы — без единой правки в их коде.
+   Отказ — рабочий подход, он лишь помечен (l.fl — номера в l.rs). */
+const KIND = { w: ['Р', 'разминка'], f: ['О', 'до отказа'], d: ['Д', 'дроп-сет'] };
+const KIND_NEXT = { '': 'w', w: 'f', f: 'd', d: '' };
+
 /* Подставленные клетки: сегодняшняя цель по прошлому разу. Если вес с
    прошлого раза вырос, цель — низ диапазона: иначе клетки снова стояли
    верхом, и закрытый без правок подход поднимал вес каждую тренировку.
@@ -4690,22 +4770,35 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
      показано приглушённо, чтобы было видно, где число своё. */
   let auto = false;
   let cur = keep || g.rs || null;
+  let kinds = Array.isArray(g.kinds) ? g.kinds.slice() : [];
+  let nn = n;
+  // закрытый подход: разминочные и дроп-подходы лежат отдельно — показываем все по порядку
+  if (g.done && (Array.isArray(g.wu) || Array.isArray(g.dr))) {
+    const wu = g.wu || [], rs = g.rs || [], dr = g.dr || [], fl = g.fl || [];
+    cur = wu.concat(rs, dr);
+    kinds = wu.map(() => 'w').concat(rs.map((_, i) => (fl.indexOf(i) >= 0 ? 'f' : '')), dr.map(() => 'd'));
+    nn = Math.max(1, cur.length);
+  } else if (g.done && Array.isArray(g.fl)) kinds = (g.rs || []).map((_, i) => (g.fl.indexOf(i) >= 0 ? 'f' : ''));
   if (!cur && !g.done) {
     const a = autoCells(prev, n, top, low, wNow);
     if (a) { cur = a; auto = true; }
   }
 
   let out = '<div class="sh"><span>ПОВТОРЫ В КАЖДОМ ПОДХОДЕ</span>' +
+    (!g.done ? '<button class="kindb" data-kindmode="1" aria-pressed="false">ТИП</button>' : '') +
     (top && !g.done ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
     '</div><div class="rb">';
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < nn; i++) {
     const v = cur && cur[i] !== undefined && cur[i] !== null ? cur[i] : '';
-    const hit = top && num(v) >= top ? ' hit' : '';
-    out += '<label class="rbx' + hit + (auto ? ' auto' : '') + '"><i>' + (i + 1) + '</i>' +
-      '<input inputmode="numeric" data-rs="' + i + '"' + (auto ? ' data-auto="1"' : '') + (g.done ? ' readonly' : '') + ' value="' + esc(v) +
-      '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + '"></label>';
+    const k = KIND[kinds[i]] ? kinds[i] : '';
+    const hit = top && !k && num(v) >= top ? ' hit' : '';
+    out += '<label class="rbx' + hit + (auto ? ' auto' : '') + (k ? ' k-' + k : '') + '"><i>' + (k ? KIND[k][0] : (i + 1)) + '</i>' +
+      '<input inputmode="numeric" data-rs="' + i + '" data-kind="' + k + '"' + (auto ? ' data-auto="1"' : '') + (g.done ? ' readonly' : '') + ' value="' + esc(v) +
+      '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + (k ? ', ' + KIND[k][1] : '') + '"></label>';
   }
   out += '</div>';
+  if (!g.done) out += '<p class="kindh">«ТИП», затем касание клетки: <b>Р</b> — разминка (не в тоннаже и не в прогрессии), ' +
+    '<b>О</b> — до отказа, <b>Д</b> — дроп-сет (добивка, не в тоннаже).</p>';
 
   // Подсказка словами: что делаем сегодня и когда вырастет вес.
   if (raised && top) out += '<div class="sg">Вес вырос: было ' + kg(prev.w) + ' кг, сейчас ' + kg(wNow) +
@@ -4840,6 +4933,13 @@ function toggleSet(j) {
   // В первой версии объём и опыт при этом не откатывались и накручивались заново.
   if (l.done) {
     rollback(l); l.done = 0;
+    // снятый подход снова показывает клетки с типами, как были
+    if (l.wu || l.dr || l.fl) {
+      const wu = l.wu || [], rs = l.rs || [], dr = l.dr || [], fl = l.fl || [];
+      l.kinds = wu.map(() => 'w').concat(rs.map((_, i) => (fl.indexOf(i) >= 0 ? 'f' : '')), dr.map(() => 'd'));
+      l.rs = wu.concat(rs, dr); l.s = String(l.rs.length);
+      delete l.wu; delete l.dr; delete l.fl;
+    }
     // снята последняя отметка закрытой тренировки — день перестаёт быть тренировкой
     if (r.wo && !Object.values(r.log).some(x => x && x.done)) { r.wo = 0; delete r.t1; addXp(-XP_WO); }
     save(); render(); return;
@@ -4864,7 +4964,7 @@ function toggleSet(j) {
     const a = autoCells(prev, Math.max(1, sSh), topRep(l.r), firstRep(l.r) || topRep(l.r), num(wSh));
     if (a) l.rs = a;
   }
-  const w = num(pick(l.w, p.w)), sets = num(pick(l.s, p.s)), reps = firstRep(pick(l.r, p.r));
+  let w = num(pick(l.w, p.w)), sets = num(pick(l.s, p.s)), reps = firstRep(pick(l.r, p.r));
   const g = p.g || l.g || null;
 
   // Повторы по подходам. Пустое поле — это не ноль: берём общее число из графы
@@ -4872,8 +4972,25 @@ function toggleSet(j) {
   if (card) {
     const rNum = /^\s*\d+\s*$/.test(String(l.r ?? '')) ? num(l.r) : 0;
     const els = [...card.querySelectorAll('[data-rs]')];
-    if (els.length) l.rs = els.slice(0, sets || els.length).map(x => num(x.value) || rNum);
+    if (els.length) {
+      const all = els.slice(0, sets || els.length);
+      const kd = all.map(x => (KIND[x.dataset.kind] ? x.dataset.kind : ''));
+      const val = x => num(x.value) || rNum;
+      if (kd.some(Boolean)) {
+        l.wu = all.filter((_, i) => kd[i] === 'w').map(val).filter(v => v > 0);
+        l.dr = all.filter((_, i) => kd[i] === 'd').map(val).filter(v => v > 0);
+        const work = all.filter((_, i) => kd[i] === '' || kd[i] === 'f');
+        l.rs = work.map(val);
+        l.fl = work.map((x, i) => (x.dataset.kind === 'f' ? i : -1)).filter(i => i >= 0);
+        l.s = String(l.rs.length);              // рабочих подходов столько, сколько рабочих клеток
+        if (!l.wu.length) delete l.wu;
+        if (!l.dr.length) delete l.dr;
+        if (!l.fl.length) delete l.fl;
+      } else { l.rs = all.map(val); delete l.wu; delete l.dr; delete l.fl; }
+      delete l.kinds;
+    }
   }
+  sets = num(pick(l.s, p.s));                  // после разбора типов — число рабочих подходов
 
   l.done = 1; l.n = p.n; l.g = g;
   // объём считаем по фактическим повторам, если они есть: 10/12/12/12 это 46,
@@ -4997,6 +5114,8 @@ function maybeProgress(l, p, w) {
   const sets = num(pick(l.s, p.s));
   if (!top || !sets) return;
   if (!fixedAt(p, l)) return;             // результат ещё не закреплён
+  // верх взят, но на отказе (RPE 10) — запаса нет, вес держим
+  if (num(l.rpe) >= 10) { note('Верх взят на отказе — вес ' + p.n + ' держим, запаса не было'); return; }
   l.prog = 1;
   // считаем от того, что реально поднято: если вес был выше рабочего,
   // прибавка от старого числа отбросила бы человека назад
@@ -5114,7 +5233,9 @@ function dayEntries(ds) {
     const vol = (l.vol !== undefined) ? num(l.vol)
       : (rs ? rs.reduce((a, b) => a + b, 0) : sets * firstRep(reps)) * w;
     out.push({ n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs,
-      vol: vol, g: l.g || p.g || null, pr: l.prevPr !== undefined && l.prevPr > 0 });
+      vol: vol, g: l.g || p.g || null, pr: l.prevPr !== undefined && l.prevPr > 0,
+      wu: Array.isArray(l.wu) ? l.wu : null, dr: Array.isArray(l.dr) ? l.dr : null,
+      fl: Array.isArray(l.fl) ? l.fl : null, rpe: num(l.rpe) || 0 });
   });
   entCache.set(ds, out);
   return out;
@@ -5124,8 +5245,11 @@ const daySets = ds => dayEntries(ds).reduce((a, e) => a + (e.rs ? e.rs.length : 
 
 // строка «4×8 · 30 кг» или «10/10/9/8 · 30 кг», если повторы записаны по подходам
 function entryLine(e) {
-  const reps = e.rs ? e.rs.join('/') : (e.s + '×' + e.r);
-  return reps + (e.w ? ' · ' + kg(e.w) + ' кг' : ' · без отягощения');
+  const fl = e.fl || [];
+  const reps = e.rs ? e.rs.map((v, i) => (fl.indexOf(i) >= 0 ? v + 'О' : v)).join('/') : (e.s + '×' + e.r);
+  return (e.wu && e.wu.length ? 'разм. ' + e.wu.join('/') + ' · ' : '') + reps +
+    (e.dr && e.dr.length ? ' + дроп ' + e.dr.join('/') : '') +
+    (e.w ? ' · ' + kg(e.w) + ' кг' : ' · без отягощения') + (e.rpe ? ' · RPE ' + e.rpe : '');
 }
 
 // все дни с записями: тренировки, еда, вес, фото
@@ -5378,6 +5502,26 @@ function brainHtml(e, pv, wNow) {
   if (plateauOf(e.n)) h += '<div class="brn dn"><p><b>Застой</b> — три тренировки без роста ≈1ПМ. ' +
     'Смени диапазон повторов в графе ПОВТ или замени упражнение аналогом в «Технике».</p></div>';
   return h;
+}
+
+/* RPE — насколько тяжело было (10 — отказ, запаса нет; 8 — два повтора в
+   запасе). Записывается к упражнению дня. Двойная прогрессия его слушает:
+   верх диапазона взят на RPE 10 — вес не растёт, иначе следующая тренировка
+   начнётся с провала. */
+const RPE = [6, 7, 8, 9, 10];
+function rpeHtml(g) {
+  const cur = num(g.rpe);
+  return '<div class="rpew"><div class="rpe"><span>RPE</span>' + RPE.map(v =>
+    '<button data-rpe="' + v + '" class="' + (cur === v ? 'on' : '') + '" aria-pressed="' + (cur === v) + '">' + v + '</button>').join('') +
+    '</div><p class="rpeh">' + (cur ? (cur >= 10 ? 'Отказ — запаса не было.' : 'В запасе ≈' + (10 - cur) + ' повт.') :
+      'Насколько тяжело: 10 — отказ, 8 — два повтора в запасе.') + '</p></div>';
+}
+// Заметка к упражнению — одна на упражнение и видна в каждой тренировке: «сиденье на 4», «узкий хват»
+function noteHtml(name) {
+  const t = String((S.exNote || {})[name] || '');
+  return '<details class="exnote"' + (t ? ' open' : '') + '><summary>Заметка' + (t ? '' : ' к упражнению') + '</summary>' +
+    '<textarea data-exnote="' + esc(name) + '" rows="2" maxlength="300" placeholder="Сиденье, хват, ощущения — видно в следующий раз">' +
+    esc(t) + '</textarea></details>';
 }
 
 function warmupHtml(e, w, d, j) {
