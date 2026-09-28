@@ -2738,6 +2738,32 @@ body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
 
+/* подходы строками: вес × повторы и галочка справа */
+.setr .rb{display:flex;flex-direction:column;gap:6px}
+.srow{display:flex;align-items:center;gap:6px}
+.srow .swkg{flex:1 1 0;min-width:0;text-align:center;font-size:16px;font-weight:700;
+  padding:11px 2px;border-radius:10px;border:1px solid var(--ln);background:var(--s1);
+  color:var(--ink);font-family:var(--f);font-variant-numeric:tabular-nums}
+.srow .swkg::placeholder{color:var(--ink3);opacity:.55;font-weight:600}
+.srow .swkg:focus{outline:none;border-color:var(--acc)}
+.srow .sx{flex:0 0 auto;color:var(--ink3);font-size:13px}
+.setr .rb .rbx{flex:1 1 0;max-width:none;flex-direction:row;align-items:center;gap:6px;
+  position:relative}
+.setr .rb .rbx i{position:absolute;left:8px;top:50%;transform:translateY(-50%);
+  font-size:10px;pointer-events:none}
+.setr .rb .rbx input{padding-left:22px;text-align:center}
+.srow .stick{flex:0 0 auto;width:44px;height:44px;border-radius:12px;
+  border:1px solid var(--ln);background:var(--s1);color:var(--ink3);
+  font-size:17px;line-height:1;display:grid;place-items:center}
+.srow.on .stick{background:var(--hot-soft,rgba(63,174,119,.16));
+  border-color:var(--hot-ln,rgba(63,174,119,.5));color:var(--hot-tx,#BFEBD6)}
+.srow.on .swkg,.srow.on .rbx input{border-color:var(--hot-ln,rgba(63,174,119,.5))}
+@media (max-width:339px){
+  .srow{gap:4px}
+  .srow .swkg,.setr .rb .rbx input{font-size:15px;padding-left:18px}
+  .srow .stick{width:44px}
+}
+
 </style>
 </head>
 <script>
@@ -4845,6 +4871,48 @@ $('exl').addEventListener('click', ev => {
   });
 });
 
+/* Вес на строку. Пустое поле значит «как в карточке»: подставленное
+   значение не записывается, иначе смена веса сверху не доходила бы до строк. */
+$('exl').addEventListener('input', ev => {
+  const inp = ev.target.closest('[data-ws]'); if (!inp) return;
+  const card = inp.closest('.ex'); if (!card) return;
+  const j = num(card.dataset.j), r = recRW(sel);
+  const l = r.log[j] = r.log[j] || {};
+  const all = [...card.querySelectorAll('[data-ws]')];
+  const ws = all.map(x => (String(x.value).trim() === '' ? '' : num(x.value)));
+  if (ws.some(v => v !== '')) l.ws = ws; else delete l.ws;
+  save();
+});
+
+/* Галочка на строке. Пустые повторы заполняются целью — как у Lyfta, где
+   подход отмечают одним касанием. Отмечены все рабочие строки — упражнение
+   закрывается тем же путём, что и кнопкой внизу: тоннаж, рекорды и опыт
+   считаются в одном месте. */
+$('exl').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-tick]'); if (!b) return;
+  ev.preventDefault();
+  const card = b.closest('.ex'); if (!card) return;
+  const j = num(card.dataset.j), i = num(b.dataset.tick);
+  const r = recRW(sel), l = r.log[j] = r.log[j] || {};
+  if (l.done) { toggleSet(j); return; }      // снять отметку со всего упражнения
+  const row = b.closest('.srow'), on = !row.classList.contains('on');
+  const rs = row.querySelector('[data-rs]');
+  if (on && rs && !String(rs.value).trim()) {
+    const e = (dayOf(sel).ex || [])[j] || {};
+    const rF = card.querySelector('[data-f="r"]');
+    const tgt = topRep(rF && String(rF.value).trim() ? rF.value : e.r);
+    if (tgt) { rs.value = tgt; rs.dispatchEvent(new Event('input', { bubbles: true })); }
+  }
+  row.classList.toggle('on', on);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  const ck = [...card.querySelectorAll('.srow')].map((x, k) => (x.classList.contains('on') ? k : -1)).filter(k => k >= 0);
+  if (ck.length) l.ck = ck; else delete l.ck;
+  save();
+  const rows = [...card.querySelectorAll('.srow')];
+  const work = rows.filter(x => { const q = x.querySelector('[data-rs]'); return !(q && q.dataset.kind); });
+  if (work.length && work.every(x => x.classList.contains('on'))) runOnce('go' + j, () => toggleSet(j), 200);
+});
+
 // подход, закрытый по верхней границе, подсвечивается сразу
 $('exl').addEventListener('input', ev => {
   const inp = ev.target.closest('[data-rs]'); if (!inp) return;
@@ -4940,17 +5008,28 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     if (a) { cur = a; auto = true; }
   }
 
-  let out = '<div class="sh"><span>ПОВТОРЫ В КАЖДОМ ПОДХОДЕ</span>' +
+  let out = '<div class="sh"><span>ПОДХОДЫ</span>' +
     (!g.done ? '<button class="kindb" data-kindmode="1" aria-pressed="false">ТИП</button>' : '') +
     (top && !g.done ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
     '</div><div class="rb">';
+  const wsAll = Array.isArray(g.ws) ? g.ws : [];
+  const ck = Array.isArray(g.ck) ? g.ck : [];
   for (let i = 0; i < nn; i++) {
     const v = cur && cur[i] !== undefined && cur[i] !== null ? cur[i] : '';
     const k = KIND[kinds[i]] ? kinds[i] : '';
     const hit = top && !k && num(v) >= top ? ' hit' : '';
-    out += '<label class="rbx' + hit + (auto ? ' auto' : '') + (k ? ' k-' + k : '') + '"><i>' + (k ? KIND[k][0] : (i + 1)) + '</i>' +
+    const wv = wsAll[i] !== undefined && wsAll[i] !== null && wsAll[i] !== '' ? kg(num(wsAll[i])) : '';
+    const on = g.done || ck.indexOf(i) >= 0;
+    out += '<div class="srow' + (on ? ' on' : '') + '">' +
+      '<input class="swkg" inputmode="decimal" data-ws="' + i + '"' + (g.done ? ' readonly' : '') +
+        ' value="' + esc(wv) + '" placeholder="' + esc(kg(num(wNow))) + '" aria-label="Вес, подход ' + (i + 1) + '">' +
+      '<span class="sx">×</span>' +
+      '<label class="rbx' + hit + (auto ? ' auto' : '') + (k ? ' k-' + k : '') + '"><i>' + (k ? KIND[k][0] : (i + 1)) + '</i>' +
       '<input inputmode="numeric" data-rs="' + i + '" data-kind="' + k + '"' + (auto ? ' data-auto="1"' : '') + (g.done ? ' readonly' : '') + ' value="' + esc(v) +
-      '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + (k ? ', ' + KIND[k][1] : '') + '"></label>';
+      '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + (k ? ', ' + KIND[k][1] : '') + '"></label>' +
+      '<button class="stick" data-tick="' + i + '" aria-pressed="' + (on ? 'true' : 'false') +
+        '" aria-label="Подход ' + (i + 1) + ' сделан">✓</button>' +
+      '</div>';
   }
   out += '</div>';
   if (!g.done) out += '<p class="kindh">«ТИП», затем касание клетки: <b>Р</b> — разминка (не в тоннаже и не в прогрессии), ' +
@@ -5143,7 +5222,18 @@ function toggleSet(j) {
         if (!l.dr.length) delete l.dr;
         if (!l.fl.length) delete l.fl;
       } else { l.rs = all.map(val); delete l.wu; delete l.dr; delete l.fl; }
-      delete l.kinds;
+      /* Вес по строкам сохраняем ровно для рабочих подходов и в их порядке:
+         разминочные и дроп в тоннаж не идут, их вес журналу не нужен. */
+      const wEls = [...card.querySelectorAll('[data-ws]')].slice(0, all.length);
+      if (wEls.length) {
+        const pickW = x => (String(x.value).trim() === '' ? '' : num(x.value));
+        const wAll = wEls.map(pickW);
+        const ws = kd.some(Boolean)
+          ? wAll.filter((_, i) => kd[i] === '' || kd[i] === 'f')
+          : wAll;
+        if (ws.some(v => v !== '' && v > 0)) l.ws = ws; else delete l.ws;
+      }
+      delete l.kinds; delete l.ck;
     }
   }
   sets = num(pick(l.s, p.s));                  // после разбора типов — число рабочих подходов
@@ -5161,8 +5251,12 @@ function toggleSet(j) {
      её считаем по низу диапазона. Раньше одна пустая клетка переводила весь
      тоннаж на план, и 12/12/пусто при 8–10 шло как 3×8. */
   const rsAny = l.rs && l.rs.length && l.rs.some(v => num(v) > 0);
-  l.vol = g ? (rsOk ? l.rs.reduce((a, b) => a + num(b), 0)
-    : rsAny ? l.rs.reduce((a, b) => a + (num(b) || reps), 0) : sets * reps) * w * sideMul(p.n || l.n) : 0;
+  /* Вес берётся на каждый подход: 60/70/80 — это не 3×80 и не 3×60.
+     Где своего веса в строке нет, идёт вес упражнения. */
+  const wAt = i => { const q = Array.isArray(l.ws) ? num(l.ws[i]) : 0; return q > 0 ? q : w; };
+  l.vol = g ? (rsOk ? l.rs.reduce((a, b, i) => a + num(b) * wAt(i), 0)
+    : rsAny ? l.rs.reduce((a, b, i) => a + (num(b) || reps) * wAt(i), 0)
+    : sets * reps * w) * sideMul(p.n || l.n) : 0;
   l.sd = 1;                                   // множитель сторон уже учтён
   if (g && S.vol[g] !== undefined) S.vol[g] += l.vol;
 
@@ -5427,9 +5521,14 @@ function dayEntries(ds) {
     const p = ex[j] || {};
     const sets = num(pick(l.s, p.s)), reps = String(pick(l.r, p.r) ?? ''), w = num(pick(l.w, p.w));
     const rs = (l.rs && l.rs.length && l.rs.some(v => num(v) > 0)) ? l.rs.map(num) : null;
+    /* Вес мог отличаться от подхода к подходу: 60/70/80 — это не 3×80
+       и не 3×60. Где своего веса нет, берётся вес упражнения. */
+    const ws = Array.isArray(l.ws) ? l.ws : null;
     const vol = (l.vol !== undefined) ? num(l.vol)
-      : (rs ? rs.reduce((a, b) => a + b, 0) : sets * firstRep(reps)) * w;
-    out.push({ n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs,
+      : (rs
+        ? rs.reduce((a, b, i) => a + b * (ws && num(ws[i]) > 0 ? num(ws[i]) : w), 0)
+        : sets * firstRep(reps) * w);
+    out.push({ n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs, ws: ws,
       vol: vol, g: l.g || p.g || null, pr: (l.prevPr !== undefined && l.prevPr > 0) || (Array.isArray(l.recs) && l.recs.length > 0),
       wu: Array.isArray(l.wu) ? l.wu : null, dr: Array.isArray(l.dr) ? l.dr : null,
       fl: Array.isArray(l.fl) ? l.fl : null, rpe: num(l.rpe) || 0 });
@@ -5444,9 +5543,14 @@ const daySets = ds => dayEntries(ds).reduce((a, e) => a + (e.rs ? e.rs.length : 
 function entryLine(e) {
   const fl = e.fl || [];
   const reps = e.rs ? e.rs.map((v, i) => (fl.indexOf(i) >= 0 ? v + 'О' : v)).join('/') : (e.s + '×' + e.r);
+  // вес разный по подходам — показываем его так же, как повторы
+  const ws = e.ws && e.rs ? e.rs.map((_, i) => (num(e.ws[i]) > 0 ? num(e.ws[i]) : e.w)) : null;
+  const many = ws && ws.some(v => v !== ws[0]);
   return (e.wu && e.wu.length ? 'разм. ' + e.wu.join('/') + ' · ' : '') + reps +
     (e.dr && e.dr.length ? ' + дроп ' + e.dr.join('/') : '') +
-    (e.w ? ' · ' + kg(e.w) + ' кг' : ' · без отягощения') + (e.rpe ? ' · RPE ' + e.rpe : '');
+    (many ? ' · ' + ws.map(kg).join('/') + ' кг'
+          : (e.w ? ' · ' + kg(e.w) + ' кг' : ' · без отягощения')) +
+    (e.rpe ? ' · RPE ' + e.rpe : '');
 }
 
 // все дни с записями: тренировки, еда, вес, фото
