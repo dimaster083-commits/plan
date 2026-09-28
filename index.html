@@ -2708,6 +2708,13 @@ svg.mch{width:100%;height:auto;display:block;aspect-ratio:300/110}
 .mhist .exchb{flex-wrap:wrap;margin-bottom:8px}
 .wklag{padding:10px 14px;margin-top:8px;font-size:12.5px;color:var(--ink2);line-height:1.45}
 .wklag b{color:var(--warn)}
+/* Календарь месяца на узком экране — от края до края, как полоса дней
+   наверху: иначе ячейка дня 36 px, меньше пальца (правило 44 px). */
+@media (max-width:419px){
+  .cal{width:100vw;margin-left:calc(50% - 50vw);padding-left:2px;padding-right:2px;border-radius:0}
+  .cal .cwk{padding:3px 0;gap:1px;border-left:0;border-right:0;border-radius:0}
+  .cal .chead{gap:1px}
+}
 /* смена экрана — сканирующая полоса сверху вниз */
 body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 #scrfx{position:fixed;left:0;right:0;top:0;height:2px;z-index:60;pointer-events:none;opacity:0;
