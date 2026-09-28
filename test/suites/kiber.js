@@ -27,7 +27,9 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(r.line===0,'2. кривая веса видна без анимации','dashoffset '+r.line);
   chk(r.hex===0,'3. шестигранник уровня виден без анимации','dashoffset '+r.hex);
   chk(/\/\//.test(r.pre)&&r.h<30,'4. «//» стоит в строке заголовка, заголовок не разъехался',r.pre+' · высота '+r.h);
-  const box=await p.$('.radar'); const bb=await box.boundingBox();
+  // карта мышц встала над окном баланса и столкнула его ниже экрана:
+  // мышь не прокручивает сама, поэтому сначала подводим окно в видимую часть
+  const box=await p.$('.radar'); await box.scrollIntoViewIfNeeded(); const bb=await box.boundingBox();
   await p.mouse.move(bb.x+40,bb.y+20); await p.mouse.down();
   const lit=await p.evaluate(()=>document.querySelector('.radar').classList.contains('lit'));
   await p.mouse.up(); await p.waitForTimeout(30);
