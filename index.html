@@ -2715,6 +2715,11 @@ svg.mch{width:100%;height:auto;display:block;aspect-ratio:300/110}
   .cal .cwk{padding:3px 0;gap:1px;border-left:0;border-right:0;border-radius:0}
   .cal .chead{gap:1px}
 }
+/* фото техники слева в строке упражнения — раскладка как у Lyfta */
+.exrow .exth{flex:0 0 auto;width:44px;height:44px;border-radius:10px;object-fit:cover;
+  border:1px solid var(--ln);box-shadow:0 0 10px rgba(46,139,255,.25);background:var(--s2)}
+.exrow.done .exth{opacity:.55}
+.exrow:has(> .exth){grid-template-columns:44px minmax(0,1fr) auto auto}
 /* смена экрана — сканирующая полоса сверху вниз */
 body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 #scrfx{position:fixed;left:0;right:0;top:0;height:2px;z-index:60;pointer-events:none;opacity:0;
@@ -4559,6 +4564,7 @@ function exRow(e, j, r, IN) {
   const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, repsDefault(e)));
   const ex = dayOf(sel).ex, ss = !!(e.ss && ex[j + 1]), ss2 = !!(j > 0 && ex[j - 1] && ex[j - 1].ss);
   return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}">
+    ${EXDB[e.n] ? `<img class="exth" src="img/${EXDB[e.n][0]}-1.jpg" alt="" loading="lazy">` : ''}
     <span class="t"><span class="n">${esc(e.n)}</span>
       <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
     <span class="kg">${w ? kg(w) : '—'}</span>
