@@ -1,4 +1,4 @@
-const CACHE = "sys-gym-148";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-149";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
@@ -116,8 +116,12 @@ self.addEventListener('fetch', e => {
           if (keep(res)) {
             const copy = res.clone();
             caches.open(CACHE).then(c => c.put('./index.html', copy)).catch(() => {});
+            return res;
           }
-          return res;
+          // Негодный ответ в кэш не кладём — и не показываем: во время
+          // выкладки хостинг несколько секунд отдаёт 404/502, и человек видел
+          // пустую страницу, хотя рабочая сборка лежала в кэше.
+          return caches.match('./index.html').then(r => r || caches.match('./')).then(r => r || res);
         })
         .catch(() => caches.match('./index.html').then(r => r || caches.match('./')))
     );
@@ -129,8 +133,10 @@ self.addEventListener('fetch', e => {
         if (keep(res)) {
           const copy = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          return res;
         }
-        return res;
+        // негодный ответ — сохранённая копия того же файла, если она есть
+        return caches.match(e.request).then(r => r || res);
       })
       // Для картинок и шрифтов подсовывать страницу вместо файла нельзя:
       // браузер получит html там, где ждёт jpg. Пусть лучше не будет ничего.
