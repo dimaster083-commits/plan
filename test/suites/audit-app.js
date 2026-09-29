@@ -7,7 +7,38 @@ let fails=0;
 const ok=(n,d)=>console.log('  ✓ '+n+(d?'   → '+d:''));
 const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
 const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
+const fs=require('fs'), path=require('path'), vm=require('vm');
+
+/* сервис-воркер в песочнице: кэш фото каталога с настоящим порядком ключей */
+async function swCdn(){
+  const src=fs.readFileSync(path.join(__dirname,'..','..','sw.js'),'utf8');
+  const store=new Map();
+  const open=name=>{ if(!store.has(name)) store.set(name,new Map()); const m=store.get(name);
+    return { put:async(k,v)=>{ const u=typeof k==='string'?k:k.url; m.delete(u); m.set(u,v); },
+      keys:async()=>[...m.keys()].map(url=>({url})), delete:async k=>m.delete(typeof k==='string'?k:k.url),
+      addAll:async()=>{}, match:async()=>null }; };
+  const h={};
+  const ctx={ self:{addEventListener:(t,f)=>{h[t]=f;},location:{origin:'https://x'},skipWaiting(){},clients:{claim(){}}},
+    caches:{open:async n=>open(n),keys:async()=>[...store.keys()],delete:async n=>store.delete(n),match:async()=>null},
+    fetch:async()=>({ok:true,status:200,type:'cors',clone(){return this;}}), URL, console, Promise, setTimeout };
+  vm.createContext(ctx); vm.runInContext(src,ctx);
+  const N=700;
+  for(let i=0;i<N;i++){
+    const url='https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Ex_'+i+'/0.jpg';
+    let pr; h.fetch({request:{method:'GET',mode:'cors',url},respondWith:x=>{pr=x;}}); await pr;
+    await new Promise(r=>setTimeout(r,1));
+  }
+  await new Promise(r=>setTimeout(r,50));
+  const m=store.get('sys-gym-cdn')||new Map(), ks=[...m.keys()];
+  return {всего:ks.length, последнее:/Ex_699\//.test(ks[ks.length-1]||''), первоеУшло:!m.has('https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Ex_0/0.jpg')};
+}
+
 (async()=>{
+  // 5. фото каталога: кэш sys-gym-cdn не растёт без края, свежие остаются
+  const cdn=await swCdn();
+  chk(cdn.всего>0&&cdn.всего<=400&&cdn.последнее&&cdn.первоеУшло,
+    '5. кэш фото каталога ограничен, уходят самые старые', JSON.stringify(cdn));
+
   const b=await chromium.launch(LAUNCH);
   const p=await(await b.newContext({viewport:{width:320,height:700}})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
