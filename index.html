@@ -5311,9 +5311,33 @@ $('exl').addEventListener('click', ev => {
   const card = b.closest('.ex'), j = num(card.dataset.j), r = recRW(sel);
   const l = r.log[j] = r.log[j] || {}, v = num(b.dataset.rpe);
   if (num(l.rpe) === v) delete l.rpe; else l.rpe = v;
+  /* Последняя галочка закрывает упражнение сама, и RPE ставят уже после.
+     Верх на отказе прибавку не даёт (maybeProgress): отказ после закрытия
+     снимает прибавку тем же журналом отката, снятый отказ её возвращает. */
+  const p = l.done ? (dayOf(sel).ex || [])[j] : null;
+  if (p && num(l.rpe) >= 10 && l.prog && unProgress(l)) {
+    note('Верх взят на отказе — вес ' + p.n + ' держим, запаса не было');
+    save(); render(); return;
+  }
+  if (p && num(l.rpe) < 10 && !l.prog) { maybeProgress(l, p, num(pick(l.w, p.w))); if (l.prog) return; }
   save();
   b.closest('.rpew').outerHTML = rpeHtml(l);
 });
+// снять только прибавку двойной прогрессии (её вес — l.prog), не трогая подъём рабочего веса при закрытии
+function unProgress(l) {
+  const keep = [];
+  let hit = false;
+  (l.bump || []).slice().reverse().forEach(u => {
+    if (!Array.isArray(u) || u[4] === undefined || num(u[4]) !== num(l.prog)) { keep.unshift(u); return; }
+    hit = true;
+    const e = exAt(u[0], u[1], l.n);
+    if (e && num(e.w) === num(u[4])) { e.w = u[2]; if (u[3]) e.fixed = 1; else delete e.fixed; }
+  });
+  if (!hit) return false;             // старая запись без веса прибавки — не угадываем
+  if (keep.length) l.bump = keep; else delete l.bump;
+  l.prog = 0;
+  return true;
+}
 /* Суперсет — связка с упражнением ниже: закрыл это — карточка сразу
    переходит к следующему, таймер отдыха ждёт конца пары. Связка — часть
    программы и живёт в дне, как подходы и повторы. */
@@ -5873,12 +5897,13 @@ function maybeProgress(l, p, w) {
   if (!fixedAt(p, l)) return;             // результат ещё не закреплён
   // верх взят, но на отказе (RPE 10) — запаса нет, вес держим
   if (num(l.rpe) >= 10) { note('Верх взят на отказе — вес ' + p.n + ' держим, запаса не было'); return; }
-  l.prog = 1;
   // считаем от того, что реально поднято: если вес был выше рабочего,
   // прибавка от старого числа отбросила бы человека назад
   const from = Math.max(num(p.w), w);
   let next = roundW(from + stepFor({ g: p.g, w: from }));     // с веса вне сетки (13,5) — обратно на сетку
   if (next <= from) next = from + granOf(from);
+  // прибавка помнит свой вес: RPE 10, поставленный уже после закрытия, снимает именно её
+  l.prog = next;
   // раньше здесь стоял вопрос «поднимать?» — лишнее нажатие в зале мокрыми руками.
   // Закрепил верх диапазона во всех подходах — вес растёт сам.
   bumpWorking(p.n, next, l);

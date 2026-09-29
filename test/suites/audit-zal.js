@@ -125,6 +125,26 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       &&/вес 110/.test(строки.лента)&&снял===100,
     '4. самый тяжёлый подход строкой — рекорд веса и ≈1ПМ; снятая отметка возвращает прежний', JSON.stringify({...строки,снял}));
 
+  // 5. RPE 10 после закрытия галочками: верх взят на отказе — прибавка снимается, снятый RPE её возвращает
+  await день();
+  await p.waitForTimeout(300);
+  await заполнить('60',null,[8,8,8]);
+  const rpe=await p.evaluate(()=>{
+    const W=()=>dayOf(today()).ex[0].w;
+    [...document.querySelectorAll('.ex[data-j="0"] [data-tick]')].forEach(t=>t.click());
+    const закрыт=!!(recOf(today()).log[0]||{}).done, прибавка=W();
+    const q=()=>document.querySelector('.ex[data-j="0"] [data-rpe="10"]');
+    if(!q()) return {закрыт, прибавка, кнопки:false};
+    q().click(); const отказ=W();
+    q().click(); const снова=W();
+    q().click(); const ещё=W();
+    return {закрыт, прибавка, отказ, снова, ещё};
+  });
+  await p.waitForTimeout(300);
+  const сброс5=await p.evaluate(()=>{ document.querySelector('.ex[data-j="0"] [data-go="0"]').click(); return dayOf(today()).ex[0].w; });
+  chk(rpe.закрыт&&+rpe.прибавка===62.5&&+rpe.отказ===60&&+rpe.снова===62.5&&+rpe.ещё===60&&+сброс5===60,
+    '5. RPE 10 после закрытия держит вес, снятый RPE возвращает прибавку, отмена — всё назад', JSON.stringify({...rpe,сброс5}));
+
   chk(errs.length===0,'без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);
