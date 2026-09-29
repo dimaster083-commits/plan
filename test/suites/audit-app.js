@@ -58,6 +58,21 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     /3 тренировки в неделю/.test(цикл.сводка)&&!/4 тренировки|верх\/низ дважды/.test(цикл.сводка),
     '2. три дня в шаблоне: «из 3», «нужно 2» (как planWeek), в выгрузке «3 тренировки»', JSON.stringify(цикл));
 
+  // 3. вторник стал отдыхом во всех неделях — прошлый тренировочный вторник ест по норме тренировки
+  await сброс();
+  const тип=await p.evaluate(async()=>{
+    const ti=S.days.findIndex(d=>d.k==='Вт'), tue=(()=>{let x=addDays(today(),-1);while(wdOf(x)!==ti)x=addDays(x,-1);return x;})();
+    const r=recRW(tue); r.wo=1; r.log={0:{done:1,n:'Жим лёжа',g:'Грудь',w:'60',s:'3',r:'8',rs:[8,8,8]}};
+    r.ml=blankMeals(tue); r.ml[0].items=[{p:'Овсянка',g:'100'}];
+    const keep=ask; ask=()=>Promise.resolve(true);
+    await setDayType(ti,'rest'); ask=keep;
+    sel=tue; tab='food'; render();
+    const тр=S.days.find(d=>d.t!=='rest').kc, отд=S.days.find(d=>d.t==='rest').kc;
+    return {тр, отд, вид:dayLook(tue).t, норма:normDay(tue).kc, поле:$('kc').value};
+  });
+  chk(тип.вид!=='rest'&&тип.тр!==тип.отд&&тип.норма===тип.тр&&тип.поле===тип.тр,
+    '3. смена типа дня во всех неделях: прошлая тренировка в «Еде» — с нормой тренировки', JSON.stringify(тип));
+
   chk(errs.length===0,'99. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   console.log(fails?'\nПРОВАЛОВ: '+fails:'\nВСЁ ЧИСТО');

@@ -4880,10 +4880,16 @@ const paused = ds => !!(S.pause && S.pause[mondayOf(ds)]);
    неделя на паузе (болею, уехал) тренировок не ждёт: незакрытый день
    тренировки там — день отдыха, и норма у него отдыха (своя, если задана
    руками). Раньше больной ел по норме тренировки, и «Разбор» с ней сверял. */
+/* Прошедший день ест по своему типу (dayLook), а не по нынешнему шаблону:
+   сменил вторник на отдых во всех неделях — прошлые тренировочные вторники
+   в «Еде» и «Разборе» сверялись с нормой отдыха, хотя в журнале тренировка. */
 function normDay(ds) {
   const d = dayOf(ds);
-  if (!d || d.t === 'rest' || !paused(ds) || recOf(ds).wo) return d;
-  return S.days.find(x => x.t === 'rest') || Object.assign({}, d, nutriFor('rest'));
+  if (!d) return d;
+  const lt = dayLook(ds).t, rest = lt === 'rest' || (paused(ds) && !recOf(ds).wo);
+  if (rest === (d.t === 'rest')) return d;
+  if (rest) return S.days.find(x => x.t === 'rest') || Object.assign({}, d, nutriFor('rest'));
+  return S.days.find(x => x.t === lt) || S.days.find(x => x.t !== 'rest') || Object.assign({}, d, nutriFor(lt));
 }
 const dayLocked = ds => { const r = S.rec[ds]; return !!(r && (r.wo || dayEntries(ds).length)); };
 /* Отметка добавки — только номер строки в списке дня (r.sp). Перенос меняет
