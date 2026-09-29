@@ -4725,6 +4725,15 @@ $('movedX').addEventListener('click', () => { delete S.map[sel]; remapLog(sel); 
    не считает пропуском, план цикла стоит и ждёт. */
 const paused = ds => !!(S.pause && S.pause[mondayOf(ds)]);
 // день с записанными подходами или закрытый — история, его тренировку не двигаем
+/* Норма еды даты. День тренировки ест на 200 ккал больше дня отдыха, но
+   неделя на паузе (болею, уехал) тренировок не ждёт: незакрытый день
+   тренировки там — день отдыха, и норма у него отдыха (своя, если задана
+   руками). Раньше больной ел по норме тренировки, и «Разбор» с ней сверял. */
+function normDay(ds) {
+  const d = dayOf(ds);
+  if (!d || d.t === 'rest' || !paused(ds) || recOf(ds).wo) return d;
+  return S.days.find(x => x.t === 'rest') || Object.assign({}, d, nutriFor('rest'));
+}
 const dayLocked = ds => { const r = S.rec[ds]; return !!(r && (r.wo || dayEntries(ds).length)); };
 const setMap = (ds, k) => { if (k === wdOf(ds)) delete S.map[ds]; else S.map[ds] = k; };
 function weekDates(ds) {
@@ -9392,7 +9401,7 @@ function itemLine(it) {
 }
 
 function paintFood() {
-  const d = dayOf(sel);
+  const d = normDay(sel);
   paintCpLast();
   $('kc').value = d.kc;
   $('pr').value = d.pr;
@@ -9417,7 +9426,7 @@ function paintFood() {
 }
 
 function paintTotals() {
-  const d = dayOf(sel), t = daySum(sel);
+  const d = normDay(sel), t = daySum(sel);
   $('tKc').innerHTML = rnd(t.k) + '<i> / ' + esc(d.kc) + ' ккал</i>';
   $('tPr').innerHTML = rnd(t.p) + '<i> / ' + esc(d.pr) + ' г</i>';
   $('bKc').style.width = Math.min(100, t.k / (num(d.kc) || 1) * 100) + '%';
@@ -9447,8 +9456,8 @@ function paintKcSrc() {
 // вписал норму руками — расчёт от веса и цели больше её не перебивает
 // в нормы — только цифры: раньше принимались «abc», «-500» и «1e9»
 const digits = el => { const v = String(el.value).replace(/[^\d]/g, '').slice(0, 4); if (v !== el.value) el.value = v; return v; };
-$('kc').addEventListener('input', e => { dayOf(sel).kc = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
-$('pr').addEventListener('input', e => { dayOf(sel).pr = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
+$('kc').addEventListener('input', e => { normDay(sel).kc = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
+$('pr').addEventListener('input', e => { normDay(sel).pr = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
 $('kcAuto').addEventListener('click', () => {
   S.kcManual = 0; applyNutri(); save(); render();
   note('Нормы пересчитаны от веса и цели');
@@ -10511,7 +10520,7 @@ function analyze() {
     const s2 = daySum(ds);
     if (s2.k > 0) {
       kcSum += s2.k; prSum += s2.p; filled++;
-      goalKs += num(dayOf(ds).kc); goalPs += num(dayOf(ds).pr);
+      goalKs += num(normDay(ds).kc); goalPs += num(normDay(ds).pr);
     }
   });
   if (filled) {
@@ -10632,7 +10641,7 @@ function analyze() {
   if (bw && filled) {
     const perDay = prSum / filled, perKg = perDay / bw;
     // норма — та же, что в «Еде» и «Ресурсе»; свой коридор 1,6–2,2 давал два вывода на одном экране
-    const prNorm = num(dayOf(today()).pr) || Math.round(bw * 2);
+    const prNorm = num(normDay(today()).pr) || Math.round(bw * 2);
     if (perDay < prNorm * 0.95) {
       add('warn', 'БЕЛОК НА КГ', 'Выходит <b>' + dec(perKg, 1) + ' г на кг</b> — ' + Math.round(perDay) +
         ' г в день при норме ' + prNorm + ' г (' + dec(prNorm / bw, 1) + ' г на кг).',
@@ -10745,7 +10754,7 @@ function buildSummary() {
   Object.keys(S.rec).filter(ds => daysBetween(ds, today()) <= 14).sort().forEach(ds => {
     const s2 = daySum(ds);
     if (s2.k > 0) L.push('- ' + fmt(ds) + ': ' + rnd(s2.k) + ' ккал, белок ' + rnd(s2.p) +
-      ' г при цели ' + dayOf(ds).kc + ' / ' + dayOf(ds).pr);
+      ' г при цели ' + normDay(ds).kc + ' / ' + normDay(ds).pr);
   });
   L.push('');
   L.push('ЧТО ВИДИТ ПРИЛОЖЕНИЕ:');

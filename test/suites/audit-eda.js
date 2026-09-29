@@ -84,6 +84,36 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(месяц.вИтогах===месяц.план&&месяц.норма===месяц.надо&&месяц.пз>=7,
     '5. месяц: план и квест «Закрыть N» без дней паузы', JSON.stringify(месяц));
 
+  // 6. неделя на паузе: день тренировки ест по норме отдыха, «Еда» и выгрузка говорят одно
+  await сброс();
+  const еда=await p.evaluate(()=>{
+    const nx=addDays(mondayOf(today()),7); let tr=nx;
+    for(let k=0;k<7;k++){ const x=addDays(nx,k); if(dayOf(x).t!=='rest'){ tr=x; break; } }
+    const отдых=nutriFor('rest').kc, трен=nutriFor('up1').kc;
+    S.pause={}; S.pause[nx]=1;
+    // прошлая неделя тоже на паузе, во вторник что-то съедено
+    const w1=addDays(mondayOf(today()),-7); S.pause[w1]=1;
+    let past=w1; for(let k=0;k<7;k++){ const x=addDays(w1,k); if(dayOf(x).t!=='rest'){ past=x; break; } }
+    allFood(); const prod=[...FOODMAP.keys()][0];
+    S.rec[past]={log:{},sp:{},wo:0,ml:[{n:'Обед',note:'',items:[{p:prod,g:'300'}]}]};
+    sel=tr; tab='food'; save(); render();
+    const line=buildSummary().split('\n').find(l=>l.indexOf(fmt(past))===2)||'';
+    return {отдых, трен, поле:$('kc').value, итог:$('tKc').textContent, выгрузка:line};
+  });
+  chk(еда.отдых!==еда.трен&&еда.поле===еда.отдых&&еда.итог.indexOf(еда.отдых)>=0&&еда.выгрузка.indexOf('цели '+еда.отдых)>=0,
+    '6. неделя на паузе: норма дня тренировки — как у отдыха, и в «Еде», и в выгрузке', JSON.stringify(еда));
+
+  // 7. на паузе поправка нормы руками ложится в норму отдыха, а закрытая тренировка ест как тренировка
+  const ручная=await p.evaluate(()=>{
+    const el=$('kc'); el.value='2345'; el.dispatchEvent(new Event('input',{bubbles:true}));
+    const rest=S.days.find(d=>d.t==='rest').kc, tr=dayOf(sel).kc;
+    recRW(sel).wo=1; render();
+    const после=$('kc').value; delete S.rec[sel].wo; S.kcManual=0; applyNutri(); save(); render();
+    return {rest, tr, после};
+  });
+  chk(ручная.rest==='2345'&&ручная.tr!=='2345'&&ручная.после===ручная.tr,
+    '7. правка нормы на паузе меняет норму отдыха; закрыл тренировку — норма тренировки', JSON.stringify(ручная));
+
   chk(errs.length===0,'99. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);
