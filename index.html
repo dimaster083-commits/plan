@@ -2933,6 +2933,29 @@ body.exopen .wobar{margin-top:8px}
 .lwarn{background:#e5484d}
 .lharm{border-color:#e5484d} .lharm b{color:#ff7b7f}
 @media (max-width:339px){ .lmu{width:62px} .lbtns{grid-template-columns:1fr} }
+/* план недели: кнопка у даты и шторка «Неделя» */
+.dateline{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
+.dateline #dt{flex:1 1 0;min-width:0;line-height:1.5}
+.dateline #wkPlan{margin-left:auto;min-height:44px;padding:0 14px;text-decoration:none;font-family:var(--fn);
+  font-size:11px;letter-spacing:.12em;color:var(--acc-2);border:1px solid var(--ln2);border-radius:var(--r-m,12px);background:var(--btn)}
+.chip.pz b{opacity:.45}
+.chip.pz u{opacity:.25}
+.wkp .wkseg{margin:0 0 10px}
+.wkh{font-size:12.5px;color:var(--mut);line-height:1.5;margin:0 0 10px}
+.wkpz{font-size:12.5px;line-height:1.5;margin:0 0 10px;padding:9px 12px;border:1px dashed var(--ln2);border-radius:var(--r-m,12px);color:var(--ink2)}
+.wkl{display:flex;flex-direction:column;gap:6px}
+.wkr{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:48px;padding:6px 12px;
+  border:1px solid var(--ln);border-radius:var(--r-m,12px);background:var(--btn);text-align:left;color:var(--tx);font:inherit}
+.wkr.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 0 18px var(--acc-soft)}
+.wkr.td .wkd b{color:var(--acc-2)}
+.wkr:disabled{opacity:.55}
+.wkd{display:flex;flex-direction:column;line-height:1.2}
+.wkd b{font-size:13px}
+.wkd i{font-style:normal;font-size:10.5px;color:var(--mut)}
+.wkn{font-size:13px;border-left:3px solid var(--c);padding-left:8px;overflow-wrap:anywhere}
+.wks{font-size:10.5px;color:var(--mut);white-space:nowrap;font-family:var(--fn)}
+.wka{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.wka .add{margin:0}
 </style>
 </head>
 <script>
@@ -2991,7 +3014,8 @@ document.documentElement.dataset.skin = 'sl';
     <div class="dh"><span class="ln" id="dln"></span>
       <span class="txt"><h3><input id="dnm" aria-label="Название дня"></h3><p id="dsb"></p></span>
       <button class="gear" id="gear" aria-label="Настроить день">⚙</button></div>
-    <div class="dateline"><span id="dt"></span><button id="toToday" hidden>вернуться к сегодня</button></div>
+    <div class="dateline"><span id="dt"></span><button id="toToday" hidden>вернуться к сегодня</button>
+      <button id="wkPlan" class="wkpb" aria-label="Перестроить неделю">⇄ Неделя</button></div>
     <div class="win dedit" id="dedit" hidden>
       <label>ТОЛЬКО ЭТА ДАТА — ЧТО ДЕЛАЕМ СЕГОДНЯ</label>
       <div class="types" id="moveTo"></div>
@@ -4247,6 +4271,11 @@ function scrubKeys() {
     });
   }
   Object.keys(S.map).forEach(k => { const v = S.map[k]; if (!(Number.isInteger(v) && v >= 0 && v < 7)) delete S.map[k]; });
+  // пауза недели — только понедельники и только единица
+  if (S.pause !== undefined) {
+    if (!plain(S.pause)) S.pause = {};
+    Object.keys(S.pause).forEach(k => { if (!okDay(k) || wdOf(k) !== 0 || S.pause[k] !== 1) delete S.pause[k]; });
+  }
   const meals = ml => (Array.isArray(ml) ? ml.filter(plain).map(m => {
     if (Array.isArray(m.items)) m.items = m.items.filter(plain); else if (m.items !== undefined) m.items = [];
     return m; }) : ml);
@@ -4573,23 +4602,28 @@ function paintStatus() {
 // точка на вкладке «Зал», пока сегодняшняя тренировка не закрыта
 function paintBadge() {
   const t = today();
-  const need = dayOf(t).t !== 'rest' && !recOf(t).wo && !recOf(t).skip;
+  const need = dayOf(t).t !== 'rest' && !recOf(t).wo && !recOf(t).skip && !paused(t);
   $('bdg-wo').hidden = !need;
 }
 
 /* ---------- шапка выбранного дня ---------- */
 function paintDay() {
-  const i = dayIdx(sel), d = dayOf(sel);
+  const d = dayOf(sel);
+  /* Дата чипа — по дню недели, цвет — по тренировке самой даты. Раньше чипы
+     отсчитывались от номера тренировки выбранного дня: после переноса
+     вся неделя уезжала на чужие даты, а цвет брался из шаблона. */
+  const wd0 = wdOf(sel);
   $('chips').innerHTML = S.days.map((x, k) => {
-    const base = at(sel); base.setDate(base.getDate() + (k - i));
-    const ds = iso(base);
-    return `<button class="chip${k === i ? ' on' : ''}" data-d="${ds}">
+    const base = at(sel); base.setDate(base.getDate() + (k - wd0));
+    const ds = iso(base), lk = dayLook(ds), pz = paused(ds) && lk.t !== 'rest' && !recOf(ds).wo;
+    return `<button class="chip${ds === sel ? ' on' : ''}${pz ? ' pz' : ''}" data-d="${ds}">
       ${recOf(ds).wo ? '<span class="tk">✓</span>' : ''}
-      <b>${esc(x.k)}</b><u style="background:var(--c-${x.t})"></u></button>`;
+      <b>${esc(x.k)}</b><u style="background:var(--c-${lk.t})"></u></button>`;
   }).join('');
 
   $('dln').style.background = 'var(--c-' + d.t + ')';
-  $('dnm').value = d.n;
+  // имя дня недели — по самой дате: после переноса вторник не зовётся «Понедельником»
+  $('dnm').value = TPL.some(x => x.n === d.n) ? TPL[wdOf(sel)].n : d.n;
   $('dsb').textContent = d.s;
   const dd = at(sel);
   document.querySelector('#dayctx .dh').dataset.n = String(+sel.slice(8, 10));
@@ -4680,6 +4714,155 @@ $('moveTo').addEventListener('click', e => {
 });
 $('movedX').addEventListener('click', () => { delete S.map[sel]; remapLog(sel); save(); render(); });
 
+/* ---------- план недели: переставить, сдвинуть, поставить на паузу ----------
+   Человек не станок: заболел, уехал, сдвинулась работа. Раньше перенос жил
+   в скрытой панели по одной дате, а неделю целиком переиграть было нечем.
+   Теперь «Неделя» — одна шторка: тап по дню, тап по другому — они меняются
+   местами. «Эта неделя» трогает только даты этой недели (S.map), «Каждую
+   неделю» — сам шаблон программы (S.days). Прошедшие и начатые дни
+   не двигаются: их тренировка закреплена за датой. «Болею» ставит неделю
+   на паузу (S.pause, ключ — понедельник): серия её перешагивает, посещаемость
+   не считает пропуском, план цикла стоит и ждёт. */
+const paused = ds => !!(S.pause && S.pause[mondayOf(ds)]);
+// день с записанными подходами или закрытый — история, его тренировку не двигаем
+const dayLocked = ds => { const r = S.rec[ds]; return !!(r && (r.wo || dayEntries(ds).length)); };
+const setMap = (ds, k) => { if (k === wdOf(ds)) delete S.map[ds]; else S.map[ds] = k; };
+function weekDates(ds) {
+  const c = at(mondayOf(ds)), out = [];
+  for (let i = 0; i < 7; i++) { out.push(iso(c)); c.setDate(c.getDate() + 1); }
+  return out;
+}
+function swapDates(a, b) {
+  if (a === b || dayLocked(a) || dayLocked(b)) return false;
+  const ia = dayIdx(a), ib = dayIdx(b);
+  setMap(a, ib); setMap(b, ia);
+  remapLog(a); remapLog(b);
+  return true;
+}
+/* Смена шаблона: содержимое двух дней недели меняется местами. Всё, что
+   уже было, — записи журнала и прошедшие дни этой недели — сначала
+   закрепляется за своей датой, иначе вчерашний жим задним числом стал бы
+   приседом. Даты с переносом идут следом за своей тренировкой. */
+function swapWeekdays(i, j) {
+  if (i === j || !S.days[i] || !S.days[j]) return false;
+  const t = today(), keep = {};
+  Object.keys(S.rec).forEach(ds => { if (okDay(ds) && (ds < t || dayLocked(ds))) keep[ds] = 1; });
+  weekDates(t).forEach(ds => { if (ds < t) keep[ds] = 1; });
+  Object.keys(keep).forEach(ds => {
+    if (S.map[ds] !== undefined) return;
+    const w = wdOf(ds);
+    if (w === i || w === j) S.map[ds] = w;
+  });
+  Object.keys(S.map).forEach(ds => {
+    const v = S.map[ds];
+    if (v === i) S.map[ds] = j; else if (v === j) S.map[ds] = i;
+    if (S.map[ds] === wdOf(ds)) delete S.map[ds];
+  });
+  const A = S.days[i], B = S.days[j];
+  // имя дня — «Вторник» — остаётся на месте; своё имя («Грудь») едет с тренировкой
+  const nm = (d, p) => (TPL[p] && d.n === TPL[p].n);
+  S.days[i] = Object.assign({}, B, { k: A.k, n: nm(B, j) ? TPL[i].n : B.n });
+  S.days[j] = Object.assign({}, A, { k: B.k, n: nm(A, i) ? TPL[j].n : A.n });
+  return true;
+}
+/* «Не могу сегодня»: тренировка уезжает на следующий день, а стоявшая там —
+   дальше, пока цепочка не упрётся в день отдыха. Тренировки не теряются,
+   если до воскресенья есть отдых; иначе последняя уходит из недели. */
+function pushDay(ds) {
+  const rest = S.days.findIndex(d => d.t === 'rest');
+  if (rest < 0 || dayLocked(ds) || dayOf(ds).t === 'rest') return null;
+  const wk = weekDates(ds).filter(x => x > ds);
+  let cur = dayIdx(ds);
+  setMap(ds, rest); remapLog(ds);
+  for (const x of wk) {
+    if (dayLocked(x)) continue;          // начатый день перешагиваем
+    const was = dayIdx(x);
+    setMap(x, cur); remapLog(x);
+    if (S.days[was].t === 'rest') return { lost: null };
+    cur = was;
+  }
+  return { lost: S.days[cur] };
+}
+
+let wkMode = 'this', wkPick = null, wkOf = null;
+const wpLabel = d => d.t === 'rest' ? 'Отдых' : (d.s || 'Тренировка');
+function openWeekPlan(ds) {
+  if (ds) { wkOf = ds; wkPick = null; }
+  const t = today(), base = wkOf || sel, days = weekDates(base), pz = paused(days[0]), all = wkMode === 'all';
+  const rows = days.map((x, k) => {
+    const d = all ? S.days[k] : dayOf(x), r = recOf(x);
+    const lk = !all && dayLocked(x);
+    const st = all ? ''
+      : r.wo ? '✓ закрыта' : lk ? 'начата' : r.skip ? 'пропуск'
+      : (pz && d.t !== 'rest') ? 'пауза' : S.map[x] !== undefined ? '↔ перенос' : '';
+    const on = wkPick === (all ? k : x), dt = at(x);
+    return `<button class="wkr${on ? ' on' : ''}${!all && x === t ? ' td' : ''}" data-wpd="${all ? k : x}"${lk ? ' disabled' : ''}>
+      <span class="wkd"><b>${esc(S.days[k].k)}</b>${all ? '' : '<i>' + dt.getDate() + ' ' + MONG[dt.getMonth()].slice(0, 3) + '</i>'}</span>
+      <span class="wkn" style="--c:var(--c-${d.t})">${esc(wpLabel(d))}</span>
+      <span class="wks">${st}</span></button>`;
+  }).join('');
+  // сдвигать можно выбранный день недели, если он не прошёл; иначе сегодняшний
+  const f = (base >= t && days.indexOf(base) >= 0) ? base : (days.indexOf(t) >= 0 ? t : null);
+  const canPush = !all && f && dayOf(f).t !== 'rest' && !dayLocked(f) && S.days.some(d => d.t === 'rest');
+  const moved = days.some(x => x >= t && S.map[x] !== undefined && !dayLocked(x));
+  sheet('НЕДЕЛЯ', `<div class="wkp">
+    <div class="pseg wkseg"><button data-wpm="this" class="${all ? '' : 'on'}">Эта неделя</button><button data-wpm="all" class="${all ? 'on' : ''}">Каждую неделю</button></div>
+    <p class="wkh">${all
+      ? 'Шаблон программы. Нажми день, потом другой — поменяются во всех следующих неделях. Сделанное остаётся как было.'
+      : fmt(days[0], 1) + ' — ' + fmt(days[6], 1) + '. Нажми день, потом другой — тренировки поменяются местами. Записанные дни не двигаются.'}</p>
+    ${pz && !all ? '<p class="wkpz">Неделя на паузе: серия не рвётся, цикл ждёт. Придёшь — тренировка засчитается как обычно.</p>' : ''}
+    <div class="wkl">${rows}</div>
+    ${all ? '' : `<div class="wka">
+      ${canPush ? `<button class="add" data-wppush="${f}">Не могу ${f === t ? 'сегодня' : fmt(f, 1)} — сдвинуть на день</button>` : ''}
+      <button class="add" data-wppause="${days[0]}">${pz ? 'Снять паузу' : 'Болею / уехал — пауза недели'}</button>
+      ${moved ? `<button class="add" data-wpreset="${days[0]}">Вернуть неделю как в программе</button>` : ''}
+    </div>`}
+  </div>`);
+}
+$('shB').addEventListener('click', e => {
+  const m = e.target.closest('[data-wpm]');
+  if (m) { wkMode = m.dataset.wpm; wkPick = null; openWeekPlan(); return; }
+  const w = e.target.closest('[data-wpd]');
+  if (w) {
+    const v = wkMode === 'all' ? +w.dataset.wpd : w.dataset.wpd;
+    if (wkPick === null || wkPick === v) { wkPick = wkPick === v ? null : v; openWeekPlan(); return; }
+    const a = wkPick; wkPick = null;
+    const ok = wkMode === 'all' ? swapWeekdays(a, v) : swapDates(a, v);
+    if (ok) { applyNutri(); save(); render(); note(wkMode === 'all' ? 'Шаблон поменялся' : 'Дни поменялись местами'); }
+    openWeekPlan();
+    return;
+  }
+  const p = e.target.closest('[data-wppush]');
+  if (p) {
+    const res = pushDay(p.dataset.wppush);
+    if (res) {
+      applyNutri(); save(); render();
+      note(res.lost ? '«' + wpLabel(res.lost) + '» не влезла в неделю — поставь её вручную' : 'Сдвинуто на день');
+    }
+    openWeekPlan();
+    return;
+  }
+  const z = e.target.closest('[data-wppause]');
+  if (z) {
+    const k = mondayOf(z.dataset.wppause);
+    S.pause = S.pause || {};
+    if (S.pause[k]) delete S.pause[k]; else S.pause[k] = 1;
+    save(); render(); openWeekPlan();
+    note(S.pause[k] ? 'Неделя на паузе — выздоравливай' : 'Пауза снята');
+    return;
+  }
+  const rs = e.target.closest('[data-wpreset]');
+  if (rs) {
+    const t = today();
+    weekDates(rs.dataset.wpreset).forEach(x => {
+      if (x < t || dayLocked(x) || S.map[x] === undefined) return;
+      delete S.map[x]; remapLog(x);
+    });
+    applyNutri(); save(); render(); openWeekPlan();
+  }
+});
+$('wkPlan').addEventListener('click', () => { wkMode = 'this'; openWeekPlan(sel); });
+
 /* =========================================================================
    ВКЛАДКА «ЗАЛ»
    ========================================================================= */
@@ -4759,6 +4942,7 @@ function paintWorkout() {
     const pen = $('qPen');
     if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'Тренировка закрыта'; }
     else if (r.skip) { pen.className = 'qpen'; pen.textContent = 'День пропущен — тренировкой не считается'; }
+    else if (paused(sel)) { pen.className = 'qpen'; pen.textContent = 'Неделя на паузе — серия не рвётся. Придёшь — засчитается'; }
     else { pen.className = 'qpen'; pen.textContent = 'Для серии недель — ' + weekNeed() + ' тренировки в неделю'; }
     paintWoHead(d, r);
     // «Пропуск» есть, пока в дне не закрыто ни одного подхода
@@ -7036,11 +7220,17 @@ function streak() {
     const m = mondayOf(d);
     if (m) cnt[m] = (cnt[m] || 0) + 1;
   });
-  const need = weekNeed();
+  const need = weekNeed(), pz = S.pause || {};
   let n = 0;
   const c = at(mondayOf(today()));
   if ((cnt[iso(c)] || 0) < need) c.setDate(c.getDate() - 7);   // текущую считаем только закрытой
-  while ((cnt[iso(c)] || 0) >= need) { n++; c.setDate(c.getDate() - 7); }
+  // неделя на паузе (болел, уехал) серию не рвёт и в неё не идёт — её перешагиваем
+  for (let g = 0; g < 5200; g++) {
+    const k = iso(c);
+    if ((cnt[k] || 0) >= need) n++;
+    else if (!pz[k]) break;
+    c.setDate(c.getDate() - 7);
+  }
   return n;
 }
 
@@ -9732,7 +9922,7 @@ function attendance(days) {
     if (recOf(ds).wo) done++;
     // дни до старта плана и сегодняшняя, ещё не закрытая тренировка — не пропуски
     if (ds < planStart() || (ds === today() && !recOf(ds).wo)) continue;
-    if (dayOf(ds).t !== 'rest') planned++;
+    if (dayOf(ds).t !== 'rest' && !paused(ds)) planned++;
   }
   return { planned, done };
 }
