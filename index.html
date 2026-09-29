@@ -5213,12 +5213,25 @@ function paintWorkout() {
 
 /* Добавки принадлежат дню, но не тренировке: в зале они только мешали,
    поэтому живут отдельной рамкой в «Еде». Данные и отметки те же самые. */
+/* Неделя на паузе (болею): незакрытый день тренировки ест как отдых
+   (normDay) — и добавки у него дня отдыха. Раньше больному предлагались
+   кофеин и цитруллин «за 45 минут до зала». Прячем строки, которых нет
+   в списке дня отдыха; номера отметок (r.sp) остаются прежними, и
+   закрытая всё-таки тренировка вернёт полный список. */
+function spHidden(ds) {
+  const d = dayOf(ds), nd = normDay(ds);
+  if (!d || !nd || nd === d || nd.t !== 'rest' || !Array.isArray(nd.sp)) return new Set();
+  const keep = new Set(nd.sp.map(x => x && x.n));
+  return new Set(d.sp.map((x, j) => keep.has(x && x.n) ? -1 : j).filter(j => j >= 0));
+}
 function paintSupp() {
-  const d = dayOf(sel), r = recOf(sel);
-  $('spCnt').textContent = Object.keys(r.sp).length + ' / ' + d.sp.length;
+  const d = dayOf(sel), r = recOf(sel), hid = spHidden(sel);
+  const vis = d.sp.map((_, j) => j).filter(j => !hid.has(j));
+  $('spCnt').textContent = vis.filter(j => r.sp[j]).length + ' / ' + vis.length;
   // «Принял всё» есть, пока хоть одна добавка не отмечена
-  $('spAll').hidden = !d.sp.length || d.sp.every((_, j) => r.sp[j]);
-  $('spl').innerHTML = d.sp.map((x, j) =>
+  $('spAll').hidden = !vis.length || vis.every(j => r.sp[j]);
+  $('spl').innerHTML = (hid.size ? '<p class="sphid">Неделя на паузе — без добавок к тренировке: ' +
+    esc([...hid].map(j => d.sp[j].n).join(', ')) + '.</p>' : '') + d.sp.map((x, j) => hid.has(j) ? '' :
     `<div class="win row${r.sp[j] ? ' on' : ''}" data-sp="${j}">
       <button class="box" data-tog="${j}" aria-label="Отметить приём">✓</button>
       <span class="t"><input value="${esc(x.n)}" data-sf="n" aria-label="Добавка">
@@ -6438,8 +6451,8 @@ async function openDayReport(ds) {
 /* ---------- добавки ---------- */
 // Отметить все разом: опыт начисляется только за те, что ещё не отмечены
 $('spAll').addEventListener('click', () => {
-  const snap = snapS(), d = dayOf(sel), r = recRW(sel);
-  d.sp.forEach((_, j) => { if (!r.sp[j]) { r.sp[j] = 1; addXp(XP_SP); } });
+  const snap = snapS(), d = dayOf(sel), r = recRW(sel), hid = spHidden(sel);
+  d.sp.forEach((_, j) => { if (!r.sp[j] && !hid.has(j)) { r.sp[j] = 1; addXp(XP_SP); } });
   save(); paintSupp(); paintStatus(); offerUndo(snap, 'Все добавки отмечены');
 });
 $('spl').addEventListener('click', e => {

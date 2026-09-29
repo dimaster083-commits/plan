@@ -73,6 +73,25 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(тип.вид!=='rest'&&тип.тр!==тип.отд&&тип.норма===тип.тр&&тип.поле===тип.тр,
     '3. смена типа дня во всех неделях: прошлая тренировка в «Еде» — с нормой тренировки', JSON.stringify(тип));
 
+  // 4. неделя на паузе: у дня тренировки нет кофеина и цитруллина «за 45 мин до зала»; «Принял всё» их не отмечает
+  await сброс();
+  const доб=await p.evaluate(()=>{
+    const m=mondayOf(today()), ti=S.days.findIndex(d=>d.k==='Вт'), tue=addDays(m,ti);
+    S.pause={}; S.pause[m]=1; sel=tue; tab='food'; save(); render();
+    const names=()=>[...document.querySelectorAll('#spl [data-sp] input[data-sf="n"]')].map(i=>i.value);
+    const r={имена:names(), счёт:$('spCnt').textContent};
+    $('spAll').click();
+    const d=dayOf(tue); r.отмечено=Object.keys(recOf(tue).sp).map(j=>d.sp[+j].n);
+    // закрыл тренировку всё-таки — полный список
+    recRW(tue).wo=1; render(); r.послеЗакрытия=names().length; r.всего=d.sp.length;
+    delete S.pause; sel=today(); save(); render();
+    return r;
+  });
+  const тренДобавки=/Кофеин|Цитруллин/;
+  chk(доб.имена.length>0&&!доб.имена.some(n=>тренДобавки.test(n))&&!доб.отмечено.some(n=>тренДобавки.test(n))&&
+    new RegExp('^0 / '+доб.имена.length+'$').test(доб.счёт)&&доб.послеЗакрытия===доб.всего,
+    '4. неделя на паузе: добавки дня тренировки — как у отдыха, закрытая тренировка возвращает список', JSON.stringify(доб));
+
   chk(errs.length===0,'99. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   console.log(fails?'\nПРОВАЛОВ: '+fails:'\nВСЁ ЧИСТО');
