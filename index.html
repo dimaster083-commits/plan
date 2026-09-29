@@ -5221,7 +5221,7 @@ function prFromLog(name) {
     Object.keys(lg).forEach(j => {
       const x = lg[j];
       if (!x || !x.done || (x.n || ((day.ex || [])[j] || {}).n) !== name) return;
-      best = Math.max(best, num(pick(x.w, ((day.ex || [])[j] || {}).w)));
+      best = Math.max(best, topW(x, pick(x.w, ((day.ex || [])[j] || {}).w)));
     });
   });
   return best;
@@ -5754,8 +5754,9 @@ function toggleSet(j) {
   const raised = short ? 0 : bumpWorking(p.n, w, l);
   if (short && w > num(p.w)) note('Рабочий вес не поднят: низ ' + low + ' повт. на ' + kg(w) + ' кг не добран');
 
-  const old = num(S.pr[p.n]);
-  if (w > 0 && w > old) { l.prevPr = old; S.pr[p.n] = w; }
+  // рекорд веса — самый тяжёлый рабочий подход, с весом строк (topW)
+  const old = num(S.pr[p.n]), wTop = topW(l, w);
+  if (wTop > 0 && wTop > old) { l.prevPr = old; S.pr[p.n] = wTop; }
 
   /* Рекорды по видам: ≈1ПМ, лучший подход и объём сравниваются с лучшим из
      журнала до этого закрытия. Первая запись упражнения рекордом не считается
@@ -5769,13 +5770,13 @@ function toggleSet(j) {
       ? { k, v: nowS.set, o: b.set, w: nowS.sw, r: nowS.sr } : { k, v: nowS[k], o: b[k] });
   });
   if (!l.recs.length) delete l.recs;
-  const wRec = w > 0 && w > old && old > 0;
+  const wRec = wTop > 0 && wTop > old && old > 0;
   const rk0 = beforeRec.e1 && strRank(p.n, beforeRec.e1.e1), rk1 = nowS && strRank(p.n, nowS.e1);
   const rankUp = rk0 && rk1 && rk1.i > rk0.i ? rk1.l : '';
 
   if (wRec || l.recs) {
     l.xp = XP_PR; addXp(XP_PR); dingPR();
-    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + [wRec ? kg(w) + ' кг' : ''].concat((l.recs || []).map(recTxt))
+    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + [wRec ? kg(wTop) + ' кг' : ''].concat((l.recs || []).map(recTxt))
       .filter(Boolean).join(' · '));
   } else {
     l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); dingSet();
@@ -5964,7 +5965,7 @@ function workoutSummary(ds) {
   d.ex.forEach((e, j) => {
     const l = r.log[j];
     if (!l || !l.done) return;
-    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(num(pick(l.w, e.w))) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
+    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(topW(l, pick(l.w, e.w))) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
       .concat((Array.isArray(l.recs) ? l.recs : []).map(recTxt)).filter(Boolean);
     if (parts.length) records.push([l.n || e.n, parts]);
   });
@@ -6022,6 +6023,16 @@ function dayEntries(ds) {
   });
   entCache.set(ds, out);
   return out;
+}
+/* Самый тяжёлый рабочий подход записи: вес строки, где он вписан, иначе вес
+   упражнения. Тоннаж считает вес каждого подхода, и рекорд веса, ≈1ПМ и
+   лента рекордов — тоже: 100/100/110 раньше шло в тонны, а в рекорд — 100. */
+function topW(l, base) {
+  const w = num(base), n = l && Array.isArray(l.rs) ? l.rs.length : 0;
+  if (!n || !Array.isArray(l.ws)) return w;
+  let m = 0;
+  for (let i = 0; i < n; i++) { const q = num(l.ws[i]); m = Math.max(m, q > 0 ? q : w); }
+  return m;
 }
 const dayTon = ds => dayEntries(ds).reduce((a, e) => a + e.vol, 0);
 const daySets = ds => dayEntries(ds).reduce((a, e) => a + (e.rs ? e.rs.length : e.s), 0);
@@ -6173,7 +6184,7 @@ function exHistory(name) {
     Object.keys(lg).forEach(j => {
       const p = day.ex[j] || {};
       if ((lg[j].n || p.n) !== name || !lg[j].done) return;
-      const w = num(pick(lg[j].w, p.w));
+      const w = topW(lg[j], pick(lg[j].w, p.w));
       if (w) out.push([ds, w, num(pick(lg[j].s, p.s)), String(pick(lg[j].r, p.r))]);
     });
   });
@@ -6349,11 +6360,14 @@ function exSessions(name) {
     if (!es.length) return;
     const s = { ds, w: 0, e1: 0, set: 0, sw: 0, sr: 0, vol: 0 };
     es.forEach(e => {
-      s.w = Math.max(s.w, e.w); s.vol += e.vol;
-      (e.rs || [firstRep(e.r)]).forEach(r => {
-        if (!(e.w > 0 && r > 0)) return;
-        if (r <= 12) s.e1 = Math.max(s.e1, r === 1 ? e.w : e.w * (1 + r / 30));
-        if (e.w * r > s.set) { s.set = e.w * r; s.sw = e.w; s.sr = r; }
+      // вес — у каждого подхода свой (строки), как в тоннаже
+      const wi = i => (e.rs && e.ws && num(e.ws[i]) > 0 ? num(e.ws[i]) : e.w);
+      s.w = Math.max(s.w, topW(e, e.w)); s.vol += e.vol;
+      (e.rs || [firstRep(e.r)]).forEach((r, i) => {
+        const w = wi(i);
+        if (!(w > 0 && r > 0)) return;
+        if (r <= 12) s.e1 = Math.max(s.e1, r === 1 ? w : w * (1 + r / 30));
+        if (w * r > s.set) { s.set = w * r; s.sw = w; s.sr = r; }
       });
     });
     out.push(s);
@@ -6658,7 +6672,7 @@ function recFeed(max) {
     Object.keys(r.log || {}).forEach(j => {
       const l = r.log[j]; if (!l || !l.done) return;
       const n = l.n || ((day.ex || [])[j] || {}).n || 'Упражнение';
-      const w = num(l.w);
+      const w = topW(l, pick(l.w, ((day.ex || [])[j] || {}).w));
       if (num(l.prevPr) > 0 && w > num(l.prevPr)) out.push({ ds, n, t: 'вес ' + kg(w) + ' кг (было ' + kg(num(l.prevPr)) + ')' });
       (l.recs || []).forEach(x => { const t = recTxt(x); if (t) out.push({ ds, n, t }); });
     });

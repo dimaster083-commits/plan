@@ -99,6 +99,32 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       &&стал.план===был.план&&Math.abs(стал.инт-был.инт)<1e-9&&был.инт<1,
     '3. смена типа дня не делает прошлые тренировки отдыхом: посещаемость, план месяца, интенсивность', JSON.stringify({был,стал}));
 
+  // 4. вес по подходам: 100/100/110 идёт в тоннаж — и в рекорд веса, ≈1ПМ, ленту рекордов тоже
+  await день();
+  const прошлый=await p.evaluate(()=>{
+    const ds=addDays(today(),-3);
+    S.rec[ds]={wo:1,log:{0:{done:1,n:'Жим лёжа',g:'Грудь',w:'100',s:'3',r:'8',rs:[8,8,8],vol:2400,sd:1}},sp:{}};
+    S.pr['Жим лёжа']=100; dayOf(today()).ex[0].w=100; entCache=null; save(); exOpen=0; render(); return ds;
+  });
+  await p.waitForTimeout(300);
+  const строки=await p.evaluate(()=>{
+    const c=document.querySelector('.ex[data-j="0"]');
+    const f=c.querySelector('[data-f="w"]'); f.value='100'; f.dispatchEvent(new Event('input',{bubbles:true}));
+    const ws=[...c.querySelectorAll('[data-ws]')], rs=[...c.querySelectorAll('[data-rs]')];
+    [100,100,110].forEach((v,i)=>{ ws[i].value=String(v); ws[i].dispatchEvent(new Event('input',{bubbles:true})); });
+    rs.forEach(x=>{ x.value='8'; x.dispatchEvent(new Event('input',{bubbles:true})); });
+    c.querySelector('[data-go="0"]').click();
+    entCache=null;
+    const b=recordsOf(exSessions('Жим лёжа'));
+    return {тонн:dayTon(today()), вес:b.w&&b.w.w, днём:b.w&&b.w.ds===today(), e1:b.e1&&Math.round(b.e1.e1*10)/10,
+      pr:S.pr['Жим лёжа'], лента:recFeed(6).filter(x=>x.ds===today()).map(x=>x.t).join(' | ')};
+  });
+  await p.waitForTimeout(300);
+  const снял=await p.evaluate(()=>{ document.querySelector('.ex[data-j="0"] [data-go="0"]').click(); return S.pr['Жим лёжа']; });
+  chk(строки.тонн===8*310&&строки.вес===110&&строки.днём&&строки.e1===Math.round(110*(1+8/30)*10)/10&&строки.pr===110
+      &&/вес 110/.test(строки.лента)&&снял===100,
+    '4. самый тяжёлый подход строкой — рекорд веса и ≈1ПМ; снятая отметка возвращает прежний', JSON.stringify({...строки,снял}));
+
   chk(errs.length===0,'без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);
