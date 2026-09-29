@@ -114,6 +114,25 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   chk(стал5.шаблон === 'up1' && стал5.впереди === 'up1' && стал5.att.planned === был5.att.planned && стал5.мес === был5.мес && !был5.звено && !стал5.звено,
     '5. отдых → тренировка во всех неделях: прошлые дни отдыха не числятся пропусками, будущие — тренировки', JSON.stringify({ был5, стал5 }));
 
+  // 6. черновик сегодняшнего дня (вписанный вес до закрытия) после обмена дней шаблона не встаёт на чужое упражнение
+  await день();
+  const k6 = await p.evaluate(() => {
+    const t = today(), wd = wdOf(t);
+    const k = S.days.findIndex((d, i) => i !== wd && d.t !== 'rest');
+    S.days[k].ex = [{ n: 'Присед', s: 3, r: '5', w: 100, g: 'Ноги' }];
+    save(); exOpen = 0; render(); return k;
+  });
+  await p.locator(C + '[data-f="w"]').fill('62.5');
+  await p.locator(C + '[data-ws="0"]').fill('65');
+  const обмен = () => p.evaluate(k => { wkMode = 'all'; openWeekPlan(today()); wkPick = null;
+    document.querySelector('#shB [data-wpd="' + wdOf(today()) + '"]').click();
+    document.querySelector('#shB [data-wpd="' + k + '"]').click(); sheetClose(); exOpen = 0; render();
+    const c = document.querySelector('.ex[data-j="0"]');
+    return { n: dayOf(today()).ex[0].n, w: c.querySelector('[data-f="w"]').value, ws0: c.querySelector('[data-ws="0"]').value }; }, k6);
+  const туда = await обмен(), обратно = await обмен();
+  chk(туда.n === 'Присед' && туда.w === '100' && туда.ws0 === '' && обратно.n === 'Жим лёжа' && обратно.w === '62,5' && обратно.ws0 === '65',
+    '6. обмен дней шаблона: вписанный вес жима не встаёт на присед и возвращается с жимом', JSON.stringify({ туда, обратно }));
+
   chk(errs.length === 0, 'без ошибок в консоли', errs.join(' | ') || 'чисто');
   await b.close();
   process.exit(fails ? 1 : 0);

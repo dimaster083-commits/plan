@@ -4862,8 +4862,11 @@ async function setDayType(i, nt) {
    не было. Снять такую отметку значило откатить тоннаж жима.
    Переставляем записи по названию. Того, чего в новом дне нет, уезжает за
    край списка: в журнале, тоннаже и опыте оно остаётся — запись сама себя
-   описывает, — а в карточках дня не показывается. */
-function remapLog(ds) {
+   описывает, — а в карточках дня не показывается.
+   Черновик (вес, повторы, отметки строк до закрытия) имени не хранит — его
+   имя берётся из прежнего дня даты (old): раньше после обмена дней вписанные
+   62,5 кг жима вставали на присед. */
+function remapLog(ds, old) {
   const r = S.rec[ds];
   if (!r || !r.log) return;
   const ex = (dayOf(ds) || {}).ex || [];
@@ -4872,7 +4875,9 @@ function remapLog(ds) {
   Object.keys(r.log).sort((a, b2) => a - b2).forEach(k => {
     const l = r.log[k];
     if (!l) return;
-    const at = l.n ? ex.findIndex((e, i) => e.n === l.n && !used[i]) : -1;
+    const n = l.n || ((old || [])[k] || {}).n;
+    if (n && !l.n) l.n = n;            // уехавший за край черновик помнит, чей он
+    const at = n ? ex.findIndex((e, i) => e.n === n && !used[i]) : -1;
     if (at >= 0) { used[at] = 1; out[at] = l; } else out[tail++] = l;
   });
   r.log = out;
@@ -4925,7 +4930,7 @@ function swapDates(a, b) {
   if (a === b || dayLocked(a) || dayLocked(b)) return false;
   const ia = dayIdx(a), ib = dayIdx(b);
   setMap(a, ib); setMap(b, ia);
-  remapLog(a); remapLog(b);
+  remapLog(a, S.days[ia].ex); remapLog(b, S.days[ib].ex);
   return true;
 }
 /* Смена шаблона: содержимое двух дней недели меняется местами. Всё, что
@@ -4934,8 +4939,9 @@ function swapDates(a, b) {
    приседом. Даты с переносом идут следом за своей тренировкой. */
 function swapWeekdays(i, j) {
   if (i === j || !S.days[i] || !S.days[j]) return false;
-  const t = today(), keep = {}, oldSp = {};
+  const t = today(), keep = {}, oldSp = {}, oldEx = {};
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && S.rec[ds] && S.rec[ds].sp) oldSp[ds] = spOf(ds); });
+  Object.keys(S.rec).forEach(ds => { if (okDay(ds)) oldEx[ds] = (dayOf(ds) || {}).ex; });
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && (ds < t || dayLocked(ds))) keep[ds] = 1; });
   weekDates(t).forEach(ds => { if (ds < t) keep[ds] = 1; });
   /* Прошлое без записей — тоже прошлое: отдых прошлого понедельника после
@@ -4969,6 +4975,8 @@ function swapWeekdays(i, j) {
   S.days[i] = Object.assign({}, B, { k: A.k, n: nm(B, j) ? TPL[i].n : B.n });
   S.days[j] = Object.assign({}, A, { k: B.k, n: nm(A, i) ? TPL[j].n : A.n });
   Object.keys(oldSp).forEach(ds => remapSp(ds, oldSp[ds]));
+  // черновик незакреплённой даты (сегодня до первого закрытия) едет по названию, а не по номеру
+  Object.keys(oldEx).forEach(ds => { if ((dayOf(ds) || {}).ex !== oldEx[ds]) remapLog(ds, oldEx[ds]); });
   return true;
 }
 /* «Не могу сегодня»: тренировка уезжает на следующий день, а стоявшая там —
@@ -4979,11 +4987,11 @@ function pushDay(ds) {
   if (rest < 0 || dayLocked(ds) || dayOf(ds).t === 'rest') return null;
   const wk = weekDates(ds).filter(x => x > ds);
   let cur = dayIdx(ds);
-  setMap(ds, rest); remapLog(ds);
+  setMap(ds, rest); remapLog(ds, S.days[cur].ex);
   for (const x of wk) {
     if (dayLocked(x)) continue;          // начатый день перешагиваем
     const was = dayIdx(x);
-    setMap(x, cur); remapLog(x);
+    setMap(x, cur); remapLog(x, S.days[was].ex);
     if (S.days[was].t === 'rest') return { lost: null };
     cur = was;
   }
@@ -5058,7 +5066,8 @@ $('shB').addEventListener('click', e => {
   if (one) {
     const ds = wkPick;
     if (typeof ds === 'string' && !dayLocked(ds)) {
-      setMap(ds, +one.dataset.wpset); remapLog(ds);
+      const o = (dayOf(ds) || {}).ex;
+      setMap(ds, +one.dataset.wpset); remapLog(ds, o);
       applyNutri(); save(); render(); note('Тренировка на ' + fmt(ds, 1) + ' заменена');
     }
     wkPick = null; openWeekPlan();
@@ -5099,7 +5108,7 @@ $('shB').addEventListener('click', e => {
     const snap = snapS(), t = today();
     weekDates(rs.dataset.wpreset).forEach(x => {
       if (x < t || dayLocked(x) || S.map[x] === undefined) return;
-      const o = spOf(x); delete S.map[x]; remapSp(x, o); remapLog(x);
+      const o = spOf(x), oe = (dayOf(x) || {}).ex; delete S.map[x]; remapSp(x, o); remapLog(x, oe);
     });
     applyNutri(); save(); render(); openWeekPlan();
     offerUndo(snap, 'Неделя — как в программе', { again: wkAgain });
@@ -5434,6 +5443,7 @@ $('exl').addEventListener('click', e => {
       // снимаем вклад закрытого подхода, иначе объём и опыт останутся висеть
       if (l && l.done) rollback(l);
       delete r.log[j];
+      const old = d.ex.slice();          // имена черновиков других дат — до сдвига
       d.ex.splice(j, 1);
       /* Отметки сдвигались только в открытом дне. Но день недели — общий
          шаблон на все недели: во всех остальных датах номера оставались
@@ -5442,7 +5452,7 @@ $('exl').addEventListener('click', e => {
          подхода откатывала чужой тоннаж и чужой рекорд.
          Переставляем записи по названию во всех датах этого дня недели. */
       const di = S.days.indexOf(d);
-      Object.keys(S.rec).forEach(ds => { if (dayIdx(ds) === di) remapLog(ds); });
+      Object.keys(S.rec).forEach(ds => { if (dayIdx(ds) === di) remapLog(ds, old); });
       save(); render();
 
       // прошлые тренировки с этим упражнением остаются в тоннаже и опыте —
