@@ -2823,6 +2823,22 @@ body.exopen .wobar{margin-top:8px}
 .exfocus{margin-top:12px}
 .exfocus p{text-align:center;margin:6px 0 0;font-size:13px;color:var(--ink2)}
 @media (max-width:339px){ .mlist{grid-template-columns:1fr} }
+/* лента «Прогресса» */
+#pseg{position:sticky;top:calc(var(--st) + 4px);z-index:12}
+.win.recap,.win.recs{padding:14px 14px 12px;margin-top:10px}
+.recn{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.recn span{display:flex;flex-direction:column;font-size:10px;letter-spacing:.04em;color:var(--ink3);line-height:1.3}
+.recn b{font-size:18px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.recb{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.recb .anb{margin:0;min-height:44px}
+.rrow{display:flex;gap:10px;align-items:baseline;padding:9px 0;border-top:1px solid var(--ln)}
+.rrow:first-child{border-top:0}
+.rrow .rd{flex:0 0 auto;width:58px;font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.rrow .rn{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rrow .rn b{font-size:13.5px;font-weight:700;color:var(--ink)}
+.rrow .rn i{font-style:normal;font-size:12px;color:var(--acc-2)}
+.rempty{margin:0;font-size:12.5px;color:var(--ink3);line-height:1.5}
+@media (max-width:339px){ .recn b{font-size:16px} .recb{grid-template-columns:1fr} }
 </style>
 </head>
 <script>
@@ -2975,10 +2991,58 @@ document.documentElement.dataset.skin = 'sl';
     <div><b id="sumStreak">0</b><s>НЕДЕЛЬ ПОДРЯД</s></div>
   </div>
 
+  <!-- Итоги — как у Lyfta: эта неделя одной строкой и вход в итоги недели и
+       месяца. Раньше «Итоги недели» лежали в четвёртой вкладке. -->
+  <div class="win recap">
+    <div class="wtitle" style="padding:0 0 6px">ИТОГИ // ЭТА НЕДЕЛЯ</div>
+    <div class="recn" id="recapN"></div>
+    <div class="recb" id="recapB">
+      <button class="anb" id="wkBtn">Итоги недели ›</button>
+      <button class="anb" id="moBtn">Итоги месяца ›</button>
+    </div>
+  </div>
+
+  <!-- Рекорды лентой: что побито и когда, по журналу. -->
+  <div class="win recs">
+    <div class="wtitle" style="padding:0 0 6px">РЕКОРДЫ</div>
+    <div id="recList"></div>
+  </div>
+
 
   </div><!-- /log -->
 
-  <div class="psec" data-s="goal" hidden>
+  <div class="psec" data-s="load">
+  <div class="win rem" id="rem"><p id="remT"></p></div>
+
+  <!-- Баланс недели: подходы по группам за 7 дней против нормы программы -->
+  <div class="win mapw" id="mapw">
+    <div class="wtitle" style="padding:0 0 6px">КАРТА МЫШЦ // 7 ДНЕЙ<em class="bleg">касание — подробности</em></div>
+    <div id="bmapBox"></div>
+    <div class="mmleg"><i class="mm0"></i>не было<i class="mm1"></i>мало<i class="mm2"></i>почти<i class="mm3"></i>норма</div>
+    <div class="mlist" id="mlist"></div>
+  </div>
+
+  <div class="win radar">
+    <div class="wtitle" style="padding:0 0 8px">ПОДХОДЫ ЗА 7 ДНЕЙ<em class="bleg">риска — норма</em></div>
+    <div id="rad" class="bal" role="img" aria-label="Подходы по группам мышц за последние семь дней"></div>
+    <p class="radn" id="radn"></p>
+  </div>
+
+  <div class="win chart">
+    <div class="wtitle" style="padding:0 0 8px">ВЕС ТЕЛА</div>
+    <svg id="wchart" viewBox="0 0 300 140"></svg>
+    <div class="hint" id="whint">Отметь вес несколько раз, и здесь появится кривая.</div>
+    <div class="lsplit"></div>
+    <div class="wtitle wtscale" style="padding:0 0 9px">ЗА ВСЁ ВРЕМЯ<em id="volTop"></em></div>
+    <div id="loadList"></div>
+    <p style="margin:11px 0 0;font-size:11.5px;color:var(--ink3);line-height:1.5">
+      Счёт идёт по группам: плечи и пресс считаются отдельно, в «Ноги» входят
+      квадрицепс, бицепс бедра и икры. Подходы и тоннаж — за весь журнал.</p>
+  </div>
+
+  </div><!-- /load -->
+
+  <div class="psec" data-s="goal">
   <div class="win quest">
     <!-- Вес и цель — две равные величины, и вводятся они одинаково. Цель
          раньше ютилась маленькой рамкой у края шкалы и выглядела чужой. -->
@@ -3028,37 +3092,6 @@ document.documentElement.dataset.skin = 'sl';
 
   </div><!-- /goal -->
 
-  <div class="psec" data-s="load" hidden>
-  <div class="win rem" id="rem"><p id="remT"></p></div>
-
-  <!-- Баланс недели: подходы по группам за 7 дней против нормы программы -->
-  <div class="win mapw" id="mapw">
-    <div class="wtitle" style="padding:0 0 6px">КАРТА МЫШЦ // 7 ДНЕЙ<em class="bleg">касание — подробности</em></div>
-    <div id="bmapBox"></div>
-    <div class="mmleg"><i class="mm0"></i>не было<i class="mm1"></i>мало<i class="mm2"></i>почти<i class="mm3"></i>норма</div>
-    <div class="mlist" id="mlist"></div>
-  </div>
-
-  <div class="win radar">
-    <div class="wtitle" style="padding:0 0 8px">ПОДХОДЫ ЗА 7 ДНЕЙ<em class="bleg">риска — норма</em></div>
-    <div id="rad" class="bal" role="img" aria-label="Подходы по группам мышц за последние семь дней"></div>
-    <p class="radn" id="radn"></p>
-  </div>
-
-  <div class="win chart">
-    <div class="wtitle" style="padding:0 0 8px">ВЕС ТЕЛА</div>
-    <svg id="wchart" viewBox="0 0 300 140"></svg>
-    <div class="hint" id="whint">Отметь вес несколько раз, и здесь появится кривая.</div>
-    <div class="lsplit"></div>
-    <div class="wtitle wtscale" style="padding:0 0 9px">ЗА ВСЁ ВРЕМЯ<em id="volTop"></em></div>
-    <div id="loadList"></div>
-    <p style="margin:11px 0 0;font-size:11.5px;color:var(--ink3);line-height:1.5">
-      Счёт идёт по группам: плечи и пресс считаются отдельно, в «Ноги» входят
-      квадрицепс, бицепс бедра и икры. Подходы и тоннаж — за весь журнал.</p>
-  </div>
-
-  </div><!-- /load -->
-
   <div class="psec" data-s="log">
   <h2 class="sec">ИСТОРИЯ</h2>
   <div id="hist"></div>
@@ -3075,14 +3108,12 @@ document.documentElement.dataset.skin = 'sl';
       <div id="cgrid"></div>
     </div>
     <div class="cleg" id="cleg"></div>
-    <button class="add" id="moBtn" style="margin-top:11px">Итоги месяца</button>
   </div>
 
   </div><!-- /log -->
 
-  <div class="psec" data-s="prog" hidden>
+  <div class="psec" data-s="prog">
   <button class="anb" id="anBtn">Разбор</button>
-  <button class="anb" id="wkBtn" style="margin-top:7px">Итоги недели</button>
   <button class="anb" id="progBtn" style="margin-top:7px">Прогресс по упражнениям</button>
   <button class="anb" id="rankBtn" style="margin-top:7px">Ранги силы</button>
   <h2 class="sec">АРХИВ</h2>
@@ -6258,20 +6289,76 @@ async function putRation(ml, msg) {
 /* =========================================================================
    ВКЛАДКА «ПРОГРЕСС»
    ========================================================================= */
+/* «Прогресс» — одной лентой, как у Lyfta: разделы больше не прячутся друг
+   за другом. Раньше итоги недели, ранги и разбор лежали в четвёртой вкладке,
+   и до них никто не доходил. Вкладки остались навигацией: касание
+   прокручивает к разделу, подсветка следит за прокруткой. */
 let pSec = 'log';
 function paintSections() {
-  document.querySelectorAll('#scr-prog .psec').forEach(el => { el.hidden = el.dataset.s !== pSec; });
+  document.querySelectorAll('#scr-prog .psec').forEach(el => { el.hidden = false; });
   document.querySelectorAll('#pseg button').forEach(b2 => b2.classList.toggle('on', b2.dataset.sec === pSec));
 }
 $('pseg').addEventListener('click', e => {
   const b2 = e.target.closest('[data-sec]'); if (!b2) return;
   pSec = b2.dataset.sec;
   paintSections();
-  window.scrollTo(0, 0);
+  const t = document.querySelector('#scr-prog .psec[data-s="' + pSec + '"]');
+  if (t) {
+    const bar = $('pseg').getBoundingClientRect().height || 0;
+    window.scrollTo(0, Math.max(0, t.getBoundingClientRect().top + window.scrollY - bar - 8));
+  }
 });
+// какой раздел сейчас на экране — его вкладка и подсвечена
+window.addEventListener('scroll', () => {
+  if (tab !== 'prog') return;
+  const bar = ($('pseg').getBoundingClientRect().bottom || 0) + 12;
+  let cur = pSec;
+  document.querySelectorAll('#scr-prog .psec').forEach(el => {
+    if (el.getBoundingClientRect().top <= bar) cur = el.dataset.s;
+  });
+  if (cur !== pSec) { pSec = cur; document.querySelectorAll('#pseg button').forEach(b2 => b2.classList.toggle('on', b2.dataset.sec === pSec)); }
+}, { passive: true });
+
+/* Эта неделя одной строкой — тем же счётом, что итоги недели (weekData). */
+function paintRecap() {
+  const box = $('recapN'); if (!box) return;
+  const w = weekData(mondayOf(today()));
+  box.innerHTML = '<span><b>' + w.wo + '</b>' + plural(w.wo, 'тренировка', 'тренировки', 'тренировок') + '</span>' +
+    '<span><b>' + w.sets + '</b>' + plural(w.sets, 'подход', 'подхода', 'подходов') + '</span>' +
+    '<span><b>' + kgTon(w.ton) + '</b>поднято</span>' +
+    '<span><b>' + w.recs + '</b>' + plural(w.recs, 'рекорд', 'рекорда', 'рекордов') + '</span>';
+}
+
+/* Рекорды лентой: последние побитые — вес и рекорды по видам (≈1ПМ,
+   лучший подход, объём). Всё из журнала, отдельно ничего не хранится. */
+function recFeed(max) {
+  const out = [];
+  Object.keys(S.rec).filter(ds => ds <= today()).sort().reverse().forEach(ds => {
+    if (out.length >= max) return;
+    const r = S.rec[ds] || {}, day = dayOf(ds) || {};
+    Object.keys(r.log || {}).forEach(j => {
+      const l = r.log[j]; if (!l || !l.done) return;
+      const n = l.n || ((day.ex || [])[j] || {}).n || 'Упражнение';
+      const w = num(l.w);
+      if (num(l.prevPr) > 0 && w > num(l.prevPr)) out.push({ ds, n, t: 'вес ' + kg(w) + ' кг (было ' + kg(num(l.prevPr)) + ')' });
+      (l.recs || []).forEach(x => { const t = recTxt(x); if (t) out.push({ ds, n, t }); });
+    });
+  });
+  return out.slice(0, max);
+}
+function paintRecs() {
+  const box = $('recList'); if (!box) return;
+  const f = recFeed(6);
+  box.innerHTML = f.length
+    ? f.map(x => '<div class="rrow"><span class="rd">' + fmt(x.ds, 1) + '</span><span class="rn"><b>' + esc(x.n) +
+        '</b><i>' + esc(x.t) + '</i></span></div>').join('')
+    : '<p class="rempty">Рекордов пока нет. Первая запись упражнения — отправная точка: побьёшь её — появится здесь.</p>';
+}
 
 function paintProgress() {
   paintSections();
+  paintRecap();
+  paintRecs();
   // Вместо уровня и ранга — числа, за которыми есть смысл.
   $('sumStreak').textContent = streak();
   $('sumWo').textContent = Object.values(S.rec).filter(r => r.wo).length;
@@ -9993,6 +10080,7 @@ async function copySummary() {
 
 $('anBtn').addEventListener('click', openAnalysis);
 $('wkBtn').addEventListener('click', () => openWeek());
+// «Итоги месяца» переехали в карточку итогов — обработчик прежний, по id
 $('measBox').addEventListener('click', e => { if (e.target.closest('[data-meas]')) openMeas(); });
 
 /* =========================================================================
