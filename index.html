@@ -5361,7 +5361,9 @@ $('exl').addEventListener('click', ev => {
   const card = b.closest('.ex'); if (!card) return;
   const j = num(card.dataset.j), i = num(b.dataset.tick);
   const r = recRW(sel), l = r.log[j] = r.log[j] || {};
-  if (l.done) { toggleSet(j); return; }      // снять отметку со всего упражнения
+  // снять отметку со всего упражнения — под той же защитой от двойного тапа,
+  // что и закрытие: второй приход тапа по последней галочке снимал только что закрытое
+  if (l.done) { runOnce('go' + j, () => toggleSet(j), 200); return; }
   const row = b.closest('.srow'), on = !row.classList.contains('on');
   const rs = row.querySelector('[data-rs]');
   if (on && rs && !String(rs.value).trim()) {

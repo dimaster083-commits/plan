@@ -1,0 +1,80 @@
+/* Сверка логики «Зала» со свежими функциями: план недели (S.map, обмен дней
+   шаблона, пауза), подходы строками, каталог. Каждая проверка — на ошибку,
+   найденную при сверке, и падает на коде до правки. */
+const { chromium } = require('playwright-core');
+const { LAUNCH, APP } = require('../env');
+let fails=0;
+const ok=(n,d)=>console.log('  ✓ '+n+(d?'   → '+d:''));
+const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
+const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
+(async()=>{
+  const b=await chromium.launch(LAUNCH);
+  const p=await(await b.newContext({viewport:{width:320,height:700}})).newPage();
+  const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto(APP); await p.waitForTimeout(1300);
+
+  // сегодня — тренировка из одного жима; план ещё не начат, чтобы вес недели был рабочим
+  const день=()=>p.evaluate(()=>{
+    S.setup=1; S.sound=0; document.getElementById('setup').classList.remove('on');
+    S.rec={}; S.map={}; S.pr={}; delete S.pause; S.days=build().days;
+    S.start=addDays(today(),60);
+    S.days.forEach(d=>{ d.ex=d.ex.filter(e=>e.n!=='Жим лёжа'); });
+    const d=dayOf(today()); d.t='up1'; d.s='тест';
+    d.ex=[{n:'Жим лёжа',s:3,r:'6-8',w:60,g:'Грудь'}];
+    entCache=null; save(); tab='wo'; sel=today(); exOpen=0; render();
+    return wdOf(today());
+  });
+  const заполнить=(w,r,rs)=>p.evaluate(([w,r,rs])=>{
+    const c=document.querySelector('.ex[data-j="0"]');
+    const f=(k,v)=>{ const x=c.querySelector('[data-f="'+k+'"]'); x.value=v; x.dispatchEvent(new Event('input',{bubbles:true})); };
+    if(w!==null) f('w',w);
+    if(r!==null) f('r',r);
+    const cells=[...document.querySelector('.ex[data-j="0"]').querySelectorAll('[data-rs]')];
+    cells.forEach((x,i)=>{ x.value=String(rs[i]); x.dispatchEvent(new Event('input',{bubbles:true})); });
+  },[w,r,rs]);
+
+  // 1. двойной тап по последней галочке: подход закрылся и тут же снимался
+  await день();
+  await заполнить(null,null,[7,7,7]);
+  const тап=await p.evaluate(()=>{
+    const ticks=()=>[...document.querySelectorAll('.ex[data-j="0"] [data-tick]')];
+    ticks().forEach(t=>t.click());                       // все строки — упражнение закрылось
+    const закрыт=!!(recOf(today()).log[0]||{}).done;
+    const t2=ticks(); if(t2.length) t2[t2.length-1].click();   // второй приход того же тапа
+    return {закрыт, после:!!(recOf(today()).log[0]||{}).done};
+  });
+  await p.waitForTimeout(400);
+  const снятие=await p.evaluate(()=>{
+    const t=[...document.querySelectorAll('.ex[data-j="0"] [data-tick]')];
+    if(t.length) t[0].click();
+    return !!(recOf(today()).log[0]||{}).done;
+  });
+  chk(тап.закрыт&&тап.после&&снятие===false,
+    '1. двойной тап по галочке не снимает только что закрытое, обычный тап позже — снимает', JSON.stringify({...тап,снятие}));
+
+  // 2. «Каждую неделю» после закрытия: снятая отметка возвращает вес и цель тренировке, уехавшей в другой день
+  const wd=await день();
+  await p.waitForTimeout(300);
+  await заполнить('62.5','5-6',[5,5,5]);
+  const откат=await p.evaluate(wd=>{
+    document.querySelector('.ex[data-j="0"] [data-go="0"]').click();
+    const подня=dayOf(today()).ex[0].w, цель=dayOf(today()).ex[0].r;
+    const k=S.days.findIndex((d,i)=>i!==wd&&d.t==='rest');
+    swapWeekdays(wd,k); save(); render();
+    return {k, подня, цель, где:S.days[k].ex.map(e=>e.n).join(',')};
+  },wd);
+  await p.waitForTimeout(300);
+  const назад=await p.evaluate(k=>{
+    exOpen=0; render();
+    document.querySelector('.ex[data-j="0"] [data-go="0"]').click();
+    const e=S.days[k].ex[0];
+    return {снят:!(recOf(today()).log[0]||{}).done, w:e.w, r:e.r, сегодня:dayOf(today()).ex[0].n};
+  },откат.k);
+  chk(num62(откат.подня)&&откат.цель==='5-6'&&откат.где==='Жим лёжа'&&назад.снят&&+назад.w===60&&назад.r==='6-8'&&назад.сегодня==='Жим лёжа',
+    '2. после обмена дней шаблона снятая отметка возвращает вес и цель', JSON.stringify({откат,назад}));
+  function num62(v){ return Math.abs(parseFloat(String(v).replace(',','.'))-62.5)<1e-6; }
+
+  chk(errs.length===0,'без ошибок в консоли',errs.join(' | ')||'чисто');
+  await b.close();
+  process.exit(fails?1:0);
+})();
