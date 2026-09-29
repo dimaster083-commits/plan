@@ -7227,15 +7227,29 @@ function paintCycle() {
 /* Вес и цель сквозные: и в первичной настройке, и на вкладке «Прогресс»
    это одно значение. Пишем его в одном месте, а поля синхронизируем между собой,
    чтобы не разъезжались две копии одного числа. */
+/* Вес тела — от 30 до 300 кг, как в первичной настройке. Поля «Прогресса»
+   и «Фото» пишут на лету и границ не знали: промах «850» вместо «85» ложился
+   в журнал, норма еды выходила 19 000 ккал, а цель — «достигнута». Вне границ
+   значение не пишется (прежнее остаётся), пустое поле — «не взвешивался». */
+const bwOk = v => { const n = num(v); return n >= 30 && n <= 300; };
+const blank = v => !String(v ?? '').trim();
 function setBw(v) {
-  S.bw = v;
+  if (!blank(v) && !bwOk(v)) return false;
+  S.bw = blank(v) ? '' : v;
   /* Стёр вес — сегодняшняя запись убирается. Раньше при стирании «85» в
      журнале оставалось промежуточное «8», и на графике и в темпе была точка 8 кг. */
-  if (num(v) > 0) recRW(today()).bw = String(v);
+  if (bwOk(v)) recRW(today()).bw = String(v);
   else if (S.rec[today()]) delete S.rec[today()].bw;
   applyNutri(); save();
   syncBwFields(); paintGoal(); paintChart(); paintRem(); paintTotals(); paintKcSrc();
   if (num(v) > 0) checkQuests();
+  return true;
+}
+// ушёл из поля с весом вне границ — поле показывает то, что записано
+function bwBack(el, key, what) {
+  if (blank(el.value) || bwOk(el.value)) return;
+  el.value = S[key] ?? '';
+  note(what + ' — от 30 до 300 кг');
 }
 /* Набор или похудение — это не отдельная настройка, а то, с какой
    стороны стоит цель. Кнопки только двигают цель в нужную сторону,
@@ -7265,7 +7279,8 @@ $('wdir').addEventListener('click', e => dirClick(e,
   v => setGoal(v)));
 
 function setGoal(v) {
-  S.goal = v;
+  if (!blank(v) && !bwOk(v)) return false;
+  S.goal = blank(v) ? '' : v;
   applyNutri(); save();
   syncBwFields(); paintGoal(); paintTotals(); paintKcSrc();
 }
@@ -7283,6 +7298,8 @@ $('bw').addEventListener('input', e => setBw(e.target.value));
 $('goalIn').addEventListener('input', e => setGoal(e.target.value));
 $('anBw').addEventListener('input', e => setBw(e.target.value));
 $('anGoal').addEventListener('input', e => setGoal(e.target.value));
+$('bw').addEventListener('change', e => bwBack(e.target, 'bw', 'Вес'));
+$('goalIn').addEventListener('change', e => bwBack(e.target, 'goal', 'Цель'));
 $('startIn').addEventListener('change', e => {
   $('startTxt').textContent = fmt(e.target.value);
   if (!okDay(e.target.value)) { $('startTxt').textContent = fmt(planStart()); return; }
@@ -10239,8 +10256,14 @@ $('phW').addEventListener('input', e => {
   // пересчитывались, и «Еда» продолжала считать от старой цифры.
   if (sel === today()) { setBw(e.target.value); return; }
   if (sel > today()) { e.target.value = ''; note('Этот день ещё впереди — взвешивания нет'); return; }
-  if (num(e.target.value) > 0) recRW(sel).bw = e.target.value; else if (S.rec[sel]) delete S.rec[sel].bw;
+  if (!blank(e.target.value) && !bwOk(e.target.value)) return;
+  if (bwOk(e.target.value)) recRW(sel).bw = e.target.value; else if (S.rec[sel]) delete S.rec[sel].bw;
   save(); paintChart(); paintGoal();
+});
+$('phW').addEventListener('change', e => {
+  if (blank(e.target.value) || bwOk(e.target.value)) return;
+  e.target.value = recOf(sel).bw || '';
+  note('Вес — от 30 до 300 кг');
 });
 
 /* ---------- сравнение снимков ---------- */
