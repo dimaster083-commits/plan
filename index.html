@@ -5678,9 +5678,15 @@ $('exl').addEventListener('click', ev => {
   const ck = [...card.querySelectorAll('.srow')].map((x, k) => (x.classList.contains('on') ? k : -1)).filter(k => k >= 0);
   if (ck.length) l.ck = ck; else delete l.ck;
   save();
+  /* Рабочие строки — обычные и «до отказа»: отказ — рабочий подход с пометкой.
+     Дроп делают после последнего рабочего, поэтому строки за ним тоже ждут
+     галочки. Раньше отказ в рабочие не шёл, упражнение закрывалось раньше
+     времени, а галочка на дропе тут же снимала всё закрытое. */
   const rows = [...card.querySelectorAll('.srow')];
-  const work = rows.filter(x => { const q = x.querySelector('[data-rs]'); return !(q && q.dataset.kind); });
-  if (work.length && work.every(x => x.classList.contains('on'))) runOnce('go' + j, () => toggleSet(j), 200);
+  const kindAt = x => { const q = x.querySelector('[data-rs]'); return (q && q.dataset.kind) || ''; };
+  const work = rows.filter(x => kindAt(x) === '' || kindAt(x) === 'f');
+  const need = work.length ? work.concat(rows.slice(rows.indexOf(work[work.length - 1]) + 1)) : [];
+  if (need.length && need.every(x => x.classList.contains('on'))) runOnce('go' + j, () => toggleSet(j), 200);
 });
 
 // подход, закрытый по верхней границе, подсвечивается сразу
