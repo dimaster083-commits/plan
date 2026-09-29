@@ -3530,8 +3530,12 @@ function goalDir() {
    −20 % даёт около 0,5–1 % массы в неделю — коридор, в котором мышцы держатся. */
 const ACT = { sit: [1.45, 'сидячая работа'], feet: [1.6, 'работа на ногах'], hard: [1.75, 'физический труд'] };
 const actOf = () => ACT[S.act] || ACT.sit;
+/* Возраст — от 12 до 100, как в первичной настройке. Поля возраста в
+   настройке и в ИМТ пишут на лету: «999» давало поддержание меньше нуля и
+   норму −2600 ккал, а жир по Дойренбергу — за 200 %. Вне границ — не вписан. */
+const ageOf = () => { const a = num(S.age); return a >= 12 && a <= 100 ? a : 0; };
 function maintOf(bw) {
-  const h = num(S.height) || 175, a = num(S.age) || 30;
+  const h = num(S.height) || 175, a = ageOf() || 30;
   const bmr = 10 * bw + 6.25 * h - 5 * a + (S.sex === 'f' ? -161 : 5);
   return bmr * actOf()[0];
 }
@@ -4758,11 +4762,11 @@ function remapLog(ds) {
 $('moveTo').addEventListener('click', e => {
   const b = e.target.closest('[data-mv]'); if (!b) return;
   const k = +b.dataset.mv;
-  if (k === wdOf(sel)) delete S.map[sel]; else S.map[sel] = k;
+  setMap(sel, k);
   remapLog(sel);
   save(); render();
 });
-$('movedX').addEventListener('click', () => { delete S.map[sel]; remapLog(sel); save(); render(); });
+$('movedX').addEventListener('click', () => { const o = spOf(sel); delete S.map[sel]; remapSp(sel, o); remapLog(sel); save(); render(); });
 
 /* ---------- план недели: переставить, сдвинуть, поставить на паузу ----------
    Человек не станок: заболел, уехал, сдвинулась работа. Раньше перенос жил
@@ -4775,8 +4779,34 @@ $('movedX').addEventListener('click', () => { delete S.map[sel]; remapLog(sel); 
    не считает пропуском, план цикла стоит и ждёт. */
 const paused = ds => !!(S.pause && S.pause[mondayOf(ds)]);
 // день с записанными подходами или закрытый — история, его тренировку не двигаем
+/* Норма еды даты. День тренировки ест на 200 ккал больше дня отдыха, но
+   неделя на паузе (болею, уехал) тренировок не ждёт: незакрытый день
+   тренировки там — день отдыха, и норма у него отдыха (своя, если задана
+   руками). Раньше больной ел по норме тренировки, и «Разбор» с ней сверял. */
+function normDay(ds) {
+  const d = dayOf(ds);
+  if (!d || d.t === 'rest' || !paused(ds) || recOf(ds).wo) return d;
+  return S.days.find(x => x.t === 'rest') || Object.assign({}, d, nutriFor('rest'));
+}
 const dayLocked = ds => { const r = S.rec[ds]; return !!(r && (r.wo || dayEntries(ds).length)); };
-const setMap = (ds, k) => { if (k === wdOf(ds)) delete S.map[ds]; else S.map[ds] = k; };
+/* Отметка добавки — только номер строки в списке дня (r.sp). Перенос меняет
+   день даты, и номер начинал указывать на чужую добавку: утренние таблетки
+   съезжали, кофеин дня тренировки становился протеином дня отдыха, а лишняя
+   отметка висела за краем списка и шла в опыт. Переносим по названию;
+   добавки, которой в новом дне нет, отметка уходит (опыт пересчитает save). */
+function remapSp(ds, old) {
+  const r = S.rec[ds], now = (dayOf(ds) || {}).sp || [];
+  if (!r || !r.sp || !Array.isArray(old) || now === old) return;
+  const used = {}, out = {};
+  Object.keys(r.sp).forEach(k => {
+    const n = (old[+k] || {}).n;
+    const i = n ? now.findIndex((x, j) => x && x.n === n && !used[j]) : -1;
+    if (i >= 0) { used[i] = 1; out[i] = r.sp[k]; }
+  });
+  r.sp = out;
+}
+const spOf = ds => (dayOf(ds) || {}).sp;
+const setMap = (ds, k) => { const o = spOf(ds); if (k === wdOf(ds)) delete S.map[ds]; else S.map[ds] = k; remapSp(ds, o); };
 function weekDates(ds) {
   const c = at(mondayOf(ds)), out = [];
   for (let i = 0; i < 7; i++) { out.push(iso(c)); c.setDate(c.getDate() + 1); }
@@ -4795,9 +4825,17 @@ function swapDates(a, b) {
    приседом. Даты с переносом идут следом за своей тренировкой. */
 function swapWeekdays(i, j) {
   if (i === j || !S.days[i] || !S.days[j]) return false;
-  const t = today(), keep = {};
+  const t = today(), keep = {}, oldSp = {};
+  Object.keys(S.rec).forEach(ds => { if (okDay(ds) && S.rec[ds] && S.rec[ds].sp) oldSp[ds] = spOf(ds); });
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && (ds < t || dayLocked(ds))) keep[ds] = 1; });
   weekDates(t).forEach(ds => { if (ds < t) keep[ds] = 1; });
+  /* Прошлое без записей — тоже прошлое: отдых прошлого понедельника после
+     смены шаблона становился тренировкой, и посещаемость, «Слабое звено»,
+     итоги и календарь задним числом видели в нём пропуск. Закрепляем все
+     прошедшие даты плана — от старта или первой записи. */
+  let from = planStart();
+  Object.keys(keep).forEach(ds => { if (ds < from) from = ds; });
+  if (from < t) for (let c = at(from), g = 0; iso(c) < t && g < 4000; c.setDate(c.getDate() + 1), g++) keep[iso(c)] = 1;
   Object.keys(keep).forEach(ds => {
     if (S.map[ds] !== undefined) return;
     const w = wdOf(ds);
@@ -4813,6 +4851,7 @@ function swapWeekdays(i, j) {
   const nm = (d, p) => (TPL[p] && d.n === TPL[p].n);
   S.days[i] = Object.assign({}, B, { k: A.k, n: nm(B, j) ? TPL[i].n : B.n });
   S.days[j] = Object.assign({}, A, { k: B.k, n: nm(A, i) ? TPL[j].n : A.n });
+  Object.keys(oldSp).forEach(ds => remapSp(ds, oldSp[ds]));
   return true;
 }
 /* «Не могу сегодня»: тренировка уезжает на следующий день, а стоявшая там —
@@ -4906,7 +4945,7 @@ $('shB').addEventListener('click', e => {
     const t = today();
     weekDates(rs.dataset.wpreset).forEach(x => {
       if (x < t || dayLocked(x) || S.map[x] === undefined) return;
-      delete S.map[x]; remapLog(x);
+      const o = spOf(x); delete S.map[x]; remapSp(x, o); remapLog(x);
     });
     applyNutri(); save(); render(); openWeekPlan();
   }
@@ -6815,7 +6854,7 @@ function bmiOf() {
   const v = w / (h * h);
   const cls = v < 18.5 ? 'lo' : v < 25 ? 'ok' : v < 30 ? 'hi' : 'vhi';
   const name = v < 18.5 ? 'недостаток' : v < 25 ? 'норма' : v < 30 ? 'избыток' : 'ожирение';
-  const age = num(S.age);
+  const age = ageOf();
   // Дойренберг: 10,8 умножается на пол (мужчина 1, женщина 0) — раньше у женщин жир занижался на 10,8 пункта
   const fat = age ? 1.20 * v + 0.23 * age - 10.8 * (S.sex === 'f' ? 0 : 1) - 5.4 : null;
   return { v: v, cls: cls, name: name, fat: fat,
@@ -6882,9 +6921,10 @@ function paintCalc() {
     row('Темп в неделю', (dir ? (dir > 0 ? '+' : '−') + dec(aLo, 2) + '…' + dec(aHi, 2) : '±' + dec(aHi, 2)) + ' кг') +
     (dir && left >= 0.5 ? row('До цели ' + kg(g) + ' кг', dec(left) + ' кг · ' +
       Math.max(1, Math.round(left / aHi)) + '–' + Math.max(1, Math.round(left / aLo)) + ' нед') : '') +
-    row('Сейчас', pc ? (pc.per > 0 ? '+' : '') + dec(pc.per, 2) + ' кг/нед' : 'нужно 2 взвешивания') +
+    // темп считает paceOf: не меньше 3 взвешиваний за 7+ дней — раньше здесь обещали темп после двух
+    row('Сейчас', pc ? (pc.per > 0 ? '+' : '') + dec(pc.per, 2) + ' кг/нед' : 'нужно 3 взвеш. за 7 дн') +
     '<p class="clh">Поддержание — формула Миффлина — Сан Жеора: вес, рост ' + (num(S.height) || 175) +
-    ' см, возраст ' + (num(S.age) || 30) + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
+    ' см, возраст ' + (ageOf() || 30) + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
     ', ' + actOf()[1] + ' (×' + dec(actOf()[0], 2) + ')' +
     '. Коридор — ' + pctTxt + ' массы в неделю; норма через день тренировки / отдыха.</p>';
 }
@@ -9514,7 +9554,7 @@ function itemLine(it) {
 }
 
 function paintFood() {
-  const d = dayOf(sel);
+  const d = normDay(sel);
   paintCpLast();
   $('kc').value = d.kc;
   $('pr').value = d.pr;
@@ -9539,7 +9579,7 @@ function paintFood() {
 }
 
 function paintTotals() {
-  const d = dayOf(sel), t = daySum(sel);
+  const d = normDay(sel), t = daySum(sel);
   $('tKc').innerHTML = rnd(t.k) + '<i> / ' + esc(d.kc) + ' ккал</i>';
   $('tPr').innerHTML = rnd(t.p) + '<i> / ' + esc(d.pr) + ' г</i>';
   $('bKc').style.width = Math.min(100, t.k / (num(d.kc) || 1) * 100) + '%';
@@ -9569,8 +9609,8 @@ function paintKcSrc() {
 // вписал норму руками — расчёт от веса и цели больше её не перебивает
 // в нормы — только цифры: раньше принимались «abc», «-500» и «1e9»
 const digits = el => { const v = String(el.value).replace(/[^\d]/g, '').slice(0, 4); if (v !== el.value) el.value = v; return v; };
-$('kc').addEventListener('input', e => { dayOf(sel).kc = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
-$('pr').addEventListener('input', e => { dayOf(sel).pr = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
+$('kc').addEventListener('input', e => { normDay(sel).kc = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
+$('pr').addEventListener('input', e => { normDay(sel).pr = digits(e.target); S.kcManual = 1; save(); paintTotals(); paintKcSrc(); });
 $('kcAuto').addEventListener('click', () => {
   S.kcManual = 0; applyNutri(); save(); render();
   note('Нормы пересчитаны от веса и цели');
@@ -10133,7 +10173,11 @@ function rangeData(mon, n) {
     if (r.wo) w.wo++;
     if (r.t0 && r.t1 && r.t1 > r.t0) w.mins += Math.round((r.t1 - r.t0) / 60000);
     w.ton += ton; w.sets += sets;
-    w.days.push({ ds, ton, sets, wo: !!r.wo, skip: !!r.skip, tr: (dayOf(ds) || {}).t !== 'rest' });
+    /* день плана — по типу самой даты (прошлые — снимок dayLook), а неделя на
+       паузе тренировок не ждёт: раньше в итогах болезни стояло «0/4», а месяц
+       с неделей болезни считал её тренировки планом */
+    const pz = paused(ds);
+    w.days.push({ ds, ton, sets, wo: !!r.wo, skip: !!r.skip, pz, tr: !pz && (dayLook(ds) || {}).t !== 'rest' });
   }
   return w;
 }
@@ -10235,7 +10279,7 @@ function openMonth(ym) {
    тренировок по плану (с переносами недели) ещё впереди. Это подсказка
    к оставшимся тренировкам, а не новая тренировка. */
 function lagHtml(w, mon) {
-  if (mon !== mondayOf(today())) return '';
+  if (mon !== mondayOf(today()) || paused(mon)) return '';     // на паузе добирать нечего
   const lag = MUSCLES.filter(m => { const t = volTargetM(m); return t > 0 && (w.m[m] || 0) < t / 2; });
   if (!lag.length) return '';
   const left = w.days.filter(x => x.ds > today() && x.tr).length + (w.days.some(x => x.ds === today() && x.tr && !x.wo) ? 1 : 0);
@@ -10246,14 +10290,15 @@ function openWeek(mon) {
   const cur = mondayOf(today());
   mon = mon && mon <= cur ? mondayOf(mon) : cur;
   const w = weekData(mon), pw = weekData(addDays(mon, -7));
-  const plan = (S.days || []).filter(d => d.t !== 'rest').length;
+  // план — дни тренировок этой недели, как в месяце: после сдвига и на паузе он другой
+  const plan = w.days.filter(x => x.tr).length, pz = paused(mon);
   const tile = (v, l, d) => `<div class="win"><b>${v}</b><span>${l}</span>${d ? '<i>' + d + ' к прошлой</i>' : ''}</div>`;
   const WD = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
   const mx = Math.max(1, ...w.days.map(x => x.ton));
   const html = `<div class="wknav"><button data-wk="${addDays(mon, -7)}" aria-label="Прошлая неделя">‹</button>
       <b>${wkLabel(mon)}</b><button data-wk="${addDays(mon, 7)}" aria-label="Следующая неделя"${mon >= cur ? ' disabled' : ''}>›</button></div>
     <div class="sum wksum">
-      ${tile(w.wo + '<small>/' + plan + '</small>', 'ТРЕНИРОВОК')}
+      ${tile(w.wo + (pz ? '' : '<small>/' + plan + '</small>'), 'ТРЕНИРОВОК')}
       ${tile(w.sets, 'ПОДХОДОВ', pctTxt(w.sets, pw.sets))}
       ${tile(kgTon(w.ton), 'ТОННАЖ', pctTxt(w.ton, pw.ton))}
       ${tile(w.recs, 'РЕКОРДОВ')}
@@ -10266,6 +10311,7 @@ function openWeek(mon) {
       ${MUSCLES.map(m => { const t = volTargetM(m), v = w.m[m] || 0;
         return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v)}" style="transform:scaleX(${Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3)})"></u></s><b>${v}${t ? '/' + t : ''}</b></div>`; }).join('')}
     </div>
+    ${pz ? '<p class="s wkmin">Неделя на паузе — плана нет, серия не рвётся.</p>' : ''}
     ${w.mins ? '<p class="s wkmin">В зале — ' + w.mins + ' мин за неделю.</p>' : ''}
     ${lagHtml(w, mon)}
     <button class="copyb" data-wkshare="${mon}">Поделиться картинкой</button>
@@ -10299,9 +10345,9 @@ function wkPng(mon) {
     x.fillStyle = ['#2a3a5a', '#5a7fd0', '#7a6dff', '#3fb8ff'][mmLevel(m, v)]; x.fillRect(400, y + 6, 470 * k, 24);
     x.fillStyle = '#ffffff'; x.fillText(v + (t ? '/' + t : ''), 895, y + 28);
   });
-  const st = streak(), plan = (S.days || []).filter(d => d.t !== 'rest').length;
+  const st = streak(), plan = w.days.filter(d => d.tr).length;
   x.fillStyle = '#8fb8e8'; x.font = '500 26px ' + F;
-  x.fillText('план недели — ' + plan + ' трен.' + (st > 0 ? ' · серия ' + st + ' нед. подряд' : ''), 100, 1255);
+  x.fillText((paused(mon) ? 'неделя на паузе' : 'план недели — ' + plan + ' трен.') + (st > 0 ? ' · серия ' + st + ' нед. подряд' : ''), 100, 1255);
   return new Promise(res => c.toBlob(res, 'image/png'));
 }
 async function shareWeek(mon) {
@@ -10328,8 +10374,12 @@ function questsOf(ym) {
   const ton = days.reduce((a, ds) => a + dayTon(ds), 0);
   const pton = Object.keys(S.rec).filter(ds => ds.slice(0, 7) === shiftMonth(ym, -1)).reduce((a, ds) => a + dayTon(ds), 0);
   const tonNeed = pton > 0 ? Math.ceil(pton * 1.05 / 100) * 100 : 20000;
+  // дни на паузе (болел, уехал) из нормы месяца выходят: серия их перешагивает, и квест тоже
+  let act = 0;
+  for (let i = 1; i <= dim; i++) if (!paused(ym + '-' + String(i).padStart(2, '0'))) act++;
+  const woNeed = Math.max(1, Math.round(weekNeed() * act / 7));
   return [
-    { id: 'wo', t: 'Закрыть ' + Math.round(weekNeed() * dim / 7) + ' тренировок', v: days.filter(ds => S.rec[ds].wo).length, need: Math.round(weekNeed() * dim / 7) },
+    { id: 'wo', t: 'Закрыть ' + woNeed + ' ' + plural(woNeed, 'тренировку', 'тренировки', 'тренировок'), v: days.filter(ds => S.rec[ds].wo).length, need: woNeed },
     { id: 'ton', t: pton > 0 ? 'Поднять на 5 % больше прошлого месяца' : 'Поднять за месяц 20 т', v: ton, need: tonNeed, f: kgTon },
     { id: 'pr', t: 'Побить 3 рекорда', v: days.reduce((a, ds) => a + dayEntries(ds).filter(e => e.pr).length, 0), need: 3 },
     { id: 'bw', t: 'Взвеситься 4 раза', v: days.filter(ds => num(S.rec[ds].bw) > 0).length, need: 4 }
@@ -10437,6 +10487,10 @@ function regularity(days) {
     if (ds > today()) break;
     const day = S.days[dayIdx(ds)];
     if (!day || day.t === 'rest') continue;
+    /* пропуск — тем же счётом, что посещаемость: неделя на паузе (болел),
+       дни до старта плана и сегодняшняя незакрытая — не пропуски. Раньше
+       неделя болезни давала «чаще всего пропускается вторник» */
+    if (paused(ds) || ds < planStart() || (ds === today() && !recOf(ds).wo)) continue;
     if (!recOf(ds).wo) miss[day.k] = (miss[day.k] || 0) + 1;
   }
   let gap = 0;
@@ -10619,7 +10673,7 @@ function analyze() {
     const s2 = daySum(ds);
     if (s2.k > 0) {
       kcSum += s2.k; prSum += s2.p; filled++;
-      goalKs += num(dayOf(ds).kc); goalPs += num(dayOf(ds).pr);
+      goalKs += num(normDay(ds).kc); goalPs += num(normDay(ds).pr);
     }
   });
   if (filled) {
@@ -10690,7 +10744,7 @@ function analyze() {
     }
     if (reg.worstN >= 2) {
       add('warn', 'СЛАБОЕ ЗВЕНО НЕДЕЛИ', 'Чаще всего пропускается <b>' + reg.worst + '</b>: ' +
-        reg.worstN + ' раза за месяц.', 'Перенеси эту тренировку на удобный день через шестерёнку');
+        reg.worstN + ' раза за месяц.', 'Переставь эту тренировку на удобный день: «Неделя» → «Каждую неделю»');
     }
   }
 
@@ -10740,7 +10794,7 @@ function analyze() {
   if (bw && filled) {
     const perDay = prSum / filled, perKg = perDay / bw;
     // норма — та же, что в «Еде» и «Ресурсе»; свой коридор 1,6–2,2 давал два вывода на одном экране
-    const prNorm = num(dayOf(today()).pr) || Math.round(bw * 2);
+    const prNorm = num(normDay(today()).pr) || Math.round(bw * 2);
     if (perDay < prNorm * 0.95) {
       add('warn', 'БЕЛОК НА КГ', 'Выходит <b>' + dec(perKg, 1) + ' г на кг</b> — ' + Math.round(perDay) +
         ' г в день при норме ' + prNorm + ' г (' + dec(prNorm / bw, 1) + ' г на кг).',
@@ -10820,7 +10874,10 @@ function buildSummary() {
   const a14 = attendance(14);
   const L = [];
   L.push('СВОДКА ИЗ ДНЕВНИКА ТРЕНИРОВОК, ' + fmt(today()));
-  L.push('Рост ' + (S.height || 177) + ' см, вес ' + kg(S.bw) + ' кг, цель ' + (S.goal || 95) + ' кг.');
+  // без чужих цифр: не вписан рост — его нет, пустая цель — «держать» (раньше 177 см и 95 кг)
+  L.push([num(S.height) ? 'Рост ' + num(S.height) + ' см' : 'Рост не указан',
+    'вес ' + (num(S.bw) ? kg(num(S.bw)) + ' кг' : 'не записан'),
+    'цель ' + (num(S.goal) ? kg(num(S.goal)) + ' кг' : 'держать вес')].join(', ') + '.');
   if (pts.length > 1) {
     const first = pts[0], last = pts[pts.length - 1];
     L.push('Вес: ' + kg(first[1]) + ' кг (' + fmt(first[0]) + ') → ' + kg(last[1]) + ' кг (' + fmt(last[0]) + ').');
@@ -10850,7 +10907,7 @@ function buildSummary() {
   Object.keys(S.rec).filter(ds => daysBetween(ds, today()) <= 14).sort().forEach(ds => {
     const s2 = daySum(ds);
     if (s2.k > 0) L.push('- ' + fmt(ds) + ': ' + rnd(s2.k) + ' ккал, белок ' + rnd(s2.p) +
-      ' г при цели ' + dayOf(ds).kc + ' / ' + dayOf(ds).pr);
+      ' г при цели ' + normDay(ds).kc + ' / ' + normDay(ds).pr);
   });
   L.push('');
   L.push('ЧТО ВИДИТ ПРИЛОЖЕНИЕ:');
