@@ -17,7 +17,8 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   // сегодня — жим 4×6–8 и тяга; неделю назад жим уже был
   const день = () => p.evaluate(() => {
     S.setup = 1; S.sound = 0; document.getElementById('setup').classList.remove('on');
-    clearInterval(tInt); tInt = null; $('tmr').classList.remove('on');   // таймер отдыха прошлого пункта
+    try { clearInterval(tInt); tInt = null; } catch (e) { }   // таймер отдыха — если он ещё есть в сборке
+    if ($('tmr')) $('tmr').classList.remove('on');
     S.rec = {}; S.map = {}; S.pr = {}; delete S.pause; S.days = build().days;
     S.start = addDays(today(), 60);
     const d = dayOf(today()); d.t = 'up1'; d.s = 'тест';
@@ -84,12 +85,34 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   await день();
   await p.evaluate(() => { recRW(today()).t0 = Date.now() - 6e5; exOpen = null; render(); });
   await p.click('.exrow[data-j="0"] [data-go="0"]'); await p.waitForTimeout(300);
-  await p.evaluate(() => { clearInterval(tInt); tInt = null; $('tmr').classList.remove('on'); });
   await p.evaluate(() => $('fin').click()); await p.waitForTimeout(300);
   const итог = await p.evaluate(() => ({ wo: recOf(today()).wo, упр: document.querySelector('#shB .sum .win b').textContent, журнал: dayEntries(today()).length }));
   await p.evaluate(() => sheetClose());
   chk(итог.wo && итог.упр === '1' && итог.журнал === 1,
     '4. итоги тренировки считают сделанные упражнения (1 из 2), а не план дня', JSON.stringify(итог));
+
+  // 5. «Каждую неделю» отдых → тренировка: прошлые дни отдыха без записей не становятся пропусками
+  const был5 = await p.evaluate(() => {
+    S.rec = {}; S.map = {}; delete S.pause; S.days = build().days;
+    S.start = addDays(mondayOf(today()), -28);
+    // все прошлые тренировки сделаны — слабого звена нет
+    for (let ds = S.start; ds < today(); ds = addDays(ds, 1)) if (dayOf(ds).t !== 'rest') S.rec[ds] = { wo: 1, log: {}, sp: {} };
+    entCache = null; recomputeStats(1); save(); edit = false; sel = today(); render();
+    const i = S.days.findIndex((d, k) => d.t === 'rest' && k !== wdOf(today()));
+    const mon = addDays(mondayOf(today()), -28);
+    return { i, att: attendance(28), мес: rangeData(mon, 28).days.filter(x => x.tr).length, звено: regularity(28).worst || null };
+  });
+  await p.evaluate(i => { wkMode = 'all'; openWeekPlan(today()); wkPick = i; openWeekPlan();
+    document.querySelector('#shB [data-wpt="up1"]').click(); }, был5.i);
+  await p.waitForTimeout(300); await p.click('#askY'); await p.waitForTimeout(300);
+  const стал5 = await p.evaluate(i => {
+    sheetClose();
+    const mon = addDays(mondayOf(today()), -28), next = addDays(today(), ((i - wdOf(today())) + 7) % 7 || 7);
+    return { шаблон: S.days[i].t, att: attendance(28), мес: rangeData(mon, 28).days.filter(x => x.tr).length,
+      впереди: dayOf(next).t, звено: regularity(28).worst || null };
+  }, был5.i);
+  chk(стал5.шаблон === 'up1' && стал5.впереди === 'up1' && стал5.att.planned === был5.att.planned && стал5.мес === был5.мес && !был5.звено && !стал5.звено,
+    '5. отдых → тренировка во всех неделях: прошлые дни отдыха не числятся пропусками, будущие — тренировки', JSON.stringify({ был5, стал5 }));
 
   chk(errs.length === 0, 'без ошибок в консоли', errs.join(' | ') || 'чисто');
   await b.close();

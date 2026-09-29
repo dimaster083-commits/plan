@@ -4828,9 +4828,20 @@ async function setDayType(i, nt) {
   const ok = await ask('Поменять ' + d.k + ' во всех неделях плана? Прошедшие тренировки останутся как были. ' +
     'Если нужно только на одной дате — отмени и выбери её в «Эта неделя».', 'ПОМЕНЯТЬ');
   if (!ok) return false;
-  const snap = snapS();
-  Object.keys(S.rec).forEach(ds => { const r = S.rec[ds];
-    if (ds < today() && dayOf(ds) === d && r && !r.dt) { r.dt = was; r.dn = d.s; } });
+  const snap = snapS(), t = today();
+  /* Прошлое без записей — тоже прошлое: отдых прошлых воскресений после
+     «воскресенье — тренировка» становился пропущенной тренировкой в
+     посещаемости, итогах месяца и «Слабом звене». Снимок типа получают все
+     прошедшие даты этого дня — от старта плана или первой записи, как при
+     обмене дней шаблона (swapWeekdays). */
+  let from = planStart();
+  Object.keys(S.rec).forEach(ds => { if (okDay(ds) && ds < from) from = ds; });
+  for (let c = at(from), g = 0; iso(c) < t && g < 4000; c.setDate(c.getDate() + 1), g++) {
+    const ds = iso(c);
+    if (dayOf(ds) !== d) continue;
+    const r = recRW(ds);
+    if (!r.dt) { r.dt = was; r.dn = d.s; }
+  }
   d.t = nt;
   // подпись дня идёт следом за типом, иначе «Низ тела» висит над жимом лёжа
   const src = TPL.find(x => x.t === nt);
@@ -5499,7 +5510,7 @@ function purgeExercise(name) {
     });
     // день без единой отметки и без отметки о тренировке больше не нужен
     const r = S.rec[ds];
-    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw && !r.skip) delete S.rec[ds];
+    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw && !r.skip && !r.dt) delete S.rec[ds];
   });
   delete S.pr[name];
   recomputeStats(1);
@@ -6542,6 +6553,8 @@ $('rd').addEventListener('click', () => {
       Object.values(r.log || {}).forEach(l => { if (l.done) rollback(l); });
       if (r.wo) addXp(-XP_WO);
       delete S.rec[sel];
+      // тип прошедшего дня (снимок смены шаблона) — план, а не отметка: остаётся
+      if (r.dt) S.rec[sel] = { log: {}, sp: {}, wo: 0, dt: r.dt, dn: r.dn };
     }
     save(); render();
     offerUndo(snap, 'Отметки за ' + fmt(sel) + ' очищены');
@@ -10799,7 +10812,7 @@ function regularity(days) {
     const ds = iso(d);
     if (ds > today()) break;
     const day = S.days[dayIdx(ds)];
-    if (!day || day.t === 'rest') continue;
+    if (!day || dayLook(ds).t === 'rest') continue;      // тип прошедшего дня — снимок, как в посещаемости
     /* пропуск — тем же счётом, что посещаемость: неделя на паузе (болел),
        дни до старта плана и сегодняшняя незакрытая — не пропуски. Раньше
        неделя болезни давала «чаще всего пропускается вторник» */
