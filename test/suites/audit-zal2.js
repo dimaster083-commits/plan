@@ -44,6 +44,31 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
       && JSON.stringify(l1.wu) === '[10]' && JSON.stringify(l1.dr) === '[12]' && т1.ton === 8 * 60 + 6 * 65 && т1.sets === 2 && т1.pr === 65,
     '1. отказ — рабочий подход, дроп после него ждёт галочки: закрытие на последней строке, тоннаж по рабочим', JSON.stringify({ ход, l1, т1 }));
 
+  // 2. вписанные повторы — в журнале дня: переход к другому упражнению и перезагрузка их не стирают,
+  //    а ○ в списке закрывает ровно черновик — с разминкой, которую отметили в карточке
+  await день();
+  await p.click(C + '[data-kindmode]');
+  await p.locator(C + '.rbx').nth(0).click();                                  // первая строка — разминка
+  await p.click(C + '[data-kindmode]');
+  await p.locator(C + '[data-rs="0"]').fill('12');
+  await p.locator(C + '[data-rs="1"]').fill('9');
+  await p.locator(C + '[data-tick="1"]').click();
+  const клетки = () => p.evaluate(() => [...document.querySelectorAll('.ex[data-j="0"] [data-rs]')].map(x => x.value).join('/'));
+  const до2 = await клетки();
+  await p.evaluate(() => { exOpen = 1; render(); exOpen = 0; render(); });
+  const переход = await клетки();
+  await p.reload(); await p.waitForTimeout(1200);
+  await p.evaluate(() => { tab = 'wo'; sel = today(); exOpen = 0; render(); });
+  const перезагр = await клетки();
+  const галка = await p.evaluate(() => document.querySelectorAll('.ex[data-j="0"] .srow')[1].classList.contains('on'));
+  await p.evaluate(() => { exOpen = null; render(); });
+  const строка = await p.evaluate(() => document.querySelector('.exrow[data-j="0"] .s').textContent);
+  await p.click('.exrow[data-j="0"] [data-go="0"]'); await p.waitForTimeout(300);
+  const l2 = await лог(), т2 = await p.evaluate(() => dayTon(today()));
+  chk(до2 === '12/9/9/9' && переход === до2 && перезагр === до2 && галка && /12\/9\/9\/9/.test(строка)
+      && JSON.stringify(l2.wu) === '[12]' && JSON.stringify(l2.rs) === '[9,9,9]' && т2 === 9 * 60 * 3,
+    '2. вписанные повторы переживают переход и перезагрузку, ○ в списке закрывает черновик с разминкой', JSON.stringify({ до2, переход, перезагр, галка, строка, l2, т2 }));
+
   chk(errs.length === 0, 'без ошибок в консоли', errs.join(' | ') || 'чисто');
   await b.close();
   process.exit(fails ? 1 : 0);

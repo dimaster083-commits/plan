@@ -5291,7 +5291,12 @@ function exRow(e, j, r, IN) {
   const sug = weightFor(e, IN);
   const sets = setsOf(sel, num(e.s), j);
   const w = num(pick(g.w, sug));
-  const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, repsDefault(e)));
+  // черновик клеток — теми же числами, что в карточке: пустые подставлены
+  const rr = pick(g.r, repsDefault(e));
+  const fc = !g.done && g.rs && g.rs.length
+    ? fillCells(g.rs, Math.max(1, num(pick(g.s, sets)) || 1), lastDone(e.n, sel), topRep(rr), firstRep(rr) || topRep(rr), w) : null;
+  const rs = fc ? fc.vals.map(v => (v === '' ? '—' : v)).join('/')
+    : (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + rr);
   const ex = dayOf(sel).ex, ss = !!(e.ss && ex[j + 1]), ss2 = !!(j > 0 && ex[j - 1] && ex[j - 1].ss);
   return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}">
     ${exPic(e.n, 1) ? `<img class="exth" src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">` : ''}
@@ -5619,6 +5624,7 @@ $('exl').addEventListener('click', ev => {
       if (was[i][1] === undefined) delete x.dataset.auto; else x.dataset.auto = was[i][1];
       const lb = x.closest('.rbx'); if (lb) lb.classList.toggle('auto', was[i][1] === '1');
     });
+    saveCells(box.closest('.ex'));       // подставленное снова подставленное и в журнале
   } });
 });
 
@@ -5703,14 +5709,16 @@ $('exl').addEventListener('input', ev => {
      клетки получают то же число: 10 в первом подходе — 10 и в остальных. */
   inp.dataset.auto = '';
   if (lab) lab.classList.remove('auto');
-  if (!ev.isTrusted || !String(inp.value).trim()) return;
-  const all = [...card.querySelectorAll('[data-rs]')];
-  all.slice(all.indexOf(inp) + 1).forEach(nx => {
-    if (String(nx.value).trim() && nx.dataset.auto !== '1') return;
-    nx.value = inp.value; nx.dataset.auto = '1';
-    const lb = nx.closest('.rbx');
-    if (lb) { lb.classList.add('auto'); lb.classList.toggle('hit', !!top && num(nx.value) >= top); }
-  });
+  if (ev.isTrusted && String(inp.value).trim()) {
+    const all = [...card.querySelectorAll('[data-rs]')];
+    all.slice(all.indexOf(inp) + 1).forEach(nx => {
+      if (String(nx.value).trim() && nx.dataset.auto !== '1') return;
+      nx.value = inp.value; nx.dataset.auto = '1';
+      const lb = nx.closest('.rbx');
+      if (lb) { lb.classList.add('auto'); lb.classList.toggle('hit', !!top && num(nx.value) >= top); }
+    });
+  }
+  if (!inp.readOnly) saveCells(card);
 });
 
 // Подходы и повторы меняются прямо в карточке: блок под ними должен
@@ -5750,6 +5758,34 @@ function autoCells(prev, n, top, low, wNow) {
   while (base.length < n) base.push(base.length ? base[base.length - 1] : top);
   return base.slice(0, n);
 }
+/* Клетки незакрытого упражнения. Свои числа черновика (l.rs) — как есть,
+   пустые — тем же правилом, что при вводе: число из своей клетки выше, а
+   выше пусто — сегодняшняя цель по прошлому разу (autoCells). auto — какие
+   подставлены. Раньше вписанное в клетки жило только на экране: переход
+   к другому упражнению или перезагрузка возвращали подставленное, а галочка
+   на строке оставалась. */
+function fillCells(cur, n, prev, top, low, wNow) {
+  const a = autoCells(prev, n, top, low, wNow);
+  if (!cur && !a) return null;
+  const vals = [], auto = [];
+  let last = '';
+  for (let i = 0; i < n; i++) {
+    const v = cur ? cur[i] : undefined;
+    if (v !== undefined && v !== null && String(v).trim() !== '') { vals.push(v); auto.push(false); last = v; continue; }
+    const f = last !== '' ? last : (a ? a[i] : '');
+    const has = f !== undefined && f !== null && f !== '';
+    vals.push(has ? f : ''); auto.push(has);
+  }
+  return { vals, auto };
+}
+// свои числа клеток — в журнал дня, подставленные — нет: они пересчитываются сами
+function saveCells(card) {
+  const j = num(card.dataset.j), r = recRW(sel), l = r.log[j] = r.log[j] || {};
+  if (l.done) return;
+  const own = [...card.querySelectorAll('[data-rs]')].map(x => (x.dataset.auto === '1' || String(x.value).trim() === '' ? '' : num(x.value)));
+  if (own.some(v => v !== '')) l.rs = own; else delete l.rs;
+  save();
+}
 
 function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
   // Цель берём из поля ПОВТ, если там что-то стоит: поменял 8 на 10 —
@@ -5768,7 +5804,7 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
      прошлый результат плюс повтор по двойной прогрессии. Закрыл подход,
      ничего не трогая, — записано «сделал по плану». Подставленное
      показано приглушённо, чтобы было видно, где число своё. */
-  let auto = false;
+  let autoAt = [];
   let cur = keep || g.rs || null;
   let kinds = Array.isArray(g.kinds) ? g.kinds.slice() : [];
   let nn = n;
@@ -5779,9 +5815,9 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     kinds = wu.map(() => 'w').concat(rs.map((_, i) => (fl.indexOf(i) >= 0 ? 'f' : '')), dr.map(() => 'd'));
     nn = Math.max(1, cur.length);
   } else if (g.done && Array.isArray(g.fl)) kinds = (g.rs || []).map((_, i) => (g.fl.indexOf(i) >= 0 ? 'f' : ''));
-  if (!cur && !g.done) {
-    const a = autoCells(prev, n, top, low, wNow);
-    if (a) { cur = a; auto = true; }
+  if (!g.done) {
+    const f = fillCells(cur, nn, prev, top, low, wNow);
+    if (f) { cur = f.vals; autoAt = f.auto; }
   }
 
   let out = '<div class="sh"><span>ПОДХОДЫ</span>' +
@@ -5804,8 +5840,8 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
       '<input class="swkg" inputmode="decimal" data-ws="' + i + '"' + (g.done ? ' readonly' : '') +
         ' value="' + esc(wv) + '" placeholder="' + esc(kg(num(wNow))) + '" aria-label="Вес, подход ' + (i + 1) + '">' +
       '<span class="sx">×</span>' +
-      '<label class="rbx' + hit + (auto ? ' auto' : '') + (k ? ' k-' + k : '') + '"><i>' + (k ? KIND[k][0] : (i + 1)) + '</i>' +
-      '<input inputmode="numeric" data-rs="' + i + '" data-kind="' + k + '"' + (auto ? ' data-auto="1"' : '') + (g.done ? ' readonly' : '') + ' value="' + esc(v) +
+      '<label class="rbx' + hit + (autoAt[i] ? ' auto' : '') + (k ? ' k-' + k : '') + '"><i>' + (k ? KIND[k][0] : (i + 1)) + '</i>' +
+      '<input inputmode="numeric" data-rs="' + i + '" data-kind="' + k + '"' + (autoAt[i] ? ' data-auto="1"' : '') + (g.done ? ' readonly' : '') + ' value="' + esc(v) +
       '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + (k ? ', ' + KIND[k][1] : '') + '"></label>' +
       '<button class="stick" data-tick="' + i + '" aria-pressed="' + (on ? 'true' : 'false') +
         '" aria-label="Подход ' + (i + 1) + ' сделан">✓</button>' +
@@ -5965,10 +6001,15 @@ function toggleSet(j) {
   // рабочий вес из программы, а на экране всё это время висел вес по интенсивности.
   const card = $('exl').querySelector('.ex[data-j="' + j + '"]');
   const rDef = repsDefault(p);
+  let rows = null;                 // строки подходов: повторы, тип, вес строки
   if (card) {
     l.s = card.querySelector('[data-f="s"]').value;
     l.r = card.querySelector('[data-f="r"]').value;
     l.w = card.querySelector('[data-f="w"]').value;
+    rows = [...card.querySelectorAll('[data-rs]')].map(x => {
+      const wi = x.closest('.srow') && x.closest('.srow').querySelector('[data-ws]');
+      return { v: x.value, k: x.dataset.kind || '', w: wi ? wi.value : '' };
+    });
   } else {
     /* Кнопка ○ в строке списка записывает то, что показано в строке: вес
        недели, подходы недели, цель из графы ПОВТ и подставленные клетки.
@@ -5977,45 +6018,44 @@ function toggleSet(j) {
     const IN = intOf(sel, d.t), prev = lastDone(p.n, sel);
     const wSh = pick(l.w, weightFor(p, IN)), sSh = num(pick(l.s, setsOf(sel, num(p.s), j)));
     l.w = kg(num(wSh)); l.s = String(sSh); l.r = String(pick(l.r, rDef));
-    const a = autoCells(prev, Math.max(1, sSh), topRep(l.r), firstRep(l.r) || topRep(l.r), num(wSh));
-    if (a) l.rs = a;
+    /* Черновик строк (свои повторы, типы, вес строки) лежит в журнале дня —
+       ○ закрывает ровно его, как карточка. Раньше здесь брались только
+       подставленные клетки: вписанное и отмеченное пропадало. */
+    const n = Math.max(1, sSh);
+    const f = fillCells(Array.isArray(l.rs) ? l.rs : null, n, prev, topRep(l.r), firstRep(l.r) || topRep(l.r), num(wSh));
+    const kd0 = Array.isArray(l.kinds) ? l.kinds : [], ws0 = Array.isArray(l.ws) ? l.ws : [];
+    if (f || kd0.some(Boolean) || ws0.some(v => num(v) > 0)) {
+      rows = Array.from({ length: n }, (_, i) => ({ v: f ? f.vals[i] : '', k: kd0[i] || '', w: ws0[i] ?? '' }));
+    }
   }
   let w = num(pick(l.w, p.w)), sets = num(pick(l.s, p.s)), reps = firstRep(pick(l.r, p.r));
   const g = p.g || l.g || null;
 
   // Повторы по подходам. Пустое поле — это не ноль: берём общее число из графы
   // ПОВТ, если там стоит одно число, а не диапазон вида 6-10.
-  if (card) {
+  if (rows && rows.length) {
     const rNum = /^\s*\d+\s*$/.test(String(l.r ?? '')) ? num(l.r) : 0;
-    const els = [...card.querySelectorAll('[data-rs]')];
-    if (els.length) {
-      const all = els.slice(0, sets || els.length);
-      const kd = all.map(x => (KIND[x.dataset.kind] ? x.dataset.kind : ''));
-      const val = x => num(x.value) || rNum;
-      if (kd.some(Boolean)) {
-        l.wu = all.filter((_, i) => kd[i] === 'w').map(val).filter(v => v > 0);
-        l.dr = all.filter((_, i) => kd[i] === 'd').map(val).filter(v => v > 0);
-        const work = all.filter((_, i) => kd[i] === '' || kd[i] === 'f');
-        l.rs = work.map(val);
-        l.fl = work.map((x, i) => (x.dataset.kind === 'f' ? i : -1)).filter(i => i >= 0);
-        l.s = String(l.rs.length);              // рабочих подходов столько, сколько рабочих клеток
-        if (!l.wu.length) delete l.wu;
-        if (!l.dr.length) delete l.dr;
-        if (!l.fl.length) delete l.fl;
-      } else { l.rs = all.map(val); delete l.wu; delete l.dr; delete l.fl; }
-      /* Вес по строкам сохраняем ровно для рабочих подходов и в их порядке:
-         разминочные и дроп в тоннаж не идут, их вес журналу не нужен. */
-      const wEls = [...card.querySelectorAll('[data-ws]')].slice(0, all.length);
-      if (wEls.length) {
-        const pickW = x => (String(x.value).trim() === '' ? '' : num(x.value));
-        const wAll = wEls.map(pickW);
-        const ws = kd.some(Boolean)
-          ? wAll.filter((_, i) => kd[i] === '' || kd[i] === 'f')
-          : wAll;
-        if (ws.some(v => v !== '' && v > 0)) l.ws = ws; else delete l.ws;
-      }
-      delete l.kinds; delete l.ck;
-    }
+    const all = rows.slice(0, sets || rows.length);
+    const kd = all.map(x => (KIND[x.k] ? x.k : ''));
+    const val = x => num(x.v) || rNum;
+    const isWork = (_, i) => kd[i] === '' || kd[i] === 'f';
+    if (kd.some(Boolean)) {
+      l.wu = all.filter((_, i) => kd[i] === 'w').map(val).filter(v => v > 0);
+      l.dr = all.filter((_, i) => kd[i] === 'd').map(val).filter(v => v > 0);
+      const work = all.filter(isWork);
+      l.rs = work.map(val);
+      l.fl = work.map((x, i) => (x.k === 'f' ? i : -1)).filter(i => i >= 0);
+      l.s = String(l.rs.length);              // рабочих подходов столько, сколько рабочих клеток
+      if (!l.wu.length) delete l.wu;
+      if (!l.dr.length) delete l.dr;
+      if (!l.fl.length) delete l.fl;
+    } else { l.rs = all.map(val); delete l.wu; delete l.dr; delete l.fl; }
+    /* Вес по строкам сохраняем ровно для рабочих подходов и в их порядке:
+       разминочные и дроп в тоннаж не идут, их вес журналу не нужен. */
+    const pickW = x => (String(x.w ?? '').trim() === '' ? '' : num(x.w));
+    const ws = (kd.some(Boolean) ? all.filter(isWork) : all).map(pickW);
+    if (ws.some(v => v !== '' && v > 0)) l.ws = ws; else delete l.ws;
+    delete l.kinds; delete l.ck;
   }
   sets = num(pick(l.s, p.s));                  // после разбора типов — число рабочих подходов
   entCache = null;
