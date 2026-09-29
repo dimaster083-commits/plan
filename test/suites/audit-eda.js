@@ -138,6 +138,20 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     &&добавки.сдвиг==='Витамин D3 2000 МЕ'&&добавки.шаблон==='Омега-3 1-2 г EPA+DHA',
     '8. отметки добавок едут по названию при обмене, сдвиге и смене шаблона', JSON.stringify(добавки));
 
+  // 9. смена шаблона «каждую неделю» не переписывает прошлые дни без записей
+  await сброс();
+  const прошлое=await p.evaluate(()=>{
+    const m0=mondayOf(today()); S.start=addDays(m0,-35); save();
+    const w1=addDays(m0,-7), was=[0,1,2,3,4,5,6].map(k=>dayLook(addDays(w1,k)).t).join(',');
+    const до=attendance(14).planned;
+    swapWeekdays(0,1); save();
+    const nx=addDays(m0,7);
+    return {до, после:attendance(14).planned, было:was, стало:[0,1,2,3,4,5,6].map(k=>dayLook(addDays(w1,k)).t).join(','),
+      будущийПн:dayOf(nx).t, будущийВт:dayOf(addDays(nx,1)).t};
+  });
+  chk(прошлое.до===прошлое.после&&прошлое.было===прошлое.стало&&прошлое.будущийПн==='up1'&&прошлое.будущийВт==='rest',
+    '9. «каждую неделю»: прошлая неделя без записей остаётся как была, посещаемость не меняется', JSON.stringify(прошлое));
+
   chk(errs.length===0,'99. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);

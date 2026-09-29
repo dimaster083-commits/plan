@@ -4775,6 +4775,13 @@ function swapWeekdays(i, j) {
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && S.rec[ds] && S.rec[ds].sp) oldSp[ds] = spOf(ds); });
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && (ds < t || dayLocked(ds))) keep[ds] = 1; });
   weekDates(t).forEach(ds => { if (ds < t) keep[ds] = 1; });
+  /* Прошлое без записей — тоже прошлое: отдых прошлого понедельника после
+     смены шаблона становился тренировкой, и посещаемость, «Слабое звено»,
+     итоги и календарь задним числом видели в нём пропуск. Закрепляем все
+     прошедшие даты плана — от старта или первой записи. */
+  let from = planStart();
+  Object.keys(keep).forEach(ds => { if (ds < from) from = ds; });
+  if (from < t) for (let c = at(from), g = 0; iso(c) < t && g < 4000; c.setDate(c.getDate() + 1), g++) keep[iso(c)] = 1;
   Object.keys(keep).forEach(ds => {
     if (S.map[ds] !== undefined) return;
     const w = wdOf(ds);
