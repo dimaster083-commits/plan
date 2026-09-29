@@ -4577,7 +4577,8 @@ async function undoNow() {
   if (u.again && wasOpen) u.again();
   note('Отменено');
 }
-$('undoB').addEventListener('click', () => runOnce('undo', undoNow, 300));
+// повторный тап безвреден: копия одна, вторая отмена найдёт пустоту
+$('undoB').addEventListener('click', () => { undoNow(); });
 addEventListener('scroll', () => { if (undoRec) placeUndo(); }, { passive: true });
 addEventListener('resize', () => { if (undoRec) placeUndo(); });
 
