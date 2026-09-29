@@ -2755,6 +2755,10 @@ body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 .srow .stick{flex:0 0 auto;width:44px;height:44px;border-radius:12px;
   border:1px solid var(--ln);background:var(--s1);color:var(--ink3);
   font-size:17px;line-height:1;display:grid;place-items:center}
+.setr .srow{flex-wrap:wrap}
+.setprev{flex:0 0 100%;display:flex;align-items:center;gap:8px;color:var(--ink3);font-size:11px;min-width:0}
+.setprev small{flex:1;line-height:1.5}
+.setprev button{min-width:44px;min-height:44px;padding:6px 10px;background:var(--s2);border:1px solid var(--ln);border-radius:10px;color:var(--cy2);font:inherit}
 .srow.on .stick{background:var(--hot-soft,rgba(63,174,119,.16));
   border-color:var(--hot-ln,rgba(63,174,119,.5));color:var(--hot-tx,#BFEBD6)}
 .srow.on .swkg,.srow.on .rbx input{border-color:var(--hot-ln,rgba(63,174,119,.5))}
@@ -4746,7 +4750,9 @@ function prFromLog(name) {
     Object.keys(lg).forEach(j => {
       const x = lg[j];
       if (!x || !x.done || (x.n || ((day.ex || [])[j] || {}).n) !== name) return;
-      best = Math.max(best, num(pick(x.w, ((day.ex || [])[j] || {}).w)));
+      const w = num(pick(x.w, ((day.ex || [])[j] || {}).w));
+      const weights = x.rs && x.rs.length ? x.rs.map((_, i) => x.ws && num(x.ws[i]) > 0 ? num(x.ws[i]) : w) : [w];
+      best = Math.max(best, ...weights);
     });
   });
   return best;
@@ -4827,6 +4833,7 @@ $('exl').addEventListener('click', ev => {
     cell.querySelector('i').textContent = k ? KIND[k][0] : (num(inp.dataset.rs) + 1);
     const j = num(card.dataset.j), r = recRW(sel); r.log[j] = r.log[j] || {};
     r.log[j].kinds = [...card.querySelectorAll('[data-rs]')].map(x => x.dataset.kind || '');
+    refreshPrevious(card);
     save();
     return;
   }
@@ -4881,6 +4888,23 @@ $('exl').addEventListener('input', ev => {
   const all = [...card.querySelectorAll('[data-ws]')];
   const ws = all.map(x => (String(x.value).trim() === '' ? '' : num(x.value)));
   if (ws.some(v => v !== '')) l.ws = ws; else delete l.ws;
+  save();
+});
+
+// Копирование — только явный ввод в одну строку, без отметки и прогрессии.
+$('exl').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-copy-prev]'); if (!b) return;
+  const card = b.closest('.ex'), j = num(card.dataset.j);
+  if ((recOf(sel).log[j] || {}).done) return;
+  const fields = [...card.querySelectorAll('[data-rs]')], i = num(b.dataset.copyPrev);
+  const e = (dayOf(sel).ex || [])[j]; if (!e) return;
+  const kinds = fields.map(x => x.dataset.kind || '');
+  const ref = previousSet(previousSets(e.n, sel), kinds, i); if (!ref) return;
+  const row = fields[i].closest('.srow'), w = row.querySelector('[data-ws]');
+  w.value = kg(ref.w); w.dispatchEvent(new Event('input', { bubbles: true }));
+  fields[i].value = String(ref.r); fields[i].dispatchEvent(new Event('input', { bubbles: true }));
+  const l = recRW(sel).log[j];
+  l.rs = fields.map(x => String(x.value).trim() === '' ? '' : num(x.value));
   save();
 });
 
@@ -5014,6 +5038,7 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     '</div><div class="rb">';
   const wsAll = Array.isArray(g.ws) ? g.ws : [];
   const ck = Array.isArray(g.ck) ? g.ck : [];
+  const previous = previousSets(e.n, sel);
   for (let i = 0; i < nn; i++) {
     const v = cur && cur[i] !== undefined && cur[i] !== null ? cur[i] : '';
     const k = KIND[kinds[i]] ? kinds[i] : '';
@@ -5029,7 +5054,7 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
       '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + (k ? ', ' + KIND[k][1] : '') + '"></label>' +
       '<button class="stick" data-tick="' + i + '" aria-pressed="' + (on ? 'true' : 'false') +
         '" aria-label="Подход ' + (i + 1) + ' сделан">✓</button>' +
-      '</div>';
+      previousHtml(previous, kinds, i, g.done) + '</div>';
   }
   out += '</div>';
   if (!g.done) out += '<p class="kindh">«ТИП», затем касание клетки: <b>Р</b> — разминка (не в тоннаже и не в прогрессии), ' +
@@ -5278,7 +5303,8 @@ function toggleSet(j) {
   if (short && w > num(p.w)) note('Рабочий вес не поднят: низ ' + low + ' повт. на ' + kg(w) + ' кг не добран');
 
   const old = num(S.pr[p.n]);
-  if (w > 0 && w > old) { l.prevPr = old; S.pr[p.n] = w; }
+  const recordW = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => wAt(i))) : w;
+  if (recordW > 0 && recordW > old) { l.prevPr = old; S.pr[p.n] = recordW; }
 
   /* Рекорды по видам: ≈1ПМ, лучший подход и объём сравниваются с лучшим из
      журнала до этого закрытия. Первая запись упражнения рекордом не считается
@@ -5292,13 +5318,13 @@ function toggleSet(j) {
       ? { k, v: nowS.set, o: b.set, w: nowS.sw, r: nowS.sr } : { k, v: nowS[k], o: b[k] });
   });
   if (!l.recs.length) delete l.recs;
-  const wRec = w > 0 && w > old && old > 0;
+  const wRec = recordW > 0 && recordW > old && old > 0;
   const rk0 = beforeRec.e1 && strRank(p.n, beforeRec.e1.e1), rk1 = nowS && strRank(p.n, nowS.e1);
   const rankUp = rk0 && rk1 && rk1.i > rk0.i ? rk1.l : '';
 
   if (wRec || l.recs) {
     l.xp = XP_PR; addXp(XP_PR); dingPR();
-    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + [wRec ? kg(w) + ' кг' : ''].concat((l.recs || []).map(recTxt))
+    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + [wRec ? kg(recordW) + ' кг' : ''].concat((l.recs || []).map(recTxt))
       .filter(Boolean).join(' · '));
   } else {
     l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); dingSet();
@@ -5849,6 +5875,42 @@ function lastDone(name, before) {
   return null;
 }
 
+// Только завершённая запись до выбранной даты. Общие значения старого
+// журнала — допустимый запасной источник; сегодняшняя программа им не служит.
+function previousSets(name, before) {
+  for (const ds of Object.keys(S.rec).filter(d => d < before).sort().reverse()) {
+    const day = dayOf(ds), log = S.rec[ds].log || {};
+    for (const j of Object.keys(log)) {
+      const l = log[j];
+      if (!l || !l.done || (l.n || (day && day.ex[j] || {}).n) !== name) continue;
+      const rs = Array.isArray(l.rs) ? l.rs : Array(Math.max(0, Math.min(12, num(l.s)))).fill(firstRep(l.r));
+      return { ds, sets: rs.map((r, i) => ({ r: num(r),
+        w: Array.isArray(l.ws) && num(l.ws[i]) > 0 ? num(l.ws[i]) : num(l.w),
+        kind: Array.isArray(l.fl) && l.fl.includes(i) ? 'f' : '' })) };
+    }
+  }
+  return null;
+}
+function previousSet(previous, kinds, i) {
+  if (!previous) return null;
+  const kind = KIND[kinds[i]] ? kinds[i] : '';
+  const index = Array.from({ length: i }, (_, j) => KIND[kinds[j]] ? kinds[j] : '').filter(k => k === kind).length;
+  const ref = previous.sets.filter(s => s.kind === kind)[index];
+  return ref && ref.w > 0 && ref.r > 0 ? ref : null;
+}
+function previousHtml(previous, kinds, i, done) {
+  const ref = previousSet(previous, kinds, i);
+  return '<div class="setprev"><small>' + (ref ? '// ' + esc(previous.ds.split('-').reverse().join('.')) + ' · ' + kg(ref.w) + ' кг × ' + ref.r :
+    (previous ? 'Нет записанного результата для этого подхода' : 'Нет прошлых записей')) + '</small>' +
+    (ref && !done ? '<button data-copy-prev="' + i + '" aria-label="Повторить прошлый результат, подход ' + (i + 1) + '">Повторить</button>' : '') + '</div>';
+}
+function refreshPrevious(card) {
+  const e = (dayOf(sel).ex || [])[num(card.dataset.j)]; if (!e) return;
+  const previous = previousSets(e.n, sel), fields = [...card.querySelectorAll('[data-rs]')];
+  const kinds = fields.map(x => x.dataset.kind || '');
+  fields.forEach((x, i) => { x.closest('.srow').querySelector('.setprev').outerHTML = previousHtml(previous, kinds, i, false); });
+}
+
 /* ---------- рекорды по видам ----------
    Считаются по журналу, как и всё остальное: отдельно ничего не хранится,
    поэтому снятая отметка или стёртая запись меняют их сами. Четыре вида:
@@ -5862,11 +5924,13 @@ function exSessions(name) {
     if (!es.length) return;
     const s = { ds, w: 0, e1: 0, set: 0, sw: 0, sr: 0, vol: 0 };
     es.forEach(e => {
-      s.w = Math.max(s.w, e.w); s.vol += e.vol;
-      (e.rs || [firstRep(e.r)]).forEach(r => {
-        if (!(e.w > 0 && r > 0)) return;
-        if (r <= 12) s.e1 = Math.max(s.e1, r === 1 ? e.w : e.w * (1 + r / 30));
-        if (e.w * r > s.set) { s.set = e.w * r; s.sw = e.w; s.sr = r; }
+      s.vol += e.vol;
+      (e.rs || [firstRep(e.r)]).forEach((r, i) => {
+        const w = e.ws && num(e.ws[i]) > 0 ? num(e.ws[i]) : e.w;
+        s.w = Math.max(s.w, w);
+        if (!(w > 0 && r > 0)) return;
+        if (r <= 12) s.e1 = Math.max(s.e1, r === 1 ? w : w * (1 + r / 30));
+        if (w * r > s.set) { s.set = w * r; s.sw = w; s.sr = r; }
       });
     });
     out.push(s);
