@@ -42,14 +42,14 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
     const snap=()=>[JSON.stringify(S), tab, sel, mo, exOpen, pSec, calView, calYear, edit, editPast,
       document.getElementById('sh').className, document.getElementById('ask').className,
       document.getElementById('fp').className, document.getElementById('ov').className,
-      document.getElementById('tmr').className, hash(document.body.innerHTML)].join('|');
+      document.getElementById('tmr').className, String((document.getElementById('hsh')||{}).hidden), hash(document.body.innerHTML)].join('|');
     const key=btn=>(btn.id||'')+'|'+(typeof btn.className==='string'?btn.className:'')+'|'+
       (btn.dataset.d??btn.dataset.j??btn.dataset.go??btn.dataset.open??btn.dataset.cd??btn.dataset.mo??
        btn.dataset.sec??btn.dataset.tab??btn.dataset.jump??btn.dataset.tog??btn.dataset.day??'')+'|'+
       btn.textContent.trim().slice(0,20);
     // Native file pickers do not alter the DOM; foto.js exercises the upload flow.
     const SKIP=/^(wipe|exp|imp|csv|impFile|phFile|phAdd)$/;
-    const reset=t=>{try{sheetClose();}catch(e){} try{askClose(false);}catch(e){}
+    const reset=t=>{try{sheetClose();}catch(e){} try{hintClose();}catch(e){} try{askClose(false);}catch(e){}
       ['fp','ov','setup'].forEach(id=>{const e2=document.getElementById(id); if(e2) e2.classList.remove('on');});
       document.body.style.overflow=''; tab=t; sel=today(); exOpen=null; render();};
 

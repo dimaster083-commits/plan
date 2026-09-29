@@ -3054,6 +3054,7 @@ document.documentElement.dataset.skin = 'sl';
           <span class="st8r" id="st8rank">РАНГ E</span>
         </span>
       </span>
+      <button type="button" class="hib" data-hint="xp" aria-label="Подсказка: уровень и опыт"></button>
     </div>
     <div class="st8b">
       <div class="st8row"><span class="k" data-t="xp">XP</span>
@@ -3080,9 +3081,12 @@ document.documentElement.dataset.skin = 'sl';
 
 <!-- ================= ЗАЛ ================= -->
 <section class="scr" id="scr-wo">
+  <!-- день отдыха — не пустой экран, а подсказка, что делать -->
+  <div class="win restw" id="restW" hidden><p><b>ДЕНЬ ОТДЫХА</b>Мышцы растут между тренировками: сон 7–8 часов, прогулка, растяжка.
+    Хочешь заниматься сегодня — «⇄ Неделя» поставит сюда тренировку.</p><button type="button" class="hib" data-hint="rest" aria-label="Подсказка: день отдыха"></button></div>
   <div id="tw">
     <div class="win qbox">
-      <div class="qhead"><b>ТРЕНИРОВКА ДНЯ</b><i id="qType">—</i></div>
+      <div class="qhead"><b>ТРЕНИРОВКА ДНЯ<button type="button" class="hib" data-hint="day" aria-label="Подсказка: тренировка дня"></button></b><i id="qType">—</i></div>
       <!-- крупная цифра дня: поднятое за тренировку, рядом — подходы,
            упражнения и время. Сразу видно, что сделано, без счёта в уме. -->
       <div class="whead">
@@ -3095,12 +3099,15 @@ document.documentElement.dataset.skin = 'sl';
       </div>
       <div class="qprog"><i id="qpf"></i></div>
       <div class="qmeta"><span id="qCnt">—</span><span id="qRew">—</span></div>
-      <div class="qpen" id="qPen">Для серии недель — 3 тренировки в неделю</div>
+      <div class="qpen" id="qPen"><span id="qPenT">Для серии недель — 3 тренировки в неделю</span><button type="button" class="hib" data-hint="streak" aria-label="Подсказка: серия и пропуск"></button></div>
       <!-- не пошёл в зал — день помечается пропущенным; тренировкой он не считается -->
       <button class="add qskip" id="skipDay" hidden>Пропуск</button>
     </div>
     <div id="exl"></div>
     <button class="add" id="addEx">+ Упражнение</button>
+    <!-- совет экрана — под списком, а не над ним: сверху он отодвигал #tw,
+         и липкая кнопка тренировки на 320×568 уходила за край -->
+    <div class="tip" id="tip-wo" hidden></div>
     <!-- Кнопка тренировки постоянная: держится внизу и на списке, и на
          раскрытом упражнении. Пока идёт — на ней часы. -->
     <div class="wobar" id="wobar"><button class="fin" id="fin">Начать тренировку</button><button class="wocx" id="woCx" type="button" hidden>Отменить начало</button></div>
@@ -3115,10 +3122,12 @@ document.documentElement.dataset.skin = 'sl';
      Библиотека, как в Lyfta: поиск, лента мышц с фигуркой, фильтры,
      карточки с фото. База грузится при первом открытии экрана. -->
 <section class="scr" id="scr-ex">
+  <div class="tip" id="tip-ex" hidden></div>
   <div class="lpick win" id="lpick" hidden><span id="lpickT">Выбор упражнения</span>
     <button class="lpickx" id="lpickX" aria-label="Отменить выбор">Отмена</button></div>
   <div class="exhd">
     <input id="exs" class="exs" type="search" placeholder="Поиск упражнений" autocomplete="off" aria-label="Поиск упражнений">
+    <button type="button" class="hib" data-hint="lib" aria-label="Подсказка: каталог"></button>
     <button class="exfb" id="exf" aria-label="Фильтры"><svg viewBox="0 0 24 24"><path d="M3 6h11a3 3 0 0 1 5.8 0H21v2h-1.2a3 3 0 0 1-5.8 0H3zm13.9 1a1.1 1.1 0 1 0 0 .01zM3 16h2.2a3 3 0 0 1 5.8 0H21v2H11a3 3 0 0 1-5.8 0H3zm5.1 1a1.1 1.1 0 1 0 0 .01z"/></svg></button>
   </div>
   <div class="exmu" id="exmu" role="toolbar" aria-label="Мышцы"></div>
@@ -3130,10 +3139,11 @@ document.documentElement.dataset.skin = 'sl';
 
 <!-- ================= ЕДА ================= -->
 <section class="scr" id="scr-food">
+  <div class="tip" id="tip-food" hidden></div>
   <div class="win tot">
-    <div class="tl"><b id="tKc">0<i> / 3300 ккал</i></b><span>КАЛОРИИ</span></div>
+    <div class="tl"><b id="tKc">0<i> / 3300 ккал</i></b><span>КАЛОРИИ<button type="button" class="hib" data-hint="kcal" aria-label="Подсказка: калории"></button></span></div>
     <div class="tbar"><i id="bKc"></i></div>
-    <div class="tl"><b id="tPr">0<i> / 200 г</i></b><span>БЕЛОК</span></div>
+    <div class="tl"><b id="tPr">0<i> / 200 г</i></b><span>БЕЛОК<button type="button" class="hib" data-hint="protein" aria-label="Подсказка: белок"></button></span></div>
     <div class="tbar"><i id="bPr" class="pr"></i></div>
     <div class="mini"><span id="tFa">жиры 0 г</span><span id="tCa">углеводы 0 г</span></div>
   </div>
@@ -3146,11 +3156,11 @@ document.documentElement.dataset.skin = 'sl';
   <button class="fin cplast" id="cpLast" hidden></button>
   <button class="cpb" id="cpBtn">Скопировать рацион</button>
   <div id="mll"></div>
-  <button class="add" id="addMl">+ Приём пищи</button>
+  <div class="hrow"><button class="add" id="addMl">+ Приём пищи</button><button type="button" class="hib" data-hint="meals" aria-label="Подсказка: рацион"></button></div>
 
   <!-- добавки: отдельная рамка, как системная подсказка, а не часть дня -->
   <div class="win supp" id="suppBox">
-    <div class="supph"><b data-t="supp">Снаряжение</b><em id="spCnt"></em></div>
+    <div class="supph"><b data-t="supp">Снаряжение</b><span class="supr"><em id="spCnt"></em><button type="button" class="hib" data-hint="supp" aria-label="Подсказка: добавки"></button></span></div>
     <button class="add spall" id="spAll" hidden>Принял всё</button>
     <p class="suppn" data-t="suppHint">Приём добавок за день</p>
     <div id="spl"></div>
@@ -3160,6 +3170,7 @@ document.documentElement.dataset.skin = 'sl';
 
 <!-- ================= ПРОГРЕСС ================= -->
 <section class="scr" id="scr-prog">
+  <div class="tip" id="tip-prog" hidden></div>
   <div class="pseg" id="pseg">
     <button data-sec="log" class="on">Журнал</button>
     <button data-sec="load">Нагрузка</button>
@@ -3177,7 +3188,7 @@ document.documentElement.dataset.skin = 'sl';
   <!-- Итоги — как у Lyfta: эта неделя одной строкой и вход в итоги недели и
        месяца. Раньше «Итоги недели» лежали в четвёртой вкладке. -->
   <div class="win recap">
-    <div class="wtitle" style="padding:0 0 6px">ИТОГИ // ЭТА НЕДЕЛЯ</div>
+    <div class="wtitle" style="padding:0 0 6px">ИТОГИ // ЭТА НЕДЕЛЯ<button type="button" class="hib" data-hint="recap" aria-label="Подсказка: итоги"></button></div>
     <div class="recn" id="recapN"></div>
     <div class="recb" id="recapB">
       <button class="anb" id="wkBtn">Итоги недели ›</button>
@@ -3187,7 +3198,7 @@ document.documentElement.dataset.skin = 'sl';
 
   <!-- Рекорды лентой: что побито и когда, по журналу. -->
   <div class="win recs">
-    <div class="wtitle" style="padding:0 0 6px">РЕКОРДЫ</div>
+    <div class="wtitle" style="padding:0 0 6px">РЕКОРДЫ<button type="button" class="hib" data-hint="recs" aria-label="Подсказка: рекорды"></button></div>
     <div id="recList"></div>
   </div>
 
@@ -3199,24 +3210,24 @@ document.documentElement.dataset.skin = 'sl';
 
   <!-- Баланс недели: подходы по группам за 7 дней против нормы программы -->
   <div class="win mapw" id="mapw">
-    <div class="wtitle" style="padding:0 0 6px">КАРТА МЫШЦ // 7 ДНЕЙ<em class="bleg">касание — подробности</em></div>
+    <div class="wtitle" style="padding:0 0 6px">КАРТА МЫШЦ // 7 ДНЕЙ<em class="bleg">касание — подробности<button type="button" class="hib" data-hint="musmap" aria-label="Подсказка: карта мышц"></button></em></div>
     <div id="bmapBox"></div>
     <div class="mmleg"><i class="mm0"></i>не было<i class="mm1"></i>мало<i class="mm2"></i>почти<i class="mm3"></i>норма</div>
     <div class="mlist" id="mlist"></div>
   </div>
 
   <div class="win radar">
-    <div class="wtitle" style="padding:0 0 8px">ПОДХОДЫ ЗА 7 ДНЕЙ<em class="bleg">риска — норма</em></div>
+    <div class="wtitle" style="padding:0 0 8px">ПОДХОДЫ ЗА 7 ДНЕЙ<em class="bleg">риска — норма<button type="button" class="hib" data-hint="balance" aria-label="Подсказка: подходы за 7 дней"></button></em></div>
     <div id="rad" class="bal" role="img" aria-label="Подходы по группам мышц за последние семь дней"></div>
     <p class="radn" id="radn"></p>
   </div>
 
   <div class="win chart">
-    <div class="wtitle" style="padding:0 0 8px">ВЕС ТЕЛА</div>
+    <div class="wtitle" style="padding:0 0 8px">ВЕС ТЕЛА<button type="button" class="hib" data-hint="bwchart" aria-label="Подсказка: вес тела"></button></div>
     <svg id="wchart" viewBox="0 0 300 140"></svg>
     <div class="hint" id="whint">Отметь вес несколько раз, и здесь появится кривая.</div>
     <div class="lsplit"></div>
-    <div class="wtitle wtscale" style="padding:0 0 9px">ЗА ВСЁ ВРЕМЯ<em id="volTop"></em></div>
+    <div class="wtitle wtscale" style="padding:0 0 9px">ЗА ВСЁ ВРЕМЯ<button type="button" class="hib" data-hint="tonall" aria-label="Подсказка: тоннаж за всё время"></button><em id="volTop"></em></div>
     <div id="loadList"></div>
     <p style="margin:11px 0 0;font-size:11.5px;color:var(--ink3);line-height:1.5">
       Счёт идёт по группам: плечи и пресс считаются отдельно, в «Ноги» входят
@@ -3236,7 +3247,7 @@ document.documentElement.dataset.skin = 'sl';
           <div class="wval"><input id="bw" type="text" inputmode="decimal" value="" aria-label="Вес сейчас"><span>кг</span></div>
         </div>
         <div class="wcell">
-          <label for="goalIn">ЦЕЛЬ</label>
+          <label for="goalIn">ЦЕЛЬ<button type="button" class="hib" data-hint="goal" aria-label="Подсказка: вес и цель"></button></label>
           <div class="wval"><input id="goalIn" type="text" inputmode="decimal" value="" aria-label="Цель по весу"><span>кг</span></div>
         </div>
       </div>
@@ -3258,7 +3269,7 @@ document.documentElement.dataset.skin = 'sl';
   <div class="win clc" id="calcBox"></div>
 
   <div class="win cyc">
-    <div class="cycTop"><b id="cycW">Неделя 1<i> из 8</i></b><span id="cycPh">ЦИКЛ 1</span></div>
+    <div class="cycTop"><b id="cycW">Неделя 1<i> из 8</i></b><span class="supr"><span id="cycPh">ЦИКЛ 1</span><button type="button" class="hib" data-hint="cycle" aria-label="Подсказка: цикл"></button></span></div>
     <div class="cycBar" id="cycBar"></div>
     <div class="cycNote" id="cycNote"></div>
     <div class="cycStart">старт плана
@@ -3276,7 +3287,7 @@ document.documentElement.dataset.skin = 'sl';
   </div><!-- /goal -->
 
   <div class="psec" data-s="log">
-  <h2 class="sec">ИСТОРИЯ</h2>
+  <h2 class="sec">ИСТОРИЯ<button type="button" class="hib" data-hint="cal" aria-label="Подсказка: история"></button></h2>
   <div id="hist"></div>
   <button class="add" id="histMore" hidden>Показать ещё</button>
 
@@ -3296,12 +3307,13 @@ document.documentElement.dataset.skin = 'sl';
   </div><!-- /log -->
 
   <div class="psec" data-s="prog">
+  <h2 class="sec">РАЗБОР<button type="button" class="hib" data-hint="an" aria-label="Подсказка: разбор и ранги"></button></h2>
   <button class="anb" id="anBtn">Разбор</button>
   <button class="anb" id="progBtn" style="margin-top:7px">Прогресс по упражнениям</button>
   <button class="anb" id="rankBtn" style="margin-top:7px">Ранги силы</button>
   <h2 class="sec">АРХИВ</h2>
   <div class="win bk">
-    <h4>РЕЗЕРВНАЯ КОПИЯ</h4>
+    <h4>РЕЗЕРВНАЯ КОПИЯ<button type="button" class="hib" data-hint="backup" aria-label="Подсказка: резервная копия"></button></h4>
     <p>iOS может очистить хранилище, если не заходить месяцами. Раз в пару месяцев сохраняй копию —
        в ней весь журнал, веса и фотографии. Файл клади в «Файлы» или iCloud.</p>
     <div class="bkb">
@@ -3314,7 +3326,7 @@ document.documentElement.dataset.skin = 'sl';
   </div>
   <h2 class="sec">ПРОГРАММА</h2>
   <div class="win pln">
-    <h4>РАБОЧИЕ ВЕСА</h4>
+    <h4>РАБОЧИЕ ВЕСА<button type="button" class="hib" data-hint="work" aria-label="Подсказка: рабочие веса"></button></h4>
     <table class="wtab">
       <colgroup><col class="nm"><col class="d"><col class="n"><col class="n"><col class="n"></colgroup>
       <thead><tr><th>Упражнение</th><th>День</th><th>Рабочий</th><th>Неделя</th><th>Рекорд</th></tr></thead>
@@ -3334,7 +3346,7 @@ document.documentElement.dataset.skin = 'sl';
 
 <!-- ================= ФОТО ================= -->
 <section class="scr" id="scr-photo">
-  <div class="shead"><h2><span>Фото</span><i></i></h2><p id="phDate">снимок за выбранный день</p></div>
+  <div class="shead"><h2><span>Фото</span><i></i><button type="button" class="hib" data-hint="photo" aria-label="Подсказка: фото"></button></h2><p id="phDate">снимок за выбранный день</p></div>
   <div class="win ph" style="margin-top:10px">
     <div class="phbox">
       <div class="phthumb" id="phT"><span>+</span></div>
@@ -3354,6 +3366,7 @@ document.documentElement.dataset.skin = 'sl';
   <input type="file" id="phFile" accept="image/*" hidden>
   <button class="anb" id="phHist" style="margin-top:10px">История</button>
   <p class="bkst" id="phHint">Все снимки по дням — в истории.</p>
+  <div class="tip" id="tip-photo" hidden></div>
 </section>
 
 
@@ -3364,8 +3377,15 @@ document.documentElement.dataset.skin = 'sl';
 
 <!-- ================= НАКЛАДКИ ================= -->
 <div class="sheet" id="sh"><div class="shin">
-  <div class="shh"><b id="shT">—</b><button id="shX" aria-label="Закрыть">×</button></div>
+  <div class="shh"><b id="shT">—</b><button class="hib" id="shI" type="button" data-hint="" hidden aria-label="Подсказка"></button><button id="shX" aria-label="Закрыть">×</button></div>
   <div id="shB"></div>
+</div></div>
+
+<!-- подсказка «i»: своя маленькая шторка поверх всего, открытая шторка под ней остаётся -->
+<div class="hsh" id="hsh" hidden role="dialog" aria-modal="true" aria-labelledby="hshT"><div class="hshin">
+  <div class="hshh"><b id="hshT">—</b><button id="hshX" type="button" aria-label="Закрыть подсказку">×</button></div>
+  <div id="hshB"></div>
+  <p class="hshs" id="hshS"></p>
 </div></div>
 
 <div class="tmr" id="tmr"><div class="in">
@@ -4348,6 +4368,15 @@ function scrubKeys() {
       else if (v.length > 300) S.exNote[n] = v.slice(0, 300);
     });
   }
+  /* Подсказки: выключатель — только 0 (нет ключа — включены), закрытые
+     советы — только известные экраны и только единица. Строка, массив или
+     «__proto__» из правленой копии иначе ломали показ советов. */
+  if (S.hints !== undefined && S.hints !== 0) delete S.hints;
+  if (S.tips !== undefined) {
+    const src = plain(S.tips) ? S.tips : {}, out = {};
+    Object.keys(TIPS).forEach(k => { if (Object.prototype.hasOwnProperty.call(src, k) && (src[k] === 1 || src[k] === true)) out[k] = 1; });
+    S.tips = out;
+  }
   Object.keys(S.map).forEach(k => { const v = S.map[k]; if (!(Number.isInteger(v) && v >= 0 && v < 7)) delete S.map[k]; });
   // пауза недели — только понедельники и только единица
   if (S.pause !== undefined) {
@@ -4681,8 +4710,11 @@ $('askN').addEventListener('click', () => askClose(false));
 $('ask').addEventListener('click', e => { if (e.target.id === 'ask') askClose(false); });
 
 /* ---------- общая шторка ---------- */
-function sheet(title, html) {
+/* Третий аргумент — ключ подсказки (HINTS): у шапки шторки появляется «i». */
+function sheet(title, html, hint) {
   $('shT').textContent = title;
+  const si = $('shI');
+  if (si) { si.hidden = !(hint && HINTS[hint]); si.dataset.hint = hint || ''; si.setAttribute('aria-label', 'Подсказка: ' + String(title).toLowerCase()); }
   $('shB').innerHTML = html;
   $('sh').classList.add('on');
   document.body.style.overflow = 'hidden';
@@ -4755,6 +4787,7 @@ function render() {
   if (tab === 'ex') paintLib();
   paintBadge();
   paintStatus();
+  paintTips();
   if (typeof syncWake === 'function') syncWake();
 }
 
@@ -5028,7 +5061,7 @@ function openWeekPlan(ds) {
       <button class="add" data-wppause="${days[0]}">${pz ? 'Снять паузу' : 'Болею / уехал — пауза недели'}</button>
       ${moved ? `<button class="add" data-wpreset="${days[0]}">Вернуть неделю как в программе</button>` : ''}
     </div>`}
-  </div>`);
+  </div>`, 'week');
   // выбор под списком: на телефоне он ниже края — показываем, что появилось
   const wt = $('shB').querySelector('.wkt');
   if (wt && wt.scrollIntoView) wt.scrollIntoView({ block: 'nearest' });
@@ -5163,6 +5196,8 @@ function paintWorkout() {
   // Кнопка «Править» возвращает обычные карточки, если нужно что-то исправить.
   const jr = sel < today() && !editPast && dayEntries(sel).length > 0;
   $('tw').hidden = !tr && !jr;
+  // день отдыха без записей: вместо пустого экрана — что делать сегодня
+  $('restW').hidden = tr || jr;
   $('addEx').hidden = jr;
   $('editPast').hidden = !jr;
   paintWoBar(d, r, jr);
@@ -5177,10 +5212,10 @@ function paintWorkout() {
     $('qCnt').innerHTML = '<b>' + doneCnt + '</b> из ' + d.ex.length + ' упражнений';
     $('qRew').innerHTML = r.wo ? 'закрыта' : '';
     const pen = $('qPen');
-    if (r.wo) { pen.className = 'qpen done'; pen.textContent = 'Тренировка закрыта'; }
-    else if (r.skip) { pen.className = 'qpen'; pen.textContent = 'День пропущен — тренировкой не считается'; }
-    else if (paused(sel)) { pen.className = 'qpen'; pen.textContent = 'Неделя на паузе — серия не рвётся. Придёшь — засчитается'; }
-    else { pen.className = 'qpen'; pen.textContent = 'Для серии недель — ' + weekNeed() + ' тренировки в неделю'; }
+    if (r.wo) { pen.className = 'qpen done'; $('qPenT').textContent = 'Тренировка закрыта'; }
+    else if (r.skip) { pen.className = 'qpen'; $('qPenT').textContent = 'День пропущен — тренировкой не считается'; }
+    else if (paused(sel)) { pen.className = 'qpen'; $('qPenT').textContent = 'Неделя на паузе — серия не рвётся. Придёшь — засчитается'; }
+    else { pen.className = 'qpen'; $('qPenT').textContent = 'Для серии недель — ' + weekNeed() + ' тренировки в неделю'; }
     paintWoHead(d, r);
     // «Пропуск» есть, пока в дне не закрыто ни одного подхода
     const sk = $('skipDay');
@@ -5213,7 +5248,8 @@ function paintSupp() {
   $('spCnt').textContent = Object.keys(r.sp).length + ' / ' + d.sp.length;
   // «Принял всё» есть, пока хоть одна добавка не отмечена
   $('spAll').hidden = !d.sp.length || d.sp.every((_, j) => r.sp[j]);
-  $('spl').innerHTML = d.sp.map((x, j) =>
+  $('spl').innerHTML = d.sp.length ? '' : '<p class="hempty">Пусто. Проверенная база — креатин 3–5 г в день; что ещё работает и в каких дозах — «i» у заголовка.</p>';
+  if (d.sp.length) $('spl').innerHTML = d.sp.map((x, j) =>
     `<div class="win row${r.sp[j] ? ' on' : ''}" data-sp="${j}">
       <button class="box" data-tog="${j}" aria-label="Отметить приём">✓</button>
       <span class="t"><input value="${esc(x.n)}" data-sf="n" aria-label="Добавка">
@@ -5235,7 +5271,7 @@ function paintJournal() {
   $('qRew').textContent = mins ? mins + ' мин' : '';
   const pen = $('qPen');
   pen.className = r.wo ? 'qpen done' : 'qpen';
-  pen.textContent = r.wo ? 'Тренировка закрыта' : 'Тренировка не была закрыта';
+  $('qPenT').textContent = r.wo ? 'Тренировка закрыта' : 'Тренировка не была закрыта';
 
   $('exl').innerHTML = ent.map(e => `<div class="win jrow">
     <b>${esc(e.n)}</b>
@@ -5327,7 +5363,7 @@ function exFull(e, j, r, IN, d) {
           <img src="${how}"${exCors(e.n)} alt="" loading="lazy">
           <span>Техника ↗</span></button>` : ''}
       </div>
-      <span class="exfwlabel">ВЕС НА СЕГОДНЯ</span>
+      <span class="exfwlabel">ВЕС НА СЕГОДНЯ${hib('wtoday', 'вес, подходы, повторы')}</span>
       <div class="exfw">
         <input class="exfkg" inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}"${g.done ? ' readonly' : ''} aria-label="Вес">
         <span class="exfu">КГ</span>
@@ -5341,7 +5377,7 @@ function exFull(e, j, r, IN, d) {
         num(e.w) && sug && sug !== num(e.w)
           ? ' · на этой неделе ' + kg(sug) + ' кг' + (sug < num(e.w) ? ', полегче' : '') : ''}${
         pr ? ' · рекорд ' + kg(pr) + ' кг' : ''}${
-        e1rmOf(pv) ? ' · <span class="e1">≈1ПМ ' + kg(roundW(e1rmOf(pv))) + '</span>' : ''}</div>
+        e1rmOf(pv) ? ' · <span class="e1">≈1ПМ ' + kg(roundW(e1rmOf(pv))) + '</span>' + hib('e1rm') : ''}</div>
       ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
       ${rpeHtml(g)}
@@ -5349,8 +5385,8 @@ function exFull(e, j, r, IN, d) {
         <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
         <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
       </div>
-      ${d.ex[j + 1] ? `<button class="ssb${e.ss ? ' on' : ''}" data-ss="${j}" aria-pressed="${!!e.ss}">${e.ss
-        ? 'Суперсет с «' + esc(d.ex[j + 1].n) + '» — снять' : 'Суперсет со следующим: «' + esc(d.ex[j + 1].n) + '»'}</button>` : ''}
+      ${d.ex[j + 1] ? `<div class="hrow"><button class="ssb${e.ss ? ' on' : ''}" data-ss="${j}" aria-pressed="${!!e.ss}">${e.ss
+        ? 'Суперсет с «' + esc(d.ex[j + 1].n) + '» — снять' : 'Суперсет со следующим: «' + esc(d.ex[j + 1].n) + '»'}</button>${hib('ss')}</div>` : ''}
       ${noteHtml(e.n)}
       ${recHtml(e.n)}
       ${exChartHtml(e.n)}
@@ -5778,7 +5814,7 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     if (a) { cur = a; auto = true; }
   }
 
-  let out = '<div class="sh"><span>ПОДХОДЫ</span>' +
+  let out = '<div class="sh"><span>ПОДХОДЫ' + hib('sets') + '</span>' +
     (!g.done ? '<button class="kindb" data-kindmode="1" aria-pressed="false">ТИП</button>' : '') +
     (top && !g.done ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
     '</div><div class="rb">';
@@ -6221,7 +6257,7 @@ function openExPicker() {
      <input id="exq" class="exq" placeholder="Поиск упражнения" autocomplete="off" aria-label="Поиск упражнения">
      <div class="chains" id="exgs">${chips.map(g =>
        `<button data-exg="${g}" class="${g ? '' : 'on'}">${g || 'Все'}</button>`).join('')}</div>
-     <div id="exlist">${exPickList()}</div>`);
+     <div id="exlist">${exPickList()}</div>`, 'addex');
 }
 $('addEx').addEventListener('click', openExPicker);
 $('shB').addEventListener('input', e => {
@@ -6302,7 +6338,7 @@ function workoutSummary(ds) {
   h += `<div class="win pln" style="margin-top:10px"><p style="margin:0">
     ${st > 1 ? 'Серия: <b>' + st + '</b> недель подряд, от ' + weekNeed() + ' тренировок в каждой. Не рви её.'
       : weekNeed() + ' тренировки за неделю засчитывают её в серию — она видна в «Прогрессе».'}</p></div>`;
-  sheet('ТРЕНИРОВКА ЗАКРЫТА', h);
+  sheet('ТРЕНИРОВКА ЗАКРЫТА', h, 'xp');
 }
 
 
@@ -6614,14 +6650,14 @@ function brainHtml(e, pv, wNow) {
      лёгкой неделе всё ещё выше рекорда. Говорим прямо и предлагаем рекорд. */
   const pr = prOf(e.n), work = num(e.w);
   if (!adv && pr > 0 && work > pr + 1e-6 && num(wNow) > pr + 1e-6) {
-    h += '<div class="brn dn"><p><b>Рабочий ещё не взят</b> — ' + kg(work) + ' кг ни разу не поднимались, рекорд ' +
+    h += '<div class="brn dn"><p><b>Рабочий ещё не взят</b>' + hib('advice') + ' — ' + kg(work) + ' кг ни разу не поднимались, рекорд ' +
       kg(pr) + ' кг. Надёжнее начать с рекорда и прибавлять по двойной прогрессии.</p>' +
       '<button class="add" data-setw="' + pr + '">Поставить ' + kg(pr) + ' кг</button></div>';
   }
   if (adv) h += '<div class="brn ' + (adv.up ? 'up' : 'dn') + '"><p><b>' + (adv.up ? 'Вес лёгкий' : 'Вес тяжёлый') +
-    '</b> — ' + esc(adv.why) + '. По расчёту на ' + (adv.up ? topRep(e.r) : firstRep(e.r)) + ' повт. — <b>' + kg(adv.w) + ' кг</b>.</p>' +
+    '</b>' + hib('advice') + ' — ' + esc(adv.why) + '. По расчёту на ' + (adv.up ? topRep(e.r) : firstRep(e.r)) + ' повт. — <b>' + kg(adv.w) + ' кг</b>.</p>' +
     '<button class="add" data-setw="' + adv.w + '">Поставить ' + kg(adv.w) + ' кг</button></div>';
-  if (plateauOf(e.n)) h += '<div class="brn dn"><p><b>Застой</b> — три тренировки без роста ≈1ПМ. ' +
+  if (plateauOf(e.n)) h += '<div class="brn dn"><p><b>Застой</b>' + hib('advice') + ' — три тренировки без роста ≈1ПМ. ' +
     'Смени диапазон повторов в графе ПОВТ или замени упражнение аналогом в «Технике».</p></div>';
   return h;
 }
@@ -6635,8 +6671,8 @@ function rpeHtml(g) {
   const cur = num(g.rpe);
   return '<div class="rpew"><div class="rpe"><span>RPE</span>' + RPE.map(v =>
     '<button data-rpe="' + v + '" class="' + (cur === v ? 'on' : '') + '" aria-pressed="' + (cur === v) + '">' + v + '</button>').join('') +
-    '</div><p class="rpeh">' + (cur ? (cur >= 10 ? 'Отказ — запаса не было.' : 'В запасе ≈' + (10 - cur) + ' повт.') :
-      'Насколько тяжело: 10 — отказ, 8 — два повтора в запасе.') + '</p></div>';
+    '</div><p class="rpeh"><span>' + (cur ? (cur >= 10 ? 'Отказ — запаса не было.' : 'В запасе ≈' + (10 - cur) + ' повт.') :
+      'Насколько тяжело: 10 — отказ, 8 — два повтора в запасе.') + '</span>' + hib('rpe') + '</p></div>';
 }
 // Заметка к упражнению — одна на упражнение и видна в каждой тренировке: «сиденье на 4», «узкий хват»
 function noteHtml(name) {
@@ -6649,9 +6685,10 @@ function noteHtml(name) {
 function warmupHtml(e, w, d, j) {
   const wu = warmupFor(e, w, d, j);
   const plates = isBarbell(e.n) && num(w) > BAR ? '<p class="wup">На грифе ' + kg(w) + ' кг: ' + platesTxt(w) + '</p>' : '';
-  if (wu.skip) return plates ? '<div class="wu">' + plates + '<p class="wus">Разминка не нужна: ' + esc(wu.skip) + '</p></div>' : '<p class="wus">Разминка не нужна: ' + esc(wu.skip) + '</p>';
-  if (!wu.sets.length) return plates ? '<div class="wu">' + plates + '</div>' : '';
-  return '<details class="wu"><summary>Разминка · ' + wu.sets.length + ' подх.</summary>' +
+  const skip = '<p class="wus"><span>Разминка не нужна: ' + esc(wu.skip) + '</span>' + hib('warmup') + '</p>';
+  if (wu.skip) return plates ? '<div class="wu">' + plates + skip + '</div>' : skip;
+  if (!wu.sets.length) return plates ? '<div class="wu">' + plates.replace('</p>', hib('warmup') + '</p>') + '</div>' : '';
+  return '<details class="wu"><summary>Разминка · ' + wu.sets.length + ' подх.' + hib('warmup') + '</summary>' +
     wu.sets.map(([x, r]) => '<div class="wur"><b>' + kg(x) + ' кг × ' + r + '</b>' +
       (wu.bar ? '<span>' + (x === BAR ? 'пустой гриф' : platesTxt(x)) + '</span>' : '') + '</div>').join('') +
     plates + '</details>';
@@ -6808,7 +6845,7 @@ function openRanks() {
       ' упр. при весе тела ' + kg(num(S.bw)) + ' кг. Пороги: E → S — новичок, начинающий, средний, продвинутый, элита.</span></div>' +
       rows.map(x => '<div class="win rkrow" data-hist="' + esc(x.n) + '">' + rankHtml(x.n, x.e1).replace('<em>Ранг силы</em>', '<em>' + esc(x.n) + '</em>') + '</div>').join('');
   }
-  sheet('РАНГИ СИЛЫ', html);
+  sheet('РАНГИ СИЛЫ', html, 'rank');
 }
 
 /* График упражнения с переключателем: ≈1ПМ, вес или объём. ≈1ПМ — по
@@ -6864,7 +6901,7 @@ function openHistory(name) {
     ? `<button class="add" data-purge="${esc(name)}" style="margin-top:10px;border-color:var(--down-tx);color:var(--down-tx)">
          СТЕРЕТЬ ЭТИ ЗАПИСИ ИЗ ЖУРНАЛА</button>`
     : '';
-  sheet('ИСТОРИЯ', html + (rows || '<p class="s" style="color:var(--mut);font-size:12px">Записей пока нет.</p>') + wipeBtn);
+  sheet('ИСТОРИЯ', html + (rows || '<p class="s" style="color:var(--mut);font-size:12px">Записей пока нет.</p>') + wipeBtn, 'recs');
 }
 
 // одна точка входа для всех кнопок внутри шторки
@@ -7132,7 +7169,7 @@ function openBmi() {
     '<p style="margin-top:12px;font-size:12px;color:var(--ink3);line-height:1.5">ИМТ не различает мышцы и жир: ' +
     'у человека с большой мышечной массой он закономерно выше нормы. Доля жира считается по формуле ' +
     'Deurenberg и даёт погрешность около 4 %, то есть годится для отслеживания изменений, а не как точное число. ' +
-    'Всё считается на устройстве, никуда не отправляется.</p></div>');
+    'Всё считается на устройстве, никуда не отправляется.</p></div>', 'bmi');
   $('bmiAge').addEventListener('input', e => {
     S.age = e.target.value; applyNutri(); save(); paintBmi(); paintCalc();
     const b2 = bmiOf();
@@ -7155,7 +7192,7 @@ function paintCalc() {
   const pctTxt = dir > 0 ? '0,25–0,5 %' : dir < 0 ? '0,5–1 %' : '±0,25 %';
   const pc = paceOf(wlog());
   const row = (k, v) => '<div class="clr"><span>' + k + '</span><b>' + v + '</b></div>';
-  box.innerHTML = '<div class="wtitle" style="padding:0 0 8px">РАСЧЁТ</div>' +
+  box.innerHTML = '<div class="wtitle" style="padding:0 0 8px">РАСЧЁТ' + hib('pace') + '</div>' +
     row('Поддержание', rnd(m) + ' ккал') +
     row(mode, (S.kcManual ? 'вручную' : tr.kc + ' / ' + rs.kc + ' ккал')) +
     row('Белок', (S.kcManual && num(dayOf(sel).pr) ? num(dayOf(sel).pr) + ' г · вручную' : tr.pr + ' г')) +
@@ -7544,7 +7581,7 @@ function openMuscle(m) {
     (rows ? '<div class="cph">ЗА 7 ДНЕЙ</div><ul class="musx">' + rows + '</ul>' : '') +
     (plan.length ? '<div class="cph">В ПРОГРАММЕ</div><ul class="musx">' + plan.join('') + '</ul>'
       : '<p class="musw">В программе на неё ничего не стоит.</p>') +
-    '</div>');
+    '</div>', 'musmap');
 }
 $('mapw').addEventListener('click', e => {
   const b = e.target.closest('[data-mus]'); if (!b) return;
@@ -8136,6 +8173,9 @@ function openSettings() {
     '<button class="add" data-dayset="1">⇄ Неделя: переставить и сменить дни</button>' +
     '<div class="cph">ЗВУК</div>' +
     `<button class="add" data-snd="1">Звук: ${S.sound === 0 ? 'выкл' : 'вкл'}</button>` +
+    '<div class="cph">ПОДСКАЗКИ</div>' +
+    `<button class="add" data-hints="1" aria-pressed="${hintsOn()}">Подсказки «i» и советы экранов: ${hintsOn() ? 'вкл' : 'выкл'}</button>` +
+    (hintsOn() && S.tips && Object.keys(S.tips).length ? '<button class="add" data-tipsreset="1">Показать советы экранов заново</button>' : '') +
     '<div class="cph">ВЕСА</div>' +
     '<button class="add" data-recalc="1">Пересчитать рабочие веса</button>' +
     /* Копия лежала внизу вкладки «Веса», под таблицей из двух десятков
@@ -8147,12 +8187,17 @@ function openSettings() {
     '<button class="add" data-bk="csv">Выгрузить CSV для Excel</button>' +
     '<p class="s" style="color:var(--mut);font-size:12.5px;margin:9px 0 0;line-height:1.5">' +
     'В копии весь журнал, веса, рацион и фотографии. iOS может очистить хранилище, ' +
-    'если не заходить месяцами, — сохраняй файл в «Файлы» или iCloud.</p>');
+    'если не заходить месяцами, — сохраняй файл в «Файлы» или iCloud.</p>', 'backup');
 }
 
 $('shB').addEventListener('click', e => {
   const sn = e.target.closest('[data-snd]');
   if (sn) { S.sound = S.sound === 0 ? 1 : 0; save(); if (S.sound) dingSet(); openSettings(); return; }
+  if (e.target.closest('[data-hints]')) {
+    if (hintsOn()) S.hints = 0; else delete S.hints;
+    save(); paintTips(); openSettings(); return;
+  }
+  if (e.target.closest('[data-tipsreset]')) { delete S.tips; save(); paintTips(); openSettings(); note('Советы экранов снова на местах'); return; }
   const rc = e.target.closest('[data-recalc]');
   if (rc) { sheetClose(); openSetup(); return; }
   const dst = e.target.closest('[data-dayset]');
@@ -8167,6 +8212,218 @@ $('shB').addEventListener('click', e => {
 
 syncThemeColor();
 paintDict();
+
+/* =========================================================================
+   ПОДСКАЗКИ — как у Lyfta: значок «i» у каждой неочевидной графы, совет
+   экрана при первом открытии и пустые места, которые учат. Содержание —
+   пересказ двух книг владельца своими словами, с цифрами и без цитат:
+   «Фитнес для умных» Д. Смирнова (выжимка — docs/fitnes-dlya-umnyh.md) и
+   «Спортивная нутрициология» Дмитриева и Гуниной (2020), — плюс правила
+   самой Системы. Выключаются в шестерёнке (S.hints = 0), закрытые советы
+   экранов — S.tips {экран: 1}; форму обоих чинит scrubKeys.
+   ========================================================================= */
+const HSRC = { f: 'книга «Фитнес для умных», Д. Смирнов', n: 'книга «Спортивная нутрициология», Дмитриев, Гунина', s: 'правило Системы' };
+// ключ: [заголовок, абзацы, источники]
+const HINTS = {
+  day: ['ТРЕНИРОВКА ДНЯ', [
+    'Крупная цифра — поднятое за день: вес × повторы рабочих подходов. Разминка и дроп в неё не идут.',
+    '«Начать тренировку» запускает часы. Тап по строке раскрывает упражнение, ○ закрывает все подходы по цели. Случайный тап — «Отменить» внизу.',
+    'По книге: до 6 упражнений в основной части, около 20 рабочих подходов, около часа.'], 'sf'],
+  streak: ['СЕРИЯ // ПРОПУСК', [
+    'Неделя идёт в серию, если закрыто на одну тренировку меньше плана или больше: при 4 днях — 3.',
+    '«Пропуск» честно помечает день без зала: опыта нет, тренировкой не считается. Заболел или уехал — «⇄ Неделя» → пауза: серия неделю перешагнёт.',
+    'По книге оптимум — через день, 3–4 тренировки в неделю.'], 'sf'],
+  xp: ['УРОВЕНЬ // ОПЫТ // ЦИКЛ', [
+    'Опыт: закрытое упражнение +12, тренировка +60, добавка +4, рекорд +30, квест месяца +100. Уровень — каждые 500 XP; ранг героя E…S и класс растут с уровнем.',
+    'Полоса «Цикл» — неделя плана из шести: подробности в «Прогресс → Цель».'], 's'],
+  wtoday: ['ВЕС // ПОДХ // ПОВТ', [
+    'Рабочий вес — от него считается программа. На лёгкой неделе цикла в карточке стоит облегчённый, это не откат.',
+    'ПОВТ — твоя цель повторов, по умолчанию как в прошлый раз. Исправишь сам — цель уйдёт во все дни с упражнением.',
+    'Двойная прогрессия: верх диапазона во всех подходах — вес растёт на шаг (1 кг до 20 кг, 2,5 кг выше); дважды не добрал низ — шаг назад.',
+    'Диапазоны по книге: сила — 1–5 повторов, масса — 8–15 (в приоритете 10–15), новичку — путь от 6–8 к 15.'], 'fs'],
+  sets: ['ПОДХОДЫ', [
+    'Клетки заранее заполнены целью от прошлого раза: закрыл, ничего не трогая, — значит сделал по плану. Пустая клетка — «не записал», в тоннаж идёт низом диапазона.',
+    '«ВСЕ ПО N» ставит цель во все клетки. «ТИП» меняет метку подхода: Р — разминка, О — до отказа, Д — дроп-сет. Р и Д не идут ни в тоннаж, ни в прогрессию; О — рабочий подход.',
+    'Под каждым подходом — прошлый результат с датой; «Повторить» копирует его в строку, без отметки.',
+    'По книге: дроп — до 3 ступеней по −15–20 % веса, не в становой; чем ближе к отказу, тем проще должно быть упражнение.'], 'fs'],
+  warmup: ['РАЗМИНКА // БЛИНЫ', [
+    'Разминка — мышце, а не упражнению: если мышца уже работала сегодня, её нет. Штанга — с пустого грифа, затем 50/70/85 % для силы (низ ≤ 6) или 50/75 % для объёма; гантели и блоки — 50 и 75 % на первом упражнении.',
+    'По книге: в разминочном подходе вдвое меньше повторов, чем в рабочем, но не больше 8; вес растёт шагами ~20 %; перед рабочим — около 90 % на 1–2 повтора. Перед ногами — 3–5 минут кардио.',
+    'Блины — на одну сторону грифа 20 кг, от тяжёлых к лёгким.'], 'fs'],
+  advice: ['ПОДСКАЗКА ВЕСА // ЗАСТОЙ', [
+    'Было на 3+ повтора выше верха диапазона или на 2+ ниже низа — вес пересчитан по ≈1ПМ на нужное число повторов. Кнопка только вписывает цифру, решаешь ты.',
+    'Застой — три тренировки без роста ≈1ПМ; лёгкие недели цикла приведены к полной нагрузке и застоем не считаются.',
+    'По книге: сменить диапазон повторов или вариант упражнения, программу держать 4–6 недель, порядок упражнений менять примерно раз в 2 недели.'], 'fs'],
+  e1rm: ['≈1ПМ', [
+    'Оценка разового максимума по формуле Эпли: вес × (1 + повторы / 30), по лучшему подходу до 12 повторов.',
+    'Это ориентир, а не цель: проверять максимум в зале не нужно. По нему считаются рекорды, застой и ранг силы.'], 's'],
+  rpe: ['RPE', [
+    'Насколько тяжело было, по шкале 6–10: 10 — отказ, запаса нет; 9 — один повтор в запасе; 8 — два.',
+    'Верх диапазона на RPE 10 вес не поднимает — иначе следующая тренировка начнётся с провала.',
+    'По книге рабочие подходы идут с запасом, сет до отказа — редкость, примерно раз в месяц.'], 'fs'],
+  ss: ['СУПЕРСЕТ // ОТДЫХ', [
+    'Суперсет связывает упражнение со следующим: закрыл первое — карточка переходит ко второму, отдых после пары.',
+    'По книге лучшие пары — противоположные движения (жим + тяга, А1/А2): пока одни мышцы работают, другие отдыхают.',
+    'Отдых Система не рассчитывает: по книге жди, пока дыхание и пульс почти вернутся к покою. Таймер ⏱ — только по нажатию.'], 'fs'],
+  week: ['НЕДЕЛЯ', [
+    'Тап по дню, потом по другому — тренировки меняются местами. «Эта неделя» двигает только даты, «Каждую неделю» — шаблон; прошлое остаётся за своими датами.',
+    'Тап по одному дню — под списком выбор, что на нём стоит.',
+    '«Не могу — сдвинуть на день» везёт тренировку на завтра, цепочка гаснет в первом дне отдыха. «Болею» ставит неделю на паузу: серия не рвётся, цикл ждёт.',
+    'Записанный или закрытый день не двигается.'], 's'],
+  cycle: ['ЦИКЛ', [
+    'Шесть недель: две — набор объёма, две — интенсификация, пик и разгрузка. Нагрузка дня: тяжёлая — 100 % рабочего веса, средняя — 90 %, лёгкая — 80 %, разгрузка — 60 %.',
+    'Лёгкая неделя — не откат. По книге разгрузка нужна каждые 2–4 недели (−15–30 % интенсивности), а после 6–8 недель — отдых, иначе копится усталость и веса встают.',
+    'Неделя плана сменится, когда на прошлой закрыто не меньше 3 тренировок; нет — план повторит неделю, а не убежит вперёд.'], 'fs'],
+  rest: ['ДЕНЬ ОТДЫХА', [
+    'Мышцы растут между тренировками. По книге: сон 7–8 часов, лучше до полуночи, в прохладе и темноте; днём можно 15–25 минут.',
+    'Лёгкая прогулка и растяжка работавших мышц (30 с на подход) помогают восстановиться.',
+    'Хочешь позаниматься сегодня — «⇄ Неделя» поставит сюда тренировку другого дня.'], 'f'],
+  addex: ['ВЫБОР УПРАЖНЕНИЯ', [
+    'По книге программа держит равновесие противоположностей: горизонтальный жим — горизонтальная тяга, вертикальный жим — вертикальная тяга, колено — таз.',
+    'Новичку нужен набор: жим, одна тяга, присед, тазовое движение, вращение плеча наружу и кор. Не больше 6 упражнений в основной части.'], 'f'],
+  lib: ['КАТАЛОГ', [
+    '876 упражнений: поиск (можно без «ё»), лента мышц, фильтры по книге и инвентарю, закладка — избранное.',
+    'Тап по карточке — страница: мышцы, тип движения, лесенка по книге, прошлый раз и твои рекорды. «+ В тренировку» ставит упражнение в выбранный день.',
+    '«!» на карточке — книга считает движение вредным.'], 'fs'],
+  planes: ['ТИПЫ ДВИЖЕНИЯ', [
+    'ГЖ — горизонтальный жим, ВЖ — вертикальный жим, ГТ — горизонтальная тяга, ВТ — вертикальная тяга, КД — колено-доминантные (приседы, выпады), ТД — таз-доминантные (становые, мостики), ВПН — вращают плечо наружу, стабилизаторы плеча, кор — корпус.',
+    'Правило книги: противоположные типы уравнивают по числу подъёмов за неделю (ГЖ = ГТ, ВЖ = ВТ, КД = ТД), с небольшим перекосом в сторону тяг, вертикальных жимов и таза.',
+    'Вредные по книге — присед Сизифа, силовой жим ногами, тяга к подбородку стоя, французский жим, гакк-машина, концентрированные сгибания, разводки лёжа. Фильтр «Без вредных» их прячет.'], 'f'],
+  ladder: ['ЛЕСЕНКА // МЫШЦЫ', [
+    'Каждый тип движения — лесенка: 1 — самое простое, для новичка; 5 — самое тяжёлое по весу; 6 — на одну сторону, сложное по координации. Выше — когда техника стабильна.',
+    'По книге нет «базовых» и «изолирующих»: базовое — то, что ты сейчас развиваешь.',
+    'На фигуре ярко — основные мышцы, вполсилы — помощники. В баланс недели подходы идут основной мышце.'], 'fs'],
+  recap: ['ИТОГИ', [
+    'Неделя — с понедельника: тренировки, рабочие подходы, поднятые тонны и рекорды. «Итоги недели» и «Итоги месяца» — те же цифры с картой мышц и картинкой.',
+    '«Что добрать» — подсказка к тренировкам, оставшимся на неделе по плану, а не лишняя тренировка.',
+    'Плитки сверху — за весь журнал; «недель подряд» — серия (пауза её не рвёт).'], 's'],
+  recs: ['РЕКОРДЫ', [
+    'Четыре вида: вес, ≈1ПМ (формула Эпли), лучший подход (вес × повторы) и объём упражнения за тренировку.',
+    'Всё — по журналу: снимешь отметку — рекорд вернётся к прежнему. Первая запись упражнения — точка отсчёта, не рекорд.'], 's'],
+  musmap: ['КАРТА МЫШЦ', [
+    'Цвет — рабочие подходы мышцы за 7 дней против её нормы: столько ставит на мышцу сама программа. Серая — не было, дальше «мало», «почти», «норма».',
+    'Касание мышцы — что делал, когда в последний раз и что стоит в программе. Предплечья, ягодицы, голень и приводящие не красятся: таких мышц нет в журнале.'], 's'],
+  balance: ['ПОДХОДЫ ЗА 7 ДНЕЙ', [
+    'Столбец — рабочие подходы мышцы за неделю, риска — норма программы. Разминка и дроп не считаются.',
+    'По книге противоположные движения должны быть поровну, а у слабого звена — чуть больше.'], 'fs'],
+  bwchart: ['ВЕС ТЕЛА', [
+    'Бледные точки — взвешивания, яркая линия — среднее за 7 дней: утренний вес гуляет на 1–2 кг от воды.',
+    'Взвешивайся утром натощак, 3+ раза в неделю. Темп — наклон по всем взвешиваниям за 21 день; нужно минимум 3 точки за 7+ дней.'], 's'],
+  tonall: ['ЗА ВСЁ ВРЕМЯ', [
+    'Тоннаж по группам за весь журнал: вес × повторы рабочих подходов. Шкала прямая, край — 1000 т, дальше — следующая тысяча.'], 's'],
+  goal: ['ВЕС // ЦЕЛЬ', [
+    'Вес сейчас — одна цифра на всё приложение: по ней считаются еда, темп и ранги силы.',
+    'Цель выше веса — набор, ниже — снижение, пусто — удержание.',
+    'По книге в первые полгода задача новичка — техника, общая подготовка и привычки питания, а не резкий набор или сброс.'], 'fs'],
+  bmi: ['ИМТ', [
+    'Индекс массы тела — вес / рост². У тренированных мышцы завышают его: это ориентир, а не диагноз. Доля жира — оценка по ИМТ, возрасту и полу.',
+    'По книге хорошая форма — 12–14 % жира.'], 'fs'],
+  pace: ['РАСЧЁТ', [
+    'Поддержание — формула Миффлина — Сан Жеора × активность: 1,45 сидя, 1,6 на ногах, 1,75 физический труд.',
+    'Набор — +12 %, снижение — −20 % в среднем за неделю; день тренировки на 200 ккал выше дня отдыха.',
+    'Коридор темпа: набор 0,25–0,5 % массы в неделю, снижение 0,5–1 %, удержание ±0,25 %. Вышел из коридора — Система поправит калории шагом 100–400 ккал.'], 's'],
+  quests: ['КВЕСТЫ МЕСЯЦА', [
+    'Цели строятся из твоего же журнала: чуть выше того, что уже получалось. Опыт за каждый квест — один раз в месяц.'], 's'],
+  meas: ['ЗАМЕРЫ', [
+    'Сантиметровой лентой, утром, в тех же точках, раз в 2–4 недели. Весы не отличат жир от мышц, а талия и бицепс — отличат.',
+    'Талия растёт быстрее груди и бицепса — набор идёт в жир; талия уходит, а вес стоит — рекомпозиция.'], 's'],
+  cal: ['ИСТОРИЯ', [
+    'Каждый записанный день: подходы, тоннаж, еда. Тап по дню открывает его; прошлое правится через «Править этот день».',
+    'Календарь красит дни по типу тренировки; год — одна клетка на день.'], 's'],
+  an: ['РАЗБОР // РАНГИ', [
+    '«Разбор» — вердикт по темпу, белку, мышцам и застою одной моделью с графиком. «Прогресс по упражнениям» — график ≈1ПМ и рекорды.',
+    '«Ранги силы» — ≈1ПМ к весу тела в базовых движениях против пяти порогов E…S (у женщин свои). Без веса тела ранга нет.',
+    'Силовой баланс по книге: становая ≈ 1,5 × присед; жим лёжа ≈ подтягивания обратным хватом с весом тела.'], 'fs'],
+  rank: ['РАНГ СИЛЫ', [
+    '≈1ПМ базового движения делится на вес тела и сравнивается с пятью порогами: E — новичок … S — элита. У женщин пороги свои.',
+    'Изоляция ранга не получает: по одиночному махи выходили бы в S. Нужен вес тела в «Цели».'], 's'],
+  work: ['РАБОЧИЕ ВЕСА', [
+    '«Рабочий» — вес, от которого считается программа; «Неделя» — что стоит сегодня с учётом цикла; «Рекорд» — лучший вес по журналу.',
+    '«Пересчитать» заново задаёт веса от опорных. Веса гантелей — за одну.'], 's'],
+  backup: ['РЕЗЕРВНАЯ КОПИЯ', [
+    'Всё хранится только на этом телефоне. iOS может очистить данные сайта, в который долго не заходили, — сохраняй копию раз в пару месяцев в «Файлы» или iCloud.',
+    'В копии журнал, веса, еда и фото. CSV — таблица для Excel. «Начать заново» стирает всё — сначала копия.'], 's'],
+  kcal: ['КАЛОРИИ', [
+    'Норма дня из расчёта: поддержание × 1,12 на наборе или × 0,8 на снижении; день тренировки на 200 ккал выше дня отдыха.',
+    'Впишешь свою цель — расчёт отключится до «ВЕРНУТЬ РАСЧЁТ». Откуда цифры — «Прогресс → Цель → Расчёт».'], 's'],
+  protein: ['БЕЛОК', [
+    'Норма Системы — 1,9 г на кг веса, на снижении 2,2 г/кг.',
+    'По нутрициологии спортсмену нужно 1,4–2,0 г/кг в день, в силовых видах — 1,6–2,2 г/кг, на дефиците — ближе к верху, чтобы сохранить мышцы.',
+    'Раздели на 3–4 приёма примерно по 0,4 г/кг: так синтез мышечного белка идёт лучше, чем от одной большой порции.'], 'ns'],
+  meals: ['РАЦИОН', [
+    'Добавь приём и продукты — калории и белок считаются сами. «Скопировать рацион» переносит день целиком; пустой день заполняется одним нажатием по последнему дню с едой.',
+    'Белок — ровнее по дню, 3–4 приёма.'], 'ns'],
+  supp: ['ДОБАВКИ', [
+    'Креатин моногидрат: 3–5 г в день постоянно или загрузка — 20 г в 4 приёма 5–7 дней; больше 15 г в сутки смысла нет.',
+    'Кофеин: 3–6 мг/кг за 30–60 минут до тренировки, действует через 25–40 минут; выше 9 мг/кг пользы не прибавляет.',
+    'Вода: потеря 1–2 % массы тела с потом уже снижает работоспособность — пей по ходу тренировки.',
+    'Добавки не заменяют еду и сон. Отметка приёма даёт +4 XP.'], 'n'],
+  photo: ['ФОТО', [
+    'Снимок за выбранный день: одно место, один свет, одна поза, утром, раз в неделю. Вес в этот день пишется рядом.',
+    '«Сравнить» ставит два снимка рядом — изменения за месяц видно лучше, чем в зеркале. Фото живут только на телефоне и попадают в резервную копию.'], 's']
+};
+// советы экранов: показываются, пока их не закрыли «Понятно»
+const TIPS = {
+  wo: ['Здесь тренировка дня. Тап по упражнению — подходы строками, ○ — закрыть по цели. Значок «i» объясняет любую графу.', 'day'],
+  ex: ['Каталог по книге: тип движения, лесенка от простого к тяжёлому, вредные помечены «!». Тап по карточке — страница упражнения.', 'lib'],
+  prog: ['Сверху — итоги и рекорды, ниже — нагрузка, цель и веса. Всё считается по журналу, вводить дважды ничего не нужно.', 'recap'],
+  food: ['Нормы калорий и белка считаются от твоего веса и цели. Вписывай еду — полосы заполнятся.', 'kcal'],
+  photo: ['Одно место, один свет, одна поза — раз в неделю. Потом «Сравнить».', 'photo']
+};
+const hintsOn = () => !S || S.hints !== 0;
+// кнопка «i» для разметки, которая строится кодом
+const hib = (k, lbl) => HINTS[k]
+  ? '<button type="button" class="hib" data-hint="' + k + '" aria-label="Подсказка: ' + esc(lbl || HINTS[k][0].toLowerCase()) + '"></button>' : '';
+let hintBack = null;
+function openHint(k) {
+  const h = HINTS[k]; if (!h) return;
+  hintBack = document.activeElement;
+  $('hshT').textContent = h[0];
+  $('hshB').innerHTML = h[1].map(p => '<p>' + esc(p) + '</p>').join('');
+  $('hshS').textContent = '// ' + h[2].split('').map(c => HSRC[c]).filter(Boolean).join(' · ');
+  $('hsh').dataset.k = k;
+  $('hsh').hidden = false;
+  $('hshB').parentNode.scrollTop = 0;
+  try { $('hshX').focus({ preventScroll: true }); } catch (e) { /* нет фокуса — не беда */ }
+}
+function hintClose() {
+  if ($('hsh').hidden) return;
+  $('hsh').hidden = true;
+  const b = hintBack; hintBack = null;
+  if (b && b.isConnected && b.focus) try { b.focus({ preventScroll: true }); } catch (e) { /* пусть */ }
+}
+/* Ловим «i» раньше всех: значок сидит в строке упражнения, в сводке
+   разминки, в подписи поля — их собственные обработчики не должны
+   сработать (раскрыть упражнение, свернуть разминку, сфокусировать поле). */
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-hint]');
+  if (!b || !b.dataset.hint) return;
+  e.preventDefault(); e.stopPropagation();
+  openHint(b.dataset.hint);
+}, true);
+$('hshX').addEventListener('click', hintClose);
+$('hsh').addEventListener('click', e => { if (e.target === $('hsh')) hintClose(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('hsh').hidden) { e.stopPropagation(); hintClose(); } }, true);
+
+function paintTips() {
+  const on = hintsOn();
+  document.body.classList.toggle('nohints', !on);
+  Object.keys(TIPS).forEach(k => {
+    const el = $('tip-' + k); if (!el) return;
+    const show = on && !(S.tips && S.tips[k] === 1);
+    el.hidden = !show;
+    if (show && !el.firstChild) el.innerHTML = '<p><b>ПОДСКАЗКА</b>' + esc(TIPS[k][0]) + '</p>' +
+      '<div class="tipb"><button type="button" class="tipm" data-hint="' + TIPS[k][1] + '">Подробнее</button>' +
+      '<button type="button" class="tipok" data-tipok="' + k + '">Понятно</button></div>';
+  });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-tipok]');
+  if (!b) return;
+  const k = b.dataset.tipok; if (!TIPS[k]) return;
+  S.tips = (S.tips && typeof S.tips === 'object' && !Array.isArray(S.tips)) ? S.tips : {};
+  S.tips[k] = 1; save(); paintTips();
+});
 
 /* =========================================================================
    ЭКРАН НЕ ГАСНЕТ ВО ВРЕМЯ ТРЕНИРОВКИ
@@ -8407,7 +8664,7 @@ function openLibFilter() {
     <div class="cph">ЕЩЁ</div>
     <div class="chains"><button data-lf="safe:t" class="${LF.safe ? 'on' : ''}">Без вредных по книге</button>
       <button data-lf="ru:t" class="${LF.ru ? 'on' : ''}">Только с русским описанием</button></div>
-    <button class="add" data-lfdone="1">Готово</button></div>`);
+    <button class="add" data-lfdone="1">Готово</button></div>`, 'planes');
 }
 
 // последний раз по журналу: дата и что было
@@ -8457,7 +8714,7 @@ function openLib(id) {
       <div class="lbtns">
         <button class="lgo" data-libadd="${esc(o.id)}">+ В тренировку · ${esc(fmt(inDay, 1))}</button>
         <button class="lfav2${fav ? ' on' : ''}" data-lfav="${esc(o.id)}" aria-pressed="${fav}">${fav ? 'В избранном' : 'В избранное'}</button>
-      </div></div>`);
+      </div></div>`, 'ladder');
     // два кадра по очереди — как анимация движения; при «уменьшении движения» кадры стоят рядом
     clearInterval(libAnim);
     const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -8729,7 +8986,7 @@ function openProgression() {
         график и вся история подходов по этому упражнению.</p>
     </div>
     <button class="copyb" id="csvSheet">▤ ВЫГРУЗИТЬ ВЕСЬ ЖУРНАЛ В ТАБЛИЦУ</button>`;
-  sheet('ПРОГРЕССИЯ', html);
+  sheet('ПРОГРЕССИЯ', html, 'recs');
   $('csvSheet').addEventListener('click', exportCsv);
 }
 $('progBtn').addEventListener('click', openProgression);
@@ -9914,7 +10171,7 @@ function openRation() {
       <span>${mealsOf(ds).length} приёмов · ${rnd(t.k)} ккал · ${rnd(t.p)} г белка</span>
      </button>`;
   }).join('') : '<p class="s" style="color:var(--mut);font-size:12px;margin:0 0 4px">Съеденных дней пока нет.</p>';
-  sheet('РАЦИОН', h);
+  sheet('РАЦИОН', h, 'meals');
 }
 $('cpBtn').addEventListener('click', openRation);
 
@@ -10187,7 +10444,7 @@ async function paintPhotoScreen() {
    вместе с ним; теперь открывается по кнопке и подтягивает миниатюры лениво. */
 function openPhotoHistory() {
   if (!PH.length) { note('Снимков пока нет'); return; }
-  sheet('ИСТОРИЯ СНИМКОВ', '<div class="strip" id="stripAll"></div>');
+  sheet('ИСТОРИЯ СНИМКОВ', '<div class="strip" id="stripAll"></div>', 'photo');
   const box = $('stripAll');
   box.innerHTML = PH.slice().reverse().map(d => {
     const bw = num(recOf(d).bw);
@@ -10534,7 +10791,7 @@ function openMonth(ym) {
       ${MUSCLES.map(m => { const t = Math.round(volTargetM(m) * k), v = w.m[m] || 0;
         return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v, k)}" style="transform:scaleX(${Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3)})"></u></s><b>${v}${t ? '/' + t : ''}</b></div>`; }).join('')}
     </div>
-    <button class="copyb" data-wk="${mondayOf(ym === cur ? today() : ym + '-' + String(dim).padStart(2, '0'))}">Итоги недели</button>`);
+    <button class="copyb" data-wk="${mondayOf(ym === cur ? today() : ym + '-' + String(dim).padStart(2, '0'))}">Итоги недели</button>`, 'recap');
 }
 /* Что добрать: на текущей неделе — мышцы меньше половины нормы, и сколько
    тренировок по плану ещё впереди. Это подсказка к оставшимся тренировкам,
@@ -10578,7 +10835,7 @@ function openWeek(mon) {
     ${lagHtml(w, mon)}
     <button class="copyb" data-wkshare="${mon}">Поделиться картинкой</button>
     <button class="copyb" data-mon="${mon.slice(0, 7)}">Итоги месяца</button>`;
-  sheet('ИТОГИ НЕДЕЛИ', html);
+  sheet('ИТОГИ НЕДЕЛИ', html, 'recap');
 }
 /* Картинка итогов 1080×1350 — в стиле окна Системы: синева, сетка, штрих. */
 function wkPng(mon) {
@@ -10663,7 +10920,7 @@ function checkQuests() {
 function paintQuests() {
   const box = $('questBox'); if (!box) return;
   const ym = today().slice(0, 7), got = questDone(ym);
-  box.innerHTML = '<div class="wtitle">КВЕСТЫ МЕСЯЦА<em>' + MON[+ym.slice(5, 7) - 1].toLowerCase() + ' · +' + XP_Q + ' XP за каждый</em></div>' +
+  box.innerHTML = '<div class="wtitle">КВЕСТЫ МЕСЯЦА<em>' + MON[+ym.slice(5, 7) - 1].toLowerCase() + ' · +' + XP_Q + ' XP за каждый' + hib('quests') + '</em></div>' +
     questsOf(ym).map(q => {
       const done = got.indexOf(q.id) >= 0 || q.v >= q.need, f = q.f || (v => String(v));
       return '<div class="qrow' + (done ? ' ok' : '') + '"><span>' + (done ? '✓ ' : '') + esc(q.t) + '</span><b>' + f(q.v) + ' / ' + f(q.need) + '</b>' +
@@ -10683,7 +10940,7 @@ function measSeries(k) {
 function paintMeas() {
   const box = $('measBox'); if (!box) return;
   const m = measAll(), ds = Object.keys(m).sort();
-  const head = '<div class="wtitle">ЗАМЕРЫ<em>' + (ds.length ? 'последний ' + fmt(ds[ds.length - 1], 1) : 'сантиметровой лентой') + '</em></div>';
+  const head = '<div class="wtitle">ЗАМЕРЫ<em>' + (ds.length ? 'последний ' + fmt(ds[ds.length - 1], 1) : 'сантиметровой лентой') + hib('meas') + '</em></div>';
   if (!ds.length) {
     box.innerHTML = head + '<p class="mhint">Весы не отличат жир от мышц, а талия и бицепс — отличат. Утром, раз в 2–4 недели.</p>' +
       '<button class="anb" data-meas="1">Внести замеры</button>';
@@ -10710,7 +10967,7 @@ function openMeas() {
     '<button class="copyb" data-measave="1">Записать</button>' +
     (Object.keys(td).length ? '<button class="copyb mdel" data-measdel="' + today() + '">Стереть сегодняшние замеры</button>' : '') + '</div>' +
     (have.length ? '<div class="win mhist"><div class="exchb">' + have.map(([k, l]) => '<button data-measch="' + k + '" class="' + (k === measK ? 'on' : '') + '">' + l + '</button>').join('') + '</div>' +
-      miniChart(sr, 'var(--acc-2)', v => kg(v) + ' см') + '</div>' : ''));
+      miniChart(sr, 'var(--acc-2)', v => kg(v) + ' см') + '</div>' : ''), 'meas');
 }
 
 /* ---------- данные, на которые опирается тренер ---------- */
@@ -11127,7 +11384,7 @@ function openAnalysis() {
     <p class="bkst">Выгрузка — обычный текст с твоими числами. Вставь его в чат с Claude
        и спроси что угодно: разбор программы, замену упражнения, что делать с застоем.</p>`;
 
-  sheet('РАЗБОР', html);
+  sheet('РАЗБОР', html, 'an');
   $('anCopy').addEventListener('click', copySummary);
 }
 
