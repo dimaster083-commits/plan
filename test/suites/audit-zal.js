@@ -74,6 +74,31 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     '2. после обмена дней шаблона снятая отметка возвращает вес и цель', JSON.stringify({откат,назад}));
   function num62(v){ return Math.abs(parseFloat(String(v).replace(',','.'))-62.5)<1e-6; }
 
+  // 3. смена типа дня во всех неделях: прошлые тренировки остаются тренировками
+  //    и в посещаемости, и в плане месяца, и в интенсивности для застоя (dayLook, а не шаблон)
+  await p.waitForTimeout(300);
+  const был=await p.evaluate(()=>{
+    S.setup=1; S.sound=0; document.getElementById('setup').classList.remove('on');
+    S.rec={}; S.map={}; S.pr={}; delete S.pause; S.days=build().days;
+    S.start=addDays(mondayOf(today()),-56);
+    const t=today(); let last=null;
+    for(let k=13;k>=1;k--){ const ds=addDays(t,-k);
+      if(dayOf(ds).t==='rest') continue;
+      S.rec[ds]={wo:1,log:{0:{done:1,n:'Жим лёжа',g:'Грудь',w:'60',s:'3',r:'8',rs:[8,8,8],vol:1440,sd:1}},sp:{}};
+      last=ds; }
+    entCache=null; save(); tab='wo'; sel=last; edit=true; render();
+    const rd=rangeData(addDays(t,-13),13);
+    return {ds:last, a:attendance(14), план:rd.days.filter(x=>x.tr).length, инт:intFactor(last)};
+  });
+  await p.evaluate(()=>{ const bt=document.querySelector('#types [data-t="rest"]'); bt.click(); });
+  await p.waitForTimeout(300); await p.click('#askY'); await p.waitForTimeout(300);
+  const стал=await p.evaluate(ds=>{ edit=false; sel=today(); render();
+    const rd=rangeData(addDays(today(),-13),13);
+    return {шаблон:S.days[wdOf(ds)].t, a:attendance(14), план:rd.days.filter(x=>x.tr).length, инт:intFactor(ds)}; },был.ds);
+  chk(стал.шаблон==='rest'&&стал.a.planned===был.a.planned&&стал.a.done===был.a.done&&стал.a.done<=стал.a.planned
+      &&стал.план===был.план&&Math.abs(стал.инт-был.инт)<1e-9&&был.инт<1,
+    '3. смена типа дня не делает прошлые тренировки отдыхом: посещаемость, план месяца, интенсивность', JSON.stringify({был,стал}));
+
   chk(errs.length===0,'без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);

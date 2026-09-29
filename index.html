@@ -9912,7 +9912,8 @@ $('ovX').addEventListener('click', () => { $('ov').classList.remove('on'); docum
    полной интенсивности: иначе лёгкая неделя, назначенная самим циклом,
    читалась как «вес не растёт». */
 function intFactor(ds) {
-  const IN = intOf(ds, (dayOf(ds) || {}).t);
+  // тип дня — каким он был в тот день (dayLook): смена шаблона прошлое не переписывает
+  const IN = intOf(ds, dayLook(ds).t);
   return Math.max(0.3, (IN ? IN[0] : 1) * rampOf(ds));
 }
 function bestByDate(name, norm) {
@@ -9932,7 +9933,9 @@ function attendance(days) {
     if (recOf(ds).wo) done++;
     // дни до старта плана и сегодняшняя, ещё не закрытая тренировка — не пропуски
     if (ds < planStart() || (ds === today() && !recOf(ds).wo)) continue;
-    if (dayOf(ds).t !== 'rest' && !paused(ds)) planned++;
+    // план прошедшего дня — его снимок (dayLook): после смены типа дня во всех
+    // неделях прошлые тренировки становились «отдыхом», и сделано выходило больше плана
+    if (dayLook(ds).t !== 'rest' && !paused(ds)) planned++;
   }
   return { planned, done };
 }
@@ -10020,7 +10023,7 @@ function rangeData(mon, n) {
     if (r.wo) w.wo++;
     if (r.t0 && r.t1 && r.t1 > r.t0) w.mins += Math.round((r.t1 - r.t0) / 60000);
     w.ton += ton; w.sets += sets;
-    w.days.push({ ds, ton, sets, wo: !!r.wo, skip: !!r.skip, tr: (dayOf(ds) || {}).t !== 'rest' });
+    w.days.push({ ds, ton, sets, wo: !!r.wo, skip: !!r.skip, tr: dayLook(ds).t !== 'rest' });
   }
   return w;
 }
