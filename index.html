@@ -4261,18 +4261,43 @@ function scrubKeys() {
       Object.keys(row).forEach(k => { const v = num(row[k]); if (v > 0) row[k] = v; else delete row[k]; });
     });
   }
-  if (S.quest !== undefined && !plain(S.quest)) S.quest = {};
+  // имя «__proto__» из файла копии — не упражнение: при копировании словаря оно меняет прототип
+  const BADK = k => k === '__proto__' || k === 'constructor' || k === 'prototype';
+  /* Квест месяца — список выполненных id, опыт за каждый. Копия, правленая
+     руками, приносила тысячу одинаковых id — и тысячу наград опыта. */
+  if (S.quest !== undefined) {
+    if (!plain(S.quest)) S.quest = {};
+    Object.keys(S.quest).forEach(ym => {
+      const v = S.quest[ym];
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(ym) || !Array.isArray(v)) { delete S.quest[ym]; return; }
+      S.quest[ym] = v.filter((x, i) => typeof x === 'string' && x && v.indexOf(x) === i).slice(0, 10);
+    });
+  }
   if (S.myEx !== undefined) {
     if (!plain(S.myEx)) S.myEx = {};
-    Object.keys(S.myEx).forEach(n => { if (!GROUPS.some(([g]) => g === S.myEx[n]) || !n.trim()) delete S.myEx[n]; });
+    Object.keys(S.myEx).forEach(n => { if (BADK(n) || !GROUPS.some(([g]) => g === S.myEx[n]) || !n.trim()) delete S.myEx[n]; });
   }
   // избранное каталога — список id базы; связка «название → упражнение базы и мышца»
   if (S.fav !== undefined) S.fav = Array.isArray(S.fav) ? S.fav.filter(x => typeof x === 'string' && x).slice(0, 500) : [];
+  /* id базы идёт прямо в адрес картинки (exPic). Кавычка в id из файла копии
+     дописывала в разметку свой атрибут — в базе id только из латиницы, цифр, _ и -. */
   if (S.libEx !== undefined) {
     if (!plain(S.libEx)) S.libEx = {};
     Object.keys(S.libEx).forEach(n => {
       const v = S.libEx[n];
-      if (!n.trim() || !Array.isArray(v) || typeof v[0] !== 'string' || (v[1] !== null && MUSCLES.indexOf(v[1]) < 0)) delete S.libEx[n];
+      if (BADK(n) || !n.trim() || !Array.isArray(v) || typeof v[0] !== 'string' || !/^[A-Za-z0-9_-]{1,120}$/.test(v[0])
+        || (v[1] !== null && MUSCLES.indexOf(v[1]) < 0)) delete S.libEx[n];
+    });
+  }
+  /* Заметка к упражнению — строка до 300 знаков. Массив вместо словаря молча
+     терял каждую новую заметку (JSON не пишет свойства массива), объект
+     показывался в поле как «[object Object]». */
+  if (S.exNote !== undefined) {
+    if (!plain(S.exNote)) S.exNote = {};
+    Object.keys(S.exNote).forEach(n => {
+      const v = S.exNote[n];
+      if (BADK(n) || !n.trim() || typeof v !== 'string' || !v.trim()) delete S.exNote[n];
+      else if (v.length > 300) S.exNote[n] = v.slice(0, 300);
     });
   }
   Object.keys(S.map).forEach(k => { const v = S.map[k]; if (!(Number.isInteger(v) && v >= 0 && v < 7)) delete S.map[k]; });
@@ -4291,6 +4316,16 @@ function scrubKeys() {
     if (d.ml !== undefined) d.ml = meals(d.ml) || [];
   });
   S.days = (S.days || []).filter(plain);
+  /* Расписание — ровно семь дней, индекс — день недели. Копия с пятью днями
+     проходила проверку, и шторка «Неделя» падала на S.days[5]; лишние дни
+     никогда не показывались. Недостающие берутся из шаблона, подпись дня
+     (k) принадлежит слоту — как в swapWeekdays. Пустое чинит migrate(). */
+  if (S.days.length) {
+    const base = build().days;
+    S.days = S.days.slice(0, 7);
+    while (S.days.length < 7) S.days.push(base[S.days.length]);
+    S.days.forEach((d, i) => { d.k = TPL[i].k; });
+  }
   Object.keys(S.rec).forEach(ds => {
     const r = S.rec[ds];
     if (!plain(r)) { delete S.rec[ds]; return; }
@@ -4301,6 +4336,16 @@ function scrubKeys() {
       if (typeof l.rs === 'string') l.rs = l.rs.split(/[^\d.]+/).filter(Boolean).map(Number);
       if (l.rs !== undefined && !Array.isArray(l.rs)) delete l.rs;
       if (Array.isArray(l.rs) && l.rs.some(v => typeof v !== 'number' && typeof v !== 'string')) l.rs = l.rs.map(v => num(v));
+      /* Остальные списки записи — только списками: строка вместо списка
+         роняла снятие отметки (wu.map, bump.slice().reverse). */
+      ['rs', 'ws', 'wu', 'dr', 'fl', 'kinds', 'ck', 'recs'].forEach(k => {
+        if (l[k] === undefined) return;
+        if (!Array.isArray(l[k])) delete l[k]; else if (l[k].length > 100) l[k] = l[k].slice(0, 100);
+      });
+      ['bump', 'rbump'].forEach(k => {
+        if (l[k] === undefined) return;
+        if (!Array.isArray(l[k])) delete l[k]; else l[k] = l[k].filter(Array.isArray);
+      });
     });
     if (r.sp !== undefined && !plain(r.sp)) r.sp = {};
     if (r.dt !== undefined && !TYPES.some(([k]) => k === r.dt)) { delete r.dt; delete r.dn; }
@@ -6040,7 +6085,7 @@ function dayEntries(ds) {
       : (rs
         ? rs.reduce((a, b, i) => a + b * (ws && num(ws[i]) > 0 ? num(ws[i]) : w), 0)
         : sets * firstRep(reps) * w);
-    out.push({ n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs, ws: ws,
+    out.push({ j: j, n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs, ws: ws,
       vol: vol, g: l.g || p.g || null, pr: (l.prevPr !== undefined && l.prevPr > 0) || (Array.isArray(l.recs) && l.recs.length > 0),
       wu: Array.isArray(l.wu) ? l.wu : null, dr: Array.isArray(l.dr) ? l.dr : null,
       fl: Array.isArray(l.fl) ? l.fl : null, rpe: num(l.rpe) || 0 });
@@ -8415,23 +8460,26 @@ function buildCsv() {
     'Заметка'].join(';')];
   Object.keys(S.rec).sort().forEach(ds => {
     const r = S.rec[ds], day = S.days[dayIdx(ds)], lg = r.log || {};
-    const base = [ds, day ? day.k : '', r.wo ? 'да' : 'нет'];
+    // день недели — самой даты: у перенесённой даты S.days[dayIdx].k — чужой слот
+    const base = [ds, TPL[wdOf(ds)].k, r.wo ? 'да' : 'нет'];
     const tailBw = String(num(r.bw) || '').replace('.', ',');
-    const keys = Object.keys(lg).filter(j => lg[j].done);
-    if (!keys.length) {
+    /* Строки и тоннаж — тем же счётом, что журнал (dayEntries): по записанным
+       подходам и их весам. Раньше без готового l.vol тоннаж шёл по плану —
+       подходы × низ диапазона × вес, и таблица расходилась с «Прогрессом». */
+    const ents = dayEntries(ds);
+    if (!ents.length) {
       out.push(base.concat(['', '', '', '', '', '', '', '', tailBw, q(r.note || '')]).join(';'));
       return;
     }
-    keys.forEach(j => {
-      const l = lg[j], e = (day && day.ex[j]) || {};
-      const sets = num(pick(l.s, e.s)), reps = pick(l.r, e.r), w = num(pick(l.w, e.w));
-      const rs = (l.rs || []).filter(v => num(v) > 0);
+    ents.forEach(x => {
+      const l = lg[x.j], e = (day && day.ex[x.j]) || {};
+      const rs = (x.rs || []).filter(v => v > 0);
       out.push(base.concat([
-        q(l.n || e.n || ''), q(l.g || e.g || ''),
-        sets, q(reps), q(rs.join('/')),
-        q(rs.length ? (fixedAt({ r: e.r ?? l.r, s: sets }, l) ? 'да' : 'нет') : ''),
-        String(w).replace('.', ','),
-        String(num(l.vol) || sets * firstRep(reps) * w).replace('.', ','),
+        q(x.n), q(x.g || ''),
+        x.s, q(x.r), q(rs.join('/')),
+        q(rs.length ? (fixedAt({ r: e.r ?? l.r, s: x.s }, l) ? 'да' : 'нет') : ''),
+        String(x.w).replace('.', ','),
+        String(Math.round(x.vol * 100) / 100).replace('.', ','),
         tailBw, q(r.note || '')
       ]).join(';'));
     });
@@ -10184,8 +10232,8 @@ function openMonth(ym) {
     <button class="copyb" data-wk="${mondayOf(ym === cur ? today() : ym + '-' + String(dim).padStart(2, '0'))}">Итоги недели</button>`);
 }
 /* Что добрать: на текущей неделе — мышцы меньше половины нормы, и сколько
-   тренировок по плану ещё впереди. Своих дней нет (шаблон владельца),
-   поэтому это подсказка к оставшимся тренировкам, а не новая тренировка. */
+   тренировок по плану (с переносами недели) ещё впереди. Это подсказка
+   к оставшимся тренировкам, а не новая тренировка. */
 function lagHtml(w, mon) {
   if (mon !== mondayOf(today())) return '';
   const lag = MUSCLES.filter(m => { const t = volTargetM(m); return t > 0 && (w.m[m] || 0) < t / 2; });
