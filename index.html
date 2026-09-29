@@ -10161,8 +10161,8 @@ function openMonth(ym) {
     <button class="copyb" data-wk="${mondayOf(ym === cur ? today() : ym + '-' + String(dim).padStart(2, '0'))}">Итоги недели</button>`);
 }
 /* Что добрать: на текущей неделе — мышцы меньше половины нормы, и сколько
-   тренировок по плану ещё впереди. Своих дней нет (шаблон владельца),
-   поэтому это подсказка к оставшимся тренировкам, а не новая тренировка. */
+   тренировок по плану ещё впереди (даты недели — с переносами из «Недели»).
+   Новых дней не заводим: это подсказка к оставшимся тренировкам. */
 function lagHtml(w, mon) {
   if (mon !== mondayOf(today())) return '';
   const lag = MUSCLES.filter(m => { const t = volTargetM(m); return t > 0 && (w.m[m] || 0) < t / 2; });
@@ -10175,7 +10175,9 @@ function openWeek(mon) {
   const cur = mondayOf(today());
   mon = mon && mon <= cur ? mondayOf(mon) : cur;
   const w = weekData(mon), pw = weekData(addDays(mon, -7));
-  const plan = (S.days || []).filter(d => d.t !== 'rest').length;
+  // план — тренировки этих дат, тем же счётом, что у месяца: после сдвига
+  // за край недели или смены типа дня шаблон показывал чужое число
+  const plan = w.days.filter(x => x.tr).length;
   const tile = (v, l, d) => `<div class="win"><b>${v}</b><span>${l}</span>${d ? '<i>' + d + ' к прошлой</i>' : ''}</div>`;
   const WD = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
   const mx = Math.max(1, ...w.days.map(x => x.ton));
@@ -10228,7 +10230,7 @@ function wkPng(mon) {
     x.fillStyle = ['#2a3a5a', '#5a7fd0', '#7a6dff', '#3fb8ff'][mmLevel(m, v)]; x.fillRect(400, y + 6, 470 * k, 24);
     x.fillStyle = '#ffffff'; x.fillText(v + (t ? '/' + t : ''), 895, y + 28);
   });
-  const st = streak(), plan = (S.days || []).filter(d => d.t !== 'rest').length;
+  const st = streak(), plan = w.days.filter(x => x.tr).length;
   x.fillStyle = '#8fb8e8'; x.font = '500 26px ' + F;
   x.fillText('план недели — ' + plan + ' трен.' + (st > 0 ? ' · серия ' + st + ' нед. подряд' : ''), 100, 1255);
   return new Promise(res => c.toBlob(res, 'image/png'));

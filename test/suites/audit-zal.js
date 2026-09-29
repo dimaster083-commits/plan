@@ -145,6 +145,20 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(rpe.закрыт&&+rpe.прибавка===62.5&&+rpe.отказ===60&&+rpe.снова===62.5&&+rpe.ещё===60&&+сброс5===60,
     '5. RPE 10 после закрытия держит вес, снятый RPE возвращает прибавку, отмена — всё назад', JSON.stringify({...rpe,сброс5}));
 
+  // 6. итоги недели: план — тренировки этих дат (как у месяца), а не шаблона; выпавшая при сдвиге не в плане
+  const план6=await p.evaluate(()=>{
+    S.rec={}; S.map={}; delete S.pause; S.days=build().days;
+    const mon=mondayOf(today()), sun=addDays(mon,6);
+    const r=pushDay(sun); save(); render();
+    openWeek(mon);
+    const t=document.querySelector('#shB .wksum .win small');
+    const дат=weekData(mon).days.filter(x=>x.tr).length;
+    sheetClose && sheetClose();
+    return {выпала:!!(r&&r.lost), плитка:t?t.textContent:null, дат};
+  });
+  chk(план6.выпала&&план6.дат===3&&план6.плитка==='/3',
+    '6. итоги недели: план по датам недели — сдвинутая за край тренировка не числится', JSON.stringify(план6));
+
   chk(errs.length===0,'без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);
