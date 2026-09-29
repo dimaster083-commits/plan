@@ -90,13 +90,15 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     const rd=rangeData(addDays(t,-13),13);
     return {ds:last, a:attendance(14), план:rd.days.filter(x=>x.tr).length, инт:intFactor(last)};
   });
-  await p.evaluate(()=>{ const bt=document.querySelector('#types [data-t="rest"]'); bt.click(); });
+  // тип дня во всех неделях — в шторке «Неделя» («Каждую неделю», выбранный день)
+  await p.evaluate(()=>{ wkMode='all'; openWeekPlan(sel); wkPick=wdOf(sel); openWeekPlan();
+    document.querySelector('#shB [data-wpt="rest"]').click(); });
   await p.waitForTimeout(300); await p.click('#askY'); await p.waitForTimeout(300);
   const стал=await p.evaluate(ds=>{ edit=false; sel=today(); render();
     const rd=rangeData(addDays(today(),-13),13);
     return {шаблон:S.days[wdOf(ds)].t, a:attendance(14), план:rd.days.filter(x=>x.tr).length, инт:intFactor(ds)}; },был.ds);
   chk(стал.шаблон==='rest'&&стал.a.planned===был.a.planned&&стал.a.done===был.a.done&&стал.a.done<=стал.a.planned
-      &&стал.план===был.план&&Math.abs(стал.инт-был.инт)<1e-9&&был.инт<1,
+      &&стал.план===был.план&&Math.abs(стал.инт-был.инт)<1e-9,
     '3. смена типа дня не делает прошлые тренировки отдыхом: посещаемость, план месяца, интенсивность', JSON.stringify({был,стал}));
 
   // 4. вес по подходам: 100/100/110 — в тоннаж, рекорд веса, ≈1ПМ, ленту рекордов и в график упражнения

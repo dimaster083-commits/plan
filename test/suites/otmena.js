@@ -168,7 +168,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   await prep();
   await E(()=>{ const past=addDays(today(),-7); S.rec[past]={wo:1,log:{0:{done:1,n:'Жим ногами',g:'Ноги',w:'100',s:'3',r:'8-10',rs:[8,8,8]}},sp:{}}; save(); render(); });
   await remember();
-  await E(()=>{ edit=true; paintDay(); const b2=document.querySelector('#types [data-t="up1"]'); b2.click(); }); await yes();
+  await E(()=>{ wkMode='all'; openWeekPlan(sel); wkPick=wdOf(sel); openWeekPlan(); document.querySelector('#shB [data-wpt="up1"]').click(); }); await yes();
   const t11=await E(()=>({t:dayOf(today()).t, dt:(S.rec[addDays(today(),-7)]||{}).dt}));
   const p11=await polo(); const u11=await undo();
   chk(t11.t==='up1'&&t11.dt==='lo1'&&p11.on&&u11.same, '11. смена типа дня во всех неделях отменяется вместе с закреплением прошлого', J([t11,p11,u11]));
