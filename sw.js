@@ -1,8 +1,9 @@
-const CACHE = "sys-gym-160";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-165";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
   './manifest.webmanifest',
+  './exlib.js',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
@@ -94,6 +95,9 @@ self.addEventListener('activate', e => {
 // Ответ годится в кэш, только если он удачный и наш собственный:
 // чужие ответы приходят непрозрачными, с нулевым статусом.
 const keep = res => res && res.ok && (res.type === 'basic' || res.type === 'default');
+// Фото каталога идут с jsDelivr с CORS — их тоже храним: открытое раз
+// упражнение потом видно и без сети. Другие чужие ответы в кэш не кладём.
+const keepCdn = (res, url) => res && res.ok && res.type === 'cors' && url.hostname === 'cdn.jsdelivr.net';
 
 // Сеть в приоритете, кэш как запасной вариант.
 // Так обновления подхватываются сразу, а без интернета всё равно работает.
@@ -130,7 +134,7 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(res => {
-        if (keep(res)) {
+        if (keep(res) || keepCdn(res, url)) {
           const copy = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
           return res;
