@@ -6762,7 +6762,8 @@ function paintCalc() {
     row('Темп в неделю', (dir ? (dir > 0 ? '+' : '−') + dec(aLo, 2) + '…' + dec(aHi, 2) : '±' + dec(aHi, 2)) + ' кг') +
     (dir && left >= 0.5 ? row('До цели ' + kg(g) + ' кг', dec(left) + ' кг · ' +
       Math.max(1, Math.round(left / aHi)) + '–' + Math.max(1, Math.round(left / aLo)) + ' нед') : '') +
-    row('Сейчас', pc ? (pc.per > 0 ? '+' : '') + dec(pc.per, 2) + ' кг/нед' : 'нужно 2 взвешивания') +
+    // темп считает paceOf: не меньше 3 взвешиваний за 7+ дней — раньше здесь обещали темп после двух
+    row('Сейчас', pc ? (pc.per > 0 ? '+' : '') + dec(pc.per, 2) + ' кг/нед' : 'нужно 3 взвеш. за 7 дн') +
     '<p class="clh">Поддержание — формула Миффлина — Сан Жеора: вес, рост ' + (num(S.height) || 175) +
     ' см, возраст ' + (num(S.age) || 30) + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
     ', ' + actOf()[1] + ' (×' + dec(actOf()[0], 2) + ')' +
@@ -10697,7 +10698,10 @@ function buildSummary() {
   const a14 = attendance(14);
   const L = [];
   L.push('СВОДКА ИЗ ДНЕВНИКА ТРЕНИРОВОК, ' + fmt(today()));
-  L.push('Рост ' + (S.height || 177) + ' см, вес ' + kg(S.bw) + ' кг, цель ' + (S.goal || 95) + ' кг.');
+  // без чужих цифр: не вписан рост — его нет, пустая цель — «держать» (раньше 177 см и 95 кг)
+  L.push([num(S.height) ? 'Рост ' + num(S.height) + ' см' : 'Рост не указан',
+    'вес ' + (num(S.bw) ? kg(num(S.bw)) + ' кг' : 'не записан'),
+    'цель ' + (num(S.goal) ? kg(num(S.goal)) + ' кг' : 'держать вес')].join(', ') + '.');
   if (pts.length > 1) {
     const first = pts[0], last = pts[pts.length - 1];
     L.push('Вес: ' + kg(first[1]) + ' кг (' + fmt(first[0]) + ') → ' + kg(last[1]) + ' кг (' + fmt(last[0]) + ').');
