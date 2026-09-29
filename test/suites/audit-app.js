@@ -47,6 +47,17 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     '1. вес вне 30–300 кг (850, −80, цель 850, «Фото» 8500) не пишется, поле возвращает записанное',
     JSON.stringify({в850,вМинус,поле,цель,норм,фото}));
 
+  // 2. план из трёх дней: «из 3», «нужно 2» — как считает planWeek, и в выгрузке «3 тренировки»
+  await сброс();
+  const цикл=await p.evaluate(()=>{
+    const sat=S.days.findIndex(d=>d.k==='Сб'); S.days[sat].t='rest'; S.days[sat].ex=[];
+    S.start=addDays(mondayOf(today()),-7); save(); tab='prog'; render(); paintCycle();
+    return {текст:$('cycNote').textContent, нужно:weekNeed(), сводка:buildSummary().split('\n').find(l=>/^План:/.test(l))};
+  });
+  chk(цикл.нужно===2&&/из 3\b/.test(цикл.текст)&&!/из 4/.test(цикл.текст)&&/нужно 2\./.test(цикл.текст)&&
+    /3 тренировки в неделю/.test(цикл.сводка)&&!/4 тренировки|верх\/низ дважды/.test(цикл.сводка),
+    '2. три дня в шаблоне: «из 3», «нужно 2» (как planWeek), в выгрузке «3 тренировки»', JSON.stringify(цикл));
+
   chk(errs.length===0,'99. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   console.log(fails?'\nПРОВАЛОВ: '+fails:'\nВСЁ ЧИСТО');
