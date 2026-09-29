@@ -2755,6 +2755,10 @@ body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 .srow .stick{flex:0 0 auto;width:44px;height:44px;border-radius:12px;
   border:1px solid var(--ln);background:var(--s1);color:var(--ink3);
   font-size:17px;line-height:1;display:grid;place-items:center}
+.setr .srow{flex-wrap:wrap}
+.setprev{flex:0 0 100%;display:flex;align-items:center;gap:8px;color:var(--ink3);font-size:11px;min-width:0}
+.setprev small{flex:1;line-height:1.5}
+.setprev button{min-width:44px;min-height:44px;padding:6px 10px;background:var(--s2);border:1px solid var(--ln);border-radius:10px;color:var(--cy2);font:inherit}
 .srow.on .stick{background:var(--hot-soft,rgba(63,174,119,.16));
   border-color:var(--hot-ln,rgba(63,174,119,.5));color:var(--hot-tx,#BFEBD6)}
 .srow.on .swkg,.srow.on .rbx input{border-color:var(--hot-ln,rgba(63,174,119,.5))}
@@ -2957,6 +2961,7 @@ body.exopen .wobar{margin-top:8px}
 .wka{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .wka .add{margin:0}
 </style>
+<link rel="stylesheet" href="./system.css">
 </head>
 <script>
 /* Тема ставится до разбора остального кода: иначе экран успевает моргнуть
@@ -5090,13 +5095,15 @@ function exFull(e, j, r, IN, d) {
       <span class="exfcnt">${String(j + 1).padStart(2, '0')} / ${String(d.ex.length).padStart(2, '0')}</span>
     </div>
     <div class="win ex exf" data-j="${j}">
-      ${how ? `<button class="exfpic" data-how="${esc(e.n)}" aria-label="Техника: ${esc(e.n)}">
-        <img src="${how}"${exCors(e.n)} alt="" loading="lazy"><img src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">
-        <span>Техника</span></button>` : ''}
       <div class="exfhead">
+        <div class="exftitle"><span class="exfgrp">${e.g ? esc(e.g) : 'Упражнение'} · ${g.done ? 'Выполнено' : 'Текущий квест'}</span>
         <button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button>
-        <span class="exfgrp">${e.g ? esc(e.g) : ''}</span>
+        </div>
+        ${how ? `<button class="exfpic" data-how="${esc(e.n)}" aria-label="Техника: ${esc(e.n)}">
+          <img src="${how}"${exCors(e.n)} alt="" loading="lazy">
+          <span>Техника ↗</span></button>` : ''}
       </div>
+      <span class="exfwlabel">ВЕС НА СЕГОДНЯ</span>
       <div class="exfw">
         <input class="exfkg" inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}"${g.done ? ' readonly' : ''} aria-label="Вес">
         <span class="exfu">КГ</span>
@@ -5114,15 +5121,15 @@ function exFull(e, j, r, IN, d) {
       ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
       ${rpeHtml(g)}
+      <div class="exfact">
+        <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
+        <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
+      </div>
       ${d.ex[j + 1] ? `<button class="ssb${e.ss ? ' on' : ''}" data-ss="${j}" aria-pressed="${!!e.ss}">${e.ss
         ? 'Суперсет с «' + esc(d.ex[j + 1].n) + '» — снять' : 'Суперсет со следующим: «' + esc(d.ex[j + 1].n) + '»'}</button>` : ''}
       ${noteHtml(e.n)}
       ${recHtml(e.n)}
       ${exChartHtml(e.n)}
-      <div class="exfact">
-        <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
-        <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
-      </div>
       <div class="exfft">${g.done ? holdBadge(e, g) : ''}</div>
       <!-- Обработчик удаления упражнения был написан, а кнопки к нему не
            существовало ни в одной разметке: добавить упражнение человек мог,
@@ -5221,7 +5228,9 @@ function prFromLog(name) {
     Object.keys(lg).forEach(j => {
       const x = lg[j];
       if (!x || !x.done || (x.n || ((day.ex || [])[j] || {}).n) !== name) return;
-      best = Math.max(best, topW(x, pick(x.w, ((day.ex || [])[j] || {}).w)));
+      const w = num(pick(x.w, ((day.ex || [])[j] || {}).w));
+      const weights = x.rs && x.rs.length ? x.rs.map((_, i) => x.ws && num(x.ws[i]) > 0 ? num(x.ws[i]) : w) : [w];
+      best = Math.max(best, ...weights);
     });
   });
   return best;
@@ -5233,7 +5242,7 @@ function rollback(l) {
   if (l.xp) addXp(-l.xp);
   /* Рекорд после снятой отметки — лучший вес из оставшегося журнала, а не
      снимок на момент закрытия: снимок стирал рекорд, поставленный позже. */
-  if (l.prevPr !== undefined && l.n) {
+  if (l.n) {
     const was = l.done; l.done = 0;
     const best = prFromLog(l.n);
     l.done = was;
@@ -5302,6 +5311,7 @@ $('exl').addEventListener('click', ev => {
     cell.querySelector('i').textContent = k ? KIND[k][0] : (num(inp.dataset.rs) + 1);
     const j = num(card.dataset.j), r = recRW(sel); r.log[j] = r.log[j] || {};
     r.log[j].kinds = [...card.querySelectorAll('[data-rs]')].map(x => x.dataset.kind || '');
+    refreshPrevious(card);
     save();
     return;
   }
@@ -5380,6 +5390,23 @@ $('exl').addEventListener('input', ev => {
   const all = [...card.querySelectorAll('[data-ws]')];
   const ws = all.map(x => (String(x.value).trim() === '' ? '' : num(x.value)));
   if (ws.some(v => v !== '')) l.ws = ws; else delete l.ws;
+  save();
+});
+
+// Копирование — только явный ввод в одну строку, без отметки и прогрессии.
+$('exl').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-copy-prev]'); if (!b) return;
+  const card = b.closest('.ex'), j = num(card.dataset.j);
+  if ((recOf(sel).log[j] || {}).done) return;
+  const fields = [...card.querySelectorAll('[data-rs]')], i = num(b.dataset.copyPrev);
+  const e = (dayOf(sel).ex || [])[j]; if (!e) return;
+  const kinds = fields.map(x => x.dataset.kind || '');
+  const ref = previousSet(previousSets(e.n, sel), kinds, i); if (!ref) return;
+  const row = fields[i].closest('.srow'), w = row.querySelector('[data-ws]');
+  w.value = kg(ref.w); w.dispatchEvent(new Event('input', { bubbles: true }));
+  fields[i].value = String(ref.r); fields[i].dispatchEvent(new Event('input', { bubbles: true }));
+  const l = recRW(sel).log[j];
+  l.rs = fields.map(x => String(x.value).trim() === '' ? '' : num(x.value));
   save();
 });
 
@@ -5513,8 +5540,12 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     (!g.done ? '<button class="kindb" data-kindmode="1" aria-pressed="false">ТИП</button>' : '') +
     (top && !g.done ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
     '</div><div class="rb">';
-  const wsAll = Array.isArray(g.ws) ? g.ws : [];
+  let wsAll = Array.isArray(g.ws) ? g.ws : [];
+  if (g.done && (Array.isArray(g.wu) || Array.isArray(g.dr))) {
+    wsAll = (g.wu || []).map(() => '').concat((g.rs || []).map((_, i) => wsAll[i] ?? ''), (g.dr || []).map(() => ''));
+  }
   const ck = Array.isArray(g.ck) ? g.ck : [];
+  const previous = previousSets(e.n, sel);
   for (let i = 0; i < nn; i++) {
     const v = cur && cur[i] !== undefined && cur[i] !== null ? cur[i] : '';
     const k = KIND[kinds[i]] ? kinds[i] : '';
@@ -5530,7 +5561,7 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
       '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + (k ? ', ' + KIND[k][1] : '') + '"></label>' +
       '<button class="stick" data-tick="' + i + '" aria-pressed="' + (on ? 'true' : 'false') +
         '" aria-label="Подход ' + (i + 1) + ' сделан">✓</button>' +
-      '</div>';
+      previousHtml(previous, kinds, i, g.done) + '</div>';
   }
   out += '</div>';
   if (!g.done) out += '<p class="kindh">«ТИП», затем касание клетки: <b>Р</b> — разминка (не в тоннаже и не в прогрессии), ' +
@@ -5673,6 +5704,7 @@ function toggleSet(j) {
     if (l.wu || l.dr || l.fl) {
       const wu = l.wu || [], rs = l.rs || [], dr = l.dr || [], fl = l.fl || [];
       l.kinds = wu.map(() => 'w').concat(rs.map((_, i) => (fl.indexOf(i) >= 0 ? 'f' : '')), dr.map(() => 'd'));
+      if (Array.isArray(l.ws)) l.ws = wu.map(() => '').concat(rs.map((_, i) => l.ws[i] ?? ''), dr.map(() => ''));
       l.rs = wu.concat(rs, dr); l.s = String(l.rs.length);
       delete l.wu; delete l.dr; delete l.fl;
     }
@@ -5778,9 +5810,9 @@ function toggleSet(j) {
   const raised = short ? 0 : bumpWorking(p.n, w, l);
   if (short && w > num(p.w)) note('Рабочий вес не поднят: низ ' + low + ' повт. на ' + kg(w) + ' кг не добран');
 
-  // рекорд веса — самый тяжёлый рабочий подход, с весом строк (topW)
-  const old = num(S.pr[p.n]), wTop = topW(l, w);
-  if (wTop > 0 && wTop > old) { l.prevPr = old; S.pr[p.n] = wTop; }
+  const old = num(S.pr[p.n]);
+  const recordW = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => wAt(i))) : w;
+  if (recordW > 0 && recordW > old) { l.prevPr = old; S.pr[p.n] = recordW; }
 
   /* Рекорды по видам: ≈1ПМ, лучший подход и объём сравниваются с лучшим из
      журнала до этого закрытия. Первая запись упражнения рекордом не считается
@@ -5794,13 +5826,13 @@ function toggleSet(j) {
       ? { k, v: nowS.set, o: b.set, w: nowS.sw, r: nowS.sr } : { k, v: nowS[k], o: b[k] });
   });
   if (!l.recs.length) delete l.recs;
-  const wRec = wTop > 0 && wTop > old && old > 0;
+  const wRec = recordW > 0 && recordW > old && old > 0;
   const rk0 = beforeRec.e1 && strRank(p.n, beforeRec.e1.e1), rk1 = nowS && strRank(p.n, nowS.e1);
   const rankUp = rk0 && rk1 && rk1.i > rk0.i ? rk1.l : '';
 
   if (wRec || l.recs) {
     l.xp = XP_PR; addXp(XP_PR); dingPR();
-    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + [wRec ? kg(wTop) + ' кг' : ''].concat((l.recs || []).map(recTxt))
+    note('НОВЫЙ РЕКОРД: ' + p.n + ' — ' + [wRec ? kg(recordW) + ' кг' : ''].concat((l.recs || []).map(recTxt))
       .filter(Boolean).join(' · '));
   } else {
     l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); dingSet();
@@ -5990,7 +6022,9 @@ function workoutSummary(ds) {
   d.ex.forEach((e, j) => {
     const l = r.log[j];
     if (!l || !l.done) return;
-    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(topW(l, pick(l.w, e.w))) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
+    const w = num(pick(l.w, e.w));
+    const recordW = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => l.ws && num(l.ws[i]) > 0 ? num(l.ws[i]) : w)) : w;
+    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(recordW) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
       .concat((Array.isArray(l.recs) ? l.recs : []).map(recTxt)).filter(Boolean);
     if (parts.length) records.push([l.n || e.n, parts]);
   });
@@ -6050,8 +6084,8 @@ function dayEntries(ds) {
   return out;
 }
 /* Самый тяжёлый рабочий подход записи: вес строки, где он вписан, иначе вес
-   упражнения. Тоннаж считает вес каждого подхода, и рекорд веса, ≈1ПМ и
-   лента рекордов — тоже: 100/100/110 раньше шло в тонны, а в рекорд — 100. */
+   упражнения. Рекорды уже считают вес каждого подхода; график упражнения
+   (exHistory) — тем же счётом: 100/100/110 в рекорде 110, а на графике было 100. */
 function topW(l, base) {
   const w = num(base), n = l && Array.isArray(l.rs) ? l.rs.length : 0;
   if (!n || !Array.isArray(l.ws)) return w;
@@ -6069,10 +6103,11 @@ function entryLine(e) {
   // вес разный по подходам — показываем его так же, как повторы
   const ws = e.ws && e.rs ? e.rs.map((_, i) => (num(e.ws[i]) > 0 ? num(e.ws[i]) : e.w)) : null;
   const many = ws && ws.some(v => v !== ws[0]);
+  const sameW = ws && ws.length ? ws[0] : e.w;
   return (e.wu && e.wu.length ? 'разм. ' + e.wu.join('/') + ' · ' : '') + reps +
     (e.dr && e.dr.length ? ' + дроп ' + e.dr.join('/') : '') +
     (many ? ' · ' + ws.map(kg).join('/') + ' кг'
-          : (e.w ? ' · ' + kg(e.w) + ' кг' : ' · без отягощения')) +
+          : (sameW ? ' · ' + kg(sameW) + ' кг' : ' · без отягощения')) +
     (e.rpe ? ' · RPE ' + e.rpe : '');
 }
 
@@ -6372,6 +6407,42 @@ function lastDone(name, before) {
   return null;
 }
 
+// Только завершённая запись до выбранной даты. Общие значения старого
+// журнала — допустимый запасной источник; сегодняшняя программа им не служит.
+function previousSets(name, before) {
+  for (const ds of Object.keys(S.rec).filter(d => d < before).sort().reverse()) {
+    const day = dayOf(ds), log = S.rec[ds].log || {};
+    for (const j of Object.keys(log)) {
+      const l = log[j];
+      if (!l || !l.done || (l.n || (day && day.ex[j] || {}).n) !== name) continue;
+      const rs = Array.isArray(l.rs) ? l.rs : Array(Math.max(0, Math.min(12, num(l.s)))).fill(firstRep(l.r));
+      return { ds, sets: rs.map((r, i) => ({ r: num(r),
+        w: Array.isArray(l.ws) && num(l.ws[i]) > 0 ? num(l.ws[i]) : num(l.w),
+        kind: Array.isArray(l.fl) && l.fl.includes(i) ? 'f' : '' })) };
+    }
+  }
+  return null;
+}
+function previousSet(previous, kinds, i) {
+  if (!previous) return null;
+  const kind = KIND[kinds[i]] ? kinds[i] : '';
+  const index = Array.from({ length: i }, (_, j) => KIND[kinds[j]] ? kinds[j] : '').filter(k => k === kind).length;
+  const ref = previous.sets.filter(s => s.kind === kind)[index];
+  return ref && ref.w > 0 && ref.r > 0 ? ref : null;
+}
+function previousHtml(previous, kinds, i, done) {
+  const ref = previousSet(previous, kinds, i);
+  return '<div class="setprev"><small>' + (ref ? '// ' + esc(previous.ds.split('-').reverse().join('.')) + ' · ' + kg(ref.w) + ' кг × ' + ref.r :
+    (previous ? 'Нет записанного результата для этого подхода' : 'Нет прошлых записей')) + '</small>' +
+    (ref && !done ? '<button data-copy-prev="' + i + '" aria-label="Повторить прошлый результат, подход ' + (i + 1) + '">Повторить</button>' : '') + '</div>';
+}
+function refreshPrevious(card) {
+  const e = (dayOf(sel).ex || [])[num(card.dataset.j)]; if (!e) return;
+  const previous = previousSets(e.n, sel), fields = [...card.querySelectorAll('[data-rs]')];
+  const kinds = fields.map(x => x.dataset.kind || '');
+  fields.forEach((x, i) => { x.closest('.srow').querySelector('.setprev').outerHTML = previousHtml(previous, kinds, i, false); });
+}
+
 /* ---------- рекорды по видам ----------
    Считаются по журналу, как и всё остальное: отдельно ничего не хранится,
    поэтому снятая отметка или стёртая запись меняют их сами. Четыре вида:
@@ -6385,11 +6456,10 @@ function exSessions(name) {
     if (!es.length) return;
     const s = { ds, w: 0, e1: 0, set: 0, sw: 0, sr: 0, vol: 0 };
     es.forEach(e => {
-      // вес — у каждого подхода свой (строки), как в тоннаже
-      const wi = i => (e.rs && e.ws && num(e.ws[i]) > 0 ? num(e.ws[i]) : e.w);
-      s.w = Math.max(s.w, topW(e, e.w)); s.vol += e.vol;
+      s.vol += e.vol;
       (e.rs || [firstRep(e.r)]).forEach((r, i) => {
-        const w = wi(i);
+        const w = e.ws && num(e.ws[i]) > 0 ? num(e.ws[i]) : e.w;
+        s.w = Math.max(s.w, w);
         if (!(w > 0 && r > 0)) return;
         if (r <= 12) s.e1 = Math.max(s.e1, r === 1 ? w : w * (1 + r / 30));
         if (w * r > s.set) { s.set = w * r; s.sw = w; s.sr = r; }
@@ -6697,7 +6767,8 @@ function recFeed(max) {
     Object.keys(r.log || {}).forEach(j => {
       const l = r.log[j]; if (!l || !l.done) return;
       const n = l.n || ((day.ex || [])[j] || {}).n || 'Упражнение';
-      const w = topW(l, pick(l.w, ((day.ex || [])[j] || {}).w));
+      const commonW = num(pick(l.w, ((day.ex || [])[j] || {}).w));
+      const w = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => l.ws && num(l.ws[i]) > 0 ? num(l.ws[i]) : commonW)) : commonW;
       if (num(l.prevPr) > 0 && w > num(l.prevPr)) out.push({ ds, n, t: 'вес ' + kg(w) + ' кг (было ' + kg(num(l.prevPr)) + ')' });
       (l.recs || []).forEach(x => { const t = recTxt(x); if (t) out.push({ ds, n, t }); });
     });

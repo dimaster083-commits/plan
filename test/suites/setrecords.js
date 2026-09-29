@@ -1,0 +1,128 @@
+/* Regression: actual per-set weights must drive records, not the card target. */
+const assert = require('node:assert/strict');
+const { chromium } = require('playwright-core');
+const { LAUNCH, APP } = require('../env');
+(async () => {
+  const browser = await chromium.launch(LAUNCH);
+  try {
+    const page = await browser.newPage();
+    await page.goto(APP);
+    await page.waitForTimeout(1300);
+    const result = await page.evaluate(() => {
+      S.rec = {}; entCache = null;
+      const ds = today(), n = 'Жим лёжа';
+      S.rec[ds] = { log: { 0: { done: 1, n, w: 200, s: 3, r: '5', rs: [10, 5, 1], ws: [60, 80, 100], g: 'Грудь' } } };
+      recOf(ds); // Normalize the day container before measuring journal immutability.
+      const before = JSON.stringify(S.rec);
+      const varied = exSessions(n)[0];
+      const rollbackBest = prFromLog(n);
+      const untouched = JSON.stringify(S.rec) === before;
+      S.rec[ds].log[0].ws = [60, '', 100];
+      S.rec[ds].log[0].w = 70; entCache = null;
+      const fallback = exSessions(n)[0];
+      delete S.rec[ds].log[0].ws; entCache = null;
+      const legacy = exSessions(n)[0];
+      S.rec[ds].log[0].done = 0; entCache = null;
+      const draft = exSessions(n);
+      return { varied, rollbackBest, untouched, fallback, legacy, draft };
+    });
+    assert.equal(result.varied.w, 100, 'record weight must not be the unused 200 kg card target');
+    assert.equal(result.varied.e1, 100, 'e1RM must pair each weight with its own reps');
+    assert.equal(result.varied.set, 600);
+    assert.equal(result.varied.sw, 60);
+    assert.equal(result.varied.sr, 10);
+    assert.equal(result.varied.vol, 1100);
+    assert.equal(result.rollbackBest, 100, 'undo reconstructs actual max weight');
+    assert.equal(result.untouched, true);
+    console.log('✓ Actual weights drive records, volume and rollback without rewriting history');
+    assert.equal(result.fallback.w, 100);
+    assert.equal(result.fallback.vol, 1050);
+    assert.equal(result.legacy.w, 70);
+    assert.equal(result.legacy.set, 700);
+    assert.equal(result.legacy.vol, 1120);
+    assert.deepEqual(result.draft, []);
+    console.log('✓ Missing per-set weights retain legacy fallback; drafts are excluded');
+    const closed = await page.evaluate(() => {
+      S.setup = 1; S.sound = 0; S.rec = {}; S.pr = { 'Жим лёжа': 80 };
+      document.getElementById('setup').classList.remove('on');
+      const d = dayOf(today()); d.t = 'up1';
+      d.ex = [{ n: 'Жим лёжа', s: 3, r: '5', w: 200, g: 'Грудь' }];
+      entCache = null; save(); tab = 'wo'; sel = today(); exOpen = 0; render();
+      const card = document.querySelector('.ex[data-j="0"]');
+      card.querySelector('[data-f="w"]').value = '200';
+      [...card.querySelectorAll('[data-ws]')].forEach((x, i) => { x.value = [60, 80, 100][i]; });
+      [...card.querySelectorAll('[data-rs]')].forEach((x, i) => { x.value = [10, 5, 1][i]; });
+      toggleSet(0);
+      const peak = S.pr['Жим лёжа'];
+      workoutSummary(sel);
+      const summary = $('shB').textContent;
+      const feed = recFeed(10).map(x => x.t);
+      sheetClose();
+      toggleSet(0);
+      return { peak, summary, feed, afterUndo: S.pr['Жим лёжа'] || 0 };
+    });
+    assert.equal(closed.peak, 100, 'closing stores the actual weight record, not the card target');
+    assert.equal(closed.afterUndo, 0, 'undo excludes the removed session even after records were cached');
+    console.log('✓ Closing and undo keep the weight record synchronized with actual sets');
+    assert.match(closed.summary, /вес 100 кг \(было 80\)/, 'workout summary must show the actual set record');
+    assert.doesNotMatch(closed.summary, /вес 200 кг/);
+    console.log('✓ Workout summary reports the actual record instead of the card target');
+    assert.ok(closed.feed.includes('вес 100 кг (было 80)'), 'record feed must show the actual set record');
+    assert.ok(!closed.feed.some(t => /вес 200 кг/.test(t)));
+    console.log('✓ Record feed agrees with the actual record and workout summary');
+    const typed = await page.evaluate(() => {
+      S.rec = {}; S.pr = {}; entCache = null;
+      const d = dayOf(sel); d.ex = [{ n: 'Жим лёжа', s: 4, r: '5', w: 100, g: 'Грудь' }];
+      save(); exOpen = 0; render();
+      const card = document.querySelector('.ex[data-j="0"]');
+      card.querySelector('[data-f="w"]').value = '100';
+      [...card.querySelectorAll('[data-rs]')].forEach((x, i) => { x.value = '5'; x.dataset.kind = ['w', '', 'f', 'd'][i]; });
+      [...card.querySelectorAll('[data-ws]')].forEach((x, i) => { x.value = [20, 60, 80, 30][i]; });
+      toggleSet(0);
+      const first = { vol: dayTon(sel), peak: S.pr['Жим лёжа'] };
+      exOpen = 0; render();
+      const shown = [...document.querySelectorAll('[data-ws]')].map(x => x.value);
+      toggleSet(0);
+      const undone = { ws: recOf(sel).log[0].ws, kinds: recOf(sel).log[0].kinds };
+      exOpen = 0; render(); toggleSet(0);
+      const second = { vol: dayTon(sel), peak: S.pr['Жим лёжа'] };
+      return { first, shown, undone, second };
+    });
+    assert.deepEqual(typed.first, { vol: 700, peak: 80 });
+    assert.deepEqual(typed.shown.slice(1, 3), ['60', '80'], 'closed working rows must keep their own weights after the warmup row');
+    assert.deepEqual(typed.undone.ws, ['', 60, 80, ''], 'undo must align saved work weights with restored warmup/drop rows');
+    assert.deepEqual(typed.undone.kinds, ['w', '', 'f', 'd']);
+    assert.deepEqual(typed.second, typed.first, 'reclosing must not shift work weights into warmup/drop or change volume/records');
+    console.log('✓ Typed sets retain work weights through closed display, undo and reclose');
+    const sameWeights = await page.evaluate(() => {
+      const l = recOf(sel).log[0];
+      l.w = 200; l.rs = [5, 5]; l.ws = [80, 80]; entCache = null;
+      return entryLine(dayEntries(sel)[0]);
+    });
+    assert.match(sameWeights, /· 80 кг/, 'history must display equal actual weights even when the card target differs');
+    assert.doesNotMatch(sameWeights, /200 кг/);
+    console.log('✓ History reports equal actual set weights instead of the unused card target');
+    const removedAll = await page.evaluate(() => {
+      S.rec = {}; S.pr = {}; entCache = null;
+      const now = today(), date = new Date(now + 'T12:00:00'); date.setDate(date.getDate() - 7);
+      const past = iso(date), n = 'Жим лёжа';
+      [past, now].forEach(ds => { const d = dayOf(ds); d.t = 'up1'; d.ex = [{ n, s: 1, r: '5', w: 60, g: 'Грудь' }]; });
+      [[past, 100], [now, 80]].forEach(([ds, w]) => {
+        sel = ds; editPast = true; exOpen = 0; save(); render();
+        document.querySelector('[data-f="w"]').value = '60';
+        document.querySelector('[data-rs]').value = '5';
+        document.querySelector('[data-ws]').value = String(w);
+        toggleSet(0);
+      });
+      const lowerWasRecord = recOf(now).log[0].prevPr !== undefined;
+      sel = past; exOpen = 0; render(); toggleSet(0);
+      const remaining = S.pr[n];
+      sel = now; exOpen = 0; render(); toggleSet(0);
+      return { lowerWasRecord, remaining, final: S.pr[n] || 0 };
+    });
+    assert.equal(removedAll.lowerWasRecord, false);
+    assert.equal(removedAll.remaining, 80);
+    assert.equal(removedAll.final, 0, 'removing the remaining lower session must clear a record restored by an earlier undo');
+    console.log('✓ Removing peak then remaining lower session leaves no stale weight record');
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

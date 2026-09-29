@@ -1,7 +1,8 @@
-const CACHE = "sys-gym-164";   // меняется при каждом обновлении приложения
+const CACHE = "sys-gym-165";   // меняется при каждом обновлении приложения
 const FILES = [
   './',
   './index.html',
+  './system.css',
   './manifest.webmanifest',
   './exlib.js',
   './icon-180.png',
