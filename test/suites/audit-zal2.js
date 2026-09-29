@@ -17,6 +17,7 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   // сегодня — жим 4×6–8 и тяга; неделю назад жим уже был
   const день = () => p.evaluate(() => {
     S.setup = 1; S.sound = 0; document.getElementById('setup').classList.remove('on');
+    clearInterval(tInt); tInt = null; $('tmr').classList.remove('on');   // таймер отдыха прошлого пункта
     S.rec = {}; S.map = {}; S.pr = {}; delete S.pause; S.days = build().days;
     S.start = addDays(today(), 60);
     const d = dayOf(today()); d.t = 'up1'; d.s = 'тест';
@@ -68,6 +69,27 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   chk(до2 === '12/9/9/9' && переход === до2 && перезагр === до2 && галка && /12\/9\/9\/9/.test(строка)
       && JSON.stringify(l2.wu) === '[12]' && JSON.stringify(l2.rs) === '[9,9,9]' && т2 === 9 * 60 * 3,
     '2. вписанные повторы переживают переход и перезагрузку, ○ в списке закрывает черновик с разминкой', JSON.stringify({ до2, переход, перезагр, галка, строка, l2, т2 }));
+
+  // 3. «Завершить» без единого закрытого подхода тренировку не закрывает: ни опыта, ни недели в серию
+  await день();
+  const xp3 = await p.evaluate(() => S.xp);
+  await p.evaluate(() => $('fin').click()); await p.waitForTimeout(250);
+  await p.evaluate(() => $('fin').click()); await p.waitForTimeout(300);
+  const пусто = await p.evaluate(xp0 => ({ wo: recOf(today()).wo, dxp: S.xp - xp0, нед: doneThisWeek(today()), отмена: !$('woCx').hidden }), xp3);
+  await p.evaluate(() => sheetClose());
+  chk(!пусто.wo && пусто.dxp === 0 && пусто.нед === 0 && пусто.отмена,
+    '3. пустая тренировка не закрывается: без опыта и без недели в серию, «Отменить начало» на месте', JSON.stringify(пусто));
+
+  // 4. итоги тренировки: «упражнений» — сделанные по журналу, а не стоящие в плане дня
+  await день();
+  await p.evaluate(() => { recRW(today()).t0 = Date.now() - 6e5; exOpen = null; render(); });
+  await p.click('.exrow[data-j="0"] [data-go="0"]'); await p.waitForTimeout(300);
+  await p.evaluate(() => { clearInterval(tInt); tInt = null; $('tmr').classList.remove('on'); });
+  await p.evaluate(() => $('fin').click()); await p.waitForTimeout(300);
+  const итог = await p.evaluate(() => ({ wo: recOf(today()).wo, упр: document.querySelector('#shB .sum .win b').textContent, журнал: dayEntries(today()).length }));
+  await p.evaluate(() => sheetClose());
+  chk(итог.wo && итог.упр === '1' && итог.журнал === 1,
+    '4. итоги тренировки считают сделанные упражнения (1 из 2), а не план дня', JSON.stringify(итог));
 
   chk(errs.length === 0, 'без ошибок в консоли', errs.join(' | ') || 'чисто');
   await b.close();

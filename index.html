@@ -6290,6 +6290,10 @@ $('fin').addEventListener('click', () => {
     offerUndo(snap, 'Тренировка пошла');
     return;
   }
+  /* Тренировка — это записанные подходы. Пустая закрывалась: +60 опыта,
+     неделя в серию и цикл вперёд без единого подхода. Снятая последняя
+     отметка и так делает день не тренировкой — закрытие тем же правилом. */
+  if (!dayEntries(sel).length) { note('Закрой хотя бы одно упражнение — или «Отменить начало»'); return; }
   r.wo = 1;
   r.t1 = Date.now();
   addXp(XP_WO, 'Тренировка закрыта');
@@ -6336,7 +6340,7 @@ function workoutSummary(ds) {
   const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
   const st = streak();
   let h = `<div class="sum">
-    <div class="win"><b>${d.ex.length}</b><span>УПРАЖНЕНИЙ</span></div>
+    <div class="win"><b>${dayEntries(ds).length}</b><span>УПРАЖНЕНИЙ</span></div>
     <div class="win"><b>${sets}</b><span>ПОДХОДОВ</span></div>
     <div class="win"><b>${ton >= 1000 ? dec(ton / 1000) + ' т' : rnd(ton) + ' кг'}</b><span>ПОДНЯТО</span></div>
     <div class="win"><b>${mins ? mins + ' мин' : '—'}</b><span>ДЛИТЕЛЬНОСТЬ</span></div>
