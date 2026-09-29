@@ -121,7 +121,12 @@ const ПРАВИЛА = () => {
     const тип = await p.evaluate(async()=>{
       const d=dayOf(sel), был=d.t;
       const хочу=(был==='up1'||был==='up2')?'lo1':'up1';
-      const кн=document.querySelector('#types [data-t="'+хочу+'"]');
+      // тип дня во всех неделях — в шторке «Неделя», режим «Каждую неделю»
+      wkMode='all'; openWeekPlan(sel);
+      const день=document.querySelector('#shB [data-wpd="'+S.days.indexOf(d)+'"]');
+      if(!день) return {err:'дня в шторке нет'};
+      день.click();
+      const кн=document.querySelector('#shB [data-wpt="'+хочу+'"]');
       if(!кн) return {err:'кнопки типа нет'};
       кн.click(); await new Promise(r=>setTimeout(r,250));
       const да=[...document.querySelectorAll('.askw button')].find(x=>!/отмен|нет/i.test(x.textContent));

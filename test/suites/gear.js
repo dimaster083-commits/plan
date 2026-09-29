@@ -26,9 +26,11 @@ const out=[]; const ok=(n,c,d)=>out.push((c?'  ✓ ':'  ✗ ')+n+(c?'':'   → '
   await p.evaluate(()=>{S.setup=1;document.getElementById('setup').classList.remove('on');tab='wo';render();});
   await p.click('#gear'); await p.waitForTimeout(500);
   await p.click('[data-dayset]'); await p.waitForTimeout(600);
-  const dayset=await p.evaluate(()=>({edit:edit, shown:!document.getElementById('dedit').hidden,
+  // правка дня — одна дорога: шторка «Неделя» (прежняя скрытая панель #dedit убрана)
+  const dayset=await p.evaluate(()=>({title:document.getElementById('shT').textContent,
+    rows:document.querySelectorAll('#shB [data-wpd]').length, dedit:!!document.getElementById('dedit'),
     sheet:document.getElementById('sh').classList.contains('on')}));
-  ok('настройка дня открывается из настроек', dayset.edit && dayset.shown && !dayset.sheet, JSON.stringify(dayset));
+  ok('расписание открывается из настроек шторкой «Неделя»', dayset.sheet && dayset.title==='НЕДЕЛЯ' && dayset.rows===7 && !dayset.dedit, JSON.stringify(dayset));
 
   console.log(out.join('\n'));
   console.log('ошибки JS:', errs.length?[...new Set(errs)].slice(0,3).join(' | '):'нет');

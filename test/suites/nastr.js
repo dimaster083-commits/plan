@@ -71,10 +71,11 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     const btn=document.querySelector('#shB [data-dayset]');
     if(!btn) return {err:'кнопки нет'};
     btn.click(); await new Promise(r=>setTimeout(r,300));
-    return { tab, edit, sheet:document.getElementById('sh').classList.contains('on') };
+    return { title:document.getElementById('shT').textContent, rows:document.querySelectorAll('#shB [data-wpd]').length,
+      sheet:document.getElementById('sh').classList.contains('on') };
   });
-  chk(!dayset.err && dayset.tab==='wo' && dayset.edit && !dayset.sheet,
-      '7. настройка дня открывается из настроек', dayset.err||JSON.stringify(dayset));
+  chk(!dayset.err && dayset.sheet && dayset.title==='НЕДЕЛЯ' && dayset.rows===7,
+      '7. расписание открывается из настроек шторкой «Неделя»', dayset.err||JSON.stringify(dayset));
 
   // 8. «пересчитать» честно спрашивает про поднятые веса и умеет их сбросить
   const full=await p.evaluate(async ()=>{

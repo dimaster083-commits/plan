@@ -297,8 +297,6 @@ input,select{font-size:16px}
 .dateline{font-size:10.5px;color:var(--cy);letter-spacing:.1em;margin:-6px 0 12px}
 .dateline button{color:var(--mut);text-decoration:underline;font-size:10.5px;margin-left:8px}
 
-.dedit{padding:12px 13px;margin-bottom:12px}
-.dedit label{display:block;font-size:10px;letter-spacing:.14em;color:var(--mut);margin-bottom:7px}
 .types{display:flex;gap:6px;flex-wrap:wrap}
 .types button{padding:7px 11px;border:1px solid var(--edge2);font-size:12px;border-radius:2px;
   background:var(--panel2)}
@@ -308,7 +306,6 @@ input,select{font-size:16px}
 .types button.on{border-color:var(--cy);color:#fff;
   background:linear-gradient(180deg,rgba(var(--tint),.3),rgba(26,48,86,.4));
   box-shadow:0 0 14px rgba(var(--tint),.35)}
-.dsplit{height:1px;background:var(--edge2);margin:13px 0 12px}
 .moved{margin-top:10px;font-size:10.5px;color:var(--cy2);display:flex;align-items:center;
   justify-content:space-between;gap:8px}
 .moved button{border:1px solid var(--edge2);padding:6px 10px;font-size:10px;border-radius:2px;color:var(--mut)}
@@ -2575,7 +2572,9 @@ div.wu .wus{margin:0;padding:0 0 9px}
    повторов — 16 px везде, остальные — на iPhone. Поля ввода и мелкие
    кнопки — не ниже 44 px. */
 .exfsm .fl input{font-size:16px;min-height:44px}
-@supports (-webkit-touch-callout:none){ input,textarea,select{font-size:max(16px,1em)} }
+@supports (-webkit-touch-callout:none){ input,textarea,select{font-size:max(16px,1em)}
+  /* поля добавок заданы классом и перебивали правило выше: 14 и 11,5 px */
+  .row .t input,.row .t input.s{font-size:16px} }
 #bw,#goalIn,#kc,#pr,#phW,.srow input{min-height:44px}
 #toToday{min-height:44px;padding:0 10px}
 .grpsel button,#exgs button{min-height:44px}
@@ -2760,7 +2759,8 @@ body.rd-enter #scrfx{animation:cy-scan .7s var(--cy-ease) both}
 .srow.on .swkg,.srow.on .rbx input{border-color:var(--hot-ln,rgba(63,174,119,.5))}
 @media (max-width:339px){
   .srow{gap:4px}
-  .srow .swkg,.setr .rb .rbx input{font-size:15px;padding-left:18px}
+  /* 16 px и здесь: мельче — iPhone увеличивает страницу при касании поля */
+  .srow .swkg,.setr .rb .rbx input{padding-left:18px}
   .srow .stick{width:44px}
 }
 
@@ -2845,7 +2845,7 @@ body.exopen .wobar{margin-top:8px}
 .lpickx{flex:0 0 auto;min-height:44px;padding:0 14px;border:1px solid var(--edge2);border-radius:var(--r-s);background:transparent;color:var(--ink2);font:inherit}
 .exhd{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 .exs{flex:1 1 auto;min-width:0;height:48px;padding:0 18px;border-radius:999px;border:1px solid var(--edge2);
-  background:var(--s1);color:var(--ink);font:500 15px var(--f);outline:none}
+  background:var(--s1);color:var(--ink);font:500 16px var(--f);outline:none}
 .exs:focus{border-color:var(--cy)}
 .exfb{flex:0 0 auto;width:48px;height:48px;border-radius:14px;border:1px solid var(--edge2);background:var(--s1);color:var(--ink2);display:grid;place-items:center}
 .exfb svg{width:22px;height:22px;fill:currentColor}
@@ -2956,6 +2956,28 @@ body.exopen .wobar{margin-top:8px}
 .wks{font-size:10.5px;color:var(--mut);white-space:nowrap;font-family:var(--fn)}
 .wka{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .wka .add{margin:0}
+/* тип дня и разовая замена — в той же шторке «Неделя», под выбранным днем */
+.wkt{margin-top:12px;padding:10px 12px 12px;border:1px dashed var(--ln2);border-radius:var(--r-m,12px)}
+.wkt p{margin:0 0 8px;font-size:12.5px;line-height:1.45;color:var(--ink2)}
+.wkt .types button{min-height:44px}
+
+/* ---------- аудит 320–414: то, что не влезало ----------
+   Таймер: четыре пресета и «СТОП» в одну строку на 320 уводили «СТОП» за
+   край, а пресеты сжимались до 33 px. Цифра и «СТОП» — строкой, пресеты — под ними. */
+@media (max-width:420px){
+  .tmr .in{flex-wrap:wrap;row-gap:8px}
+  .tmr b{flex:1 1 auto}
+  .tmr .p{order:3;flex:1 0 100%}
+}
+/* RPE: подпись над кнопками, иначе на 320 кнопки 42 px */
+@media (max-width:339px){ .rpe{flex-wrap:wrap} .rpe span{flex:1 0 100%} }
+/* мышца в списке баланса переносится, а не режется многоточием («Бицепс бе…») */
+.mrow span{white-space:normal;line-height:1.2}
+@media (max-width:379px){
+  .mrow{flex-wrap:wrap;row-gap:1px;padding-top:5px;padding-bottom:5px}
+  .mrow span{flex:1 1 calc(100% - 20px)}
+  .mrow b{margin-left:20px}
+}
 </style>
 </head>
 <script>
@@ -3013,18 +3035,11 @@ document.documentElement.dataset.skin = 'sl';
   <div class="wrap">
     <div class="dh"><span class="ln" id="dln"></span>
       <span class="txt"><h3><input id="dnm" aria-label="Название дня"></h3><p id="dsb"></p></span>
-      <button class="gear" id="gear" aria-label="Настроить день">⚙</button></div>
+      <button class="gear" id="gear" aria-label="Настройки">⚙</button></div>
     <div class="dateline"><span id="dt"></span><button id="toToday" hidden>вернуться к сегодня</button>
       <button id="wkPlan" class="wkpb" aria-label="Перестроить неделю">⇄ Неделя</button></div>
-    <div class="win dedit" id="dedit" hidden>
-      <label>ТОЛЬКО ЭТА ДАТА — ЧТО ДЕЛАЕМ СЕГОДНЯ</label>
-      <div class="types" id="moveTo"></div>
-      <div class="moved" id="movedRow" hidden>
-        <span id="movedTxt"></span><button id="movedX">ВЕРНУТЬ</button></div>
-      <div class="dsplit"></div>
-      <label>РАСПИСАНИЕ ВСЕГО ПЛАНА — МЕНЯЕТ ЭТОТ ДЕНЬ НЕДЕЛИ ВО ВСЕХ НЕДЕЛЯХ</label>
-      <div class="types" id="types"></div>
-    </div>
+    <!-- Правка дня (разовая замена и тип дня во всех неделях) живёт в шторке
+         «Неделя»: прежняя скрытая панель #dedit была вторым способом того же. -->
   </div>
 </div>
 
@@ -4630,23 +4645,6 @@ function paintDay() {
   $('dt').textContent = (sel === today() ? 'СЕГОДНЯ · ' : '') +
     dd.getDate() + ' ' + MONG[dd.getMonth()] + ' ' + dd.getFullYear();
   $('toToday').hidden = sel === today();
-
-  $('gear').classList.toggle('on', edit);
-  $('dedit').hidden = !edit;
-  if (edit) {
-    const base = S.days[wdOf(sel)];        // шаблон настоящего дня недели этой даты
-    $('types').innerHTML = TYPES.map(([t, l]) =>
-      `<button data-t="${t}" class="${base.t === t ? 'on' : ''}">${l}</button>`).join('');
-    const wd = wdOf(sel), mv = S.map[sel];
-    $('moveTo').innerHTML = S.days.map((x, k) => {
-      const lbl = x.t === 'rest' ? 'отдых'
-        : ((TYPES.find(t => t[0] === x.t) || [, ''])[1] || '').toLowerCase();
-      return `<button class="mvbtn${(mv === undefined ? wd : mv) === k ? ' on' : ''}" data-mv="${k}">
-        <b>${esc(x.k)}</b><i style="color:var(--c-${x.t})">${esc(lbl)}</i></button>`;
-    }).join('');
-    $('movedRow').hidden = mv === undefined;
-    if (mv !== undefined) $('movedTxt').textContent = 'Здесь тренировка за ' + S.days[mv].n;
-  }
 }
 
 $('chips').addEventListener('click', e => {
@@ -4657,18 +4655,18 @@ $('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 
 // Шестерёнка открывает настройки. Раньше она переключала правку дня,
 // а экран настроек был написан, но никуда не привязан — сменить тему
 // было физически нечем.
-$('gear').addEventListener('click', () => { edit = false; paintDay(); openSettings(); });
+$('gear').addEventListener('click', () => { edit = false; openSettings(); });
 $('dnm').addEventListener('input', e => { dayOf(sel).n = e.target.value; save(); });
-$('types').addEventListener('click', async e => {
-  const b = e.target.closest('[data-t]'); if (!b) return;
-  const d = S.days[wdOf(sel)], nt = b.dataset.t, was = d.t;
-  if (nt === was) return;
-  // Раньше эта кнопка молча меняла день недели во всех неделях сразу.
-  // Разовая замена делается строкой выше, поэтому здесь спрашиваем.
-  const wdName = d.k;
-  const ok = await ask('Поменять ' + wdName + ' во всех неделях плана? ' +
-    'Если нужно только на этой дате — отмени и выбери тренировку в строке «Только эта дата».', 'ПОМЕНЯТЬ');
-  if (!ok) return;
+/* Тип дня недели во всех неделях. Раньше жил в скрытой панели под
+   шестерёнкой рядом с переносом «только эта дата» — вторым, старым способом
+   переиграть неделю. Теперь оба — в шторке «Неделя», под выбранным днём. */
+async function setDayType(i, nt) {
+  const d = S.days[i], was = d && d.t;
+  if (!d || nt === was) return false;
+  // Раньше эта кнопка молча меняла день недели во всех неделях сразу — спрашиваем.
+  const ok = await ask('Поменять ' + d.k + ' во всех неделях плана? Прошедшие тренировки останутся как были. ' +
+    'Если нужно только на одной дате — отмени и выбери её в «Эта неделя».', 'ПОМЕНЯТЬ');
+  if (!ok) return false;
   Object.keys(S.rec).forEach(ds => { const r = S.rec[ds];
     if (ds < today() && dayOf(ds) === d && r && !r.dt) { r.dt = was; r.dn = d.s; } });
   d.t = nt;
@@ -4683,7 +4681,8 @@ $('types').addEventListener('click', async e => {
   }
   applyNutri();                         // норма калорий — по новому типу дня (тренировка / отдых)
   save(); render();
-});
+  return true;
+}
 /* Перенос дня подставляет под уже закрытые подходы другой набор
    упражнений. Отметка лежит под номером: после переноса номер ноль — это
    уже не жим, а присед, и приложение показывало закрытым присед, которого
@@ -4705,15 +4704,6 @@ function remapLog(ds) {
   });
   r.log = out;
 }
-$('moveTo').addEventListener('click', e => {
-  const b = e.target.closest('[data-mv]'); if (!b) return;
-  const k = +b.dataset.mv;
-  if (k === wdOf(sel)) delete S.map[sel]; else S.map[sel] = k;
-  remapLog(sel);
-  save(); render();
-});
-$('movedX').addEventListener('click', () => { delete S.map[sel]; remapLog(sel); save(); render(); });
-
 /* ---------- план недели: переставить, сдвинуть, поставить на паузу ----------
    Человек не станок: заболел, уехал, сдвинулась работа. Раньше перенос жил
    в скрытой панели по одной дате, а неделю целиком переиграть было нечем.
@@ -4805,6 +4795,21 @@ function openWeekPlan(ds) {
   const f = (base >= t && days.indexOf(base) >= 0) ? base : (days.indexOf(t) >= 0 ? t : null);
   const canPush = !all && f && dayOf(f).t !== 'rest' && !dayLocked(f) && S.days.some(d => d.t === 'rest');
   const moved = days.some(x => x >= t && S.map[x] !== undefined && !dayLocked(x));
+  /* Под выбранным днём — что на нём стоит. «Каждую неделю» — тип дня во всех
+     неделях (setDayType), «Эта неделя» — разовая замена на тренировку другого
+     дня программы, без обмена (S.map). */
+  const tpName = x => x.t === 'rest' ? 'отдых' : ((TYPES.find(y => y[0] === x.t) || [, ''])[1] || '').toLowerCase();
+  let pick = '';
+  if (wkPick !== null && all && S.days[wkPick]) {
+    const d = S.days[wkPick];
+    pick = `<div class="wkt"><p><b>${esc(d.k)}</b> во всех неделях — какая тренировка. Или нажми другой день, чтобы поменять их местами.</p>
+      <div class="types">${TYPES.map(([tt, l]) => `<button data-wpt="${tt}" class="${d.t === tt ? 'on' : ''}" aria-pressed="${d.t === tt}">${l}</button>`).join('')}</div></div>`;
+  } else if (wkPick !== null && !all && days.indexOf(wkPick) >= 0 && !dayLocked(wkPick)) {
+    const cur = dayIdx(wkPick);
+    pick = `<div class="wkt"><p>Только <b>${fmt(wkPick, 1)}</b> — поставить тренировку другого дня. Или нажми другой день, чтобы поменять их местами.</p>
+      <div class="types">${S.days.map((x, k) => `<button class="mvbtn${cur === k ? ' on' : ''}" data-wpset="${k}" aria-pressed="${cur === k}">
+        <b>${esc(x.k)}</b><i style="color:var(--c-${x.t})">${esc(tpName(x))}</i></button>`).join('')}</div></div>`;
+  }
   sheet('НЕДЕЛЯ', `<div class="wkp">
     <div class="pseg wkseg"><button data-wpm="this" class="${all ? '' : 'on'}">Эта неделя</button><button data-wpm="all" class="${all ? 'on' : ''}">Каждую неделю</button></div>
     <p class="wkh">${all
@@ -4812,16 +4817,37 @@ function openWeekPlan(ds) {
       : fmt(days[0], 1) + ' — ' + fmt(days[6], 1) + '. Нажми день, потом другой — тренировки поменяются местами. Записанные дни не двигаются.'}</p>
     ${pz && !all ? '<p class="wkpz">Неделя на паузе: серия не рвётся, цикл ждёт. Придёшь — тренировка засчитается как обычно.</p>' : ''}
     <div class="wkl">${rows}</div>
+    ${pick}
     ${all ? '' : `<div class="wka">
       ${canPush ? `<button class="add" data-wppush="${f}">Не могу ${f === t ? 'сегодня' : fmt(f, 1)} — сдвинуть на день</button>` : ''}
       <button class="add" data-wppause="${days[0]}">${pz ? 'Снять паузу' : 'Болею / уехал — пауза недели'}</button>
       ${moved ? `<button class="add" data-wpreset="${days[0]}">Вернуть неделю как в программе</button>` : ''}
     </div>`}
   </div>`);
+  // выбор под списком: на телефоне он ниже края — показываем, что появилось
+  const wt = $('shB').querySelector('.wkt');
+  if (wt && wt.scrollIntoView) wt.scrollIntoView({ block: 'nearest' });
 }
 $('shB').addEventListener('click', e => {
   const m = e.target.closest('[data-wpm]');
   if (m) { wkMode = m.dataset.wpm; wkPick = null; openWeekPlan(); return; }
+  const ty = e.target.closest('[data-wpt]');
+  if (ty) {
+    const i = wkPick;
+    setDayType(i, ty.dataset.wpt).then(ok => { if (ok) { wkPick = null; note('Тип дня поменялся во всех неделях'); }
+      if ($('sh').classList.contains('on')) openWeekPlan(); });
+    return;
+  }
+  const one = e.target.closest('[data-wpset]');
+  if (one) {
+    const ds = wkPick;
+    if (typeof ds === 'string' && !dayLocked(ds)) {
+      setMap(ds, +one.dataset.wpset); remapLog(ds);
+      applyNutri(); save(); render(); note('Тренировка на ' + fmt(ds, 1) + ' заменена');
+    }
+    wkPick = null; openWeekPlan();
+    return;
+  }
   const w = e.target.closest('[data-wpd]');
   if (w) {
     const v = wkMode === 'all' ? +w.dataset.wpd : w.dataset.wpd;
@@ -7731,8 +7757,8 @@ function paintDict() {
 
 function openSettings() {
   sheet('НАСТРОЙКИ',
-    '<div class="cph">ЭТОТ ДЕНЬ</div>' +
-    '<button class="add" data-dayset="1">Настроить тренировку этого дня</button>' +
+    '<div class="cph">РАСПИСАНИЕ</div>' +
+    '<button class="add" data-dayset="1">⇄ Неделя: переставить и сменить дни</button>' +
     '<div class="cph">ЗВУК</div>' +
     `<button class="add" data-snd="1">Звук: ${S.sound === 0 ? 'выкл' : 'вкл'}</button>` +
     '<div class="cph">ВЕСА</div>' +
@@ -7755,7 +7781,8 @@ $('shB').addEventListener('click', e => {
   const rc = e.target.closest('[data-recalc]');
   if (rc) { sheetClose(); openSetup(); return; }
   const dst = e.target.closest('[data-dayset]');
-  if (dst) { sheetClose(); tab = 'wo'; edit = true; exOpen = null; render(); window.scrollTo(0, 0); return; }
+  // одна дорога к расписанию — шторка «Неделя», та же, что у кнопки у даты
+  if (dst) { wkMode = 'this'; openWeekPlan(sel); return; }
   /* Жмём ту же кнопку, что в «Архиве», а не копию обработчика: выбор файла
      и скачивание должны остаться внутри настоящего касания, иначе Safari
      их не пустит. */
@@ -10109,10 +10136,11 @@ function openMonth(ym) {
     <button class="copyb" data-wk="${mondayOf(ym === cur ? today() : ym + '-' + String(dim).padStart(2, '0'))}">Итоги недели</button>`);
 }
 /* Что добрать: на текущей неделе — мышцы меньше половины нормы, и сколько
-   тренировок по плану ещё впереди. Своих дней нет (шаблон владельца),
-   поэтому это подсказка к оставшимся тренировкам, а не новая тренировка. */
+   тренировок по плану ещё впереди. Это подсказка к оставшимся тренировкам,
+   а не новая тренировка; переставить их — шторка «Неделя». На неделе
+   на паузе («болею») добирать нечего: подсказка молчит. */
 function lagHtml(w, mon) {
-  if (mon !== mondayOf(today())) return '';
+  if (mon !== mondayOf(today()) || paused(mon)) return '';
   const lag = MUSCLES.filter(m => { const t = volTargetM(m); return t > 0 && (w.m[m] || 0) < t / 2; });
   if (!lag.length) return '';
   const left = w.days.filter(x => x.ds > today() && x.tr).length + (w.days.some(x => x.ds === today() && x.tr && !x.wo) ? 1 : 0);
