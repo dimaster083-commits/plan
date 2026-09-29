@@ -37,9 +37,9 @@ const txt = async (p, t) => p.evaluate(tt => { tab=tt; exOpen=null; render(); re
     console.log('\n===== ' + (skin==='sl'?'СИСТЕМА':'КЛЕЙМО') + ' =====');
     await p.evaluate(s => void s, skin);
 
-    // 1. четыре вкладки
-    const tabs = await p.evaluate(() => [...document.querySelectorAll('.tabbar .tab')].map(t=>t.innerText.trim()));
-    chk(tabs.length===4, '1. внизу ровно четыре вкладки', tabs.join(' · '));
+    // 1. пять вкладок: к «Залу», «Прогрессу», «Еде» и «Фото» добавился каталог упражнений
+    const tabs = await p.evaluate(() => [...document.querySelectorAll('.tabbar .tab')].map(t=>t.dataset.tab));
+    chk(tabs.join(',')==='wo,ex,prog,food,photo', '1. внизу пять вкладок: Зал, Упражнения, Прогресс, Еда, Фото', tabs.join(' · '));
 
     // 2. выпиленное не вернулось
     let all='';
