@@ -114,6 +114,30 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(ручная.rest==='2345'&&ручная.tr!=='2345'&&ручная.после===ручная.tr,
     '7. правка нормы на паузе меняет норму отдыха; закрыл тренировку — норма тренировки', JSON.stringify(ручная));
 
+  // 8. добавки: отметка — номер строки; перенос дня не должен переводить её на чужую добавку
+  await сброс();
+  const добавки=await p.evaluate(()=>{
+    const nx=addDays(mondayOf(today()),7), tue=addDays(nx,1), thu=addDays(nx,3);
+    const names=ds=>Object.keys(recOf(ds).sp).map(k=>(dayOf(ds).sp[+k]||{}).n||('#'+k)).sort().join('|');
+    const tick=(ds,list)=>{ const r=recRW(ds); list.forEach(n=>{ r.sp[dayOf(ds).sp.findIndex(x=>x.n===n)]=1; }); };
+    // «эта неделя»: вторник (тренировка) ↔ понедельник (отдых)
+    tick(tue,['Креатин моногидрат 5 г','Цитруллина малат 8 г']); tick(nx,['Протеин 30 г']);
+    swapDates(nx,tue);
+    const обмен={вт:names(tue), пн:names(nx), лишних:Object.keys(recOf(tue).sp).filter(k=>+k>=dayOf(tue).sp.length).length};
+    // «не могу — сдвинуть»: четверг уезжает на пятницу
+    tick(thu,['Витамин D3 2000 МЕ','Кофеин 200 мг']);
+    pushDay(thu);
+    const сдвиг=names(thu);
+    // «каждую неделю»: шаблон пн ↔ вт, будущая дата с отметками без подходов
+    S.map={}; S.rec={}; tick(tue,['Омега-3 1-2 г EPA+DHA','Кофеин 200 мг']);
+    swapWeekdays(0,1);
+    const шаблон=names(tue);
+    return {обмен, сдвиг, шаблон};
+  });
+  chk(добавки.обмен.вт==='Креатин моногидрат 5 г'&&добавки.обмен.пн==='Протеин 30 г'&&добавки.обмен.лишних===0
+    &&добавки.сдвиг==='Витамин D3 2000 МЕ'&&добавки.шаблон==='Омега-3 1-2 г EPA+DHA',
+    '8. отметки добавок едут по названию при обмене, сдвиге и смене шаблона', JSON.stringify(добавки));
+
   chk(errs.length===0,'99. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);

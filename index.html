@@ -4708,11 +4708,11 @@ function remapLog(ds) {
 $('moveTo').addEventListener('click', e => {
   const b = e.target.closest('[data-mv]'); if (!b) return;
   const k = +b.dataset.mv;
-  if (k === wdOf(sel)) delete S.map[sel]; else S.map[sel] = k;
+  setMap(sel, k);
   remapLog(sel);
   save(); render();
 });
-$('movedX').addEventListener('click', () => { delete S.map[sel]; remapLog(sel); save(); render(); });
+$('movedX').addEventListener('click', () => { const o = spOf(sel); delete S.map[sel]; remapSp(sel, o); remapLog(sel); save(); render(); });
 
 /* ---------- план недели: переставить, сдвинуть, поставить на паузу ----------
    Человек не станок: заболел, уехал, сдвинулась работа. Раньше перенос жил
@@ -4735,7 +4735,24 @@ function normDay(ds) {
   return S.days.find(x => x.t === 'rest') || Object.assign({}, d, nutriFor('rest'));
 }
 const dayLocked = ds => { const r = S.rec[ds]; return !!(r && (r.wo || dayEntries(ds).length)); };
-const setMap = (ds, k) => { if (k === wdOf(ds)) delete S.map[ds]; else S.map[ds] = k; };
+/* Отметка добавки — только номер строки в списке дня (r.sp). Перенос меняет
+   день даты, и номер начинал указывать на чужую добавку: утренние таблетки
+   съезжали, кофеин дня тренировки становился протеином дня отдыха, а лишняя
+   отметка висела за краем списка и шла в опыт. Переносим по названию;
+   добавки, которой в новом дне нет, отметка уходит (опыт пересчитает save). */
+function remapSp(ds, old) {
+  const r = S.rec[ds], now = (dayOf(ds) || {}).sp || [];
+  if (!r || !r.sp || !Array.isArray(old) || now === old) return;
+  const used = {}, out = {};
+  Object.keys(r.sp).forEach(k => {
+    const n = (old[+k] || {}).n;
+    const i = n ? now.findIndex((x, j) => x && x.n === n && !used[j]) : -1;
+    if (i >= 0) { used[i] = 1; out[i] = r.sp[k]; }
+  });
+  r.sp = out;
+}
+const spOf = ds => (dayOf(ds) || {}).sp;
+const setMap = (ds, k) => { const o = spOf(ds); if (k === wdOf(ds)) delete S.map[ds]; else S.map[ds] = k; remapSp(ds, o); };
 function weekDates(ds) {
   const c = at(mondayOf(ds)), out = [];
   for (let i = 0; i < 7; i++) { out.push(iso(c)); c.setDate(c.getDate() + 1); }
@@ -4754,7 +4771,8 @@ function swapDates(a, b) {
    приседом. Даты с переносом идут следом за своей тренировкой. */
 function swapWeekdays(i, j) {
   if (i === j || !S.days[i] || !S.days[j]) return false;
-  const t = today(), keep = {};
+  const t = today(), keep = {}, oldSp = {};
+  Object.keys(S.rec).forEach(ds => { if (okDay(ds) && S.rec[ds] && S.rec[ds].sp) oldSp[ds] = spOf(ds); });
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && (ds < t || dayLocked(ds))) keep[ds] = 1; });
   weekDates(t).forEach(ds => { if (ds < t) keep[ds] = 1; });
   Object.keys(keep).forEach(ds => {
@@ -4772,6 +4790,7 @@ function swapWeekdays(i, j) {
   const nm = (d, p) => (TPL[p] && d.n === TPL[p].n);
   S.days[i] = Object.assign({}, B, { k: A.k, n: nm(B, j) ? TPL[i].n : B.n });
   S.days[j] = Object.assign({}, A, { k: B.k, n: nm(A, i) ? TPL[j].n : A.n });
+  Object.keys(oldSp).forEach(ds => remapSp(ds, oldSp[ds]));
   return true;
 }
 /* «Не могу сегодня»: тренировка уезжает на следующий день, а стоявшая там —
@@ -4865,7 +4884,7 @@ $('shB').addEventListener('click', e => {
     const t = today();
     weekDates(rs.dataset.wpreset).forEach(x => {
       if (x < t || dayLocked(x) || S.map[x] === undefined) return;
-      delete S.map[x]; remapLog(x);
+      const o = spOf(x); delete S.map[x]; remapSp(x, o); remapLog(x);
     });
     applyNutri(); save(); render(); openWeekPlan();
   }
