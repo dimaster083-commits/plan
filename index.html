@@ -4758,6 +4758,14 @@ function swapWeekdays(i, j) {
     if (v === i) S.map[ds] = j; else if (v === j) S.map[ds] = i;
     if (S.map[ds] === wdOf(ds)) delete S.map[ds];
   });
+  /* Журнал отката (bump, rbump) помнит номер дня шаблона. Тренировка уезжает
+     в другой день — номер едет следом, иначе снятая отметка искала упражнение
+     в чужом дне и не возвращала ни вес, ни цель. */
+  const sw = x => (x === i ? j : x === j ? i : x);
+  Object.keys(S.rec).forEach(ds => Object.values((S.rec[ds] || {}).log || {}).forEach(l => {
+    if (!l) return;
+    ['bump', 'rbump'].forEach(k => { if (Array.isArray(l[k])) l[k].forEach(u => { if (Array.isArray(u)) u[0] = sw(u[0]); }); });
+  }));
   const A = S.days[i], B = S.days[j];
   // имя дня — «Вторник» — остаётся на месте; своё имя («Грудь») едет с тренировкой
   const nm = (d, p) => (TPL[p] && d.n === TPL[p].n);
