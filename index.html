@@ -2961,6 +2961,7 @@ body.exopen .wobar{margin-top:8px}
 .wka{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .wka .add{margin:0}
 </style>
+<link rel="stylesheet" href="./system.css">
 </head>
 <script>
 /* Тема ставится до разбора остального кода: иначе экран успевает моргнуть
@@ -5086,13 +5087,15 @@ function exFull(e, j, r, IN, d) {
       <span class="exfcnt">${String(j + 1).padStart(2, '0')} / ${String(d.ex.length).padStart(2, '0')}</span>
     </div>
     <div class="win ex exf" data-j="${j}">
-      ${how ? `<button class="exfpic" data-how="${esc(e.n)}" aria-label="Техника: ${esc(e.n)}">
-        <img src="${how}"${exCors(e.n)} alt="" loading="lazy"><img src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">
-        <span>Техника</span></button>` : ''}
       <div class="exfhead">
+        <div class="exftitle"><span class="exfgrp">${e.g ? esc(e.g) : 'Упражнение'} · ${g.done ? 'Выполнено' : 'Текущий квест'}</span>
         <button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button>
-        <span class="exfgrp">${e.g ? esc(e.g) : ''}</span>
+        </div>
+        ${how ? `<button class="exfpic" data-how="${esc(e.n)}" aria-label="Техника: ${esc(e.n)}">
+          <img src="${how}"${exCors(e.n)} alt="" loading="lazy">
+          <span>Техника ↗</span></button>` : ''}
       </div>
+      <span class="exfwlabel">ВЕС НА СЕГОДНЯ</span>
       <div class="exfw">
         <input class="exfkg" inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}"${g.done ? ' readonly' : ''} aria-label="Вес">
         <span class="exfu">КГ</span>
@@ -5110,15 +5113,15 @@ function exFull(e, j, r, IN, d) {
       ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
       ${rpeHtml(g)}
+      <div class="exfact">
+        <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
+        <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
+      </div>
       ${d.ex[j + 1] ? `<button class="ssb${e.ss ? ' on' : ''}" data-ss="${j}" aria-pressed="${!!e.ss}">${e.ss
         ? 'Суперсет с «' + esc(d.ex[j + 1].n) + '» — снять' : 'Суперсет со следующим: «' + esc(d.ex[j + 1].n) + '»'}</button>` : ''}
       ${noteHtml(e.n)}
       ${recHtml(e.n)}
       ${exChartHtml(e.n)}
-      <div class="exfact">
-        <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
-        <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
-      </div>
       <div class="exfft">${g.done ? holdBadge(e, g) : ''}</div>
       <!-- Обработчик удаления упражнения был написан, а кнопки к нему не
            существовало ни в одной разметке: добавить упражнение человек мог,
@@ -5231,7 +5234,7 @@ function rollback(l) {
   if (l.xp) addXp(-l.xp);
   /* Рекорд после снятой отметки — лучший вес из оставшегося журнала, а не
      снимок на момент закрытия: снимок стирал рекорд, поставленный позже. */
-  if (l.prevPr !== undefined && l.n) {
+  if (l.n) {
     const was = l.done; l.done = 0;
     const best = prFromLog(l.n);
     l.done = was;
@@ -5503,7 +5506,10 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     (!g.done ? '<button class="kindb" data-kindmode="1" aria-pressed="false">ТИП</button>' : '') +
     (top && !g.done ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
     '</div><div class="rb">';
-  const wsAll = Array.isArray(g.ws) ? g.ws : [];
+  let wsAll = Array.isArray(g.ws) ? g.ws : [];
+  if (g.done && (Array.isArray(g.wu) || Array.isArray(g.dr))) {
+    wsAll = (g.wu || []).map(() => '').concat((g.rs || []).map((_, i) => wsAll[i] ?? ''), (g.dr || []).map(() => ''));
+  }
   const ck = Array.isArray(g.ck) ? g.ck : [];
   const previous = previousSets(e.n, sel);
   for (let i = 0; i < nn; i++) {
@@ -5664,6 +5670,7 @@ function toggleSet(j) {
     if (l.wu || l.dr || l.fl) {
       const wu = l.wu || [], rs = l.rs || [], dr = l.dr || [], fl = l.fl || [];
       l.kinds = wu.map(() => 'w').concat(rs.map((_, i) => (fl.indexOf(i) >= 0 ? 'f' : '')), dr.map(() => 'd'));
+      if (Array.isArray(l.ws)) l.ws = wu.map(() => '').concat(rs.map((_, i) => l.ws[i] ?? ''), dr.map(() => ''));
       l.rs = wu.concat(rs, dr); l.s = String(l.rs.length);
       delete l.wu; delete l.dr; delete l.fl;
     }
@@ -5980,7 +5987,9 @@ function workoutSummary(ds) {
   d.ex.forEach((e, j) => {
     const l = r.log[j];
     if (!l || !l.done) return;
-    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(num(pick(l.w, e.w))) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
+    const w = num(pick(l.w, e.w));
+    const recordW = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => l.ws && num(l.ws[i]) > 0 ? num(l.ws[i]) : w)) : w;
+    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(recordW) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
       .concat((Array.isArray(l.recs) ? l.recs : []).map(recTxt)).filter(Boolean);
     if (parts.length) records.push([l.n || e.n, parts]);
   });
@@ -6049,10 +6058,11 @@ function entryLine(e) {
   // вес разный по подходам — показываем его так же, как повторы
   const ws = e.ws && e.rs ? e.rs.map((_, i) => (num(e.ws[i]) > 0 ? num(e.ws[i]) : e.w)) : null;
   const many = ws && ws.some(v => v !== ws[0]);
+  const sameW = ws && ws.length ? ws[0] : e.w;
   return (e.wu && e.wu.length ? 'разм. ' + e.wu.join('/') + ' · ' : '') + reps +
     (e.dr && e.dr.length ? ' + дроп ' + e.dr.join('/') : '') +
     (many ? ' · ' + ws.map(kg).join('/') + ' кг'
-          : (e.w ? ' · ' + kg(e.w) + ' кг' : ' · без отягощения')) +
+          : (sameW ? ' · ' + kg(sameW) + ' кг' : ' · без отягощения')) +
     (e.rpe ? ' · RPE ' + e.rpe : '');
 }
 
@@ -6712,7 +6722,8 @@ function recFeed(max) {
     Object.keys(r.log || {}).forEach(j => {
       const l = r.log[j]; if (!l || !l.done) return;
       const n = l.n || ((day.ex || [])[j] || {}).n || 'Упражнение';
-      const w = num(l.w);
+      const commonW = num(pick(l.w, ((day.ex || [])[j] || {}).w));
+      const w = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => l.ws && num(l.ws[i]) > 0 ? num(l.ws[i]) : commonW)) : commonW;
       if (num(l.prevPr) > 0 && w > num(l.prevPr)) out.push({ ds, n, t: 'вес ' + kg(w) + ' кг (было ' + kg(num(l.prevPr)) + ')' });
       (l.recs || []).forEach(x => { const t = recTxt(x); if (t) out.push({ ds, n, t }); });
     });
