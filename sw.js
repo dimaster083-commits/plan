@@ -1,4 +1,8 @@
 const CACHE = "sys-gym-164";   // меняется при каждом обновлении приложения
+// Фото каталога с jsDelivr живут в своём кэше, без номера сборки: в кэше
+// версии они стирались при каждой выкладке, и открытое вчера упражнение
+// после обновления снова было без фото в подвале без связи.
+const CDN_CACHE = "sys-gym-cdn";
 const FILES = [
   './',
   './index.html',
@@ -87,7 +91,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== CDN_CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -136,7 +140,7 @@ self.addEventListener('fetch', e => {
       .then(res => {
         if (keep(res) || keepCdn(res, url)) {
           const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          caches.open(keep(res) ? CACHE : CDN_CACHE).then(c => c.put(e.request, copy)).catch(() => {});
           return res;
         }
         // негодный ответ — сохранённая копия того же файла, если она есть
