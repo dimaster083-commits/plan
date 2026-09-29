@@ -3368,12 +3368,6 @@ document.documentElement.dataset.skin = 'sl';
   <div id="shB"></div>
 </div></div>
 
-<div class="tmr" id="tmr"><div class="in">
-  <b id="tmrV">0:00</b>
-  <div class="p"><button data-t="60">60</button><button data-t="90">90</button>
-    <button data-t="120">2:00</button><button data-t="180">3:00</button></div>
-  <button class="stop" id="tmrX">СТОП</button>
-</div></div>
 
 <div class="fp" id="fp">
   <div class="fph"><input id="fq" placeholder="Поиск продукта" autocomplete="off" aria-label="Поиск продукта">
@@ -5347,7 +5341,6 @@ function exFull(e, j, r, IN, d) {
       ${rpeHtml(g)}
       <div class="exfact">
         <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
-        <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
       </div>
       ${d.ex[j + 1] ? `<button class="ssb${e.ss ? ' on' : ''}" data-ss="${j}" aria-pressed="${!!e.ss}">${e.ss
         ? 'Суперсет с «' + esc(d.ex[j + 1].n) + '» — снять' : 'Суперсет со следующим: «' + esc(d.ex[j + 1].n) + '»'}</button>` : ''}
@@ -5388,8 +5381,6 @@ $('exl').addEventListener('blur', e => {
 }, true);
 
 $('exl').addEventListener('click', e => {
-  const t = e.target.closest('[data-rest]');
-  if (t) { tStart(+t.dataset.rest); return; }
 
   const cl = e.target.closest('[data-close]');
   if (cl) { exOpen = null; render(); enterFx(); window.scrollTo(0, 0); return; }
@@ -5501,19 +5492,6 @@ function purgeExercise(name) {
   return n;
 }
 
-/* Отдых под тип упражнения. Трёхминутный отдых на базе даёт больше и в силе,
-   и в массе, чем минутный; изоляции хватает полутора. Раньше на всё стояло 90 с. */
-/* Отдых между подходами. Раньше здесь читалось r[5], а у записей
-   каталога всего пять полей — шестого нет ни у одного упражнения.
-   То есть таймер всегда предлагал 90 секунд, каким бы тяжёлым ни было
-   движение. Считаем от доли опорного веса: чем ближе к базе, тем
-   дольше отдых. */
-function restFor(name) {
-  const r = EXDB[name];
-  if (!r) return 90;
-  const k = Number(r[3]) || 0;
-  return k >= 0.7 ? 180 : k >= 0.25 ? 120 : 90;
-}
 
 // одно нажатие проставляет все подходы по верхней границе: в зале это
 // самый частый случай, а вбивать одно и то же число рукой по четыре раза — лишнее
@@ -6092,9 +6070,8 @@ function toggleSet(j) {
   justDone = j; save(); render(); justDone = -1;
   syncWake();
 
-  // отдых включается сам: в зале лишнее нажатие мокрыми руками ни к чему
-  const allDone = d.ex.length > 0 && d.ex.every((_, k) => (r.log[k] || {}).done);
-  if (!allDone && ssNext < 0) tStart(restFor(p.n));      // база отдыхает дольше изоляции
+  /* Таймера отдыха нет (решение владельца, 30.09.2026): сколько отдыхать,
+     человек чувствует сам, а сам собой включавшийся отсчёт только мешал. */
 
   maybeProgress(l, p, w);
   maybeRegress(l, p, w);
@@ -6249,7 +6226,6 @@ $('fin').addEventListener('click', () => {
   addXp(XP_WO, 'Тренировка закрыта');
   save(); render();
   keepAwake(false);
-  clearInterval(tInt); $('tmr').classList.remove('on');
   workoutSummary(sel);
   checkQuests();
   offerUndo(snap, 'Тренировка закрыта');
@@ -8787,44 +8763,6 @@ function exportCsv() {
 }
 $('csv').addEventListener('click', exportCsv);
 
-/* =========================================================================
-   ТАЙМЕР ОТДЫХА
-   ========================================================================= */
-let tEnd = 0, tInt = null, tHide = null, tDur = 1;
-function tShow(left) {
-  $('tmrV').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
-  // полоса под таймером тает вместе с отдыхом
-  $('tmr').style.setProperty('--tp', Math.max(0, Math.min(1, left / tDur)));
-}
-function tStart(sec) {
-  tEnd = Date.now() + sec * 1000;
-  tDur = sec > 0 ? sec : 1;
-  // окно закрывается через 1,4 с после нуля. Если за это время закрыть
-  // следующий подход, старый таймер прятал уже новый отсчёт — гасим его.
-  clearTimeout(tHide); tHide = null;
-  $('tmr').classList.add('on');
-  tShow(sec);
-  clearInterval(tInt);
-  // считаем по метке времени: на телефоне интервал засыпает вместе с экраном
-  tInt = setInterval(() => {
-    const left = Math.max(0, Math.round((tEnd - Date.now()) / 1000));
-    tShow(left);
-    if (left <= 0) {
-      clearInterval(tInt); tInt = null;
-      // вибрации в Safari на iPhone нет, поэтому конец отдыха ещё и звучит
-      dingRest();
-      if (navigator.vibrate) navigator.vibrate([200, 90, 200]);
-      note('Отдых окончен');
-      tHide = setTimeout(() => { tHide = null; $('tmr').classList.remove('on'); }, 1400);
-    }
-  }, 250);
-}
-$('tmr').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) tStart(+b.dataset.t); });
-$('tmrX').addEventListener('click', () => {
-  clearInterval(tInt); tInt = null;
-  clearTimeout(tHide); tHide = null;
-  $('tmr').classList.remove('on');
-});
 
 const FOOD=[
 ["Овсяные хлопья сухие",366,11.9,7.2,59],

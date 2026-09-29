@@ -45,21 +45,14 @@ const SEED = () => {
   };
   const errs = [];
 
-  // 1. таймер отдыха: пресеты и «СТОП» не уже пальца и не за краем экрана
-  for (const w of [320, 360, 375, 414]) {
+  // 1. таймера отдыха нет (решение владельца, 30.09.2026): ни окна, ни кнопки ⏱ в карточке
+  for (const w of [320]) {
     const p = await open(w);
-    await p.evaluate(() => {
-      tab = 'wo'; sel = today(); exOpen = 0; render(); tStart(90);
-      return new Promise(res => setTimeout(res, 500));
-    });
     const t = await p.evaluate(() => {
-      document.getAnimations().forEach(a => { try { a.finish(); } catch (e) { /* бесконечная */ } });  // появление — scale .97
-      const bs = [...document.querySelectorAll('#tmr button')].map(x => { const r = x.getBoundingClientRect();
-        return { t: x.textContent.trim(), w: Math.round(r.width), h: Math.round(r.height), r: Math.round(r.right) }; });
-      return { vw: innerWidth, bs };
+      tab = 'wo'; sel = today(); exOpen = 0; render();
+      return { окно: !!document.getElementById('tmr'), кнопка: !!document.querySelector('[data-rest]'), функция: typeof tStart };
     });
-    const badB = t.bs.filter(x => x.w < 44 || x.h < 44 || x.r > t.vw);
-    chk(t.bs.length === 5 && !badB.length, `1. таймер на ${w}: пресеты и «СТОП» ≥ 44 px и в экране`, JSON.stringify(badB.length ? badB : t.bs.map(x => x.w)));
+    chk(!t.окно && !t.кнопка && t.функция === 'undefined', '1. таймера отдыха нет: ни окна, ни кнопки', JSON.stringify(t));
     errs.push(...p.errs); await p.close();
   }
 

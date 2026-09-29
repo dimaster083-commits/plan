@@ -40,17 +40,17 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 
   // 6–9. суперсет
   await p.evaluate(()=>{ S.rec={}; const d=dayOf(today()); d.ex=[{n:'Жим лёжа',s:3,r:'8-10',w:60,g:'Грудь'},{n:'Тяга штанги в наклоне',s:3,r:'8-10',w:50,g:'Спина'},{n:'Жим штанги стоя',s:3,r:'8-10',w:30,g:'Плечи'}];
-    document.getElementById('tmr').classList.remove('on'); save(); exOpen=0; render(); });
+    save(); exOpen=0; render(); });
   const r6=await p.evaluate(()=>{ const bt=document.querySelector('[data-ss="0"]'); const h=bt?Math.round(bt.getBoundingClientRect().height):0; if(bt) bt.click();
     exOpen=null; render(); const rows=[...document.querySelectorAll('.exrow')].map(x=>(x.classList.contains('ss')?'ss':'')+(x.classList.contains('ss2')?'ss2':''));
     return {ss:dayOf(today()).ex[0].ss, rows, h}; });
   chk(r6.ss===1&&r6.rows[0]==='ss'&&r6.rows[1]==='ss2'&&r6.rows[2]===''&&r6.h>=44,'6. «Суперсет со следующим» связывает пару, в списке видно',JSON.stringify(r6));
   const r7=await p.evaluate(()=>{ exOpen=0; render(); const c=document.querySelector('.ex[data-j="0"]'); [...c.querySelectorAll('[data-rs]')].forEach(x=>{x.value='10';});
-    toggleSet(0); return {open:exOpen, tmr:document.getElementById('tmr').classList.contains('on')}; });
-  chk(r7.open===1&&!r7.tmr,'7. закрыл первое — сразу второе, таймер отдыха не включился',JSON.stringify(r7));
+    toggleSet(0); return {open:exOpen, tmr:!!document.getElementById('tmr')}; });
+  chk(r7.open===1&&!r7.tmr,'7. закрыл первое — сразу второе',JSON.stringify(r7));
   const r8=await p.evaluate(()=>{ const c=document.querySelector('.ex[data-j="1"]'); [...c.querySelectorAll('[data-rs]')].forEach(x=>{x.value='10';});
-    toggleSet(1); return {open:exOpen, tmr:document.getElementById('tmr').classList.contains('on')}; });
-  chk(r8.open===1&&r8.tmr,'8. после пары — отдых',JSON.stringify(r8));
+    toggleSet(1); return {open:exOpen, tmr:!!document.getElementById('tmr')}; });
+  chk(r8.open===1&&!r8.tmr,'8. после пары таймер отдыха не включается — его нет',JSON.stringify(r8));
   chk(errs.length===0,'9. без ошибок страницы',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);

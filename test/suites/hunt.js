@@ -42,7 +42,7 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
     const snap=()=>[JSON.stringify(S), tab, sel, mo, exOpen, pSec, calView, calYear, edit, editPast,
       document.getElementById('sh').className, document.getElementById('ask').className,
       document.getElementById('fp').className, document.getElementById('ov').className,
-      document.getElementById('tmr').className, hash(document.body.innerHTML)].join('|');
+      hash(document.body.innerHTML)].join('|');
     const key=btn=>(btn.id||'')+'|'+(typeof btn.className==='string'?btn.className:'')+'|'+
       (btn.dataset.d??btn.dataset.j??btn.dataset.go??btn.dataset.open??btn.dataset.cd??btn.dataset.mo??
        btn.dataset.sec??btn.dataset.tab??btn.dataset.jump??btn.dataset.tog??btn.dataset.day??'')+'|'+

@@ -110,14 +110,9 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     return dl.sets<hard.sets?true:JSON.stringify({dl,hard});
   })===true, '6. на разгрузке подходов меньше, чем на пике');
 
-  // 7. отдых зависит от упражнения, а не один на всех
-  chk(await p.evaluate(()=>{
-    const vals=Object.keys(EXDB).map(n=>restFor(n));
-    const uniq=[...new Set(vals)];
-    const base=restFor('Присед со штангой'), iso2=restFor('Махи в стороны');
-    if(uniq.length<2) return 'у всех упражнений один отдых: '+uniq.join(',');
-    return base>iso2?true:JSON.stringify({base,iso:iso2,uniq});
-  })===true, '7. отдых после базы дольше, чем после изоляции');
+  // 7. таймера отдыха нет (решение владельца): отдых не рассчитывается
+  chk(await p.evaluate(()=>typeof restFor==='undefined'&&typeof tStart==='undefined'&&!document.getElementById('tmr')),
+    '7. таймера отдыха нет — ни расчёта, ни окна');
 
   // 8. добавленное из каталога упражнение получает вес и группу
   chk(await p.evaluate(()=>{
