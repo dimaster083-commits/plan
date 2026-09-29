@@ -12,8 +12,11 @@ const chk=(c,n,d)=>{ if(!c) fails++; console.log('  '+(c?'✓':'✗')+' '+n+(d?'
   const past=await p.evaluate(()=>{ S.setup=1; document.getElementById('setup').classList.remove('on'); S.rec={};
     const z=new Date(); z.setDate(z.getDate()-7); const ds=iso(z); const d=dayOf(today()); d.t='lo1'; d.s='Низ тела · силовой'; delete S.map[ds]; delete S.map[today()];
     S.rec[ds]={wo:1,log:{0:{done:1,n:'Присед со штангой',g:'Ноги',w:'60',s:'3',r:'8',rs:[8,8,8],vol:1440,sd:1}}};
-    save(); tab='wo'; sel=today(); edit=true; render(); return ds; });
-  await p.evaluate(()=>{ const bt=document.querySelector('#types [data-t="up2"]'); bt.click(); });
+    save(); tab='wo'; sel=today(); render(); return ds; });
+  // тип дня во всех неделях — шторка «Неделя», «Каждую неделю», выбранный день
+  await p.evaluate(()=>{ wkMode='all'; openWeekPlan(today());
+    document.querySelector('#shB [data-wpd="'+wdOf(today())+'"]').click();
+    document.querySelector('#shB [data-wpt="up2"]').click(); });
   await p.waitForTimeout(300); await p.click('#askY'); await p.waitForTimeout(300);
   const r=await p.evaluate(ds=>{ const now=dayOf(today()).t; sel=ds; editPast=false; render(); const q=document.getElementById('qType').textContent;
     const lk=dayLook(ds); S.rec[ds].dt='мусор'; scrubKeys(); return {now, q, lk, scrub:S.rec[ds].dt===undefined}; },past);
