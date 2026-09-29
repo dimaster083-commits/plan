@@ -3533,6 +3533,10 @@ const MONG = ['января', 'февраля', 'марта', 'апреля', '�
 /* Раньше здесь стояли числа 70 и 75/80/85/90/95 — шкала одного человека.
    Теперь точка отсчёта это первый записанный вес, а вехи строятся от неё
    до цели и в нужную сторону: цель может быть и ниже текущего веса. */
+/* Свой вес — вписанный или из журнала. Без него нормы еды и расчёт не
+   показываются: «Позже» в первой настройке оставлял «расчёт от веса 70 кг»,
+   рост 175 и возраст 30 — чужие цифры, выданные за свои. */
+const ownBw = () => num(S.bw) || num(S.bw0) || (wlog()[0] || [])[1] || 0;
 function startW() {
   if (num(S.bw0)) return num(S.bw0);
   const w = wlog();
@@ -7164,6 +7168,11 @@ $('bmiRow').addEventListener('click', openBmi);
    те же функции, что считают нормы и разбор, только показанные цифрами. */
 function paintCalc() {
   const box = $('calcBox'); if (!box) return;
+  if (!ownBw()) {
+    box.innerHTML = '<div class="wtitle" style="padding:0 0 8px">РАСЧЁТ</div>' +
+      '<p class="clh">Впиши свой вес — от него считаются поддержание, норма еды и темп.</p>';
+    return;
+  }
   const bw = num(S.bw) || startW() || 70, g = num(S.goal) || bw, dir = goalDir();
   const m = maintOf(bw), tr = nutriFor('up1'), rs = nutriFor('rest');
   const [lo, hi] = paceRange(dir);
@@ -7182,8 +7191,9 @@ function paintCalc() {
       Math.max(1, Math.round(left / aHi)) + '–' + Math.max(1, Math.round(left / aLo)) + ' нед') : '') +
     // темп считает paceOf: не меньше 3 взвешиваний за 7+ дней — раньше здесь обещали темп после двух
     row('Сейчас', pc ? (pc.per > 0 ? '+' : '') + dec(pc.per, 2) + ' кг/нед' : 'нужно 3 взвеш. за 7 дн') +
-    '<p class="clh">Поддержание — формула Миффлина — Сан Жеора: вес, рост ' + (num(S.height) || 175) +
-    ' см, возраст ' + (ageOf() || 30) + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
+    '<p class="clh">Поддержание — формула Миффлина — Сан Жеора: вес, рост ' +
+    (num(S.height) ? num(S.height) + ' см' : 'не вписан (взят 175 см)') +
+    ', возраст ' + (ageOf() ? ageOf() : 'не вписан (взят 30)') + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
     ', ' + actOf()[1] + ' (×' + dec(actOf()[0], 2) + ')' +
     '. Коридор — ' + pctTxt + ' массы в неделю; норма через день тренировки / отдыха.</p>';
 }
@@ -8033,8 +8043,8 @@ function openSetup() {
   syncBwFields();
   $('setupRows').innerHTML = ANCHORS.map(([k, label, def]) =>
     `<div class="srow"><span>${label}</span>
-      <input id="an-${k}" inputmode="decimal" value="${fresh ? '' : esc(a[k] ?? def)}" placeholder="${def}" aria-label="${label}"><i>кг</i></div>`).join('');
-  $('anH').value = fresh ? '' : (S.height || 177);
+      <input id="an-${k}" inputmode="decimal" value="${fresh ? '' : esc(a[k] || '')}" placeholder="${def}" aria-label="${label}"><i>кг</i></div>`).join('');
+  $('anH').value = fresh ? '' : (S.height || '');   // не вписан — пусто, а не чужие 177
   $('anAge').value = fresh ? '' : (S.age || '');
   paintSex();
   // Пока первая настройка открыта, сквозная синхронизация не возвращает
@@ -8096,7 +8106,7 @@ $('setOk').addEventListener('click', async () => {
     a.b = r25(bw * 0.5); a.s = r25(bw * 0.6); a.d = r25(bw * 0.7);
   }
   S.anchors = a;
-  S.height = hIn || num(S.height) || 175;
+  if (hIn) S.height = hIn;           // не вписан — не пишем чужие 175 см: maintOf возьмёт их сам
   if (num($('anAge').value)) S.age = $('anAge').value;
   S.sex = S.sex || 'm';
   // вес и цель уже записаны сквозными полями; здесь остаётся только точка отсчёта
@@ -9839,10 +9849,11 @@ function itemLine(it) {
 }
 
 function paintFood() {
-  const d = normDay(sel);
+  const d = normDay(sel), none = !ownBw() && !S.kcManual;
   paintCpLast();
-  $('kc').value = d.kc;
-  $('pr').value = d.pr;
+  $('kc').value = none ? '' : d.kc;
+  $('pr').value = none ? '' : d.pr;
+  $('kc').placeholder = $('pr').placeholder = none ? '—' : '';
   paintKcSrc();
   $('mll').innerHTML = mealsOf(sel).map((m, j) => {
     const s = mealSum(m);
@@ -9864,11 +9875,12 @@ function paintFood() {
 }
 
 function paintTotals() {
-  const d = normDay(sel), t = daySum(sel);
-  $('tKc').innerHTML = rnd(t.k) + '<i> / ' + esc(d.kc) + ' ккал</i>';
-  $('tPr').innerHTML = rnd(t.p) + '<i> / ' + esc(d.pr) + ' г</i>';
-  $('bKc').style.width = Math.min(100, t.k / (num(d.kc) || 1) * 100) + '%';
-  $('bPr').style.width = Math.min(100, t.p / (num(d.pr) || 1) * 100) + '%';
+  const d = normDay(sel), t = daySum(sel), none = !ownBw() && !S.kcManual;
+  const kc = none ? '—' : d.kc, pr = none ? '—' : d.pr;
+  $('tKc').innerHTML = rnd(t.k) + '<i> / ' + esc(kc) + ' ккал</i>';
+  $('tPr').innerHTML = rnd(t.p) + '<i> / ' + esc(pr) + ' г</i>';
+  $('bKc').style.width = (none ? 0 : Math.min(100, t.k / (num(d.kc) || 1) * 100)) + '%';
+  $('bPr').style.width = (none ? 0 : Math.min(100, t.p / (num(d.pr) || 1) * 100)) + '%';
   $('tFa').textContent = 'жиры ' + rnd(t.f) + ' г';
   $('tCa').textContent = 'углеводы ' + rnd(t.c) + ' г';
   // пересчитываем подписи, не трогая поля ввода: иначе слетит фокус при наборе
@@ -9886,6 +9898,7 @@ function paintTotals() {
 function paintKcSrc() {
   const dir = goalDir();
   $('kcTxt').textContent = S.kcManual ? 'нормы заданы вручную'
+    : !ownBw() ? 'впиши свой вес в «Прогрессе» — от него считается норма'
     : 'расчёт от веса ' + kg(num(S.bw) || startW()) + ' кг · ' +
       (dir > 0 ? 'набор' : dir < 0 ? 'снижение' : 'удержание');
   $('kcAuto').hidden = !S.kcManual;

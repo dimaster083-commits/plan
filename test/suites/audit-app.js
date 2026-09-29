@@ -123,6 +123,28 @@ async function swCdn(){
     new RegExp('^0 / '+доб.имена.length+'$').test(доб.счёт)&&доб.послеЗакрытия===доб.всего,
     '4. неделя на паузе: добавки дня тренировки — как у отдыха, закрытая тренировка возвращает список', JSON.stringify(доб));
 
+  // 6. первая настройка «Позже»: ни «расчёта от 70 кг», ни роста 175 и защёлкнутых чужих весов
+  {
+    const q=await(await b.newContext({viewport:{width:320,height:700}})).newPage();
+    q.on('pageerror',e=>errs.push(e.message));
+    await q.goto(APP); await q.waitForTimeout(1300);
+    await q.click('#setSkip'); await q.waitForTimeout(200);
+    const позже=await q.evaluate(()=>{
+      tab='food'; render();
+      const r={kc:$('kc').value, итог:$('tKc').textContent, src:$('kcTxt').textContent};
+      tab='prog'; render(); r.расчёт=$('calcBox').textContent;
+      openSetup(); r.рост=$('anH').value; r.веса=['b','s','d'].map(k=>$('an-'+k).value).join(',');
+      return r;
+    });
+    await q.fill('#anBw','80'); await q.click('#setOk'); await q.waitForTimeout(300);
+    const после=await q.evaluate(()=>({рост:S.height||'', сводка:buildSummary().split('\n')[1], расчёт:$('calcBox').textContent}));
+    chk(позже.kc===''&&/\/ —/.test(позже.итог)&&!/70 кг/.test(позже.src)&&/впиши/i.test(позже.src)&&!/2\d{3}|175|70/.test(позже.расчёт)&&
+      позже.рост===''&&позже.веса===',,'&&после.рост===''&&/Рост не указан/.test(после.сводка)&&/не вписан/.test(после.расчёт),
+      '6. «Позже» в настройке: норма — прочерк и «впиши вес», поля пустые, рост 175 в состояние не пишется',
+      JSON.stringify({позже,после}));
+    await q.close();
+  }
+
   chk(errs.length===0,'99. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   console.log(fails?'\nПРОВАЛОВ: '+fails:'\nВСЁ ЧИСТО');
