@@ -121,14 +121,15 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   const кат=await замер();
   const фил=await ev(()=>{ openLibFilter(); const h=$('shI').dataset.hint; $('shI').click();
     const r={h, t:$('hshT').textContent, гж:/ГЖ — горизонтальный жим/.test($('hshB').textContent)&&/КД = ТД/.test($('hshB').textContent)};
-    hintClose(); sheetClose(); r.совет=!$('tip-ex').hidden; return r; });
+    hintClose(); sheetClose(); r.совет=$('tip-ex').offsetHeight>0; return r; });
   chk(кат.keys?.includes('lib')&&!кат.small?.length&&кат.w<=320&&фил.h==='planes'&&фил.гж&&фил.совет,
     '8. «Каталог»: совет, «i» у поиска, типы движения ГЖ…ТД в фильтрах', JSON.stringify({кат,фил}));
 
   // 9. «Прогресс»: итоги, рекорды, карта мышц, подходы, цель, расчёт, цикл, квесты, копия
-  const прог=await ev(()=>{ tab='prog'; render();
+  const прог=await ev(()=>{ // с раскрытого упражнения — прямо на вкладку: body.exopen остаётся, совет не должен пропасть
+    tab='wo'; exOpen=0; render(); document.querySelector('.tab[data-tab="prog"]').click();
     const all=[...document.querySelectorAll('#scr-prog [data-hint]')].map(x=>x.dataset.hint);
-    return {all, совет:!$('tip-prog').hidden}; });
+    return {all, совет:$('tip-prog').offsetHeight>0}; });
   const нужно=['recap','recs','musmap','balance','bwchart','goal','pace','cycle','quests','meas','cal','an','backup','work'];
   chk(нужно.every(k=>прог.all?.includes(k))&&прог.совет,
     '9. «Прогресс»: «i» у итогов, рекордов, карты, баланса, веса, цели, расчёта, цикла, квестов, замеров, истории, разбора, копии', JSON.stringify(прог));
@@ -142,7 +143,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     openHint('protein'); const pr=$('hshB').textContent, src=$('hshS').textContent; hintClose();
     openHint('supp'); const sp=$('hshB').textContent; hintClose();
     return {keys, белок:/1,6–2,2/.test(pr)&&/0,4 г\/кг/.test(pr)&&/нутрициология/i.test(src),
-      добавки:/3–5 г/.test(sp)&&/3–6 мг\/кг/.test(sp), пусто:/креатин/.test($('spl').textContent), совет:!$('tip-food').hidden}; });
+      добавки:/3–5 г/.test(sp)&&/3–6 мг\/кг/.test(sp), пусто:/креатин/.test($('spl').textContent), совет:$('tip-food').offsetHeight>0}; });
   const едаМ=await замер();
   chk(['kcal','protein','meals','supp'].every(k=>еда.keys?.includes(k))&&еда.белок&&еда.добавки&&еда.пусто&&еда.совет&&!едаМ.small?.length&&!едаМ.cover?.length&&едаМ.w<=320,
     '11. «Еда»: «i» у калорий, белка (1,6–2,2 г/кг), рациона, добавок; пустые добавки учат', JSON.stringify({еда,едаМ}));
@@ -160,7 +161,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   await p.click('#tip-wo [data-tipok]',{timeout:3000}).catch(()=>{}); await p.waitForTimeout(100);
   const закрыт=await ev(()=>({скрыт:$('tip-wo').hidden, tips:JSON.stringify(S.tips)}));
   await ev(()=>flush()); await p.reload(); await p.waitForTimeout(1300);
-  const послеП=await ev(()=>({скрыт:$('tip-wo').hidden, еда:(tab='food',render(),!$('tip-food').hidden), tips:JSON.stringify(S.tips)}));
+  const послеП=await ev(()=>({скрыт:$('tip-wo').hidden, еда:(tab='food',render(),$('tip-food').offsetHeight>0), tips:JSON.stringify(S.tips)}));
   chk(закрыт.скрыт&&закрыт.tips==='{"wo":1}'&&послеП.скрыт&&послеП.еда,
     '13. «Понятно» убирает совет экрана и помнит это после перезагрузки', JSON.stringify({закрыт,послеП}));
 

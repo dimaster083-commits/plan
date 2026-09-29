@@ -239,7 +239,7 @@ button.hib[hidden],body.nohints button.hib,body.nohints .tip{display:none!import
 .tipb button{min-height:44px;min-width:44px;padding:0 14px;border-radius:var(--r-s);font:600 13px var(--f);
   color:var(--acc-2);background:none;border:0}
 .tipb .tipok{color:var(--ink);border:1px solid var(--ln2);background:var(--s2)}
-body.exopen .tip{display:none}
+body.exopen #scr-wo .tip{display:none}
 @keyframes tipIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* шторка подсказки: снизу, поверх всего, открытая шторка под ней остаётся */
