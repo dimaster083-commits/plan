@@ -10011,7 +10011,11 @@ function rangeData(mon, n) {
     if (r.wo) w.wo++;
     if (r.t0 && r.t1 && r.t1 > r.t0) w.mins += Math.round((r.t1 - r.t0) / 60000);
     w.ton += ton; w.sets += sets;
-    w.days.push({ ds, ton, sets, wo: !!r.wo, skip: !!r.skip, tr: (dayOf(ds) || {}).t !== 'rest' });
+    /* день плана — по типу самой даты (прошлые — снимок dayLook), а неделя на
+       паузе тренировок не ждёт: раньше в итогах болезни стояло «0/4», а месяц
+       с неделей болезни считал её тренировки планом */
+    const pz = paused(ds);
+    w.days.push({ ds, ton, sets, wo: !!r.wo, skip: !!r.skip, pz, tr: !pz && (dayLook(ds) || {}).t !== 'rest' });
   }
   return w;
 }
@@ -10113,7 +10117,7 @@ function openMonth(ym) {
    тренировок по плану ещё впереди. Своих дней нет (шаблон владельца),
    поэтому это подсказка к оставшимся тренировкам, а не новая тренировка. */
 function lagHtml(w, mon) {
-  if (mon !== mondayOf(today())) return '';
+  if (mon !== mondayOf(today()) || paused(mon)) return '';     // на паузе добирать нечего
   const lag = MUSCLES.filter(m => { const t = volTargetM(m); return t > 0 && (w.m[m] || 0) < t / 2; });
   if (!lag.length) return '';
   const left = w.days.filter(x => x.ds > today() && x.tr).length + (w.days.some(x => x.ds === today() && x.tr && !x.wo) ? 1 : 0);
@@ -10124,14 +10128,15 @@ function openWeek(mon) {
   const cur = mondayOf(today());
   mon = mon && mon <= cur ? mondayOf(mon) : cur;
   const w = weekData(mon), pw = weekData(addDays(mon, -7));
-  const plan = (S.days || []).filter(d => d.t !== 'rest').length;
+  // план — дни тренировок этой недели, как в месяце: после сдвига и на паузе он другой
+  const plan = w.days.filter(x => x.tr).length, pz = paused(mon);
   const tile = (v, l, d) => `<div class="win"><b>${v}</b><span>${l}</span>${d ? '<i>' + d + ' к прошлой</i>' : ''}</div>`;
   const WD = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
   const mx = Math.max(1, ...w.days.map(x => x.ton));
   const html = `<div class="wknav"><button data-wk="${addDays(mon, -7)}" aria-label="Прошлая неделя">‹</button>
       <b>${wkLabel(mon)}</b><button data-wk="${addDays(mon, 7)}" aria-label="Следующая неделя"${mon >= cur ? ' disabled' : ''}>›</button></div>
     <div class="sum wksum">
-      ${tile(w.wo + '<small>/' + plan + '</small>', 'ТРЕНИРОВОК')}
+      ${tile(w.wo + (pz ? '' : '<small>/' + plan + '</small>'), 'ТРЕНИРОВОК')}
       ${tile(w.sets, 'ПОДХОДОВ', pctTxt(w.sets, pw.sets))}
       ${tile(kgTon(w.ton), 'ТОННАЖ', pctTxt(w.ton, pw.ton))}
       ${tile(w.recs, 'РЕКОРДОВ')}
@@ -10144,6 +10149,7 @@ function openWeek(mon) {
       ${MUSCLES.map(m => { const t = volTargetM(m), v = w.m[m] || 0;
         return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v)}" style="transform:scaleX(${Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3)})"></u></s><b>${v}${t ? '/' + t : ''}</b></div>`; }).join('')}
     </div>
+    ${pz ? '<p class="s wkmin">Неделя на паузе — плана нет, серия не рвётся.</p>' : ''}
     ${w.mins ? '<p class="s wkmin">В зале — ' + w.mins + ' мин за неделю.</p>' : ''}
     ${lagHtml(w, mon)}
     <button class="copyb" data-wkshare="${mon}">Поделиться картинкой</button>
@@ -10177,9 +10183,9 @@ function wkPng(mon) {
     x.fillStyle = ['#2a3a5a', '#5a7fd0', '#7a6dff', '#3fb8ff'][mmLevel(m, v)]; x.fillRect(400, y + 6, 470 * k, 24);
     x.fillStyle = '#ffffff'; x.fillText(v + (t ? '/' + t : ''), 895, y + 28);
   });
-  const st = streak(), plan = (S.days || []).filter(d => d.t !== 'rest').length;
+  const st = streak(), plan = w.days.filter(d => d.tr).length;
   x.fillStyle = '#8fb8e8'; x.font = '500 26px ' + F;
-  x.fillText('план недели — ' + plan + ' трен.' + (st > 0 ? ' · серия ' + st + ' нед. подряд' : ''), 100, 1255);
+  x.fillText((paused(mon) ? 'неделя на паузе' : 'план недели — ' + plan + ' трен.') + (st > 0 ? ' · серия ' + st + ' нед. подряд' : ''), 100, 1255);
   return new Promise(res => c.toBlob(res, 'image/png'));
 }
 async function shareWeek(mon) {
@@ -10206,8 +10212,12 @@ function questsOf(ym) {
   const ton = days.reduce((a, ds) => a + dayTon(ds), 0);
   const pton = Object.keys(S.rec).filter(ds => ds.slice(0, 7) === shiftMonth(ym, -1)).reduce((a, ds) => a + dayTon(ds), 0);
   const tonNeed = pton > 0 ? Math.ceil(pton * 1.05 / 100) * 100 : 20000;
+  // дни на паузе (болел, уехал) из нормы месяца выходят: серия их перешагивает, и квест тоже
+  let act = 0;
+  for (let i = 1; i <= dim; i++) if (!paused(ym + '-' + String(i).padStart(2, '0'))) act++;
+  const woNeed = Math.max(1, Math.round(weekNeed() * act / 7));
   return [
-    { id: 'wo', t: 'Закрыть ' + Math.round(weekNeed() * dim / 7) + ' тренировок', v: days.filter(ds => S.rec[ds].wo).length, need: Math.round(weekNeed() * dim / 7) },
+    { id: 'wo', t: 'Закрыть ' + woNeed + ' ' + plural(woNeed, 'тренировку', 'тренировки', 'тренировок'), v: days.filter(ds => S.rec[ds].wo).length, need: woNeed },
     { id: 'ton', t: pton > 0 ? 'Поднять на 5 % больше прошлого месяца' : 'Поднять за месяц 20 т', v: ton, need: tonNeed, f: kgTon },
     { id: 'pr', t: 'Побить 3 рекорда', v: days.reduce((a, ds) => a + dayEntries(ds).filter(e => e.pr).length, 0), need: 3 },
     { id: 'bw', t: 'Взвеситься 4 раза', v: days.filter(ds => num(S.rec[ds].bw) > 0).length, need: 4 }
@@ -10315,6 +10325,10 @@ function regularity(days) {
     if (ds > today()) break;
     const day = S.days[dayIdx(ds)];
     if (!day || day.t === 'rest') continue;
+    /* пропуск — тем же счётом, что посещаемость: неделя на паузе (болел),
+       дни до старта плана и сегодняшняя незакрытая — не пропуски. Раньше
+       неделя болезни давала «чаще всего пропускается вторник» */
+    if (paused(ds) || ds < planStart() || (ds === today() && !recOf(ds).wo)) continue;
     if (!recOf(ds).wo) miss[day.k] = (miss[day.k] || 0) + 1;
   }
   let gap = 0;
@@ -10568,7 +10582,7 @@ function analyze() {
     }
     if (reg.worstN >= 2) {
       add('warn', 'СЛАБОЕ ЗВЕНО НЕДЕЛИ', 'Чаще всего пропускается <b>' + reg.worst + '</b>: ' +
-        reg.worstN + ' раза за месяц.', 'Перенеси эту тренировку на удобный день через шестерёнку');
+        reg.worstN + ' раза за месяц.', 'Переставь эту тренировку на удобный день: «Неделя» → «Каждую неделю»');
     }
   }
 

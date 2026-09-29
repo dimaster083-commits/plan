@@ -44,6 +44,46 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(расчёт.темп===null&&/3/.test(расчёт.текст||'')&&!/2 взвеш/.test(расчёт.текст||'')&&расчёт.край!==null&&расчёт.край<=320,
     '2. «Сейчас» в расчёте: при двух взвешиваниях просит три за 7 дней, как paceOf, и влезает в 320', JSON.stringify(расчёт));
 
+  // 3. «Слабое звено недели»: неделя на паузе — не пропуск (тем же счётом, что посещаемость)
+  await сброс();
+  const звено=await p.evaluate(()=>{
+    const t=today(), m0=mondayOf(t), w1=addDays(m0,-7), w2=addDays(m0,-14);
+    S.start=addDays(m0,-42); S.pause={}; S.pause[w1]=1; S.pause[w2]=1;
+    for(let i=1;i<28;i++){ const ds=addDays(t,-i);
+      if(dayOf(ds).t!=='rest'&&!paused(ds)) S.rec[ds]={log:{},sp:{},wo:1}; }
+    save();
+    const r=regularity(28);
+    return {худший:r.worst||null, раз:r.worstN, карточка:analyze().some(x=>x.title==='СЛАБОЕ ЗВЕНО НЕДЕЛИ')};
+  });
+  chk(звено.раз<2&&!звено.карточка,
+    '3. две недели на паузе не делают «слабым звеном» дни, пропущенные по болезни', JSON.stringify(звено));
+
+  // 4. итоги недели на паузе: плана нет — не «0/4»
+  await сброс();
+  const итоги=await p.evaluate(()=>{
+    const w1=addDays(mondayOf(today()),-7); S.pause={}; S.pause[w1]=1; save();
+    openWeek(w1);
+    const tile=document.querySelector('#shB .wksum .win b').textContent;
+    return {плитка:tile, пауза:/пауз/i.test($('shB').textContent), план:weekData(w1).days.filter(x=>x.tr).length};
+  });
+  chk(итоги.плитка==='0'&&итоги.пауза&&итоги.план===0,
+    '4. итоги недели на паузе: плитка без «/4», сказано про паузу', JSON.stringify(итоги));
+
+  // 5. месяц и квест: неделя на паузе не идёт ни в план месяца, ни в норму квеста
+  await сброс();
+  const месяц=await p.evaluate(()=>{
+    const ym=today().slice(0,7), mid=mondayOf(ym+'-15'), dim=new Date(+ym.slice(0,4),+ym.slice(5,7),0).getDate();
+    S.pause={}; S.pause[mid]=1; save();
+    let пз=0, план=0;
+    for(let i=1;i<=dim;i++){ const ds=ym+'-'+String(i).padStart(2,'0');
+      if(paused(ds)) пз++; else if(dayLook(ds).t!=='rest') план++; }
+    const q=questsOf(ym)[0];
+    return {пз, план, вИтогах:rangeData(ym+'-01',dim).days.filter(x=>x.tr).length,
+      норма:q.need, надо:Math.max(1,Math.round(weekNeed()*(dim-пз)/7)), текст:q.t};
+  });
+  chk(месяц.вИтогах===месяц.план&&месяц.норма===месяц.надо&&месяц.пз>=7,
+    '5. месяц: план и квест «Закрыть N» без дней паузы', JSON.stringify(месяц));
+
   chk(errs.length===0,'99. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);
