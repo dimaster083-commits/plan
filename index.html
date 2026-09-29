@@ -2956,6 +2956,34 @@ body.exopen .wobar{margin-top:8px}
 .wks{font-size:10.5px;color:var(--mut);white-space:nowrap;font-family:var(--fn)}
 .wka{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .wka .add{margin:0}
+
+/* Полоска «Отменить» после случайного или стирающего действия — окно
+   Системы: синяя панель, голубая кромка, «//» перед подписью, линия
+   обратного отсчёта сжимается к краю. Стоит над кнопкой тренировки и
+   нижними вкладками, выше шторок, но под окном вопроса. */
+.undo{position:fixed;left:8px;right:8px;max-width:440px;margin:0 auto;z-index:190;
+  bottom:calc(var(--tabh) + var(--sb) + 20px);display:flex;align-items:center;gap:8px;
+  min-height:52px;padding:4px 4px 4px 14px;background:var(--panel-solid);color:var(--ink);
+  border:1px solid var(--hot-ln);border-radius:var(--r-m);overflow:hidden;
+  box-shadow:0 0 var(--glow-r,18px) var(--glow-c,rgba(46,139,255,.35)),0 18px 44px -14px rgba(0,0,0,.9);
+  animation:undo-in .22s var(--cy-ease) both}
+.undo[hidden]{display:none}
+.undo span{flex:1 1 auto;min-width:0;font-size:13px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+.undo span::before{content:'//';margin-right:.4em;color:var(--hot-tx);opacity:.7;font-family:var(--fn)}
+.undo button{flex:0 0 auto;min-height:44px;min-width:44px;padding:0 14px;border-radius:var(--r-p);
+  background:var(--hot-soft);border:1px solid var(--hot-ln);color:var(--hot-tx);
+  font-family:var(--fn);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.undo button:active{transform:scale(.97)}
+.undo::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--grad);
+  transform-origin:left;animation:undo-left var(--undo-ms,7s) linear both}
+@keyframes undo-in{from{opacity:0;transform:translateY(10px)}}
+@keyframes undo-left{to{transform:scaleX(0)}}
+/* начатая, но пустая тренировка отменяется всегда, а не только пока видна полоска */
+.wocx{display:block;width:100%;min-height:44px;margin-top:6px;border-radius:var(--r-m);
+  background:var(--panel-solid);border:1px solid var(--ln2);color:var(--ink2);
+  font-family:var(--fn);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.wocx[hidden]{display:none}
+.copyb.mdel{color:var(--down-tx);border-color:var(--down-tx)}
 </style>
 </head>
 <script>
@@ -3055,7 +3083,7 @@ document.documentElement.dataset.skin = 'sl';
     <button class="add" id="addEx">+ Упражнение</button>
     <!-- Кнопка тренировки постоянная: держится внизу и на списке, и на
          раскрытом упражнении. Пока идёт — на ней часы. -->
-    <div class="wobar" id="wobar"><button class="fin" id="fin">Начать тренировку</button></div>
+    <div class="wobar" id="wobar"><button class="fin" id="fin">Начать тренировку</button><button class="wocx" id="woCx" type="button" hidden>Отменить начало</button></div>
     <button class="add" id="editPast" hidden>Править этот день</button>
   </div>
 
@@ -3398,6 +3426,7 @@ document.documentElement.dataset.skin = 'sl';
 </div></div>
 
 <div class="note" id="note"><span id="noteT"></span></div>
+<div class="undo" id="undo" role="status" aria-live="polite" hidden><span id="undoT"></span><button type="button" id="undoB">Отменить</button></div>
 
 <script>
 'use strict';
@@ -4305,6 +4334,7 @@ function scrubKeys() {
 }
 
 let saveTimer = null;
+let undoRec = null, undoTimer = null;   // отмена последнего действия — см. offerUndo
 /* На телефоне один тап иногда приходит дважды до перерисовки. Блокируем
    только повтор одной пишущей операции на короткое время. */
 const pendingActions = new Set();
@@ -4325,6 +4355,8 @@ function save() {
   wkCache = null;
   statsDirty = true;
   entCache = null;
+  // после отменяемого действия записано новое — старая копия его бы стёрла
+  if (undoRec && undoRec.armed) undoDrop();
   if (!canSave) { setSaveState('failed'); return; }
   clearTimeout(saveTimer);
   setSaveState('saving');
@@ -4474,6 +4506,80 @@ function note(t) {
   clearTimeout(noteTimer);
   noteTimer = setTimeout(() => n.classList.remove('on'), 1900);
 }
+
+/* ---------- отмена последнего действия ----------
+   Случайный тап не должен быть навсегда: хозяин нажал «Начать тренировку»
+   мимо и вернуть было нечем. Как у Lyfta — после действия внизу полоска
+   «Отменить» на UNDO_MS. Действие снимает копию состояния до себя (snapS),
+   отмена кладёт её назад целиком: опыт, рекорды, журнал откатов (bump,
+   rbump), веса, перенос дней и пауза возвращаются ровно такими, какими
+   были, — по отдельности их не откатить, не разойдясь где-нибудь. Любое
+   следующее сохранение гасит полоску: иначе отмена стёрла бы то, что
+   человек успел записать после. Стирание всех данных и восстановление из
+   копии по-прежнему спрашивают — их отменить уже нечем. */
+const UNDO_MS = 7000;
+const snapS = () => JSON.stringify(S);
+function undoDrop() {
+  clearTimeout(undoTimer); undoTimer = null; undoRec = null;
+  const u = $('undo'); if (u) u.hidden = true;
+}
+// полоска встаёт над нижними вкладками, а если кнопка тренировки прижата к низу — над ней
+function placeUndo() {
+  const u = $('undo'); if (!u || u.hidden) return;
+  const tb = document.querySelector('.tabbar'), bar = $('wobar'), H = innerHeight;
+  let top = H;
+  if (tb) { const r = tb.getBoundingClientRect(); if (r.height && r.top < H) top = r.top; }
+  if (bar && !bar.hidden && tab === 'wo' && !$('sh').classList.contains('on')) {
+    const r = bar.getBoundingClientRect();
+    if (r.height && r.bottom > top - 72 && r.top < H) top = Math.min(top, r.top);
+  }
+  u.style.bottom = Math.max(8, Math.round(H - top + 8)) + 'px';
+}
+/* opt.back — вернуть то, что живёт не в S (снимок в IndexedDB), opt.again —
+   что открыть заново после отмены, opt.local — отмена только на экране
+   (клетки повторов до закрытия подхода в S не лежат). */
+function offerUndo(snap, text, opt) {
+  opt = opt || {};
+  if (!opt.local && (typeof snap !== 'string' || (!opt.back && snap === snapS()))) return;   // ничего не поменялось — отменять нечего
+  const rec = { s: snap, back: opt.back || null, again: opt.again || null, local: opt.local || null };
+  undoDrop();
+  undoRec = rec;
+  // простое уведомление говорило бы то же самое поверх полоски
+  clearTimeout(noteTimer); $('note').classList.remove('on');
+  $('noteT').textContent = text;              // последнее сообщение одно, где бы его ни показали
+  $('undoT').textContent = text;
+  const u = $('undo');
+  u.style.setProperty('--undo-ms', UNDO_MS + 'ms');
+  u.hidden = false;
+  // перезапуск анимации появления и обратного отсчёта
+  u.style.animation = 'none'; void u.offsetWidth; u.style.animation = '';
+  placeUndo();
+  // сохранения этого же действия идут до полоски; всё, что позже, — уже новое
+  setTimeout(() => { if (undoRec === rec) rec.armed = 1; }, 0);
+  undoTimer = setTimeout(undoDrop, UNDO_MS);
+}
+async function undoNow() {
+  const u = undoRec; if (!u) return;
+  undoDrop();
+  if (u.local) { note(u.local() === false ? 'Экран уже перерисован — отменять нечего' : 'Отменено'); return; }
+  let back;
+  try { back = JSON.parse(u.s); } catch (e) { return; }
+  S = back;
+  invalidateFood();
+  save(); flush();
+  if (u.back) { try { await u.back(); } catch (e) { /* снимок мог не вернуться — журнал уже вернулся */ } }
+  // шторку, открытую самим действием (итоги тренировки), отмена закрывает;
+  // шторку, в которой действие сделано («Неделя», рацион), открывает заново
+  const wasOpen = $('sh').classList.contains('on');
+  if (wasOpen) sheetClose();
+  if (exOpen !== null && exOpen >= ((dayOf(sel) || {}).ex || []).length) exOpen = null;
+  render();
+  if (u.again && wasOpen) u.again();
+  note('Отменено');
+}
+$('undoB').addEventListener('click', () => runOnce('undo', undoNow, 300));
+addEventListener('scroll', () => { if (undoRec) placeUndo(); }, { passive: true });
+addEventListener('resize', () => { if (undoRec) placeUndo(); });
 
 /* ---------- подтверждение ---------- */
 let askCb = null;
@@ -4669,20 +4775,21 @@ $('types').addEventListener('click', async e => {
   const ok = await ask('Поменять ' + wdName + ' во всех неделях плана? ' +
     'Если нужно только на этой дате — отмени и выбери тренировку в строке «Только эта дата».', 'ПОМЕНЯТЬ');
   if (!ok) return;
+  const snap = snapS();
   Object.keys(S.rec).forEach(ds => { const r = S.rec[ds];
     if (ds < today() && dayOf(ds) === d && r && !r.dt) { r.dt = was; r.dn = d.s; } });
   d.t = nt;
   // подпись дня идёт следом за типом, иначе «Низ тела» висит над жимом лёжа
   const src = TPL.find(x => x.t === nt);
   d.s = nt === 'rest' ? 'Отдых' : (nt === 'other' ? 'Своё' : (src ? src.s : d.s));
+  let kept = false;
   if (nt !== 'rest' && !d.ex.length && src && src.e) {
     // группу мышц переносим вместе с упражнением, иначе подходы не попадут в объём
     d.ex = src.e.map(e2 => ({ n: e2[0], s: e2[1], r: e2[2], w: e2[3], g: e2[4] || null }));
-  } else if (nt !== 'rest' && d.ex.length) {
-    note('Упражнения оставлены прежними');
-  }
+  } else if (nt !== 'rest' && d.ex.length) kept = true;
   applyNutri();                         // норма калорий — по новому типу дня (тренировка / отдых)
   save(); render();
+  offerUndo(snap, wdName + ' — во всех неделях' + (kept ? ', упражнения оставлены прежними' : ''));
 });
 /* Перенос дня подставляет под уже закрытые подходы другой набор
    упражнений. Отметка лежит под номером: после переноса номер ноль — это
@@ -4827,40 +4934,44 @@ $('shB').addEventListener('click', e => {
     const v = wkMode === 'all' ? +w.dataset.wpd : w.dataset.wpd;
     if (wkPick === null || wkPick === v) { wkPick = wkPick === v ? null : v; openWeekPlan(); return; }
     const a = wkPick; wkPick = null;
+    const snap = snapS();
     const ok = wkMode === 'all' ? swapWeekdays(a, v) : swapDates(a, v);
-    if (ok) { applyNutri(); save(); render(); note(wkMode === 'all' ? 'Шаблон поменялся' : 'Дни поменялись местами'); }
+    if (ok) { applyNutri(); save(); render(); }
     openWeekPlan();
+    if (ok) offerUndo(snap, wkMode === 'all' ? 'Шаблон поменялся' : 'Дни поменялись местами', { again: wkAgain });
     return;
   }
   const p = e.target.closest('[data-wppush]');
   if (p) {
+    const snap = snapS();
     const res = pushDay(p.dataset.wppush);
-    if (res) {
-      applyNutri(); save(); render();
-      note(res.lost ? '«' + wpLabel(res.lost) + '» не влезла в неделю — поставь её вручную' : 'Сдвинуто на день');
-    }
+    if (res) { applyNutri(); save(); render(); }
     openWeekPlan();
+    if (res) offerUndo(snap, res.lost ? '«' + wpLabel(res.lost) + '» не влезла в неделю — поставь её вручную' : 'Сдвинуто на день', { again: wkAgain });
     return;
   }
   const z = e.target.closest('[data-wppause]');
   if (z) {
-    const k = mondayOf(z.dataset.wppause);
+    const snap = snapS(), k = mondayOf(z.dataset.wppause);
     S.pause = S.pause || {};
     if (S.pause[k]) delete S.pause[k]; else S.pause[k] = 1;
     save(); render(); openWeekPlan();
-    note(S.pause[k] ? 'Неделя на паузе — выздоравливай' : 'Пауза снята');
+    offerUndo(snap, S.pause[k] ? 'Неделя на паузе — выздоравливай' : 'Пауза снята', { again: wkAgain });
     return;
   }
   const rs = e.target.closest('[data-wpreset]');
   if (rs) {
-    const t = today();
+    const snap = snapS(), t = today();
     weekDates(rs.dataset.wpreset).forEach(x => {
       if (x < t || dayLocked(x) || S.map[x] === undefined) return;
       delete S.map[x]; remapLog(x);
     });
     applyNutri(); save(); render(); openWeekPlan();
+    offerUndo(snap, 'Неделя — как в программе', { again: wkAgain });
   }
 });
+// отмена в шторке «Неделя» открывает её же, уже с прежним планом
+const wkAgain = () => { wkPick = null; openWeekPlan(); };
 $('wkPlan').addEventListener('click', () => { wkMode = 'this'; openWeekPlan(sel); });
 
 /* =========================================================================
@@ -4899,10 +5010,11 @@ function paintWoHead(d, r) {
 }
 
 function paintWoBar(d, r, jr) {
-  const bar = $('wobar'), f = $('fin'); if (!bar || !f) return;
+  const bar = $('wobar'), f = $('fin'), cx = $('woCx'); if (!bar || !f) return;
   const hide = jr || sel > today() || d.t === 'rest' || !d.ex.length;
   // прячем и полосу, и саму кнопку: в будущем дне отмечать нечего
   bar.hidden = hide; f.hidden = hide;
+  cx.hidden = true;                 // «Отменить начало» — только у начатой пустой
   f.disabled = false; f.classList.remove('wodone');
   f.classList.toggle('done', !!r.wo);
   if (hide) { clearInterval(woInt); woInt = null; return; }
@@ -4913,6 +5025,7 @@ function paintWoBar(d, r, jr) {
   } else if (r.t0) {
     f.textContent = 'Завершить · ' + woClock(r.t0);
     if (!woInt) woInt = setInterval(woTick, 1000);
+    cx.hidden = !woEmpty(sel);
   } else {
     f.textContent = 'Начать тренировку';
     clearInterval(woInt); woInt = null;
@@ -5011,10 +5124,10 @@ $('editPast').addEventListener('click', () => { editPast = true; render(); });
 
 // Пропуск дня: день помечен, опыта нет, в серию не идёт. Повторное нажатие возвращает день.
 $('skipDay').addEventListener('click', () => runOnce('skip', () => {
-  const r = recRW(sel);
+  const snap = snapS(), r = recRW(sel);
   if (r.skip) delete r.skip; else r.skip = 1;
   save(); render();
-  note(r.skip ? 'День пропущен — тренировкой не считается' : 'День снова в плане');
+  offerUndo(snap, r.skip ? 'День пропущен — тренировкой не считается' : 'День снова в плане');
 }, 200));
 
 /* Листание вбок между упражнениями. Порог в 48 px, чтобы не срабатывало
@@ -5174,6 +5287,7 @@ $('exl').addEventListener('click', e => {
     const name = (d.ex[j] || {}).n;
     ask('Убрать упражнение «' + name + '»?').then(async ok => {
       if (!ok) return;
+      const snap = snapS();              // одна отмена вернёт и упражнение, и стёртые записи
       const r = recRW(sel), l = r.log[j];
       // снимаем вклад закрытого подхода, иначе объём и опыт останутся висеть
       if (l && l.done) rollback(l);
@@ -5196,8 +5310,10 @@ $('exl').addEventListener('click', e => {
           ' по «' + name + '». Стереть их из тоннажа и опыта?', 'СТЕРЕТЬ')) {
         const n = purgeExercise(name);
         save(); render();
-        note('Стёрто записей: ' + n);
+        offerUndo(snap, '«' + name + '» убрано, стёрто записей: ' + n);
+        return;
       }
+      offerUndo(snap, '«' + name + '» убрано из дня');
     });
   }
 });
@@ -5332,10 +5448,25 @@ $('exl').addEventListener('click', ev => {
   const b = ev.target.closest('[data-fill]'); if (!b) return;
   ev.preventDefault();
   const box = b.closest('.setr'); if (!box) return;
-  box.querySelectorAll('[data-rs]').forEach(inp => {
+  /* «Все по N» переписывает клетки разом. До закрытия подхода клетки живут
+     только на экране, поэтому и отмена — экранная: набранное руками и
+     подставленные значения возвращаются как были. */
+  const cells = [...box.querySelectorAll('[data-rs]')];
+  const was = cells.map(x => [x.value, x.dataset.auto]);
+  cells.forEach(inp => {
     inp.value = b.dataset.fill;
     inp.dispatchEvent(new Event('input', { bubbles: true }));
   });
+  if (was.every((v, i) => v[0] === cells[i].value)) return;
+  offerUndo(null, 'Все подходы по ' + b.dataset.fill, { local: () => {
+    if (!box.isConnected) return false;
+    cells.forEach((x, i) => {
+      x.value = was[i][0];
+      x.dispatchEvent(new Event('input', { bubbles: true }));
+      if (was[i][1] === undefined) delete x.dataset.auto; else x.dataset.auto = was[i][1];
+      const lb = x.closest('.rbx'); if (lb) lb.classList.toggle('auto', was[i][1] === '1');
+    });
+  } });
 });
 
 /* Вес на строку. Пустое поле значит «как в карточке»: подставленное
@@ -5921,15 +6052,17 @@ $('shB').addEventListener('input', e => {
 });
 $('fin').addEventListener('click', () => {
   if (sel > today()) { note('Этот день ещё впереди'); return; }
+  if (recOf(sel).wo) return;
+  // копия — до recRW: пустая запись дня тоже часть того, что вернёт отмена
+  const snap = snapS();
   const r = recRW(sel);
-  if (r.wo) return;
   /* Первое нажатие начинает тренировку: часы пошли, подходы ещё не закрыты.
      Раньше отсчёт стартовал молча с первым закрытым подходом, и разминка
      в него не попадала. */
   if (!r.t0) {
     r.t0 = Date.now();
     save(); render(); keepAwake(true);
-    note('Тренировка пошла');
+    offerUndo(snap, 'Тренировка пошла');
     return;
   }
   r.wo = 1;
@@ -5940,7 +6073,22 @@ $('fin').addEventListener('click', () => {
   clearInterval(tInt); $('tmr').classList.remove('on');
   workoutSummary(sel);
   checkQuests();
+  offerUndo(snap, 'Тренировка закрыта');
 });
+/* Начатую, но пустую тренировку можно отменить в любой момент, а не только
+   пока видна полоска: раньше случайное «Начать» оставляло часы тикать, и
+   убрать их было нечем, кроме как закрыть пустую тренировку. */
+function woEmpty(ds) { const r = S.rec[ds]; return !!(r && r.t0 && !r.wo && !dayEntries(ds).length); }
+$('woCx').addEventListener('click', () => runOnce('wocx', () => {
+  if (!woEmpty(sel)) return;
+  const snap = snapS(), r = S.rec[sel];
+  delete r.t0; delete r.t1;
+  // запись, которую создало только «Начать», уходит целиком — как не нажимали
+  const bare = Object.keys(r).every(k => (k === 'wo' && !r.wo) || ((k === 'log' || k === 'sp') && !Object.keys(r[k] || {}).length));
+  if (bare) delete S.rec[sel];
+  save(); render(); keepAwake(false);
+  offerUndo(snap, 'Начало тренировки отменено');
+}));
 
 /* Итоги сразу после тренировки: сколько поднято, сколько заняло, что за рекорды.
    Считается по тому же журналу, что и статистика, — отдельных чисел не заводим. */
@@ -6093,9 +6241,9 @@ async function openDayReport(ds) {
 /* ---------- добавки ---------- */
 // Отметить все разом: опыт начисляется только за те, что ещё не отмечены
 $('spAll').addEventListener('click', () => {
-  const d = dayOf(sel), r = recRW(sel);
+  const snap = snapS(), d = dayOf(sel), r = recRW(sel);
   d.sp.forEach((_, j) => { if (!r.sp[j]) { r.sp[j] = 1; addXp(XP_SP); } });
-  save(); paintSupp(); paintStatus(); note('Все добавки отмечены');
+  save(); paintSupp(); paintStatus(); offerUndo(snap, 'Все добавки отмечены');
 });
 $('spl').addEventListener('click', e => {
   const t = e.target.closest('[data-tog]');
@@ -6107,8 +6255,10 @@ $('spl').addEventListener('click', e => {
   const del = e.target.closest('[data-spd]');
   if (del) {
     const j = +del.dataset.spd, d = dayOf(sel);
-    ask('Убрать «' + (d.sp[j] || {}).n + '» из этого дня?').then(ok => {
+    const spName = (d.sp[j] || {}).n;
+    ask('Убрать «' + spName + '» из этого дня?').then(ok => {
       if (!ok) return;
+      const snap = snapS();
       /* Отметка приёма — это только номер строки: снимка, как у подхода,
          у неё нет. Выкинули добавку из середины — и все отметки ниже
          съехали на чужие строки, причём сразу во всех прошедших днях, а
@@ -6129,6 +6279,7 @@ $('spl').addEventListener('click', e => {
         rec.sp = next;
       });
       save(); recomputeStats(1); paintSupp(); paintStatus();
+      offerUndo(snap, '«' + spName + '» убрана');
     });
   }
 });
@@ -6144,13 +6295,14 @@ $('addSp').addEventListener('click', () => {
 $('rd').addEventListener('click', () => {
   ask('Очистить отметки за ' + fmt(sel) + '? Планы и веса останутся.', 'ОЧИСТИТЬ').then(ok => {
     if (!ok) return;
-    const r = S.rec[sel];
+    const snap = snapS(), r = S.rec[sel];
     if (r) {
       Object.values(r.log || {}).forEach(l => { if (l.done) rollback(l); });
       if (r.wo) addXp(-XP_WO);
       delete S.rec[sel];
     }
     save(); render();
+    offerUndo(snap, 'Отметки за ' + fmt(sel) + ' очищены');
   });
 });
 
@@ -6494,8 +6646,18 @@ $('shB').addEventListener('click', e => {
     const row = {};
     $('shB').querySelectorAll('[data-mk]').forEach(inp => { const v = num(inp.value); if (v >= 10 && v <= 300) row[inp.dataset.mk] = Math.round(v * 10) / 10; });
     if (!Object.keys(row).length) { note('Впиши хотя бы один обхват, в сантиметрах'); return; }
+    const snap = snapS();
     S.meas = measAll(); S.meas[today()] = row;
-    save(); sheetClose(); paintMeas(); note('Замеры записаны');
+    save(); sheetClose(); paintMeas(); offerUndo(snap, 'Замеры записаны');
+    return;
+  }
+  const md = e.target.closest('[data-measdel]');
+  if (md) {
+    const snap = snapS(), m = measAll(), k = md.dataset.measdel;
+    if (!m[k]) return;
+    delete m[k]; S.meas = m;
+    save(); paintMeas(); openMeas();
+    offerUndo(snap, 'Замеры за ' + fmt(k, 1) + ' стёрты', { again: openMeas });
     return;
   }
   const mo2 = e.target.closest('[data-mon]');
@@ -6542,9 +6704,9 @@ $('shB').addEventListener('click', e => {
     ask('Стереть все записи по «' + name + '» из журнала? Тоннаж, опыт и рекорд по нему уйдут.', 'СТЕРЕТЬ')
       .then(ok => {
         if (!ok) return;
-        const n = purgeExercise(name);
+        const snap = snapS(), n = purgeExercise(name);
         save(); sheetClose(); render();
-        note('Стёрто записей: ' + n);
+        offerUndo(snap, 'Стёрто записей по «' + name + '»: ' + n);
       });
     return;
   }
@@ -6565,7 +6727,13 @@ $('shB').addEventListener('click', e => {
   const td = e.target.closest('[data-tdel]');
   if (td) {
     const i = +td.dataset.tdel;
-    ask('Удалить шаблон «' + S.tpl[i].n + '»?').then(ok => { if (!ok) return; S.tpl.splice(i, 1); save(); openRation(); });
+    const tn = S.tpl[i].n;
+    ask('Удалить шаблон «' + tn + '»?').then(ok => {
+      if (!ok) return;
+      const snap = snapS();
+      S.tpl.splice(i, 1); save(); openRation();
+      offerUndo(snap, 'Шаблон «' + tn + '» удалён', { again: openRation });
+    });
     return;
   }
 
@@ -6591,8 +6759,9 @@ async function putRation(ml, msg) {
     const okGo = await ask('В этом дне уже записано ' + rnd(cur.k) + ' ккал. Заменить рацион целиком?', 'ЗАМЕНИТЬ');
     if (!okGo) return;
   }
+  const snap = snapS();
   recRW(sel).ml = JSON.parse(JSON.stringify(ml));
-  save(); sheetClose(); render(); note(msg);
+  save(); sheetClose(); render(); offerUndo(snap, msg);
 }
 
 /* =========================================================================
@@ -8071,6 +8240,7 @@ function libAdd(id, ds) {
   const o = LIB && LIB.byId.get(id); if (!o) return;
   const name = o.n;
   runOnce('libadd:' + ds + ':' + name, () => {
+    const snap = snapS();
     if (!EXDB[name]) {
       S.myEx = myEx(); if (!S.myEx[name]) S.myEx[name] = libGroup(o);
       if (!S.libEx || typeof S.libEx !== 'object') S.libEx = {};
@@ -8081,7 +8251,7 @@ function libAdd(id, ds) {
     sheetClose();
     if (libPick) { libPick = null; sel = ds; tab = 'wo'; exOpen = null; render(); window.scrollTo(0, 0); }
     else render();
-    note('Добавлено на ' + fmt(ds, 1) + ': ' + name);
+    offerUndo(snap, 'Добавлено на ' + fmt(ds, 1) + ': ' + name);
   });
 }
 function libToggleFav(id) {
@@ -8209,6 +8379,7 @@ $('shB').addEventListener('click', async e => {
     (logged ? ' Записанный за этот день подход сотрётся: он относился к другому движению.' : ''),
     'ЗАМЕНИТЬ');
   if (!okGo) return;
+  const snap = snapS();
   /* Прошлые записи этого места — про старое движение. Раньше замена их не
      трогала: «Править» прошлого дня показывало новое упражнение, повторная
      отметка переписывала запись на него, а рекорд старого пропадал.
@@ -8231,7 +8402,7 @@ $('shB').addEventListener('click', async e => {
   if (r.log && r.log[j]) delete r.log[j];
   Object.keys(S.rec).forEach(ds => { if (ds !== sel && dayIdx(ds) === di) remapLog(ds); });
   save(); recomputeStats(1); sheetClose(); render();
-  note(was + ' → ' + name);
+  offerUndo(snap, was + ' → ' + name);
 });
 
 /* =========================================================================
@@ -9461,16 +9632,21 @@ $('mll').addEventListener('click', e => {
   if (p) { openPick(+p.dataset.pick); return; }
   const r = e.target.closest('[data-rm]');
   if (r) {
-    const j = +r.closest('[data-ml]').dataset.ml;
-    mealsRW(sel)[j].items.splice(+r.dataset.rm, 1);
-    save(); paintFood(); return;
+    const j = +r.closest('[data-ml]').dataset.ml, snap = snapS();
+    const it = mealsRW(sel)[j].items.splice(+r.dataset.rm, 1)[0];
+    save(); paintFood();
+    offerUndo(snap, '«' + ((it && (it.p || it.n)) || 'Продукт') + '» убран');
+    return;
   }
   const d = e.target.closest('[data-mld]');
   if (d) {
     const j = +d.dataset.mld;
-    ask('Убрать «' + (mealsOf(sel)[j] || {}).n + '»?').then(ok => {
+    const mn = (mealsOf(sel)[j] || {}).n;
+    ask('Убрать «' + mn + '»?').then(ok => {
       if (!ok) return;
+      const snap = snapS();
       mealsRW(sel).splice(j, 1); save(); paintFood();
+      offerUndo(snap, '«' + mn + '» убран');
     });
   }
 });
@@ -9631,11 +9807,13 @@ $('fpl').addEventListener('click', e => {
       (uses ? ' Он записан в дни и шаблоны ' + uses + ' ' + plural(uses, 'раз', 'раза', 'раз') +
         ' — там строка останется, но перестанет считаться.' : ''), 'УБРАТЬ').then(okGo => {
       if (!okGo) return;
+      const snap = snapS();
       S.myFood = S.myFood.filter(f => f.n !== nm);
       const i2 = picked.findIndex(x => x.p === nm);
       if (i2 >= 0) picked.splice(i2, 1);
-      invalidateFood(); save(); note('Продукт убран');
+      invalidateFood(); save();
       drawPick($('fq').value); paintFood();
+      offerUndo(snap, '«' + nm + '» убран из своей базы');
     });
     return;
   }
@@ -9807,10 +9985,17 @@ $('phFile').addEventListener('change', async e => {
 $('phDel').addEventListener('click', async () => {
   const day = sel;
   if (!await ask('Удалить фото за ' + fmt(day) + '?')) return;
+  // снимок живёт в IndexedDB, а не в S: для отмены держим его в памяти
+  let dat = null;
+  try { dat = PHCACHE.get(day) || (await phGet(day)) || null; } catch (e) { dat = null; }
+  const snap = snapS();
   await phDelete(day);
   PHCACHE.delete(day);
   await phSync();
   if (sel === day && tab === 'photo') paintPhotoScreen();
+  if (dat) offerUndo(snap, 'Фото за ' + fmt(day, 1) + ' удалено', { back: async () => {
+    await phPut(day, dat); PHCACHE.set(day, dat); await phSync();
+  } });
 });
 $('phW').addEventListener('input', e => {
   // Вес, вписанный рядом со снимком, — тот же самый вес. Раньше он ложился
@@ -10272,7 +10457,8 @@ function openMeas() {
   sheet('ЗАМЕРЫ', '<div class="win mform"><p class="mhint">Сегодня, ' + fmt(today(), 1) + ', в сантиметрах. Пустое поле — не мерил.</p>' +
     MEAS.map(([k, l]) => '<label><span>' + l + '</span><input data-mk="' + k + '" inputmode="decimal" value="' + (td[k] ? esc(kg(td[k])) : '') +
       '" placeholder="' + (last[k] ? kg(last[k]) : '') + '" aria-label="' + l + ', см"><i>см</i></label>').join('') +
-    '<button class="copyb" data-measave="1">Записать</button></div>' +
+    '<button class="copyb" data-measave="1">Записать</button>' +
+    (Object.keys(td).length ? '<button class="copyb mdel" data-measdel="' + today() + '">Стереть сегодняшние замеры</button>' : '') + '</div>' +
     (have.length ? '<div class="win mhist"><div class="exchb">' + have.map(([k, l]) => '<button data-measch="' + k + '" class="' + (k === measK ? 'on' : '') + '">' + l + '</button>').join('') + '</div>' +
       miniChart(sr, 'var(--acc-2)', v => kg(v) + ' см') + '</div>' : ''));
 }
