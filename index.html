@@ -2926,6 +2926,50 @@ body.exopen .wobar{margin-top:8px}
 .lgo{min-height:48px;border-radius:12px;border:1px solid var(--cy);background:var(--acc-fill,var(--s2));color:var(--cy2);font:700 13.5px var(--f)}
 .lfav2{min-height:48px;padding:0 12px;border-radius:12px;border:1px solid var(--edge2);background:transparent;color:var(--ink2);font:500 12.5px var(--f)}
 .lfav2.on{border-color:var(--cy);color:var(--cy2)}
+/* ---------- замена упражнения (как «Replace» у Lyfta, аналоги по книге) ---------- */
+.exrow .swb{width:44px;height:44px;flex:0 0 auto;display:grid;place-items:center;padding:0;border-radius:12px;
+  border:1px solid var(--ln2);background:transparent;color:var(--acc-2)}
+.exrow .swb svg,.exfswap svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.exrow .s .kg{font:inherit;font-weight:800;font-size:12.5px;color:var(--ink);text-shadow:none;letter-spacing:0}
+.exrow.done .s .kg{color:var(--ink3)}
+.exfswap{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;margin-top:4px;border-radius:12px;
+  border:1px solid var(--ln2);background:var(--btn);color:var(--acc-2);font:600 12.5px var(--f)}
+.swcur{display:grid;gap:2px;padding:10px 12px;margin-bottom:10px}
+.swcur span{font:600 10px var(--fn);letter-spacing:.12em;color:var(--ink3)}
+.swcur b{font-size:15px;color:var(--ink);line-height:1.3}
+.swcur i{font-style:normal;font-size:12px;color:var(--ink3)}
+.swq{display:block;width:100%;margin:0 0 8px}
+.sweq{flex-wrap:wrap;overflow:visible}
+.sweq button{min-height:44px}
+.sweq button.on{background:var(--acc-soft)}
+.swhint{margin:0 0 8px;font-size:11.5px;line-height:1.45;color:var(--ink3)}
+.swrow{display:flex;align-items:center;gap:10px;width:100%;min-height:64px;padding:8px;margin:0 0 6px;text-align:left;
+  border:1px solid var(--ln);border-radius:12px;background:var(--s1);color:var(--ink);font:inherit}
+.swph{flex:0 0 56px;width:56px;height:48px;border-radius:8px;overflow:hidden;background:#fff;display:grid;place-items:center}
+.swph img{width:100%;height:100%;object-fit:cover;display:block}
+.swph i{font-style:normal;font-size:9px;color:#667}
+.swt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.swt b{font-size:13.5px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+.swt span{font-size:11.5px;color:var(--ink3);line-height:1.3}
+.swt .swst,.swbook b.s-lo,.swbook b.s-eq,.swbook b.s-hi{font-weight:700}
+.s-lo{color:var(--hot-tx)!important}.s-eq{color:var(--acc-2)!important}.s-hi{color:var(--mon)!important}
+.swt .swharm{color:#ff7b7f;font-weight:700}
+.swmore{margin-top:6px}
+.swhd{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.swhd .swph{flex-basis:88px;width:88px;height:72px}
+.swhd > div{min-width:0}
+.swbook{margin-bottom:6px}
+.swwl{display:block;margin:14px 0 6px;font:600 10px var(--fn);letter-spacing:.12em;color:var(--ink3)}
+.swwin{display:block;width:100%}
+.swwh{margin:6px 0;font-size:12px;line-height:1.45;color:var(--ink2)}
+.swmode{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.swmode button{min-height:48px;padding:6px 8px;border-radius:12px;border:1px solid var(--ln2);background:transparent;
+  color:var(--ink2);font:600 12.5px var(--f);line-height:1.25}
+.swmode button.on{border-color:var(--acc);background:var(--acc-soft);color:var(--acc-ink)}
+.swmode button:disabled{opacity:.45}
+.swgo{display:block;width:100%;margin-top:12px}
+.swback{display:block;width:100%;min-height:44px;margin-top:6px;border:0;background:transparent;color:var(--ink3);font:500 12.5px var(--f)}
+@media (max-width:339px){ .swmode{grid-template-columns:1fr} }
 /* Пять вкладок делят полосу поровну: раньше ширину задавала подпись,
    и короткие вкладки ужимались до 43 px — меньше пальца. */
 .tabbar .tab{flex:1 1 0;min-width:0}
@@ -4241,7 +4285,7 @@ function recomputeStats(force) {
   const vol = zeroVol();
   let xp = 0;
   Object.keys(S.rec).forEach(ds => {
-    const day = S.days[dayIdx(ds)], r = S.rec[ds] || {};
+    const day = dayOf(ds), r = S.rec[ds] || {};
     Object.keys(r.log || {}).forEach(j => {
       const l = r.log[j];
       if (!l || !l.done) return;
@@ -4333,6 +4377,21 @@ function scrubKeys() {
       const v = S.libEx[n];
       if (BADK(n) || !n.trim() || !Array.isArray(v) || typeof v[0] !== 'string' || !/^[A-Za-z0-9_-]{1,120}$/.test(v[0])
         || (v[1] !== null && MUSCLES.indexOf(v[1]) < 0)) delete S.libEx[n];
+    });
+  }
+  /* Разовая замена упражнения: дата → { имя в программе: упражнение этой
+     даты }. Массив, строка или упражнение без имени из правленой копии
+     роняли бы карточку дня — такое выбрасываем, программа остаётся. */
+  if (S.once !== undefined) {
+    if (!plain(S.once)) S.once = {};
+    Object.keys(S.once).forEach(ds => {
+      const o = S.once[ds];
+      if (!okDate(ds) || !plain(o)) { delete S.once[ds]; return; }
+      Object.keys(o).forEach(n => {
+        const e = o[n];
+        if (BADK(n) || !n.trim() || !plain(e) || typeof e.n !== 'string' || !e.n.trim()) delete o[n];
+      });
+      if (!Object.keys(o).length) delete S.once[ds];
     });
   }
   /* Заметка к упражнению — строка до 300 знаков. Массив вместо словаря молча
@@ -4452,7 +4511,39 @@ function dayIdx(ds) {
   const w = wdOf(ds);
   return (w >= 0 && w < S.days.length) ? w : 0;
 }
-const dayOf = ds => S.days[dayIdx(ds)];
+/* Разовая замена упражнения (S.once: дата → { имя в программе: упражнение
+   на эту дату }). День недели — общий шаблон на все недели, поэтому «только
+   сегодня» живёт поверх шаблона: dayOf(дата) видит на этом месте замену,
+   а всё остальное — тот же объект программы. Чтение идёт через Proxy:
+   правка веса или повторов замены ложится в S.once, добавление и удаление
+   упражнений — в сам шаблон, как и без замены. Ключ — имя, а не номер:
+   удалили или переставили упражнение — замена не уезжает на соседнее. */
+const onceOf = ds => { const o = S.once && S.once[ds]; return o && typeof o === 'object' && !Array.isArray(o) ? o : null; };
+const onceHit = (o, e) => (e && o && typeof e.n === 'string' && Object.prototype.hasOwnProperty.call(o, e.n) && o[e.n]) || e;
+const ONCE_MUT = new Set(['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill', 'copyWithin']);
+const ONCE_PX = new WeakMap();
+function oncePx(obj, ds, make) {
+  let m = ONCE_PX.get(obj); if (!m) ONCE_PX.set(obj, m = new Map());
+  let p = m.get(ds); if (!p) m.set(ds, p = make());
+  return p;
+}
+function onceEx(arr, ds) {
+  if (!Array.isArray(arr)) return arr;
+  return oncePx(arr, ds, () => new Proxy(arr, { get(t, k, rc) {
+    if (typeof k === 'string' && /^\d+$/.test(k)) return onceHit(onceOf(ds), t[k]);
+    if (ONCE_MUT.has(k)) return t[k].bind(t);          // меняет сам шаблон, не замену
+    return Reflect.get(t, k, rc);
+  } }));
+}
+const dayOf = ds => {
+  const d = S.days[dayIdx(ds)];
+  if (!d || !onceOf(ds)) return d;
+  return oncePx(d, ds, () => new Proxy(d, { get(t, k, rc) {
+    if (k === 'ex') return onceEx(t.ex, ds);
+    if (k === 'tpl') return t;                         // сам шаблон дня
+    return Reflect.get(t, k, rc);
+  } }));
+};
 /* Тип и подпись прошедшего дня — снимок на момент смены шаблона (r.dt, r.dn).
    Раньше смена «Низ · сила» на «Верх · объём» во всех неделях переписывала
    и прошлые тренировки в журнале и календаре. */
@@ -5485,6 +5576,7 @@ const SWIPE_MIN = 90, SWIPE_MS = 600;
    списке берут цель отсюда же: раньше графа показывала 10, а клетки — 6. */
 function repsDefault(e) { const pv = lastDone(e.n, sel); return String(pick(pv && pv.r, e.r) ?? ''); }
 
+const SWAP_ICO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>';
 function exRow(e, j, r, IN) {
   const g = r.log[j] || {};
   const sug = weightFor(e, IN);
@@ -5500,8 +5592,10 @@ function exRow(e, j, r, IN) {
   return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}">
     ${exPic(e.n, 1) ? `<img class="exth" src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">` : ''}
     <span class="t"><span class="n">${esc(e.n)}</span>
-      <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
-    <span class="kg">${w ? kg(w) : '—'}</span>
+      <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}<b class="kg">${w ? kg(w) : '—'}</b>${w ? ' кг' : ''} · ${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
+    <!-- «Заменить» — на месте крупной цифры веса, она ушла в подпись: иначе
+         в 320 px имя сжималось до двух слов. Рядом только отметка, не удаление. -->
+    <button class="swb" data-swap="${j}" aria-label="Заменить: ${esc(e.n)}">${SWAP_ICO}</button>
     <button class="go" data-go="${j}" aria-label="${g.done ? 'Отменить подход' : 'Закрыть подход'}">${g.done ? '✓' : '○'}</button>
   </div>`;
 }
@@ -5526,6 +5620,7 @@ function exFull(e, j, r, IN, d) {
       <div class="exfhead">
         <div class="exftitle"><span class="exfgrp">${e.g ? esc(e.g) : 'Упражнение'} · ${g.done ? 'Выполнено' : 'Текущий квест'}</span>
         <button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button>
+        <button class="exfswap" data-swap="${j}">${SWAP_ICO}<span>Заменить</span></button>
         </div>
         ${how ? `<button class="exfpic" data-how="${esc(e.n)}" aria-label="Техника: ${esc(e.n)}">
           <img src="${how}"${exCors(e.n)} alt="" loading="lazy">
@@ -5594,6 +5689,10 @@ $('exl').addEventListener('click', e => {
 
   const cl = e.target.closest('[data-close]');
   if (cl) { exOpen = null; render(); enterFx(); window.scrollTo(0, 0); return; }
+
+  // «Заменить» лежит внутри строки, у которой свой тап — открыть карточку
+  const sw = e.target.closest('[data-swap]');
+  if (sw) { openSwap(+sw.dataset.swap); return; }
 
   const jp = e.target.closest('[data-jump]');
   if (jp) { exOpen = +jp.dataset.jump; render(); enterFx(); window.scrollTo(0, 0); return; }
@@ -5689,7 +5788,7 @@ function rollback(l) {
 function purgeExercise(name) {
   let n = 0;
   Object.keys(S.rec).forEach(ds => {
-    const day = S.days[dayIdx(ds)], lg = S.rec[ds].log || {};
+    const day = dayOf(ds), lg = S.rec[ds].log || {};
     Object.keys(lg).forEach(j => {
       const p = (day && day.ex[j]) || {};
       if ((lg[j].n || p.n) === name) { delete lg[j]; n++; }
@@ -6714,7 +6813,7 @@ $('spl').addEventListener('click', e => {
          отметка последней осталась висеть на несуществующем номере и
          продолжала считаться в опыте. Двигаем отметки следом, в каждой
          дате этого же дня недели. */
-      const di = S.days.indexOf(d);
+      const di = dayIdx(sel);
       d.sp.splice(j, 1);
       Object.keys(S.rec).forEach(ds => {
         const rec = S.rec[ds];
@@ -8831,6 +8930,272 @@ document.addEventListener('click', e => {
 
 
 /* =========================================================================
+   ЗАМЕНА УПРАЖНЕНИЯ — «Replace exercise» из Lyfta, но по книге Смирнова.
+   Аналоги — из каталога, по плоскостной системе: сначала тот же тип
+   движения и та же основная мышца, потом тот же тип, потом другое движение
+   на ту же мышцу. Ступень лесенки книги говорит, легче замена или тяжелее.
+   «Только сегодня» — S.once поверх шаблона (dayOf), программа не меняется.
+   «Во всех днях программы» — сама программа, как setReps. Журнал остаётся
+   под старым именем: записи сами себя описывают, рекорды и прогресс —
+   по имени. Дата, где старое движение уже закрыто, закрепляется за ним.
+   ========================================================================= */
+const SW = { ds: '', j: 0, eq: '', q: '', n: 30, pick: null, all: false, w: '', cands: null, from: '' };
+const SW_EQ = [['', 'Любое'], ['b', 'Штанга'], ['d', 'Гантели'], ['m', 'Тренажёр'], ['w', 'Свой вес']];
+// штанга — с EZ-грифом, гантели — с гирями, тренажёр — с блоками
+const SW_EQS = { b: ['b', 'z'], d: ['d', 'k'], m: ['m', 'c'], w: ['w'] };
+/* Во сколько раз вес снаряда обычно меньше штанги в том же движении:
+   жим гантелей лёжа в программе — 0,35 от жима штанги (на одну гантель),
+   жим в тренажёре — 0,9, тяги блоков — около 0,7. */
+const SW_EQK = { b: 1, z: 0.85, m: 0.9, c: 0.7, d: 0.35, k: 0.35 };
+const SW_TIER = ['ТОТ ЖЕ ТИП ДВИЖЕНИЯ И МЫШЦА', 'ТОТ ЖЕ ТИП ДВИЖЕНИЯ', 'ДРУГОЕ ДВИЖЕНИЕ НА ЭТУ МЫШЦУ'];
+const SW_STR = 'slog';     // сила, пауэрлифтинг, тяжёлая атлетика, стронгмен — не кардио и не растяжка
+
+// упражнение каталога по имени: из базы (S.libEx) или своё приложения под русским именем
+function libByName(name) {
+  if (!LIB || !name) return null;
+  const lb = S.libEx && S.libEx[name];
+  if (lb && LIB.byId.get(lb[0])) return LIB.byId.get(lb[0]);
+  if (!LIB.byName) { LIB.byName = new Map(); LIB.list.forEach(o => { if (!LIB.byName.has(o.n)) LIB.byName.set(o.n, o); }); }
+  return LIB.byName.get(name) || null;
+}
+// ступень лесенки книги относительно заменяемого: 1 — простейшее, 5 — самое тяжёлое, 6 — на одну сторону
+function swapStep(o, oo) {
+  if (!o || !oo || !o.st || !oo.st || o.pl !== oo.pl) return null;
+  return { st: o.st, rel: o.st === oo.st ? 'так же' : o.st < oo.st ? 'легче' : 'тяжелее' };
+}
+function swapCands(name, ds) {
+  if (!LIB) return [];
+  const oo = libByName(name), mu = muscleOf(name, grpOf(name) || (oo ? libGroup(oo) : null));
+  const have = new Set(((dayOf(ds) || {}).ex || []).map(e => e.n));
+  const str = !oo || SW_STR.indexOf(oo.c) >= 0;
+  const pl = oo && oo.pl && oo.pl !== 'other' ? oo.pl : '';
+  const out = [];
+  LIB.list.forEach(o => {
+    if (o.n === name || have.has(o.n)) return;
+    if (str ? SW_STR.indexOf(o.c) < 0 : o.c !== oo.c) return;
+    const samePl = !!pl && o.pl === pl;
+    const balMu = !!mu && libMuscle(o) === mu;
+    // та же мышца — по коду базы или по мышце баланса: у становой в базе
+    // главная «поясница», а у румынской — бицепс бедра, но это одна пара
+    const sameMu = balMu || !!(oo && oo.pm[0] && o.pm[0] === oo.pm[0]);
+    const tier = samePl && sameMu ? 0 : samePl ? 1 : balMu ? 2 : -1;
+    if (tier < 0) return;
+    const dist = oo && oo.st && o.st ? Math.abs(o.st - oo.st) : 9;
+    // вредное по книге — в конце своей группы; одно- или многосуставное как было,
+    // ближе по лесенке, с русским описанием и фото — выше
+    const iso = oo ? (!o.iso !== !oo.iso ? 1 : 0) : 0;
+    out.push({ o, tier, key: [tier, o.harm ? 1 : 0, iso, dist, o.own ? 0 : 1, o.pic || o.own ? 0 : 1, o.lv || 9] });
+  });
+  out.sort((a, b) => {
+    for (let i = 0; i < a.key.length; i++) if (a.key[i] !== b.key[i]) return a.key[i] - b.key[i];
+    return a.o.n.localeCompare(b.o.n, 'ru');
+  });
+  return out;
+}
+// без базы (первый запуск без сети) — аналоги из программы, по рисунку движения
+function swapCandsOffline(name, ds) {
+  const have = new Set(((dayOf(ds) || {}).ex || []).map(e => e.n));
+  const alts = altsOf(name);
+  return alts.filter(n => !have.has(n)).map(n => ({ tier: alts.same ? 0 : 2,
+    o: { id: '', n, en: '', c: 's', eq: '', lv: 0, iso: 0, pm: [], sm: [], pl: '', st: 0, harm: '', own: EXDB[n] ? EXDB[n][0] : '', pic: 0, hay: libNorm(n) } }));
+}
+const swapFloor = w => { if (!(w > 0)) return 0; const g = granOf(w); return Math.max(g, Math.floor(w / g + 1e-9) * g); };
+/* Стартовый вес замены. Свой прошлый результат — первым: рабочий вес в
+   программе, иначе лучший вес последней тренировки по журналу. Своего нет —
+   осторожная оценка от заменяемого: доли опорного веса у упражнений
+   программы (как startWeight), иначе ≈1ПМ заменяемого × снаряд на низ
+   диапазона с запасом 10 %. Округление — вниз по той же сетке (granOf).
+   Это подсказка в поле: человек правит её сам. */
+function swapGuess(e, name, o) {
+  for (const d of S.days) for (const x of (d.ex || [])) if (x.n === name && num(x.w) > 0) return { w: num(x.w), why: 'рабочий вес в программе' };
+  const ss = exSessions(name), last = ss[ss.length - 1];
+  if (last && last.w > 0) return { w: last.w, why: 'твой вес в прошлый раз, ' + fmt(last.ds, 1) };
+  if (o && o.eq === 'w') return { w: 0, why: 'свой вес — без отягощения' };
+  const w0 = num(e.w), a = EXDB[e.n], b = EXDB[name];
+  if (w0 > 0 && a && b && a[2] && a[2] === b[2] && a[3] > 0 && b[3] > 0)
+    return { w: swapFloor(w0 * b[3] / a[3]), why: 'от «' + e.n + '» ' + kg(w0) + ' кг по долям программы' };
+  const oo = libByName(e.n), ka = SW_EQK[(oo || {}).eq], kb = SW_EQK[(o || {}).eq];
+  if (w0 > 0 && ka && kb) {
+    const lo = botRep(e.r) || 8, ps = exSessions(e.n), pe = ps.length ? ps[ps.length - 1].e1 : 0;
+    const e1 = pe > 0 ? pe : w0 * (1 + lo / 30);
+    // односуставное после многосуставного — работает одна мышца, веса меньше
+    const k = kb / ka * (o.iso && oo && !oo.iso ? 0.6 : 1);
+    const w = swapFloor(e1 * k / (1 + lo / 30) * 0.9);
+    if (w > 0) return { w, why: 'оценка: ≈1ПМ «' + e.n + '» ' + kg(roundW(e1)) + ' кг, на ' + lo + ' повт., с запасом 10 %' };
+  }
+  const st = startWeight(name);
+  if (st > 0) return { w: st, why: 'стартовый вес по опорным весам' };
+  return { w: 0, why: 'своего веса ещё нет — подбери на разминке' };
+}
+const swapCur = () => (((dayOf(SW.ds) || {}).ex || [])[SW.j]) || null;
+function openSwap(j, pickName) {
+  const e = ((dayOf(sel) || {}).ex || [])[j];
+  if (!e) return;
+  Object.assign(SW, { ds: sel, j, eq: '', q: '', n: 30, pick: null, all: false, w: '', cands: null, from: e.n });
+  sheet('ЗАМЕНА', '<div class="swap" id="swBox"><p class="lmsg">Подбираю аналоги по книге…</p></div>');
+  const go = () => {
+    if (!$('swBox') || SW.from !== e.n) return;
+    if (pickName) {
+      const x = SW.cands.find(c => c.o.n === pickName) ||
+        (libByName(pickName) ? { o: libByName(pickName), tier: 1 } : swapCandsOffline(e.n, sel).find(c => c.o.n === pickName));
+      if (x) { swapPick(x); return; }
+    }
+    paintSwap();
+  };
+  loadLib().then(() => { SW.cands = swapCands(e.n, SW.ds); go(); })
+    .catch(() => { SW.cands = swapCandsOffline(e.n, SW.ds); SW.offline = 1; go(); });
+}
+function swapList() {
+  const q = libNorm(SW.q).trim().split(/\s+/).filter(Boolean), eqs = SW_EQS[SW.eq];
+  return (SW.cands || []).filter(x => (!eqs || (x.o.eq && eqs.indexOf(x.o.eq) >= 0)) && q.every(w => x.o.hay.indexOf(w) >= 0));
+}
+function swapThumb(o) {
+  const src = libPicUrl(o, 0);
+  return `<span class="swph">${src ? `<img src="${src}"${o.own ? '' : ' crossorigin="anonymous"'} alt="" loading="lazy">` : '<i>нет фото</i>'}</span>`;
+}
+function swapRowsHtml() {
+  const list = swapList(), oo = libByName(SW.from);
+  if (!list.length) return `<p class="lmsg">Ничего не нашлось.${SW.eq ? ' Сними фильтр оборудования.' : ''}</p>`;
+  let tier = -1, h = '';
+  list.slice(0, SW.n).forEach(x => {
+    const o = x.o, st = swapStep(o, oo), k = SW.cands.indexOf(x);
+    if (x.tier !== tier) { tier = x.tier; h += `<div class="cph swtier">${SW_TIER[tier]}</div>`; }
+    h += `<button class="swrow" data-swpick="${k}">${swapThumb(o)}
+      <span class="swt"><b>${esc(o.n)}</b>
+        <span>${[LIB_EQ[o.eq], LIB_LV[o.lv]].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</span>
+        ${st ? `<span class="swst s-${st.rel === 'так же' ? 'eq' : st.rel === 'легче' ? 'lo' : 'hi'}">ступень ${st.st} · ${st.rel}</span>` : ''}
+        ${o.harm ? '<span class="swharm">! вредно по книге</span>' : ''}</span></button>`;
+  });
+  if (list.length > SW.n) h += `<button class="add swmore" data-swmore="1">Показать ещё · ${list.length - SW.n}</button>`;
+  return h;
+}
+function paintSwap() {
+  const box = $('swBox'); if (!box) return;
+  if (SW.pick) { box.innerHTML = swapConfirmHtml(); return; }
+  const e = swapCur(); if (!e) { sheetClose(); return; }
+  const oo = libByName(e.n), pl = oo && PLANE[oo.pl];
+  box.innerHTML = `<div class="win swcur"><span>ВМЕСТО</span><b>${esc(e.n)}</b>
+      <i>${[pl && pl[0], oo && oo.st ? 'ступень ' + oo.st + ' из 6' : '', num(e.s) + ' × ' + esc(e.r)].filter(Boolean).join(' · ')}</i></div>
+    ${SW.offline ? '<p class="lmsg">База каталога не загрузилась — нужна сеть. Пока — аналоги из программы.</p>' : ''}
+    <input id="swQ" class="exs swq" type="search" enterkeyhint="search" placeholder="Поиск аналога" value="${esc(SW.q)}" aria-label="Поиск аналога">
+    <div class="chains sweq">${SW_EQ.map(([k, l]) =>
+      `<button data-sweq="${k}" class="${SW.eq === k ? 'on' : ''}" aria-pressed="${SW.eq === k}">${l}</button>`).join('')}</div>
+    <p class="swhint">По книге «Фитнес для умных»: сначала тот же тип движения и та же мышца. Ступень — по лесенке книги: 1 — простейшее, 5 — самое тяжёлое, 6 — на одну сторону.</p>
+    <div id="swL">${swapRowsHtml()}</div>`;
+}
+function swapPick(x) {
+  const e = swapCur(); if (!e) return;
+  SW.pick = x;
+  const g = swapGuess(e, x.o.n, x.o);
+  SW.guess = g; SW.w = g.w ? kg(g.w) : '';
+  SW.all = !!(recOf(SW.ds).log[SW.j] || {}).done;      // закрытое место даты — только программа
+  paintSwap();
+  const sh = $('shB'); if (sh) sh.scrollTop = 0;
+}
+function swapConfirmHtml() {
+  const x = SW.pick, o = x.o, e = swapCur(); if (!e) return '';
+  const oo = libByName(e.n), st = swapStep(o, oo), pl = PLANE[o.pl];
+  const done = !!(recOf(SW.ds).log[SW.j] || {}).done;
+  const T = (((S.days[dayIdx(SW.ds)] || {}).ex || [])[SW.j] || {}).n;
+  const places = S.days.reduce((a, d) => a + (d.ex || []).filter(z => z.n === T).length, 0);
+  const mu = o.pm.map(m => (LIB_MU[m] || [])[0]).filter(Boolean).join(', ');
+  return `<div class="swpick">
+    <div class="swhd">${swapThumb(o)}<div><b class="lname">${esc(o.n)}</b>
+      <p class="lmeta">${[mu, LIB_EQ[o.eq], LIB_LV[o.lv]].filter(Boolean).map(esc).join(' · ')}</p></div></div>
+    <div class="win lbook swbook"><b>${pl ? esc(pl[0]) : 'Аналог'}</b>
+      <p>${st ? `Ступень ${st.st} из 6 по лесенке книги — <b class="s-${st.rel === 'так же' ? 'eq' : st.rel === 'легче' ? 'lo' : 'hi'}">${st.rel}</b>, чем «${esc(e.n)}» (ступень ${oo.st}).`
+        : `Вместо «${esc(e.n)}»${oo && o.pl === oo.pl ? ' — тот же тип движения' : ''}.`}</p></div>
+    ${o.harm ? `<div class="lharm"><b>Книга против</b><p>${esc(o.harm)}</p></div>` : ''}
+    <label class="swwl" for="swW">ВЕС НА СТАРТ, КГ</label>
+    <input id="swW" class="exs swwin" inputmode="decimal" value="${esc(SW.w)}" placeholder="без веса" aria-label="Стартовый вес, кг">
+    <p class="swwh">${esc(SW.guess.why)}. Подходы и повторы — как были: ${num(e.s)} × ${esc(e.r)}.</p>
+    <div class="swmode" role="group" aria-label="Где заменить">
+      <button data-swm="0" class="${SW.all ? '' : 'on'}" aria-pressed="${!SW.all}"${done ? ' disabled' : ''}>Только ${esc(fmt(SW.ds, 1))}</button>
+      <button data-swm="1" class="${SW.all ? 'on' : ''}" aria-pressed="${SW.all}">Во всех днях программы</button></div>
+    <p class="swwh">${done ? '«' + esc(e.n) + '» в этот день уже закрыто — запись остаётся за этой датой. ' : ''}${SW.all
+      ? '«' + esc(T) + '» заменится во всех днях программы (' + places + ' ' + plural(places, 'место', 'места', 'мест') + '). Прошлые записи остаются в журнале под своим именем — с рекордами и графиком.'
+      : 'Программа не меняется: в другие дни остаётся «' + esc(T) + '». Эта дата в журнале будет с «' + esc(o.n) + '».'}</p>
+    <button class="lgo swgo" data-swgo="1">Заменить</button>
+    <button class="swback" data-swback="1">‹ Другие аналоги</button></div>`;
+}
+/* Сама замена. ds и j — дата и место в дне; o — упражнение каталога (или null
+   для своего из программы); w — стартовый вес; all — во всех днях программы. */
+function swapApply(ds, j, name, o, w, all) {
+  const cur = (((dayOf(ds) || {}).ex || [])[j]);
+  const tpl = S.days[dayIdx(ds)], base = ((tpl || {}).ex || [])[j];
+  if (!cur || !base || !name || name === cur.n) return false;
+  const done = !!(recOf(ds).log[j] || {}).done;
+  if (done && !all) { note('«' + cur.n + '» уже закрыто в этот день — замени во всех днях или сними отметку'); return false; }
+  const snap = snapS();
+  // упражнение из базы встаёт как своё — как в libAdd: группа и мышца баланса
+  if (o && o.id && !EXDB[name]) {
+    S.myEx = myEx(); if (!S.myEx[name]) S.myEx[name] = libGroup(o);
+    if (!S.libEx || typeof S.libEx !== 'object') S.libEx = {};
+    if (!S.libEx[name]) S.libEx[name] = [o.id, libMuscle(o)];
+  }
+  const g = grpOf(name) || cur.g || null, W = Math.max(0, num(w));
+  // подходы, повторы и связка суперсета — с места; вес и группа — нового движения
+  const mk = src => { const x = Object.assign({}, src, { n: name, g, w: W }); delete x.fixed; return x; };
+  if (!S.once || typeof S.once !== 'object' || Array.isArray(S.once)) S.once = {};
+  const own = (ov, k) => !!ov && Object.prototype.hasOwnProperty.call(ov, k);
+  // черновик старого движения на этой дате — не про новое
+  const r0 = S.rec[ds];
+  if (r0 && r0.log && r0.log[j] && !r0.log[j].done) delete r0.log[j];
+  const T = base.n;
+  if (!all) {
+    const ov = S.once[ds] || (S.once[ds] = {});
+    if (name === T) delete ov[T]; else ov[T] = mk(cur);       // вернули программное — разовая замена снята
+  } else {
+    const dates = new Set(Object.keys(S.rec).concat(Object.keys(S.once)));
+    dates.forEach(x => {
+      const t2 = S.days[dayIdx(x)];
+      if (!t2 || !(t2.ex || []).some(e => e.n === T)) return;
+      const lg = ((S.rec[x] || {}).log) || {}, ov = S.once[x];
+      const locked = t2.ex.some((e, i) => e.n === T && lg[i] && lg[i].done);
+      if (own(ov, T)) {
+        // разовая замена другой даты остаётся разовой; на этой — уступает новой программе
+        const keep = ov[T]; delete ov[T];
+        if ((x !== ds || locked) && !own(ov, name)) ov[name] = keep;
+      } else if (locked) {
+        // записанное место закрепляется за датой: там было старое движение
+        const ov2 = S.once[x] || (S.once[x] = {});
+        if (!own(ov2, name)) ov2[name] = Object.assign({}, t2.ex.find(e => e.n === T));
+      } else {
+        t2.ex.forEach((e, i) => { if (e.n === T && lg[i] && !lg[i].done) delete lg[i]; });
+      }
+    });
+    S.days.forEach(d => (d.ex || []).forEach(e => { if (e.n === T) { e.n = name; e.g = g; e.w = W; delete e.fixed; } }));
+  }
+  Object.keys(S.once).forEach(x => { if (!Object.keys(S.once[x] || {}).length) delete S.once[x]; });
+  if (!Object.keys(S.once).length) delete S.once;
+  entCache = null;
+  save(); sheetClose(); render();
+  offerUndo(snap, cur.n + ' → ' + name + (all ? ' · во всех днях' : ' · ' + fmt(ds, 1)));
+  return true;
+}
+$('shB').addEventListener('click', e => {
+  if (!$('swBox')) return;
+  const pk = e.target.closest('[data-swpick]');
+  if (pk) { const x = (SW.cands || [])[num(pk.dataset.swpick)]; if (x) swapPick(x); return; }
+  const eq = e.target.closest('[data-sweq]');
+  if (eq) { SW.eq = eq.dataset.sweq; SW.n = 30; paintSwap(); return; }
+  if (e.target.closest('[data-swmore]')) { SW.n += 30; $('swL').innerHTML = swapRowsHtml(); return; }
+  const m = e.target.closest('[data-swm]');
+  if (m && !m.disabled) { SW.all = m.dataset.swm === '1'; const wv = $('swW') ? $('swW').value : SW.w; SW.w = wv; paintSwap(); return; }
+  if (e.target.closest('[data-swback]')) { SW.pick = null; paintSwap(); return; }
+  if (e.target.closest('[data-swgo]')) {
+    const x = SW.pick; if (!x) return;
+    const wv = $('swW') ? $('swW').value : SW.w;
+    runOnce('swap:' + SW.ds + ':' + SW.j, () => swapApply(SW.ds, SW.j, x.o.n, x.o.id ? x.o : null, num(wv), SW.all));
+  }
+});
+$('shB').addEventListener('input', e => {
+  if (e.target.id === 'swQ') { SW.q = e.target.value; SW.n = 30; $('swL').innerHTML = swapRowsHtml(); }
+  else if (e.target.id === 'swW') SW.w = e.target.value;
+});
+
+
+/* =========================================================================
    ТЕХНИКА УПРАЖНЕНИЯ
    Фотографии лежат в папке img и входят в офлайн-кэш — в подвале без связи
    они всё равно откроются. Источник: free-exercise-db, лицензия Unlicense
@@ -8880,57 +9245,26 @@ function openHow(name, j) {
       }).join('') + '</div>' +
       `<p class="alth">${alts.same
         ? (swap
-          ? 'Тот же рисунок движения и та же нагрузка. Замена встаёт в программу этого дня недели — приложение спросит подтверждение.'
+          ? 'Тот же рисунок движения и та же нагрузка. Дальше — вес на старт и где заменить: только в этот день или во всех днях программы.'
           : 'Те же мышцы и тот же рисунок движения. Заменить можно из открытого упражнения в «Зале».')
         : (swap
           ? 'Точного аналога по рисунку движения нет — это просто другие упражнения на ту же мышцу. Нагрузка ляжет иначе.'
           : 'Точного аналога по рисунку движения нет — это другие упражнения на ту же мышцу.')}</p>`;
   }
+  if (swap) h2 += `<button class="add" data-swall="${idx}">Все аналоги по книге</button>`;
   sheet('ТЕХНИКА', h2);
 }
 
-/* Замена упражнения на аналог. День недели в этом приложении — общий
-   шаблон на все недели, отдельной копии на дату нет. Значит замена
-   меняет программу, и притворяться, что она «только на сегодня»,
-   нельзя: спрашиваем прямо. Записанные подходы этого места стираются —
-   они относились к другому движению. */
-$('shB').addEventListener('click', async e => {
-  const b2 = e.target.closest('[data-alt]'); if (!b2) return;
-  const name = b2.dataset.alt, j = num(b2.dataset.altj);
-  const d = dayOf(sel), e2 = (d.ex || [])[j];
-  if (!e2) { sheetClose(); return; }
-  const was = e2.n;
-  const logged = !!((recOf(sel).log || {})[j] || {}).done;
-  const okGo = await ask('Заменить «' + was + '» на «' + name + '»? Это место в программе ' +
-    (d.k ? ('(' + d.k + ')') : '') + ' — замена встанет во все недели.' +
-    (logged ? ' Записанный за этот день подход сотрётся: он относился к другому движению.' : ''),
-    'ЗАМЕНИТЬ');
-  if (!okGo) return;
-  const snap = snapS();
-  /* Прошлые записи этого места — про старое движение. Раньше замена их не
-     трогала: «Править» прошлого дня показывало новое упражнение, повторная
-     отметка переписывала запись на него, а рекорд старого пропадал.
-     Подписываем записи старым именем и переставляем по названию — так же,
-     как при удалении. Стираемый сегодняшний подход сначала откатываем. */
-  const di = S.days.indexOf(d);
-  Object.keys(S.rec).forEach(ds => {
-    if (dayIdx(ds) !== di) return;
-    const l0 = ((S.rec[ds] || {}).log || {})[j];
-    if (l0 && !l0.n) l0.n = was;
-  });
-  const cur = (recOf(sel).log || {})[j];
-  if (cur && cur.done) rollback(cur);
-  const src = EXDB[name] || [];
-  e2.n = name;
-  e2.g = src[1] || e2.g;
-  e2.w = String(startWeight(name) || num(e2.w) || 0);
-  delete e2.fixed;                 // вес у нового движения свой, не перенесённый
-  const r = recRW(sel);
-  if (r.log && r.log[j]) delete r.log[j];
-  Object.keys(S.rec).forEach(ds => { if (ds !== sel && dayIdx(ds) === di) remapLog(ds); });
-  save(); recomputeStats(1); sheetClose(); render();
-  offerUndo(snap, was + ' → ' + name);
+/* Аналог из «Техники» ведёт в ту же замену, что кнопка «Заменить»: вес
+   на старт, «только сегодня» или «во всех днях», отмена. Раньше здесь был
+   отдельный путь с вопросом, который стирал закрытый подход этого дня. */
+$('shB').addEventListener('click', e => {
+  const b2 = e.target.closest('[data-alt]');
+  if (b2) { openSwap(num(b2.dataset.altj), b2.dataset.alt); return; }
+  const b3 = e.target.closest('[data-swall]');
+  if (b3) openSwap(num(b3.dataset.swall));
 });
+
 
 /* =========================================================================
    СВОЙ РАЗБОР ПРОГРЕССИИ
@@ -8943,7 +9277,7 @@ function allExerciseNames() {
   const set = {};
   S.days.forEach(d => d.ex.forEach(e => { set[e.n] = 1; }));
   Object.keys(S.rec).forEach(ds => {
-    const day = S.days[dayIdx(ds)], lg = S.rec[ds].log || {};
+    const day = dayOf(ds), lg = S.rec[ds].log || {};
     Object.keys(lg).forEach(j => {
       const n = lg[j].n || ((day && day.ex[j]) || {}).n;
       if (n) set[n] = 1;
@@ -8959,7 +9293,7 @@ function setsOfExercise(name, days) {
   let sets = 0;
   Object.keys(S.rec).forEach(ds => {
     if (ds < f || ds > today()) return;
-    const day = S.days[dayIdx(ds)], lg = S.rec[ds].log || {};
+    const day = dayOf(ds), lg = S.rec[ds].log || {};
     Object.keys(lg).forEach(j => {
       const e = (day && day.ex[j]) || {};
       if (!lg[j].done || (lg[j].n || e.n) !== name) return;
@@ -9037,7 +9371,7 @@ function buildCsv() {
     'Повторы', 'По подходам', 'Закреплено', 'Вес, кг', 'Тоннаж, кг', 'Вес тела, кг',
     'Заметка'].join(';')];
   Object.keys(S.rec).sort().forEach(ds => {
-    const r = S.rec[ds], day = S.days[dayIdx(ds)], lg = r.log || {};
+    const r = S.rec[ds], day = dayOf(ds), lg = r.log || {};
     // день недели — самой даты: у перенесённой даты S.days[dayIdx].k — чужой слот
     const base = [ds, TPL[wdOf(ds)].k, r.wo ? 'да' : 'нет'];
     const tailBw = String(num(r.bw) || '').replace('.', ',');
@@ -11004,7 +11338,7 @@ function pushPull(days) {
   let push = 0, pull = 0;
   Object.keys(S.rec).forEach(ds => {
     if (ds < f || ds > today()) return;
-    const day = S.days[dayIdx(ds)], lg = S.rec[ds].log || {};
+    const day = dayOf(ds), lg = S.rec[ds].log || {};
     Object.keys(lg).forEach(j => {
       const l = lg[j];
       if (!l.done) return;

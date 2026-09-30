@@ -120,11 +120,18 @@ const chk = (c,n,d)=>c?ok(n,d):bad(n,d);
     const btn=document.querySelector('#sh [data-alt]');
     if(!btn) return 'кнопки замены нет';
     btn.click();
-    await new Promise(r=>setTimeout(r,150));
-    try{askClose(true)}catch(e){}
+    // аналог открывает шторку «ЗАМЕНА» с выбранным; «Заменить» — без вопроса, с отменой
+    await new Promise(r=>setTimeout(r,600));
+    const go=document.querySelector('#shB [data-swgo]');
+    if(!go) return 'нет кнопки «Заменить» в шторке замены';
+    go.click();
     await new Promise(r=>setTimeout(r,250));
-    return (d.ex[0].n === alt && JSON.stringify(S.vol) !== undefined) ? true
-      : JSON.stringify({was, alt, now:d.ex[0].n});
+    // «только сегодня» живёт поверх шаблона — день даты читаем заново.
+    // Закрытое сегодня место остаётся за датой, замена уходит в программу.
+    const done=!!(recOf(sel).log[0]||{}).done;
+    const now=dayOf(sel).ex[0].n, tpl=S.days[dayIdx(sel)].ex[0].n;
+    return ((done ? now === was && tpl === alt : now === alt) && JSON.stringify(S.vol) !== undefined) ? true
+      : JSON.stringify({was, alt, now, tpl, done});
   }) === true, '10. аналог встаёт и статистика пересчитывается');
 
   // 11. разгрузочная неделя действительно снимает вес

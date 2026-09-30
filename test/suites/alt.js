@@ -46,10 +46,14 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     btn.click();
     return { before, want:btn.dataset.alt };
   });
-  await p.waitForTimeout(300);
-  const asked=await p.evaluate(()=>document.getElementById('ask').classList.contains('on'));
-  chk(asked, '6. замена спрашивает подтверждение');
-  await p.evaluate(()=>{ try{askClose(true)}catch(e){} });
+  await p.waitForTimeout(700);
+  /* Замена из «Техники» ведёт в шторку «ЗАМЕНА» с выбранным аналогом: вес
+     на старт и «только сегодня / во всех днях». Вопрос ask — только там, где
+     отменить нечем (CLAUDE.md), а замена отменяется полоской «Отменить». */
+  const asked=await p.evaluate(w=>({ask:document.getElementById('ask').classList.contains('on'),
+    title:document.getElementById('shT').textContent, pick:SW.pick&&SW.pick.o.n, want:w.want}), want);
+  chk(!asked.ask && asked.title==='ЗАМЕНА' && asked.pick===asked.want, '6. аналог открывает замену с выбранным, без вопроса', JSON.stringify(asked));
+  await p.evaluate(()=>{ document.querySelector('#shB [data-swm="1"]').click(); document.querySelector('#shB [data-swgo]').click(); });
   await p.waitForTimeout(400);
   const sw=await p.evaluate(w=>({ before:w.before, want:w.want,
     after:dayOf(sel).ex[0].n, w:dayOf(sel).ex[0].w, g:dayOf(sel).ex[0].g,
@@ -74,8 +78,10 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     const btn=document.querySelector('#sh [data-alt]');
     if(!btn) return {err:'нет аналогов у второго упражнения'};
     btn.click();
-    await new Promise(r=>setTimeout(r,200));
-    try{askClose(false)}catch(e){}
+    await new Promise(r=>setTimeout(r,500));
+    // передумал: «‹ Другие аналоги» и закрыть шторку
+    const back=document.querySelector('#shB [data-swback]'); if(back) back.click();
+    sheetClose();
     await new Promise(r=>setTimeout(r,200));
     return { n0, now:dayOf(sel).ex[1].n };
   });
