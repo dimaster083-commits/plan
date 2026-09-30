@@ -4825,9 +4825,20 @@ async function setDayType(i, nt) {
   const ok = await ask('Поменять ' + d.k + ' во всех неделях плана? Прошедшие тренировки останутся как были. ' +
     'Если нужно только на одной дате — отмени и выбери её в «Эта неделя».', 'ПОМЕНЯТЬ');
   if (!ok) return false;
-  const snap = snapS();
-  Object.keys(S.rec).forEach(ds => { const r = S.rec[ds];
-    if (ds < today() && dayOf(ds) === d && r && !r.dt) { r.dt = was; r.dn = d.s; } });
+  const snap = snapS(), t = today();
+  /* Прошлое без записей — тоже прошлое: отдых прошлых воскресений после
+     «воскресенье — тренировка» становился пропущенной тренировкой в
+     посещаемости, итогах месяца и «Слабом звене». Снимок типа получают все
+     прошедшие даты этого дня — от старта плана или первой записи, как при
+     обмене дней шаблона (swapWeekdays). */
+  let from = planStart();
+  Object.keys(S.rec).forEach(ds => { if (okDay(ds) && ds < from) from = ds; });
+  for (let c = at(from), g = 0; iso(c) < t && g < 4000; c.setDate(c.getDate() + 1), g++) {
+    const ds = iso(c);
+    if (dayOf(ds) !== d) continue;
+    const r = recRW(ds);
+    if (!r.dt) { r.dt = was; r.dn = d.s; }
+  }
   d.t = nt;
   // подпись дня идёт следом за типом, иначе «Низ тела» висит над жимом лёжа
   const src = TPL.find(x => x.t === nt);
@@ -4848,8 +4859,11 @@ async function setDayType(i, nt) {
    не было. Снять такую отметку значило откатить тоннаж жима.
    Переставляем записи по названию. Того, чего в новом дне нет, уезжает за
    край списка: в журнале, тоннаже и опыте оно остаётся — запись сама себя
-   описывает, — а в карточках дня не показывается. */
-function remapLog(ds) {
+   описывает, — а в карточках дня не показывается.
+   Черновик (вес, повторы, отметки строк до закрытия) имени не хранит — его
+   имя берётся из прежнего дня даты (old): раньше после обмена дней вписанные
+   62,5 кг жима вставали на присед. */
+function remapLog(ds, old) {
   const r = S.rec[ds];
   if (!r || !r.log) return;
   const ex = (dayOf(ds) || {}).ex || [];
@@ -4858,7 +4872,9 @@ function remapLog(ds) {
   Object.keys(r.log).sort((a, b2) => a - b2).forEach(k => {
     const l = r.log[k];
     if (!l) return;
-    const at = l.n ? ex.findIndex((e, i) => e.n === l.n && !used[i]) : -1;
+    const n = l.n || ((old || [])[k] || {}).n;
+    if (n && !l.n) l.n = n;            // уехавший за край черновик помнит, чей он
+    const at = n ? ex.findIndex((e, i) => e.n === n && !used[i]) : -1;
     if (at >= 0) { used[at] = 1; out[at] = l; } else out[tail++] = l;
   });
   r.log = out;
@@ -4917,7 +4933,7 @@ function swapDates(a, b) {
   if (a === b || dayLocked(a) || dayLocked(b)) return false;
   const ia = dayIdx(a), ib = dayIdx(b);
   setMap(a, ib); setMap(b, ia);
-  remapLog(a); remapLog(b);
+  remapLog(a, S.days[ia].ex); remapLog(b, S.days[ib].ex);
   return true;
 }
 /* Смена шаблона: содержимое двух дней недели меняется местами. Всё, что
@@ -4926,8 +4942,9 @@ function swapDates(a, b) {
    приседом. Даты с переносом идут следом за своей тренировкой. */
 function swapWeekdays(i, j) {
   if (i === j || !S.days[i] || !S.days[j]) return false;
-  const t = today(), keep = {}, oldSp = {};
+  const t = today(), keep = {}, oldSp = {}, oldEx = {};
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && S.rec[ds] && S.rec[ds].sp) oldSp[ds] = spOf(ds); });
+  Object.keys(S.rec).forEach(ds => { if (okDay(ds)) oldEx[ds] = (dayOf(ds) || {}).ex; });
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && (ds < t || dayLocked(ds))) keep[ds] = 1; });
   weekDates(t).forEach(ds => { if (ds < t) keep[ds] = 1; });
   /* Прошлое без записей — тоже прошлое: отдых прошлого понедельника после
@@ -4961,6 +4978,8 @@ function swapWeekdays(i, j) {
   S.days[i] = Object.assign({}, B, { k: A.k, n: nm(B, j) ? TPL[i].n : B.n });
   S.days[j] = Object.assign({}, A, { k: B.k, n: nm(A, i) ? TPL[j].n : A.n });
   Object.keys(oldSp).forEach(ds => remapSp(ds, oldSp[ds]));
+  // черновик незакреплённой даты (сегодня до первого закрытия) едет по названию, а не по номеру
+  Object.keys(oldEx).forEach(ds => { if ((dayOf(ds) || {}).ex !== oldEx[ds]) remapLog(ds, oldEx[ds]); });
   return true;
 }
 /* «Не могу сегодня»: тренировка уезжает на следующий день, а стоявшая там —
@@ -4971,11 +4990,11 @@ function pushDay(ds) {
   if (rest < 0 || dayLocked(ds) || dayOf(ds).t === 'rest') return null;
   const wk = weekDates(ds).filter(x => x > ds);
   let cur = dayIdx(ds);
-  setMap(ds, rest); remapLog(ds);
+  setMap(ds, rest); remapLog(ds, S.days[cur].ex);
   for (const x of wk) {
     if (dayLocked(x)) continue;          // начатый день перешагиваем
     const was = dayIdx(x);
-    setMap(x, cur); remapLog(x);
+    setMap(x, cur); remapLog(x, S.days[was].ex);
     if (S.days[was].t === 'rest') return { lost: null };
     cur = was;
   }
@@ -5050,7 +5069,8 @@ $('shB').addEventListener('click', e => {
   if (one) {
     const ds = wkPick;
     if (typeof ds === 'string' && !dayLocked(ds)) {
-      setMap(ds, +one.dataset.wpset); remapLog(ds);
+      const o = (dayOf(ds) || {}).ex;
+      setMap(ds, +one.dataset.wpset); remapLog(ds, o);
       applyNutri(); save(); render(); note('Тренировка на ' + fmt(ds, 1) + ' заменена');
     }
     wkPick = null; openWeekPlan();
@@ -5091,7 +5111,7 @@ $('shB').addEventListener('click', e => {
     const snap = snapS(), t = today();
     weekDates(rs.dataset.wpreset).forEach(x => {
       if (x < t || dayLocked(x) || S.map[x] === undefined) return;
-      const o = spOf(x); delete S.map[x]; remapSp(x, o); remapLog(x);
+      const o = spOf(x), oe = (dayOf(x) || {}).ex; delete S.map[x]; remapSp(x, o); remapLog(x, oe);
     });
     applyNutri(); save(); render(); openWeekPlan();
     offerUndo(snap, 'Неделя — как в программе', { again: wkAgain });
@@ -5307,7 +5327,12 @@ function exRow(e, j, r, IN) {
   const sug = weightFor(e, IN);
   const sets = setsOf(sel, num(e.s), j);
   const w = num(pick(g.w, sug));
-  const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, repsDefault(e)));
+  // черновик клеток — теми же числами, что в карточке: пустые подставлены
+  const rr = pick(g.r, repsDefault(e));
+  const fc = !g.done && g.rs && g.rs.length
+    ? fillCells(g.rs, Math.max(1, num(pick(g.s, sets)) || 1), lastDone(e.n, sel), topRep(rr), firstRep(rr) || topRep(rr), w) : null;
+  const rs = fc ? fc.vals.map(v => (v === '' ? '—' : v)).join('/')
+    : (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + rr);
   const ex = dayOf(sel).ex, ss = !!(e.ss && ex[j + 1]), ss2 = !!(j > 0 && ex[j - 1] && ex[j - 1].ss);
   return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}">
     ${exPic(e.n, 1) ? `<img class="exth" src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">` : ''}
@@ -5431,6 +5456,7 @@ $('exl').addEventListener('click', e => {
       // снимаем вклад закрытого подхода, иначе объём и опыт останутся висеть
       if (l && l.done) rollback(l);
       delete r.log[j];
+      const old = d.ex.slice();          // имена черновиков других дат — до сдвига
       d.ex.splice(j, 1);
       /* Отметки сдвигались только в открытом дне. Но день недели — общий
          шаблон на все недели: во всех остальных датах номера оставались
@@ -5439,7 +5465,7 @@ $('exl').addEventListener('click', e => {
          подхода откатывала чужой тоннаж и чужой рекорд.
          Переставляем записи по названию во всех датах этого дня недели. */
       const di = S.days.indexOf(d);
-      Object.keys(S.rec).forEach(ds => { if (dayIdx(ds) === di) remapLog(ds); });
+      Object.keys(S.rec).forEach(ds => { if (dayIdx(ds) === di) remapLog(ds, old); });
       save(); render();
 
       // прошлые тренировки с этим упражнением остаются в тоннаже и опыте —
@@ -5507,7 +5533,7 @@ function purgeExercise(name) {
     });
     // день без единой отметки и без отметки о тренировке больше не нужен
     const r = S.rec[ds];
-    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw && !r.skip) delete S.rec[ds];
+    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw && !r.skip && !r.dt) delete S.rec[ds];
   });
   delete S.pr[name];
   recomputeStats(1);
@@ -5619,6 +5645,7 @@ $('exl').addEventListener('click', ev => {
       if (was[i][1] === undefined) delete x.dataset.auto; else x.dataset.auto = was[i][1];
       const lb = x.closest('.rbx'); if (lb) lb.classList.toggle('auto', was[i][1] === '1');
     });
+    saveCells(box.closest('.ex'));       // подставленное снова подставленное и в журнале
   } });
 });
 
@@ -5678,9 +5705,15 @@ $('exl').addEventListener('click', ev => {
   const ck = [...card.querySelectorAll('.srow')].map((x, k) => (x.classList.contains('on') ? k : -1)).filter(k => k >= 0);
   if (ck.length) l.ck = ck; else delete l.ck;
   save();
+  /* Рабочие строки — обычные и «до отказа»: отказ — рабочий подход с пометкой.
+     Дроп делают после последнего рабочего, поэтому строки за ним тоже ждут
+     галочки. Раньше отказ в рабочие не шёл, упражнение закрывалось раньше
+     времени, а галочка на дропе тут же снимала всё закрытое. */
   const rows = [...card.querySelectorAll('.srow')];
-  const work = rows.filter(x => { const q = x.querySelector('[data-rs]'); return !(q && q.dataset.kind); });
-  if (work.length && work.every(x => x.classList.contains('on'))) runOnce('go' + j, () => toggleSet(j), 200);
+  const kindAt = x => { const q = x.querySelector('[data-rs]'); return (q && q.dataset.kind) || ''; };
+  const work = rows.filter(x => kindAt(x) === '' || kindAt(x) === 'f');
+  const need = work.length ? work.concat(rows.slice(rows.indexOf(work[work.length - 1]) + 1)) : [];
+  if (need.length && need.every(x => x.classList.contains('on'))) runOnce('go' + j, () => toggleSet(j), 200);
 });
 
 // подход, закрытый по верхней границе, подсвечивается сразу
@@ -5697,14 +5730,16 @@ $('exl').addEventListener('input', ev => {
      клетки получают то же число: 10 в первом подходе — 10 и в остальных. */
   inp.dataset.auto = '';
   if (lab) lab.classList.remove('auto');
-  if (!ev.isTrusted || !String(inp.value).trim()) return;
-  const all = [...card.querySelectorAll('[data-rs]')];
-  all.slice(all.indexOf(inp) + 1).forEach(nx => {
-    if (String(nx.value).trim() && nx.dataset.auto !== '1') return;
-    nx.value = inp.value; nx.dataset.auto = '1';
-    const lb = nx.closest('.rbx');
-    if (lb) { lb.classList.add('auto'); lb.classList.toggle('hit', !!top && num(nx.value) >= top); }
-  });
+  if (ev.isTrusted && String(inp.value).trim()) {
+    const all = [...card.querySelectorAll('[data-rs]')];
+    all.slice(all.indexOf(inp) + 1).forEach(nx => {
+      if (String(nx.value).trim() && nx.dataset.auto !== '1') return;
+      nx.value = inp.value; nx.dataset.auto = '1';
+      const lb = nx.closest('.rbx');
+      if (lb) { lb.classList.add('auto'); lb.classList.toggle('hit', !!top && num(nx.value) >= top); }
+    });
+  }
+  if (!inp.readOnly) saveCells(card);
 });
 
 // Подходы и повторы меняются прямо в карточке: блок под ними должен
@@ -5744,6 +5779,34 @@ function autoCells(prev, n, top, low, wNow) {
   while (base.length < n) base.push(base.length ? base[base.length - 1] : top);
   return base.slice(0, n);
 }
+/* Клетки незакрытого упражнения. Свои числа черновика (l.rs) — как есть,
+   пустые — тем же правилом, что при вводе: число из своей клетки выше, а
+   выше пусто — сегодняшняя цель по прошлому разу (autoCells). auto — какие
+   подставлены. Раньше вписанное в клетки жило только на экране: переход
+   к другому упражнению или перезагрузка возвращали подставленное, а галочка
+   на строке оставалась. */
+function fillCells(cur, n, prev, top, low, wNow) {
+  const a = autoCells(prev, n, top, low, wNow);
+  if (!cur && !a) return null;
+  const vals = [], auto = [];
+  let last = '';
+  for (let i = 0; i < n; i++) {
+    const v = cur ? cur[i] : undefined;
+    if (v !== undefined && v !== null && String(v).trim() !== '') { vals.push(v); auto.push(false); last = v; continue; }
+    const f = last !== '' ? last : (a ? a[i] : '');
+    const has = f !== undefined && f !== null && f !== '';
+    vals.push(has ? f : ''); auto.push(has);
+  }
+  return { vals, auto };
+}
+// свои числа клеток — в журнал дня, подставленные — нет: они пересчитываются сами
+function saveCells(card) {
+  const j = num(card.dataset.j), r = recRW(sel), l = r.log[j] = r.log[j] || {};
+  if (l.done) return;
+  const own = [...card.querySelectorAll('[data-rs]')].map(x => (x.dataset.auto === '1' || String(x.value).trim() === '' ? '' : num(x.value)));
+  if (own.some(v => v !== '')) l.rs = own; else delete l.rs;
+  save();
+}
 
 function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
   // Цель берём из поля ПОВТ, если там что-то стоит: поменял 8 на 10 —
@@ -5762,7 +5825,7 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
      прошлый результат плюс повтор по двойной прогрессии. Закрыл подход,
      ничего не трогая, — записано «сделал по плану». Подставленное
      показано приглушённо, чтобы было видно, где число своё. */
-  let auto = false;
+  let autoAt = [];
   let cur = keep || g.rs || null;
   let kinds = Array.isArray(g.kinds) ? g.kinds.slice() : [];
   let nn = n;
@@ -5773,9 +5836,9 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     kinds = wu.map(() => 'w').concat(rs.map((_, i) => (fl.indexOf(i) >= 0 ? 'f' : '')), dr.map(() => 'd'));
     nn = Math.max(1, cur.length);
   } else if (g.done && Array.isArray(g.fl)) kinds = (g.rs || []).map((_, i) => (g.fl.indexOf(i) >= 0 ? 'f' : ''));
-  if (!cur && !g.done) {
-    const a = autoCells(prev, n, top, low, wNow);
-    if (a) { cur = a; auto = true; }
+  if (!g.done) {
+    const f = fillCells(cur, nn, prev, top, low, wNow);
+    if (f) { cur = f.vals; autoAt = f.auto; }
   }
 
   let out = '<div class="sh"><span>ПОДХОДЫ</span>' +
@@ -5798,8 +5861,8 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
       '<input class="swkg" inputmode="decimal" data-ws="' + i + '"' + (g.done ? ' readonly' : '') +
         ' value="' + esc(wv) + '" placeholder="' + esc(kg(num(wNow))) + '" aria-label="Вес, подход ' + (i + 1) + '">' +
       '<span class="sx">×</span>' +
-      '<label class="rbx' + hit + (auto ? ' auto' : '') + (k ? ' k-' + k : '') + '"><i>' + (k ? KIND[k][0] : (i + 1)) + '</i>' +
-      '<input inputmode="numeric" data-rs="' + i + '" data-kind="' + k + '"' + (auto ? ' data-auto="1"' : '') + (g.done ? ' readonly' : '') + ' value="' + esc(v) +
+      '<label class="rbx' + hit + (autoAt[i] ? ' auto' : '') + (k ? ' k-' + k : '') + '"><i>' + (k ? KIND[k][0] : (i + 1)) + '</i>' +
+      '<input inputmode="numeric" data-rs="' + i + '" data-kind="' + k + '"' + (autoAt[i] ? ' data-auto="1"' : '') + (g.done ? ' readonly' : '') + ' value="' + esc(v) +
       '" placeholder="' + (top || '') + '" aria-label="Повторы, подход ' + (i + 1) + (k ? ', ' + KIND[k][1] : '') + '"></label>' +
       '<button class="stick" data-tick="' + i + '" aria-pressed="' + (on ? 'true' : 'false') +
         '" aria-label="Подход ' + (i + 1) + ' сделан">✓</button>' +
@@ -5959,10 +6022,15 @@ function toggleSet(j) {
   // рабочий вес из программы, а на экране всё это время висел вес по интенсивности.
   const card = $('exl').querySelector('.ex[data-j="' + j + '"]');
   const rDef = repsDefault(p);
+  let rows = null;                 // строки подходов: повторы, тип, вес строки
   if (card) {
     l.s = card.querySelector('[data-f="s"]').value;
     l.r = card.querySelector('[data-f="r"]').value;
     l.w = card.querySelector('[data-f="w"]').value;
+    rows = [...card.querySelectorAll('[data-rs]')].map(x => {
+      const wi = x.closest('.srow') && x.closest('.srow').querySelector('[data-ws]');
+      return { v: x.value, k: x.dataset.kind || '', w: wi ? wi.value : '' };
+    });
   } else {
     /* Кнопка ○ в строке списка записывает то, что показано в строке: вес
        недели, подходы недели, цель из графы ПОВТ и подставленные клетки.
@@ -5971,45 +6039,44 @@ function toggleSet(j) {
     const IN = intOf(sel, d.t), prev = lastDone(p.n, sel);
     const wSh = pick(l.w, weightFor(p, IN)), sSh = num(pick(l.s, setsOf(sel, num(p.s), j)));
     l.w = kg(num(wSh)); l.s = String(sSh); l.r = String(pick(l.r, rDef));
-    const a = autoCells(prev, Math.max(1, sSh), topRep(l.r), firstRep(l.r) || topRep(l.r), num(wSh));
-    if (a) l.rs = a;
+    /* Черновик строк (свои повторы, типы, вес строки) лежит в журнале дня —
+       ○ закрывает ровно его, как карточка. Раньше здесь брались только
+       подставленные клетки: вписанное и отмеченное пропадало. */
+    const n = Math.max(1, sSh);
+    const f = fillCells(Array.isArray(l.rs) ? l.rs : null, n, prev, topRep(l.r), firstRep(l.r) || topRep(l.r), num(wSh));
+    const kd0 = Array.isArray(l.kinds) ? l.kinds : [], ws0 = Array.isArray(l.ws) ? l.ws : [];
+    if (f || kd0.some(Boolean) || ws0.some(v => num(v) > 0)) {
+      rows = Array.from({ length: n }, (_, i) => ({ v: f ? f.vals[i] : '', k: kd0[i] || '', w: ws0[i] ?? '' }));
+    }
   }
   let w = num(pick(l.w, p.w)), sets = num(pick(l.s, p.s)), reps = firstRep(pick(l.r, p.r));
   const g = p.g || l.g || null;
 
   // Повторы по подходам. Пустое поле — это не ноль: берём общее число из графы
   // ПОВТ, если там стоит одно число, а не диапазон вида 6-10.
-  if (card) {
+  if (rows && rows.length) {
     const rNum = /^\s*\d+\s*$/.test(String(l.r ?? '')) ? num(l.r) : 0;
-    const els = [...card.querySelectorAll('[data-rs]')];
-    if (els.length) {
-      const all = els.slice(0, sets || els.length);
-      const kd = all.map(x => (KIND[x.dataset.kind] ? x.dataset.kind : ''));
-      const val = x => num(x.value) || rNum;
-      if (kd.some(Boolean)) {
-        l.wu = all.filter((_, i) => kd[i] === 'w').map(val).filter(v => v > 0);
-        l.dr = all.filter((_, i) => kd[i] === 'd').map(val).filter(v => v > 0);
-        const work = all.filter((_, i) => kd[i] === '' || kd[i] === 'f');
-        l.rs = work.map(val);
-        l.fl = work.map((x, i) => (x.dataset.kind === 'f' ? i : -1)).filter(i => i >= 0);
-        l.s = String(l.rs.length);              // рабочих подходов столько, сколько рабочих клеток
-        if (!l.wu.length) delete l.wu;
-        if (!l.dr.length) delete l.dr;
-        if (!l.fl.length) delete l.fl;
-      } else { l.rs = all.map(val); delete l.wu; delete l.dr; delete l.fl; }
-      /* Вес по строкам сохраняем ровно для рабочих подходов и в их порядке:
-         разминочные и дроп в тоннаж не идут, их вес журналу не нужен. */
-      const wEls = [...card.querySelectorAll('[data-ws]')].slice(0, all.length);
-      if (wEls.length) {
-        const pickW = x => (String(x.value).trim() === '' ? '' : num(x.value));
-        const wAll = wEls.map(pickW);
-        const ws = kd.some(Boolean)
-          ? wAll.filter((_, i) => kd[i] === '' || kd[i] === 'f')
-          : wAll;
-        if (ws.some(v => v !== '' && v > 0)) l.ws = ws; else delete l.ws;
-      }
-      delete l.kinds; delete l.ck;
-    }
+    const all = rows.slice(0, sets || rows.length);
+    const kd = all.map(x => (KIND[x.k] ? x.k : ''));
+    const val = x => num(x.v) || rNum;
+    const isWork = (_, i) => kd[i] === '' || kd[i] === 'f';
+    if (kd.some(Boolean)) {
+      l.wu = all.filter((_, i) => kd[i] === 'w').map(val).filter(v => v > 0);
+      l.dr = all.filter((_, i) => kd[i] === 'd').map(val).filter(v => v > 0);
+      const work = all.filter(isWork);
+      l.rs = work.map(val);
+      l.fl = work.map((x, i) => (x.k === 'f' ? i : -1)).filter(i => i >= 0);
+      l.s = String(l.rs.length);              // рабочих подходов столько, сколько рабочих клеток
+      if (!l.wu.length) delete l.wu;
+      if (!l.dr.length) delete l.dr;
+      if (!l.fl.length) delete l.fl;
+    } else { l.rs = all.map(val); delete l.wu; delete l.dr; delete l.fl; }
+    /* Вес по строкам сохраняем ровно для рабочих подходов и в их порядке:
+       разминочные и дроп в тоннаж не идут, их вес журналу не нужен. */
+    const pickW = x => (String(x.w ?? '').trim() === '' ? '' : num(x.w));
+    const ws = (kd.some(Boolean) ? all.filter(isWork) : all).map(pickW);
+    if (ws.some(v => v !== '' && v > 0)) l.ws = ws; else delete l.ws;
+    delete l.kinds; delete l.ck;
   }
   sets = num(pick(l.s, p.s));                  // после разбора типов — число рабочих подходов
   entCache = null;
@@ -6243,6 +6310,10 @@ $('fin').addEventListener('click', () => {
     offerUndo(snap, 'Тренировка пошла');
     return;
   }
+  /* Тренировка — это записанные подходы. Пустая закрывалась: +60 опыта,
+     неделя в серию и цикл вперёд без единого подхода. Снятая последняя
+     отметка и так делает день не тренировкой — закрытие тем же правилом. */
+  if (!dayEntries(sel).length) { note('Закрой хотя бы одно упражнение — или «Отменить начало»'); return; }
   r.wo = 1;
   r.t1 = Date.now();
   addXp(XP_WO, 'Тренировка закрыта');
@@ -6288,7 +6359,7 @@ function workoutSummary(ds) {
   const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
   const st = streak();
   let h = `<div class="sum">
-    <div class="win"><b>${d.ex.length}</b><span>УПРАЖНЕНИЙ</span></div>
+    <div class="win"><b>${dayEntries(ds).length}</b><span>УПРАЖНЕНИЙ</span></div>
     <div class="win"><b>${sets}</b><span>ПОДХОДОВ</span></div>
     <div class="win"><b>${ton >= 1000 ? dec(ton / 1000) + ' т' : rnd(ton) + ' кг'}</b><span>ПОДНЯТО</span></div>
     <div class="win"><b>${mins ? mins + ' мин' : '—'}</b><span>ДЛИТЕЛЬНОСТЬ</span></div>
@@ -6490,6 +6561,8 @@ $('rd').addEventListener('click', () => {
       Object.values(r.log || {}).forEach(l => { if (l.done) rollback(l); });
       if (r.wo) addXp(-XP_WO);
       delete S.rec[sel];
+      // тип прошедшего дня (снимок смены шаблона) — план, а не отметка: остаётся
+      if (r.dt) S.rec[sel] = { log: {}, sp: {}, wo: 0, dt: r.dt, dn: r.dn };
     }
     save(); render();
     offerUndo(snap, 'Отметки за ' + fmt(sel) + ' очищены');
@@ -10747,7 +10820,7 @@ function regularity(days) {
     const ds = iso(d);
     if (ds > today()) break;
     const day = S.days[dayIdx(ds)];
-    if (!day || day.t === 'rest') continue;
+    if (!day || dayLook(ds).t === 'rest') continue;      // тип прошедшего дня — снимок, как в посещаемости
     /* пропуск — тем же счётом, что посещаемость: неделя на паузе (болел),
        дни до старта плана и сегодняшняя незакрытая — не пропуски. Раньше
        неделя болезни давала «чаще всего пропускается вторник» */
