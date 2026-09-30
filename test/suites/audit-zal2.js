@@ -51,6 +51,7 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   await день();
   await p.click(C + '[data-kindmode]');
   await p.locator(C + '.rbx').nth(0).click();                                  // первая строка — разминка
+  await p.waitForTimeout(300);                  // тот же «ТИП» второй раз быстрее 260 мс глушится как дребезг
   await p.click(C + '[data-kindmode]');
   await p.locator(C + '[data-rs="0"]').fill('12');
   await p.locator(C + '[data-rs="1"]').fill('9');

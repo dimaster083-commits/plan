@@ -4431,7 +4431,8 @@ function scrubKeys() {
   if (S.hints !== undefined && S.hints !== 0) delete S.hints;
   if (S.tips !== undefined) {
     const src = plain(S.tips) ? S.tips : {}, out = {};
-    Object.keys(TIPS).forEach(k => { if (Object.prototype.hasOwnProperty.call(src, k) && (src[k] === 1 || src[k] === true)) out[k] = 1; });
+    // порядок — как было записано: иначе состояние после перезагрузки отличалось от сохранённого
+    Object.keys(src).forEach(k => { if (Object.prototype.hasOwnProperty.call(TIPS, k) && (src[k] === 1 || src[k] === true)) out[k] = 1; });
     S.tips = out;
   }
   Object.keys(S.map).forEach(k => { const v = S.map[k]; if (!(Number.isInteger(v) && v >= 0 && v < 7)) delete S.map[k]; });
@@ -4860,6 +4861,10 @@ addEventListener('click', e => {
 addEventListener('click', e => {
   const el = e.target;
   if (!el || !el.closest || el.closest('#undo')) return;
+  // касание поля ввода ничего не меняет само; набранное решается при уходе с поля
+  // (focusin/change ниже) — иначе цифры, набранные быстрее отложенной проверки,
+  // приписывались касанию и полоска вылезала посреди ввода
+  if (el.closest('input,textarea,select')) return;
   const before = snapS(), seq = undoSeq, nseq = noteSeq;
   const shWas = $('sh').classList.contains('on') ? shRe : null;
   undoQuiet = false; undoSay = ''; tapDrafts = draftCells();

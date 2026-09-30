@@ -25,6 +25,7 @@ const chk = (ok, name, info = '') => { console.log((ok ? '  ✓ ' : '  ✗ ') + 
 
   await page.fill('#anBw', '80');
   await page.dispatchEvent('#anBw', 'input');
+  await page.waitForTimeout(300);              // второй тап по той же кнопке быстрее 260 мс глушится как дребезг
   await page.click('#setOk');
   await page.waitForTimeout(300);
   const s = await page.evaluate(() => ({ setup: S.setup, a: S.anchors, goal: num($('anGoal').value), open: $('setup').classList.contains('on') }));
