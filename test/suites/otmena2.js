@@ -37,13 +37,12 @@ const IMG1='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
     const past=addDays(today(),-7);
     S.rec[past]={wo:1,log:{0:{done:1,n:'Жим ногами',g:'Ноги',w:'90',s:'3',r:'8-10',rs:[9,9,9]}},sp:{}};
     entCache=null; tab='wo'; sel=today(); exOpen=open===undefined?null:open; editPast=false;
-    if(typeof tStop==='function') tStop(); else { clearInterval(tInt); document.getElementById('tmr').classList.remove('on'); }
     document.querySelectorAll('.sheet.on,#sh.on,.fp.on,#ask.on').forEach(e=>e.classList.remove('on'));
     save(); flush(); render();
     if(typeof undoDrop==='function') undoDrop();
   },open);
 
-  // 1. закрытие упражнения последней галочкой: полоска, отмена байт в байт — опыт, рекорд, прибавка веса; таймер отдыха гаснет
+  // 1. закрытие упражнения последней галочкой: полоска, отмена байт в байт — опыт, рекорд, прибавка веса
   await prep(0); await p.waitForTimeout(300);
   await p.fill('.ex[data-j="0"] [data-f="w"]','100');
   for(const k of [0,1,2]) await p.fill('.ex[data-j="0"] [data-rs="'+k+'"]','10');     // верх во всех подходах — будет прибавка
@@ -52,20 +51,18 @@ const IMG1='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
   const q1=await polo();                                   // промежуточная галочка — без полоски
   const xp1=await remember();
   await p.click('.ex[data-j="0"] [data-tick="2"]'); await p.waitForTimeout(300);
-  const t1=await E(()=>({done:!!(recOf(today()).log[0]||{}).done, xp:S.xp, w:dayOf(today()).ex[0].w, pr:S.pr['Жим ногами'],
-    tmr:document.getElementById('tmr').classList.contains('on')}));
+  const t1=await E(()=>({done:!!(recOf(today()).log[0]||{}).done, xp:S.xp, w:dayOf(today()).ex[0].w, pr:S.pr['Жим ногами']}));
   const p1=await polo();
-  const pos1=await E(()=>{ const u=document.getElementById('undo').getBoundingClientRect(), t=document.getElementById('tmr').getBoundingClientRect(),
+  const pos1=await E(()=>{ const u=document.getElementById('undo').getBoundingClientRect(),
     tb=document.querySelector('.tabbar').getBoundingClientRect(), bt=document.getElementById('undoB').getBoundingClientRect();
     const cross=(a,c)=>a.bottom>c.top+1&&a.top<c.bottom-1&&a.right>c.left+1&&a.left<c.right-1;
-    return {наТаймере:cross(u,t), наВкладках:cross(u,tb), l:u.left, r:u.right, h:Math.round(bt.height), w:Math.round(bt.width), экран:document.documentElement.scrollWidth}; });
+    return {наВкладках:cross(u,tb), l:u.left, r:u.right, h:Math.round(bt.height), w:Math.round(bt.width), экран:document.documentElement.scrollWidth}; });
   const u1=await undo();
-  const t1b=await E(()=>({done:!!(recOf(today()).log[0]||{}).done, xp:S.xp, w:dayOf(today()).ex[0].w,
-    tmr:document.getElementById('tmr').classList.contains('on')}));
-  chk(!q1.on&&t1.done&&t1.xp>xp1&&t1.w>100&&p1.on&&/Жим ногами|Закреплено|РЕКОРД/.test(p1.t)&&u1.same&&!t1b.done&&t1b.xp===xp1&&t1b.w===100&&!t1b.tmr,
-    '1. последняя галочка закрыла упражнение — «Отменить» возвращает опыт, рекорд и прибавку веса, таймер гаснет', J([q1,t1,p1,u1,t1b]));
-  chk(p1.on&&!pos1.наТаймере&&!pos1.наВкладках&&pos1.l>=0&&pos1.r<=320&&pos1.h>=44&&pos1.w>=44&&pos1.экран<=320,
-    '1б. полоска над таймером отдыха и вкладками, 44 px, в 320', J(pos1));
+  const t1b=await E(()=>({done:!!(recOf(today()).log[0]||{}).done, xp:S.xp, w:dayOf(today()).ex[0].w}));
+  chk(!q1.on&&t1.done&&t1.xp>xp1&&t1.w>100&&p1.on&&/Жим ногами|Закреплено|РЕКОРД/.test(p1.t)&&u1.same&&!t1b.done&&t1b.xp===xp1&&t1b.w===100,
+    '1. последняя галочка закрыла упражнение — «Отменить» возвращает опыт, рекорд и прибавку веса', J([q1,t1,p1,u1,t1b]));
+  chk(p1.on&&!pos1.наВкладках&&pos1.l>=0&&pos1.r<=320&&pos1.h>=44&&pos1.w>=44&&pos1.экран<=320,
+    '1б. полоска над вкладками, 44 px, в 320', J(pos1));
 
   // 2. промежуточная галочка — второе касание её же ровно отменяет первое (и цифру, поставленную галочкой)
   await prep(1); await p.waitForTimeout(200);
@@ -255,7 +252,7 @@ const IMG1='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
     'рацион':'tab="food";render();openRation();',
     'замеры':'tab="prog";render();openMeas();',
   };
-  const SKIP='#wipe,#undoB,[data-bk],[data-recalc],#impB,#exp,#expCsv,#bkB,[data-tab],#shX,#fpX,#setSkip,#setOk,[data-t],#tmrX';
+  const SKIP='#wipe,#undoB,[data-bk],[data-recalc],#impB,#exp,#expCsv,#bkB,[data-tab],#shX,#fpX,#setSkip,#setOk,[data-t]';
   const miss=[]; let tried=0, changed=0;
   for(const [sn,code] of Object.entries(screens)){
     await prep();

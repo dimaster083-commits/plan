@@ -194,3 +194,69 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
   .setr .srow{gap:5px}
   .tabbar .tab i{font-size:9px}
 }
+
+/* ===== ПОДСКАЗКИ: значок «i», совет экрана, шторка подсказки =====
+   Значок маленький (18 px), а место под палец — 44×44: отрицательные поля
+   не дают ему раздвигать строку, в которой он сидит. */
+button.hib,.shh button.hib{position:relative;display:inline-grid;place-items:center;flex:0 0 auto;
+  width:44px;height:44px;min-width:44px;min-height:44px;margin:-14px -12px -14px -6px;padding:0;
+  border:0;border-radius:50%;background:none;vertical-align:middle;color:var(--acc-2);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;box-shadow:none;text-shadow:none;font-size:0;line-height:0}
+button.hib::before{content:'i';display:grid;place-items:center;width:18px;height:18px;border-radius:50%;
+  border:1px solid var(--ln2);background:var(--acc-soft);color:var(--acc-2);
+  font:700 11px/1 var(--fn);letter-spacing:0;text-transform:none;font-style:normal}
+button.hib:active::before{background:var(--acc-fill);color:var(--onacc)}
+button.hib[hidden],body.nohints button.hib,body.nohints .tip{display:none!important}
+.shh button.hib{margin:0 -6px 0 0}
+.exhd button.hib{margin:0 -4px}
+.qpen{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.qpen button.hib{margin-right:-12px}
+.rpeh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.wus{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.exfwlabel{display:flex;align-items:center;gap:6px}
+.hrow{display:flex;align-items:center;gap:4px}
+.hrow>:first-child{flex:1;min-width:0}
+.hrow>button.hib{margin:0 -8px 0 0}
+.hrow .ssb{margin-top:0}
+.exf .hrow{margin-top:10px}
+.supr{display:inline-flex;align-items:center;gap:6px}
+.st8h button.hib{margin:-8px -10px -8px auto;align-self:flex-start}
+.restw{display:flex;align-items:flex-start;gap:6px;padding:14px 14px 12px;margin-top:10px}
+.restw[hidden]{display:none}
+.restw p{flex:1;margin:0;font-size:13.5px;line-height:1.5;color:var(--ink2)}
+.restw p b{display:block;margin-bottom:4px;font:600 10.5px var(--fn);letter-spacing:.14em;color:var(--hot-tx)}
+.restw button.hib{margin:-10px -10px 0 0}
+.hempty{margin:4px 0 8px;font-size:12.5px;line-height:1.5;color:var(--ink3)}
+
+/* совет экрана при первом открытии */
+.tip{margin:10px 0;padding:12px 14px 6px;border:1px solid var(--ln2);border-left:2px solid var(--mon);
+  border-radius:var(--r-m);background:linear-gradient(120deg,rgba(176,160,255,.08),transparent 60%),var(--s1);
+  animation:tipIn .24s ease-out}
+.tip[hidden]{display:none}
+.tip p{margin:0;font-size:13px;line-height:1.45;color:var(--ink2)}
+.tip p b{display:block;margin-bottom:4px;font:600 10px var(--fn);letter-spacing:.14em;color:var(--mon)}
+.tip p b::before{content:'// '}
+.tipb{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tipb button{min-height:44px;min-width:44px;padding:0 14px;border-radius:var(--r-s);font:600 13px var(--f);
+  color:var(--acc-2);background:none;border:0}
+.tipb .tipok{color:var(--ink);border:1px solid var(--ln2);background:var(--s2)}
+body.exopen #scr-wo .tip{display:none}
+@keyframes tipIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* шторка подсказки: снизу, поверх всего, открытая шторка под ней остаётся */
+.hsh{position:fixed;inset:0;z-index:205;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(3,6,12,.62)}
+.hsh[hidden]{display:none}
+.hshin{width:100%;max-width:520px;max-height:78vh;overflow-y:auto;overscroll-behavior:contain;
+  padding:6px 16px calc(20px + var(--sb));background:var(--s1);border:1px solid var(--ln2);border-bottom:0;
+  border-radius:var(--r-x) var(--r-x) 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.45);
+  animation:hshUp .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes hshUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.hshh{display:flex;align-items:center;gap:8px;min-height:52px}
+.hshh b{flex:1;min-width:0;font:600 11px var(--fn);letter-spacing:.12em;color:var(--acc-2);overflow-wrap:anywhere}
+.hshh b::before{content:'// ';color:var(--mon)}
+.hshh button{width:44px;height:44px;flex:0 0 auto;border:1px solid var(--ln);border-radius:var(--r-s);
+  background:var(--s2);color:var(--ink2);font-size:18px}
+#hshB p{margin:0 0 10px;font-size:14px;line-height:1.55;color:var(--ink2)}
+.hshs{margin:6px 0 0;padding-top:8px;border-top:1px solid var(--ln);font:500 10.5px/1.5 var(--fn);
+  letter-spacing:.04em;color:var(--ink3)}
