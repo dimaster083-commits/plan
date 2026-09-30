@@ -1,0 +1,196 @@
+/* СИСТЕМА · MONARCH
+   Единый визуальный слой. Данные и управление остаются в index.html.
+   Цвета статуса: голубой — действие, сиреневый — система, мятный — выполнено. */
+:root,:root[data-skin="sl"]{
+  color-scheme:dark;
+  --s0:#080b14;--s1:#101725;--s2:#182237;--s3:#21324c;
+  --panel-solid:#101725;--btn:#151f31;--glass:rgba(8,11,20,.94);--glass2:rgba(16,23,37,.96);
+  --ink:#edf3fc;--ink2:#b9c8de;--ink3:#91a3bf;
+  --ln:rgba(153,179,221,.14);--ln2:rgba(153,179,221,.3);
+  --acc:#427ff5;--acc-2:#8bceff;--acc-fill:#245bd0;--acc-soft:rgba(66,127,245,.14);
+  --acc-ink:#c9e7ff;--onacc:#fff;
+  --hot:#77dfcb;--hot-ink:#06221f;--hot-tx:#8de7d5;
+  --hot-soft:rgba(119,223,203,.1);--hot-ln:rgba(119,223,203,.38);
+  --ok:#8de7d5;--ok-soft:var(--hot-soft);--ok-ln:var(--hot-ln);--mon:#b0a0ff;
+  --r-s:10px;--r-m:14px;--r-l:18px;--r-x:22px;
+  --wt:500;--wtd:700;--glow-sys:none;--glow-t:none;--shacc:0 8px 28px rgba(22,73,175,.2);
+  --grad:linear-gradient(90deg,#467ff2,#8bccff);--bar2:var(--grad);
+  --wall-dim:radial-gradient(ellipse at 90% 0,rgba(93,67,166,.15),transparent 45%),
+    radial-gradient(ellipse at 0 45%,rgba(36,86,155,.07),transparent 55%);
+}
+body{font-weight:500;line-height:1.5;background-color:var(--s0)}
+#wall::after{animation:none}
+:root[data-skin="sl"] #wall::before{display:none}
+#grain{opacity:.14;background-size:32px 32px,32px 32px,128px 128px,128px 128px}
+#vign{opacity:.15}
+#scrfx{display:none}
+button,input,textarea{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--acc-2);outline-offset:3px}
+button{transition:background .16s ease,color .16s ease,transform .16s ease}
+button:active{transform:translateY(1px)}
+:root[data-skin="sl"] .win{
+  background:var(--s1);border:1px solid var(--ln);border-radius:var(--r-l);
+  box-shadow:0 5px 20px rgba(0,0,0,.12);backdrop-filter:none}
+:root[data-skin="sl"] .win::before{content:none}
+.win::after{display:none}
+.shead h2,:root[data-skin="sl"] .st8t h1,:root[data-skin="sl"] .dh h3 input,
+:root[data-skin="sl"] .exf .exname,:root[data-skin="sl"] .exfkg{text-shadow:none}
+.wtitle,h2.sec{letter-spacing:.1em;font-size:10px;color:var(--ink3)}
+h2.sec{padding:8px 0;border:0;border-radius:0;margin:18px 0 8px}
+.wtitle::before,h2.sec::before{color:var(--mon);opacity:1}
+/* Статус игрока: компактная шапка, отличная от рабочих карточек. */
+:root[data-skin="sl"] .st8{
+  padding:18px;background:linear-gradient(125deg,rgba(59,102,182,.12),transparent 55%),var(--s1);
+  border:1px solid var(--ln);animation:none;margin-top:8px}
+:root[data-skin="sl"] .st8::before{content:none}
+.st8t h1{font-family:var(--f);font-size:17px;letter-spacing:.015em;font-weight:700;text-transform:none}
+.st8lv{width:46px;height:46px;color:var(--acc-2)}
+:root[data-skin="sl"] .st8lv svg{filter:none;animation:none}
+.st8lv b{font-family:var(--f);font-size:20px}
+.st8r{background:rgba(176,160,255,.1);color:#c7baff;border-radius:6px;padding:3px 7px;letter-spacing:.12em}
+.st8b{margin-top:12px;padding-top:12px;gap:6px;border-top-color:var(--ln)}
+.st8row .bar{height:4px;background:var(--s3)}
+.st8row+.st8row .bar i{background:#a694ec}
+.st8row .bar i::after,.qprog i::after{display:none}
+.st8row .k,.st8row .v{font-size:9px;letter-spacing:.05em}
+/* Неделя и заголовок: текущая дата выделена без постоянной пульсации. */
+.days{background:var(--s0);padding-top:12px;padding-bottom:12px}
+:root[data-skin="sl"] .chip{border-radius:12px;background:transparent;border-color:transparent;min-height:56px;box-shadow:none;animation:none}
+:root[data-skin="sl"] .chip.on{background:#182b4c;border-color:rgba(139,206,255,.4);color:var(--ink)}
+.chip.on::after{display:none}
+.chip u{width:12px;height:2px;opacity:.8}
+.dh{margin-top:8px}
+.dh::after{display:none}
+.dh .ln{height:36px;width:2px;background:var(--acc-2)}
+.dh h3,.dh h3 input{font-family:var(--f);font-size:30px;line-height:1.2;font-weight:800;letter-spacing:-.035em}
+.dh p{font-size:12px;color:var(--ink3);font-weight:500;margin-top:3px}
+.gear{width:44px;height:44px;border-radius:12px;background:var(--s1);border-color:var(--ln);font-size:18px}
+.dateline{font-size:9px;letter-spacing:.08em;margin:10px 0 14px;color:var(--ink3)}
+.dateline #wkPlan{font-size:10px;letter-spacing:0;border-radius:10px;padding:0 11px;background:transparent;border-color:var(--ln)}
+/* Квест тренировки: один акцент на цели и тонкая шкала выполнения. */
+:root[data-skin="sl"] .qbox{
+  padding:18px;background:radial-gradient(ellipse at 100% 0,rgba(77,105,196,.15),transparent 65%),var(--s1);
+  border-top-color:rgba(139,206,255,.38)}
+:root[data-skin="sl"] .qhead b{font-family:var(--fn);font-size:10px;font-weight:500;letter-spacing:.12em;color:var(--acc-2)}
+:root[data-skin="sl"] .qhead b::before{display:none}
+.qhead i{font-size:9px;letter-spacing:.03em;color:var(--ink3)}
+.whead{margin:16px 0 14px;gap:14px}
+.wbig b{font-size:38px;letter-spacing:-.05em}
+.wbig i{font-size:10px;letter-spacing:0}
+.wsub{gap:12px}
+.wsub b{font-size:16px;color:var(--ink);font-family:var(--f)}
+.wsub span{font-size:9px;color:var(--ink3);gap:3px}
+.qprog{height:4px;background:var(--s3)}
+.qmeta{font-size:10px;color:var(--ink3);margin-top:9px}
+#skipDay{width:auto;margin:8px 0 0 auto;padding:0 14px;min-height:44px;background:transparent;box-shadow:none;color:var(--ink3);border-color:transparent;font:500 12px var(--f)}
+/* Список упражнений. */
+:root[data-skin="sl"] .exrow{padding:12px;gap:10px;border-radius:16px;background:var(--s1);border-color:var(--ln)}
+.exrow .exth{width:48px;height:56px;border-radius:10px;object-fit:cover;filter:saturate(.75)}
+.exrow .n{font-family:var(--f);font-size:14px;font-weight:700;line-height:1.35}
+.exrow .s{font-family:var(--f);font-size:11px;letter-spacing:0;color:var(--ink3);margin-top:4px}
+.exrow .kg{font-family:var(--f);font-size:20px}
+:root[data-skin="sl"] .exrow .go{width:44px;height:44px;border-radius:12px;border-width:1px}
+#exl>.exrow:first-child:not(.done),.exrow.done+.exrow:not(.done){border-color:rgba(139,206,255,.4);background:linear-gradient(90deg,rgba(66,127,245,.09),transparent),var(--s1)}
+.exrow.done .go{background:var(--hot-soft);border-color:var(--hot-ln);color:var(--hot-tx)}
+/* Открытое упражнение: техника рядом с названием, подходы ближе к началу. */
+body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
+.exfback{background:transparent;border-color:var(--ln);border-radius:12px;font-size:12px;letter-spacing:0;min-height:44px}
+.exfcnt{font-size:11px;letter-spacing:.1em;color:var(--ink3)}
+:root[data-skin="sl"] .exf{padding:16px;background:var(--s1);border-top-color:rgba(139,206,255,.35);overflow:hidden}
+.exfhead{display:flex;align-items:center;gap:12px;margin:0 0 22px}
+.exftitle{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.exf .exname{font-family:var(--f);font-size:25px;font-weight:800;letter-spacing:-.025em;line-height:1.2;text-align:left;min-height:44px;overflow-wrap:anywhere}
+.exfgrp{font-size:9px;font-weight:500;color:var(--mon);letter-spacing:.06em;line-height:1.5}
+.exf .exfpic{flex:0 0 76px;width:76px;height:84px;min-height:44px;aspect-ratio:auto;margin:0;border-radius:12px;overflow:hidden;border:1px solid var(--ln)}
+.exfpic img{object-fit:cover;object-position:center;filter:saturate(.7)}
+.exfpic::after{background:linear-gradient(transparent 45%,rgba(8,11,20,.9))}
+.exfpic span{left:0;right:0;bottom:0;padding:6px 2px;text-align:center;font:600 9px var(--f);letter-spacing:0;border:0;border-radius:0;background:transparent;color:#fff}
+.exfwlabel{display:block;font:500 9px var(--fn);letter-spacing:.12em;color:var(--ink3);margin-bottom:4px}
+.exfw{margin:0;gap:8px;align-items:center}
+.exfkg{font-family:var(--fd);font-size:44px;min-height:64px;min-width:0;letter-spacing:-.05em;border-bottom:1px solid var(--ln2);color:var(--ink)}
+.exfu{font:500 11px var(--f);color:var(--ink3);align-self:center}
+.exfsm{gap:6px}
+.exfsm .fl label{font:500 8px var(--fn);letter-spacing:.08em;color:var(--ink3)}
+.exfsm .fl input{font-family:var(--f);font-size:16px;background:var(--s2);border:1px solid var(--ln);border-radius:9px;padding:10px 0;font-weight:600}
+.exf .pl{font-size:11px;color:var(--ink3);line-height:1.65;margin:10px 0 14px;font-weight:500}
+.exf .wu{border-radius:10px;background:transparent;border-color:var(--ln);margin-top:10px}
+.wu summary{font-size:10px;letter-spacing:.06em}
+.exf .setr{padding:16px 0 0;margin-top:16px;background:transparent;border:0;border-top:1px solid var(--ln);border-radius:0}
+.setr .st{margin-bottom:10px}
+.setr .rb{gap:0}
+.setr .srow{padding:12px 0;border-bottom:1px solid var(--ln);gap:7px}
+.setr .srow:last-child{border-bottom:0}
+.setr .srow .swkg,.setr .rb .rbx input{height:48px;min-height:48px;background:#0b1220;border:1px solid var(--ln2);border-radius:10px;font:700 18px var(--f);color:var(--ink);box-shadow:none}
+.setr .srow .swkg::placeholder{color:#9badc7;opacity:1}
+.setr .rb .rbx input{padding:10px 18px 10px 24px}
+.setr .rb .rbx i{font:500 9px var(--fn);color:var(--ink3)}
+.setr .srow .stick{width:44px;height:48px;background:var(--s2);border:1px solid var(--ln2);border-radius:10px;color:var(--ink3)}
+.setr .srow.on .stick{background:var(--hot-soft);color:var(--hot-tx);border-color:var(--hot-ln)}
+.setr .srow.on .swkg,.setr .srow.on .rbx input{border-color:var(--hot-ln)}
+.setr .setprev{gap:8px;min-height:44px;color:var(--ink3)}
+.setprev small{font:500 11px/1.6 var(--f)}
+.setprev button{padding:4px 8px;min-height:44px;border:0;border-radius:8px;background:transparent;color:var(--acc-2);font:600 11px var(--f)}
+.setprev button:hover{background:var(--acc-soft)}
+.exf .kindh,.exf .sg{font:500 10px/1.65 var(--f);color:var(--ink3)}
+.exfact{margin:18px 0;gap:8px}
+.exfact .exfgo{background:var(--acc-fill);color:var(--onacc);font-family:var(--f);font-size:14px;box-shadow:none;border:1px solid var(--ln2);border-radius:12px;min-height:50px}
+.exfact .exftm{min-width:50px;min-height:50px;background:var(--s2);border:1px solid var(--ln2);border-radius:12px;color:var(--acc-2)}
+.exf .ssb,.exf .noteb{border-color:var(--ln);border-radius:10px;font-family:var(--f)}
+.exfdel{font:500 12px var(--f);opacity:1;color:var(--ink3);min-height:44px}
+.exfdots .dot{border-radius:6px}
+/* Нижняя панель: действие тренировки и постоянная навигация. */
+:root[data-skin="sl"] #fin:not(.done):not(:disabled){background:var(--acc-fill);color:#fff;box-shadow:0 6px 24px rgba(12,38,89,.3);border:1px solid rgba(139,206,255,.32)}
+.wobar .fin{min-height:52px;border-radius:14px;font-family:var(--f);font-size:14px;letter-spacing:0}
+.wobar{padding:6px 0;background:linear-gradient(transparent,var(--s0) 24%);bottom:calc(var(--tabh) + var(--sb) + 12px)}
+:root[data-skin="sl"] .note{bottom:calc(var(--tabh) + var(--sb) + 86px)}
+:root[data-skin="sl"] .tabbar{background:rgba(12,18,30,.97);border:1px solid var(--ln2);border-radius:18px;box-shadow:0 -4px 24px rgba(0,0,0,.18);backdrop-filter:blur(12px)}
+.tabbar .in{gap:2px;padding:6px}
+:root[data-skin="sl"] .tab{border-radius:12px;background:transparent;color:var(--ink3);box-shadow:none;min-height:48px}
+:root[data-skin="sl"] .tab.on{background:rgba(66,127,245,.16);color:var(--acc-2);box-shadow:none}
+.tabbar .tab i{font-family:var(--f);font-size:10px;font-weight:600}
+.tab.on::before,.tab.on::after{display:none}
+/* Прогресс и карта: ограниченное свечение только на нагруженной мышце. */
+.shead h2{font-family:var(--f);font-size:28px;letter-spacing:-.03em}
+.pseg{border-radius:12px;padding:4px;background:var(--s1);border:1px solid var(--ln)}
+:root[data-skin="sl"] .pseg button{border-radius:8px;font-family:var(--f);font-size:12px}
+.pseg button.on{background:var(--s3);color:var(--ink);box-shadow:none}
+.recn{gap:8px;padding:8px 0}
+.recn b{font-family:var(--f);font-size:22px;letter-spacing:-.02em}
+.recn span{font-family:var(--f);font-size:10px;letter-spacing:0;gap:3px}
+.recb .anb{font:600 12px var(--f);border-radius:10px;background:var(--s2);border-color:var(--ln)}
+.mapw{padding:16px;background:radial-gradient(ellipse at 50% 35%,rgba(63,96,167,.1),transparent 70%),var(--s1)}
+.bmap .bo{fill:rgba(137,170,215,.06);stroke:rgba(137,170,215,.2);stroke-width:1}
+.bmap .bk{fill:#27364b}.bmap .bh{fill:#151f31}
+.bmap .bn,.bmap .mm0{fill:#26374e}
+.bmap .mm1{fill:#4d79af}.bmap .mm2{fill:#9186d1}
+.bmap .mm3{fill:#8bceff;filter:drop-shadow(0 0 5px rgba(139,206,255,.45))}
+.mlist{gap:6px;margin-top:12px}
+.mrow{border-color:var(--ln);background:rgba(17,26,43,.8);border-radius:10px;font-size:12px;padding:6px 10px}
+.mrow i{width:7px;height:7px;border-radius:50%;border-color:var(--ink3)}
+.mrow b{font-size:13px}.mrow small{font-size:10px}
+.mmleg{font-size:10px;line-height:1.5}
+.mmleg i.mm0{background:#26374e}.mmleg i.mm1,.mrow i.mm1{background:#4d79af}
+.mmleg i.mm2,.mrow i.mm2{background:#9186d1}.mmleg i.mm3,.mrow i.mm3{background:#8bceff}
+.rrow{padding:12px 0}
+/* Состояния остаются читаемыми и без движения. */
+@media (prefers-reduced-motion:no-preference){
+  .exf{animation:monarch-enter .22s ease-out both}
+  @keyframes monarch-enter{from{opacity:.3;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .wnow{opacity:1}.wline,.st8lv svg .hx{stroke-dashoffset:0}
+}
+@media (max-width:359px){
+  :root[data-skin="sl"] .st8{padding:14px}
+  .st8t h1{font-size:15px}
+  .qhead{gap:4px}.qhead i{font-size:8px}
+  .whead{gap:8px}.wsub{gap:8px}.wbig b{font-size:32px}
+  :root[data-skin="sl"] .exf{padding:12px}
+  .exf .exname{font-size:22px}.exf .exfpic{flex-basis:64px;width:64px;height:76px}
+  .exfkg{font-size:36px}.exfsm{gap:4px}
+  .exrow .kg{font-size:18px}.exrow .exth{width:42px;height:50px}
+  .setr .srow{gap:5px}
+  .tabbar .tab i{font-size:9px}
+}

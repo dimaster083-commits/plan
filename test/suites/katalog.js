@@ -133,15 +133,31 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   });
   chk(t11.q === 3 && t11.t === 'УПРАЖНЕНИЕ' && /8\/8\/8|3×8/.test(t11.last), '11. подходы идут в баланс мышц, «Техника» ведёт на страницу с прошлым разом', JSON.stringify(t11));
 
-  // 12. битая копия чинится: избранное и связки
-  const t12 = await p.evaluate(() => {
+  // 12. Одинаковые русские названия не должны делить фото и мышцу.
+  const t12 = await p.evaluate(async () => {
+    await loadLib();
+    const d = dayOf(today()); d.ex = []; S.libEx = {}; S.myEx = {};
+    libAdd('Front_Cone_Hops_or_hurdle_hops', today());
+    await new Promise(resolve => setTimeout(resolve, 400));
+    libAdd('Hurdle_Hops', today());
+    const rows = d.ex.map(e => ({ id: e.lid, muscle: muscleOf(e.n, e.g, e.lid, e.lm), pic: exPic(e.n, 1, e.lid) }));
+    return { names: d.ex.map(e => e.n), rows };
+  });
+  chk(t12.names[0] === t12.names[1] && t12.rows[0].id === 'Front_Cone_Hops_or_hurdle_hops' &&
+    t12.rows[1].id === 'Hurdle_Hops' && t12.rows[0].muscle === 'Квадрицепс' &&
+    t12.rows[1].muscle === 'Бицепс бедра' && /Front_Cone_Hops_or_hurdle_hops\/1\.jpg$/.test(t12.rows[0].pic) &&
+    /Hurdle_Hops\/1\.jpg$/.test(t12.rows[1].pic),
+  '12. одинаковые названия каталога хранят свой id, мышцу и фото', JSON.stringify(t12));
+
+  // 13. битая копия чинится: избранное и связки
+  const t13 = await p.evaluate(() => {
     S.fav = 'мусор'; S.libEx = { 'Присед Зерхера': ['Zercher_Squats', 'Квадрицепс'], 'Битое': ['x', 'Космос'], 'Пустое': 5 };
     scrubKeys(); return { fav: S.fav, lib: Object.keys(S.libEx) };
   });
-  chk(Array.isArray(t12.fav) && t12.fav.length === 0 && JSON.stringify(t12.lib) === '["Присед Зерхера"]', '12. битая копия: избранное и связки чинятся', JSON.stringify(t12));
+  chk(Array.isArray(t13.fav) && t13.fav.length === 0 && JSON.stringify(t13.lib) === '["Присед Зерхера"]', '13. битая копия: избранное и связки чинятся', JSON.stringify(t13));
 
-  // 13. всё влезает в 320, кнопки не меньше 44
-  const t13 = await p.evaluate(async () => {
+  // 14. всё влезает в 320, кнопки не меньше 44
+  const t14 = await p.evaluate(async () => {
     sheetClose(); tab = 'ex'; render(); await new Promise(r => setTimeout(r, 200));
     const sz = sel => [...document.querySelectorAll(sel)].filter(x => x.offsetParent).map(x => Math.round(Math.min(x.getBoundingClientRect().width, x.getBoundingClientRect().height)));
     const mins = { fav: Math.min(...sz('#exgrid .lfav')), mu: Math.min(...sz('.lmu')), f: Math.min(...sz('#exf')) };
@@ -149,9 +165,9 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
     mins.step = Math.min(...sz('#shB .lstep button')); mins.go = Math.min(...sz('#shB .lgo'));
     return { w: document.documentElement.scrollWidth, sh: document.getElementById('shB').scrollWidth <= document.getElementById('shB').clientWidth + 1, mins };
   });
-  chk(t13.w <= 320 && t13.sh && Object.values(t13.mins).every(v => v >= 44), '13. влезает в 320, кнопки не меньше 44 px', JSON.stringify(t13));
+  chk(t14.w <= 320 && t14.sh && Object.values(t14.mins).every(v => v >= 44), '14. влезает в 320, кнопки не меньше 44 px', JSON.stringify(t14));
 
-  chk(errs.length === 0, '14. без ошибок страницы', errs.join(' | ') || 'чисто');
+  chk(errs.length === 0, '15. без ошибок страницы', errs.join(' | ') || 'чисто');
   await b.close();
   process.exit(fails ? 1 : 0);
 })().catch(e => { console.log('FATAL', e.message); process.exit(1); });

@@ -39,6 +39,29 @@ function check(ok, name, detail) {
   }, dates);
   check(upload.old && !upload.current, 'медленное сохранение не переносит фото на другой день', JSON.stringify(upload));
 
+  const latest = await page.evaluate(async ({ old }) => {
+    const original = compress, waiting = [];
+    compress = file => new Promise(resolve => waiting.push({ name: file.name, resolve }));
+    sel = old; tab = 'photo'; render();
+    const choose = name => {
+      const input = document.getElementById('phFile'), dt = new DataTransfer();
+      dt.items.add(new File(['x'], name, { type: 'image/png' }));
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    choose('slow.png'); choose('latest.png');
+    waiting.find(x => x.name === 'latest.png').resolve('data:image/jpeg;base64,bGF0ZXN0');
+    for (let i = 0; i < 50 && PHCACHE.get(old) !== 'data:image/jpeg;base64,bGF0ZXN0'; i++)
+      await new Promise(resolve => setTimeout(resolve, 20));
+    waiting.find(x => x.name === 'slow.png').resolve('data:image/jpeg;base64,c2xvdw==');
+    await new Promise(resolve => setTimeout(resolve, 200));
+    const result = await phLoad(old);
+    compress = original;
+    return result;
+  }, dates);
+  check(latest === 'data:image/jpeg;base64,bGF0ZXN0',
+    'раннее медленное сжатие не перезаписывает последний выбранный снимок', latest);
+
   const painting = await page.evaluate(async ({ old, current }) => {
     const original = phLoad, pending = new Map();
     phLoad = day => new Promise(resolve => pending.set(day, resolve));

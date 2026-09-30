@@ -63,21 +63,43 @@ const TMP=fs.mkdtempSync(path.join(os.tmpdir(),'dannye-'));
     return {a,b:b2,stored:JSON.parse(localStorage.getItem('sys-gym-v3')).bw}; });
   chk(!r7.a && r7.b && r7.stored==='79','7. после сбоя записи следующее сохранение проходит',JSON.stringify(r7));
 
-  // 8. копия создаётся и без IndexedDB
-  const r8=await p.evaluate(async()=>{ const o=window.phKeys; let blobbed=false;
+  // 8. Две открытые вкладки не должны затирать независимые поля друг друга.
+  await p.evaluate(()=>{ S.setup=1; S.bw=''; S.goal=''; flush(); });
+  const p2=await ctx.newPage();
+  await p2.goto(APP); await p2.waitForTimeout(800);
+  await p.evaluate(()=>{ S.bw='70'; flush(); });
+  await p2.evaluate(()=>{ S.goal='80'; flush(); });
+  const r8=await p.evaluate(()=>{ const s=JSON.parse(localStorage.getItem('sys-gym-v3')); return {bw:s.bw,goal:s.goal}; });
+  chk(r8.bw==='70'&&r8.goal==='80','8. две вкладки сохраняют независимые изменения',JSON.stringify(r8));
+  await p2.close();
+
+  // 9. Неполная старая запись во второй вкладке не удаляет расписание.
+  const r9=await p.evaluate(()=>{
+    const old=localStorage.getItem('sys-gym-v3');
+    localStorage.setItem('sys-gym-v3',JSON.stringify({rec:{}}));
+    flush();
+    const stored=JSON.parse(localStorage.getItem('sys-gym-v3'));
+    if(old) localStorage.setItem('sys-gym-v3',old);
+    load();
+    return {days:Array.isArray(stored.days)?stored.days.length:null};
+  });
+  chk(r9.days===7,'9. неполная запись не стирает расписание при слиянии',JSON.stringify(r9));
+
+  // 10. копия создаётся и без IndexedDB
+  const r10=await p.evaluate(async()=>{ const o=window.phKeys; let blobbed=false;
     const cu=URL.createObjectURL; URL.createObjectURL=()=>{blobbed=true; return 'blob:x';};
     window.indexedDB.open=()=>{ throw new Error('нет'); };
     try{ document.getElementById('exp').click(); await new Promise(r=>setTimeout(r,600)); }catch(e){}
     URL.createObjectURL=cu; return {blobbed, note:document.getElementById('noteT').textContent}; });
-  chk(r8.blobbed,'8. без IndexedDB копия журнала всё равно создаётся',JSON.stringify(r8));
+  chk(r10.blobbed,'10. без IndexedDB копия журнала всё равно создаётся',JSON.stringify(r10));
 
-  // 9. посещаемость не считает дни до старта плана и незакрытую сегодняшнюю тренировку
-  const r9=await p.evaluate(()=>{ S.rec={}; const z=new Date(); z.setDate(z.getDate()-2); S.start=iso(z);
+  // 11. посещаемость не считает дни до старта плана и незакрытую сегодняшнюю тренировку
+  const r11=await p.evaluate(()=>{ S.rec={}; const z=new Date(); z.setDate(z.getDate()-2); S.start=iso(z);
     const a=attendance(14); const d=dayOf(today()); const todayPlanned=d.t!=='rest';
     let exp=0; for(let k=2;k>=1;k--){const q=new Date(); q.setDate(q.getDate()-k); if(dayOf(iso(q)).t!=='rest') exp++;}
     return {a, exp}; });
-  chk(r9.a.planned===r9.exp,'9. «запланировано» — только с даты старта и до вчера',JSON.stringify(r9));
-  chk(errs.length===0,'10. без ошибок страницы',errs.join(' | ')||'чисто');
+  chk(r11.a.planned===r11.exp,'11. «запланировано» — только с даты старта и до вчера',JSON.stringify(r11));
+  chk(errs.length===0,'12. без ошибок страницы',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);
 })().catch(e=>{console.log('FATAL',e.message);process.exit(1);});

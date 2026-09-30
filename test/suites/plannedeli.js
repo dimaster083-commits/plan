@@ -145,7 +145,22 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(жив.ключи.length===1&&жив.ключи[0]===жив.m0&&жив.серия==='number',
     '10. пауза переживает перезагрузку, мусорные ключи вычищены', JSON.stringify(жив));
 
-  // 11. «вернуть неделю как в программе» снимает переносы будущих дней
+  // 11. Пауза остаётся паузой, даже если человек всё же потренировался.
+  // Иначе три записи в неделю болезни сдвигали цикл и продлевали серию.
+  await сброс();
+  const паузаСЗалом=await p.evaluate(()=>{
+    const cur=mondayOf(today()), prev=addDays(cur,-7), old=addDays(cur,-14);
+    S.start=old; S.pause={[cur]:1};
+    [old,prev,cur].forEach(w=>[1,3,5].forEach(k=>{
+      S.rec[addDays(w,k)]={wo:1,log:{},sp:{}};
+    }));
+    save();
+    return {серия:streak(), циклСлед:planWeek(addDays(cur,7)), пауза:paused(cur)};
+  });
+  chk(паузаСЗалом.серия===2&&паузаСЗалом.циклСлед===3&&паузаСЗалом.пауза,
+    '11. записи в паузе не двигают серию и цикл', JSON.stringify(паузаСЗалом));
+
+  // 12. «вернуть неделю как в программе» снимает переносы будущих дней
   const назад=await p.evaluate(()=>{
     S.setup=1; document.getElementById('setup').classList.remove('on');
     const nx=addDays(mondayOf(today()),7); S.map={}; delete S.pause;
@@ -157,9 +172,9 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     return {карта:JSON.stringify(S.map), пн:dayOf(nx).t, вт:dayOf(addDays(nx,1)).t};
   });
   chk(назад&&назад.карта==='{}'&&назад.пн==='rest'&&назад.вт==='up1',
-    '11. «Вернуть неделю как в программе» снимает переносы', JSON.stringify(назад));
+    '12. «Вернуть неделю как в программе» снимает переносы', JSON.stringify(назад));
 
-  chk(errs.length===0,'12. без ошибок в консоли',errs.join(' | ')||'чисто');
+  chk(errs.length===0,'13. без ошибок в консоли',errs.join(' | ')||'чисто');
   await b.close();
   process.exit(fails?1:0);
 })();

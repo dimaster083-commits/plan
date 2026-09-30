@@ -2961,6 +2961,7 @@ body.exopen .wobar{margin-top:8px}
 .wka{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .wka .add{margin:0}
 </style>
+<link rel="stylesheet" href="./system.css">
 </head>
 <script>
 /* Тема ставится до разбора остального кода: иначе экран успевает моргнуть
@@ -3894,7 +3895,7 @@ setTimeout(() => { const b = $('boot'); if (b) { b.classList.add('off'); b.remov
    СОСТОЯНИЕ
    ========================================================================= */
 const KEY = 'sys-gym-v3';       // ключ первой версии: старые данные подхватываются как есть
-let S = null, canSave = true;
+let S = null, canSave = true, saveBase = null;
 
 function build() {
   return {
@@ -3909,6 +3910,25 @@ function build() {
     })),
     rec: {}, map: {}, pr: {}, myFood: [], tpl: []
   };
+}
+
+/* localStorage общий для двух открытых вкладок, а раньше каждая из них
+   перезаписывала весь снимок S. Трёхстороннее слияние оставляет удалённые
+   поля, которые эта вкладка не меняла; при правке одного и того же значения
+   побеждает вкладка, где человек только что нажал «сохранить». */
+const stateClone = v => JSON.parse(JSON.stringify(v));
+const stateEqual = (a, b) => a === b || (a !== undefined && b !== undefined && JSON.stringify(a) === JSON.stringify(b));
+const stateObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+function mergeState(base, local, remote) {
+  if (stateEqual(local, base)) return remote;
+  if (stateEqual(remote, base) || stateEqual(local, remote)) return local;
+  if (!stateObj(local) || !stateObj(remote)) return local;
+  const out = {};
+  new Set(Object.keys(base || {}).concat(Object.keys(local), Object.keys(remote))).forEach(k => {
+    const v = mergeState((base || {})[k], local[k], remote[k]);
+    if (v !== undefined) out[k] = v;
+  });
+  return out;
 }
 
 function migrate() {
@@ -4228,10 +4248,18 @@ function load() {
   // вместе с журналом, весами и накопленным тоннажем. Теперь восстанавливаем
   // только расписание, а всё заработанное остаётся на месте.
   if (!S || typeof S !== 'object' || Array.isArray(S)) S = build();   // '[]' в хранилище — не состояние
+  const beforeRepair = stateClone(S);
   if (!Array.isArray(S.days) || !S.days.length) S.days = build().days;
   scrubKeys();
   migrate();
   recomputeStats(1);
+  /* Ремонт/миграция должны попасть на диск сразу. Иначе новая вкладка могла
+     успеть прочитать старую структуру и при следующем сохранении снова
+     убрать только что добавленные упражнения или починенные разделы. */
+  if (!stateEqual(S, beforeRepair) && canSave) {
+    saveBase = beforeRepair;
+    flush();
+  } else saveBase = stateClone(S);
 }
 
 /* Ключ журнала — это дата. Если в хранилище попало что-то другое —
@@ -4337,7 +4365,23 @@ function save() {
 function flush() {
   if (!canSave) { setSaveState('failed'); return false; }
   clearTimeout(saveTimer);
-  try { localStorage.setItem(KEY, JSON.stringify(S)); setSaveState('saved'); flush.warned = 0; return true; }
+  try {
+    const raw = localStorage.getItem(KEY);
+    let remote = null;
+    try { remote = raw ? JSON.parse(raw) : null; } catch (e) { remote = null; }
+    if (stateObj(remote) && saveBase) {
+      // Старые/обрезанные копии иногда не содержат целые служебные разделы.
+      // Интерфейс их не удаляет, поэтому при слиянии оставляем последнюю
+      // целую схему, статистику и журнал вместо undefined.
+      ['days', 'vol', 'rec', 'map', 'pr', 'myFood', 'tpl'].forEach(k => {
+        if (remote[k] === undefined && saveBase[k] !== undefined) remote[k] = stateClone(saveBase[k]);
+      });
+      S = mergeState(saveBase, S, remote);
+    }
+    localStorage.setItem(KEY, JSON.stringify(S));
+    saveBase = stateClone(S);
+    setSaveState('saved'); flush.warned = 0; return true;
+  }
   /* Одна неудачная запись (переполнено хранилище) раньше выключала сохранение
      до перезапуска, и все следующие правки терялись, даже когда место было.
      Теперь каждое сохранение пробует снова; предупреждаем один раз. */
@@ -4397,7 +4441,9 @@ function planWeek(ds) {
   const c = at(start);
   let w = 1, guard = 0;
   while (iso(c) < target) {
-    if ((cnt[iso(c)] || 0) >= weekNeed()) w++;      // неделя засчитана — идём дальше
+    // Пауза — это заморозка цикла. Даже если человек пришёл в зал, неделя
+    // болезни не должна перепрыгнуть следующую фазу программы.
+    if (!paused(iso(c)) && (cnt[iso(c)] || 0) >= weekNeed()) w++;
     c.setDate(c.getDate() + 7);
     if (++guard > 5200) break;                   // сто лет плана — дальше только петля
   }
@@ -5061,7 +5107,7 @@ function exRow(e, j, r, IN) {
   const rs = (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + pick(g.r, repsDefault(e)));
   const ex = dayOf(sel).ex, ss = !!(e.ss && ex[j + 1]), ss2 = !!(j > 0 && ex[j - 1] && ex[j - 1].ss);
   return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}">
-    ${exPic(e.n, 1) ? `<img class="exth" src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">` : ''}
+    ${exPic(e.n, 1, e.lid) ? `<img class="exth" src="${exPic(e.n, 1, e.lid)}"${exCors(e.n, e.lid)} alt="" loading="lazy">` : ''}
     <span class="t"><span class="n">${esc(e.n)}</span>
       <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
     <span class="kg">${w ? kg(w) : '—'}</span>
@@ -5077,7 +5123,7 @@ function exFull(e, j, r, IN, d) {
   const sets = setsOf(sel, num(e.s), j);
   const pr = prOf(e.n);
   // фото техники над карточкой — те же снимки, что в шторке «Техника»
-  const how = exPic(e.n, 0);
+  const how = exPic(e.n, 0, e.lid);
   const dots = d.ex.map((_, k) =>
     `<button class="dot${k === j ? ' on' : ((r.log[k] || {}).done ? ' dn' : '')}" data-jump="${k}"
       aria-label="Упражнение ${k + 1}"></button>`).join('');
@@ -5086,13 +5132,15 @@ function exFull(e, j, r, IN, d) {
       <span class="exfcnt">${String(j + 1).padStart(2, '0')} / ${String(d.ex.length).padStart(2, '0')}</span>
     </div>
     <div class="win ex exf" data-j="${j}">
-      ${how ? `<button class="exfpic" data-how="${esc(e.n)}" aria-label="Техника: ${esc(e.n)}">
-        <img src="${how}"${exCors(e.n)} alt="" loading="lazy"><img src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">
-        <span>Техника</span></button>` : ''}
       <div class="exfhead">
-        <button class="exname" data-how="${esc(e.n)}">${esc(e.n)}</button>
-        <span class="exfgrp">${e.g ? esc(e.g) : ''}</span>
+        <div class="exftitle"><span class="exfgrp">${e.g ? esc(e.g) : 'Упражнение'} · ${g.done ? 'Выполнено' : 'Текущий квест'}</span>
+        <button class="exname" data-how="${esc(e.n)}" data-how-id="${esc(e.lid || '')}">${esc(e.n)}</button>
+        </div>
+        ${how ? `<button class="exfpic" data-how="${esc(e.n)}" data-how-id="${esc(e.lid || '')}" aria-label="Техника: ${esc(e.n)}">
+          <img src="${how}"${exCors(e.n, e.lid)} alt="" loading="lazy">
+          <span>Техника ↗</span></button>` : ''}
       </div>
+      <span class="exfwlabel">ВЕС НА СЕГОДНЯ</span>
       <div class="exfw">
         <input class="exfkg" inputmode="decimal" data-f="w" value="${esc(kg(pick(g.w, sug)))}"${g.done ? ' readonly' : ''} aria-label="Вес">
         <span class="exfu">КГ</span>
@@ -5110,15 +5158,15 @@ function exFull(e, j, r, IN, d) {
       ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
       ${rpeHtml(g)}
+      <div class="exfact">
+        <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
+        <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
+      </div>
       ${d.ex[j + 1] ? `<button class="ssb${e.ss ? ' on' : ''}" data-ss="${j}" aria-pressed="${!!e.ss}">${e.ss
         ? 'Суперсет с «' + esc(d.ex[j + 1].n) + '» — снять' : 'Суперсет со следующим: «' + esc(d.ex[j + 1].n) + '»'}</button>` : ''}
       ${noteHtml(e.n)}
       ${recHtml(e.n)}
       ${exChartHtml(e.n)}
-      <div class="exfact">
-        <button class="fin exfgo" data-go="${j}">${g.done ? 'Отменить подход' : 'Закрыть подход'}</button>
-        <button class="rest exftm" data-rest="${restFor(e.n)}" aria-label="Таймер отдыха">⏱</button>
-      </div>
       <div class="exfft">${g.done ? holdBadge(e, g) : ''}</div>
       <!-- Обработчик удаления упражнения был написан, а кнопки к нему не
            существовало ни в одной разметке: добавить упражнение человек мог,
@@ -5163,7 +5211,7 @@ $('exl').addEventListener('click', e => {
   if (jp) { exOpen = +jp.dataset.jump; render(); enterFx(); window.scrollTo(0, 0); return; }
 
   const hw = e.target.closest('[data-how]');
-  if (hw) { openHow(hw.dataset.how); return; }
+  if (hw) { openHow(hw.dataset.how, null, hw.dataset.howId); return; }
 
   const go = e.target.closest('[data-go]');
   // двойной тап приходит быстрее 200 мс: без защиты подход закрывался и сразу снимался
@@ -5231,7 +5279,7 @@ function rollback(l) {
   if (l.xp) addXp(-l.xp);
   /* Рекорд после снятой отметки — лучший вес из оставшегося журнала, а не
      снимок на момент закрытия: снимок стирал рекорд, поставленный позже. */
-  if (l.prevPr !== undefined && l.n) {
+  if (l.n) {
     const was = l.done; l.done = 0;
     const best = prFromLog(l.n);
     l.done = was;
@@ -5503,7 +5551,10 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     (!g.done ? '<button class="kindb" data-kindmode="1" aria-pressed="false">ТИП</button>' : '') +
     (top && !g.done ? '<button class="fillall" data-fill="' + top + '">ВСЕ ПО ' + top + '</button>' : '') +
     '</div><div class="rb">';
-  const wsAll = Array.isArray(g.ws) ? g.ws : [];
+  let wsAll = Array.isArray(g.ws) ? g.ws : [];
+  if (g.done && (Array.isArray(g.wu) || Array.isArray(g.dr))) {
+    wsAll = (g.wu || []).map(() => '').concat((g.rs || []).map((_, i) => wsAll[i] ?? ''), (g.dr || []).map(() => ''));
+  }
   const ck = Array.isArray(g.ck) ? g.ck : [];
   const previous = previousSets(e.n, sel);
   for (let i = 0; i < nn; i++) {
@@ -5664,6 +5715,7 @@ function toggleSet(j) {
     if (l.wu || l.dr || l.fl) {
       const wu = l.wu || [], rs = l.rs || [], dr = l.dr || [], fl = l.fl || [];
       l.kinds = wu.map(() => 'w').concat(rs.map((_, i) => (fl.indexOf(i) >= 0 ? 'f' : '')), dr.map(() => 'd'));
+      if (Array.isArray(l.ws)) l.ws = wu.map(() => '').concat(rs.map((_, i) => l.ws[i] ?? ''), dr.map(() => ''));
       l.rs = wu.concat(rs, dr); l.s = String(l.rs.length);
       delete l.wu; delete l.dr; delete l.fl;
     }
@@ -5732,7 +5784,7 @@ function toggleSet(j) {
   entCache = null;
   const beforeRec = recordsOf(exSessions(p.n));   // лучшее до этого закрытия
 
-  l.done = 1; l.n = p.n; l.g = g;
+  l.done = 1; l.n = p.n; l.g = g; l.lid = p.lid || l.lid || null; l.lm = p.lm || l.lm || null;
   // объём считаем по фактическим повторам, если они есть: 10/12/12/12 это 46,
   // а не 4x10 и не 4x12
   const rsOk = l.rs && l.rs.length && l.rs.every(v => num(v) > 0);
@@ -5980,7 +6032,9 @@ function workoutSummary(ds) {
   d.ex.forEach((e, j) => {
     const l = r.log[j];
     if (!l || !l.done) return;
-    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(num(pick(l.w, e.w))) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
+    const w = num(pick(l.w, e.w));
+    const recordW = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => l.ws && num(l.ws[i]) > 0 ? num(l.ws[i]) : w)) : w;
+    const parts = (l.prevPr !== undefined && l.prevPr > 0 ? ['вес ' + kg(recordW) + ' кг (было ' + kg(l.prevPr) + ')'] : [])
       .concat((Array.isArray(l.recs) ? l.recs : []).map(recTxt)).filter(Boolean);
     if (parts.length) records.push([l.n || e.n, parts]);
   });
@@ -6032,7 +6086,8 @@ function dayEntries(ds) {
         ? rs.reduce((a, b, i) => a + b * (ws && num(ws[i]) > 0 ? num(ws[i]) : w), 0)
         : sets * firstRep(reps) * w);
     out.push({ n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs, ws: ws,
-      vol: vol, g: l.g || p.g || null, pr: (l.prevPr !== undefined && l.prevPr > 0) || (Array.isArray(l.recs) && l.recs.length > 0),
+      vol: vol, g: l.g || p.g || null, lid: l.lid || p.lid || null, lm: l.lm || p.lm || null,
+      pr: (l.prevPr !== undefined && l.prevPr > 0) || (Array.isArray(l.recs) && l.recs.length > 0),
       wu: Array.isArray(l.wu) ? l.wu : null, dr: Array.isArray(l.dr) ? l.dr : null,
       fl: Array.isArray(l.fl) ? l.fl : null, rpe: num(l.rpe) || 0 });
   });
@@ -6049,10 +6104,11 @@ function entryLine(e) {
   // вес разный по подходам — показываем его так же, как повторы
   const ws = e.ws && e.rs ? e.rs.map((_, i) => (num(e.ws[i]) > 0 ? num(e.ws[i]) : e.w)) : null;
   const many = ws && ws.some(v => v !== ws[0]);
+  const sameW = ws && ws.length ? ws[0] : e.w;
   return (e.wu && e.wu.length ? 'разм. ' + e.wu.join('/') + ' · ' : '') + reps +
     (e.dr && e.dr.length ? ' + дроп ' + e.dr.join('/') : '') +
     (many ? ' · ' + ws.map(kg).join('/') + ' кг'
-          : (e.w ? ' · ' + kg(e.w) + ' кг' : ' · без отягощения')) +
+          : (sameW ? ' · ' + kg(sameW) + ' кг' : ' · без отягощения')) +
     (e.rpe ? ' · RPE ' + e.rpe : '');
 }
 
@@ -6227,8 +6283,8 @@ const platesTxt = w => {
 function warmupFor(e, w, d, j) {
   w = num(w);
   if (!(w > 0)) return { sets: [] };
-  const m = muscleOf(e.n, e.g);
-  const before = (d.ex || []).slice(0, j).find(x => muscleOf(x.n, x.g) === m);
+  const m = muscleOf(e.n, e.g, e.lid, e.lm);
+  const before = (d.ex || []).slice(0, j).find(x => muscleOf(x.n, x.g, x.lid, x.lm) === m);
   if (before) return { skip: (m || 'мышца').toLowerCase() + ' уже в работе после «' + before.n + '»', sets: [] };
   const low = firstRep(e.r) || 8, bar = isBarbell(e.n);
   const plan = bar
@@ -6712,7 +6768,8 @@ function recFeed(max) {
     Object.keys(r.log || {}).forEach(j => {
       const l = r.log[j]; if (!l || !l.done) return;
       const n = l.n || ((day.ex || [])[j] || {}).n || 'Упражнение';
-      const w = num(l.w);
+      const commonW = num(pick(l.w, ((day.ex || [])[j] || {}).w));
+      const w = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => l.ws && num(l.ws[i]) > 0 ? num(l.ws[i]) : commonW)) : commonW;
       if (num(l.prevPr) > 0 && w > num(l.prevPr)) out.push({ ds, n, t: 'вес ' + kg(w) + ' кг (было ' + kg(num(l.prevPr)) + ')' });
       (l.recs || []).forEach(x => { const t = recTxt(x); if (t) out.push({ ds, n, t }); });
     });
@@ -7188,14 +7245,14 @@ function openMuscle(m) {
   Object.keys(S.rec).forEach(ds => {
     if (ds > td) return;
     dayEntries(ds).forEach(e => {
-      if (muscleOf(e.n, e.g) !== m) return;
+      if (muscleOf(e.n, e.g, e.lid, e.lm) !== m) return;
       if (ds > last) last = ds;
       if (ds >= f7) ex[e.n] = (ex[e.n] || 0) + (e.rs ? e.rs.length : e.s);
     });
   });
   const plan = [];
   (S.days || []).forEach(d => (d.ex || []).forEach(e => {
-    if (muscleOf(e.n, e.g) === m) plan.push('<li><b>' + esc(d.k) + '</b> ' + esc(e.n) + ' · ' + e.s + '×' + esc(String(e.r)) + '</li>');
+    if (muscleOf(e.n, e.g, e.lid, e.lm) === m) plan.push('<li><b>' + esc(d.k) + '</b> ' + esc(e.n) + ' · ' + e.s + '×' + esc(String(e.r)) + '</li>');
   }));
   const rows = Object.keys(ex).sort((a, b) => ex[b] - ex[a])
     .map(k => '<li>' + esc(k) + ' <b>' + ex[k] + ' ' + plural(ex[k], 'подход', 'подхода', 'подходов') + '</b></li>').join('');
@@ -7287,12 +7344,13 @@ function streak() {
   const need = weekNeed(), pz = S.pause || {};
   let n = 0;
   const c = at(mondayOf(today()));
-  if ((cnt[iso(c)] || 0) < need) c.setDate(c.getDate() - 7);   // текущую считаем только закрытой
+  if (pz[iso(c)] || (cnt[iso(c)] || 0) < need) c.setDate(c.getDate() - 7);   // текущую считаем только закрытой
   // неделя на паузе (болел, уехал) серию не рвёт и в неё не идёт — её перешагиваем
   for (let g = 0; g < 5200; g++) {
     const k = iso(c);
+    if (pz[k]) { c.setDate(c.getDate() - 7); continue; }
     if ((cnt[k] || 0) >= need) n++;
-    else if (!pz[k]) break;
+    else break;
     c.setDate(c.getDate() - 7);
   }
   return n;
@@ -7950,12 +8008,12 @@ function libPicUrl(o, i) {
   if (o.own) return 'img/' + o.own + '-' + i + '.jpg';
   return o.pic ? LIB_CDN + o.id + '/' + i + '.jpg' : '';
 }
-function exPic(name, i) {
+function exPic(name, i, lid) {
   if (EXDB[name]) return 'img/' + EXDB[name][0] + '-' + i + '.jpg';
-  const lb = S.libEx && S.libEx[name];
+  const lb = lid ? [lid] : S.libEx && S.libEx[name];
   return lb ? LIB_CDN + lb[0] + '/' + i + '.jpg' : '';
 }
-const exCors = name => (!EXDB[name] && S.libEx && S.libEx[name] ? ' crossorigin="anonymous"' : '');
+const exCors = (name, lid) => (!EXDB[name] && (lid || (S.libEx && S.libEx[name])) ? ' crossorigin="anonymous"' : '');
 const libFav = id => Array.isArray(S.fav) && S.fav.indexOf(id) >= 0;
 // мышца баланса упражнения — по первой основной мышце, у которой она есть
 function libMuscle(o) {
@@ -8140,7 +8198,8 @@ function libAdd(id, ds) {
       if (!S.libEx || typeof S.libEx !== 'object') S.libEx = {};
       S.libEx[name] = [o.id, libMuscle(o)];
     }
-    dayOf(ds).ex.push({ n: name, s: 3, r: '8-10', w: startWeight(name), g: grpOf(name) });
+    dayOf(ds).ex.push({ n: name, s: 3, r: '8-10', w: startWeight(name), g: grpOf(name),
+      lid: o.id, lm: libMuscle(o) });
     save();
     sheetClose();
     if (libPick) { libPick = null; sel = ds; tab = 'wo'; exOpen = null; render(); window.scrollTo(0, 0); }
@@ -8204,10 +8263,10 @@ document.addEventListener('click', e => {
    (общественное достояние). Описания — свои.
    ========================================================================= */
 
-function openHow(name, j) {
+function openHow(name, j, lid) {
   const h = EXDB[name];
   // упражнение из каталога — его страница с фото, мышцами и техникой
-  if (!h && S.libEx && S.libEx[name]) { openLib(S.libEx[name][0]); return; }
+  if (!h && (lid || (S.libEx && S.libEx[name]))) { openLib(lid || S.libEx[name][0]); return; }
   if (!h) {
     sheet(name.toUpperCase(), '<div class="win howb"><p>Для этого упражнения описание не добавлено — ' +
       'оно есть только у упражнений из программы.</p></div>');
@@ -9852,16 +9911,31 @@ function openPhotoHistory() {
 $('phHist').addEventListener('click', openPhotoHistory);
 $('phT').addEventListener('click', () => $('phFile').click());
 $('phAdd').addEventListener('click', () => $('phFile').click());
+/* Сжатие фото асинхронное: без очереди медленный первый файл мог закончиться
+   после нового выбора и перезаписать его. Очередь сохраняет порядок записи,
+   а номер намерения отбрасывает всё, что пользователь уже заменил. */
+let photoWriteIntent = 0, photoWriteChain = Promise.resolve();
+function queuePhotoWrite(task) {
+  photoWriteChain = photoWriteChain.catch(() => {}).then(task);
+  return photoWriteChain;
+}
 $('phFile').addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0];
   const day = sel;
   e.target.value = '';
   if (!f) return;
+  const intent = ++photoWriteIntent;
   try {
     const dat = await compress(f);
-    await phPut(day, dat);
-    PHCACHE.set(day, dat);
-    await phSync();
+    const saved = await queuePhotoWrite(async () => {
+      if (intent !== photoWriteIntent) return false;
+      await phPut(day, dat);
+      if (intent !== photoWriteIntent) return false;
+      PHCACHE.set(day, dat);
+      await phSync();
+      return true;
+    });
+    if (!saved) return;
     // вес подписываем только к сегодняшнему снимку: прошлому дню сегодняшний вес чужой
     if (day === today() && !recOf(day).bw && num(S.bw)) { recRW(day).bw = S.bw; save(); }
     note('Снимок сохранён');
@@ -9871,9 +9945,8 @@ $('phFile').addEventListener('change', async e => {
 $('phDel').addEventListener('click', async () => {
   const day = sel;
   if (!await ask('Удалить фото за ' + fmt(day) + '?')) return;
-  await phDelete(day);
-  PHCACHE.delete(day);
-  await phSync();
+  ++photoWriteIntent;
+  await queuePhotoWrite(async () => { await phDelete(day); PHCACHE.delete(day); await phSync(); });
   if (sel === day && tab === 'photo') paintPhotoScreen();
 });
 $('phW').addEventListener('input', e => {
@@ -10023,9 +10096,10 @@ const MUSCLE_KEY = {
   glute: 'Бицепс бедра', legcurl: 'Бицепс бедра', legcurlseat: 'Бицепс бедра',
   calfstand: 'Икры', calfseat: 'Икры'
 };
-function muscleOf(name, g) {
+function muscleOf(name, g, lid, lm) {
   const k = (EXDB[name] || [])[0];
   if (k && MUSCLE_KEY[k]) return MUSCLE_KEY[k];
+  if (lm && MUSCLES.indexOf(lm) >= 0) return lm;
   // упражнение из каталога: мышца записана при добавлении, по данным базы
   const lb = S && S.libEx && S.libEx[name];
   if (lb && !EXDB[name]) return lb[1] || null;
@@ -10037,7 +10111,7 @@ function muscleOf(name, g) {
 // недельная норма мышцы — сумма подходов, которые на неё ставит сама программа
 function volTargetM(m) {
   let t = 0;
-  (S.days || []).forEach(d => (d.ex || []).forEach(e => { if (muscleOf(e.n, e.g) === m) t += num(e.s) || 0; }));
+  (S.days || []).forEach(d => (d.ex || []).forEach(e => { if (muscleOf(e.n, e.g, e.lid, e.lm) === m) t += num(e.s) || 0; }));
   return t;
 }
 // подходы по мышцам за 7 дней — по журналу, тем же счётом, что daySets
@@ -10049,7 +10123,7 @@ function vol7m() {
   Object.keys(S.rec).forEach(ds => {
     if (ds < f7 || ds > today()) return;
     dayEntries(ds).forEach(e => {
-      const m = muscleOf(e.n, e.g);
+      const m = muscleOf(e.n, e.g, e.lid, e.lm);
       if (m && acc[m] !== undefined) acc[m] += e.rs ? e.rs.length : e.s;
     });
   });
@@ -10070,7 +10144,7 @@ function rangeData(mon, n) {
     const x = new Date(d0); x.setDate(d0.getDate() + i);
     const ds = iso(x), r = S.rec[ds] || {}, es = S.rec[ds] ? dayEntries(ds) : [];
     const ton = es.reduce((a, e) => a + e.vol, 0), sets = es.reduce((a, e) => a + (e.rs ? e.rs.length : e.s), 0);
-    es.forEach(e => { const m = muscleOf(e.n, e.g); if (m && w.m[m] !== undefined) w.m[m] += e.rs ? e.rs.length : e.s; if (e.pr) w.recs++; });
+    es.forEach(e => { const m = muscleOf(e.n, e.g, e.lid, e.lm); if (m && w.m[m] !== undefined) w.m[m] += e.rs ? e.rs.length : e.s; if (e.pr) w.recs++; });
     if (r.wo) w.wo++;
     if (r.t0 && r.t1 && r.t1 > r.t0) w.mins += Math.round((r.t1 - r.t0) / 60000);
     w.ton += ton; w.sets += sets;
