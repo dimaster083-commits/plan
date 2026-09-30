@@ -3,6 +3,13 @@ const CACHE = "sys-gym-169";   // меняется при каждом обно�
 // версии они стирались при каждой выкладке, и открытое вчера упражнение
 // после обновления снова было без фото в подвале без связи.
 const CDN_CACHE = "sys-gym-cdn";
+// Сколько фото каталога держать: около двух снимков на 150 упражнений,
+// порядка 15–25 МБ. Раньше кэш рос без края — листание всех 876 упражнений
+// оставляло на телефоне сотню мегабайт. Лишние уходят с самых старых.
+const CDN_MAX = 300;
+function trimCdn(c) {
+  return c.keys().then(ks => Promise.all(ks.slice(0, Math.max(0, ks.length - CDN_MAX)).map(k => c.delete(k))));
+}
 const FILES = [
   './',
   './index.html',
@@ -141,7 +148,9 @@ self.addEventListener('fetch', e => {
       .then(res => {
         if (keep(res) || keepCdn(res, url)) {
           const copy = res.clone();
-          caches.open(keep(res) ? CACHE : CDN_CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          const own = keep(res);
+          caches.open(own ? CACHE : CDN_CACHE)
+            .then(c => c.put(e.request, copy).then(() => own ? null : trimCdn(c))).catch(() => {});
           return res;
         }
         // негодный ответ — сохранённая копия того же файла, если она есть

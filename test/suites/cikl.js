@@ -110,7 +110,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       dd.ex.forEach((e,j)=>{r.log[j]={done:1,n:e.n,g:e.g,s:String(e.s),r:String(e.r),w:num(e.w),rs:[8,8,8],vol:1,xp:1};});
     }
     entCache=null; statsDirty=true; save(); recomputeStats(1);
-    return {мало:было, норма:planWeek(), порог:WEEK_MIN};
+    return {мало:было, норма:planWeek(), порог:weekNeed()};
   });
   chk(переход.мало===1,'9. неделя с двумя тренировками план не двигает','осталась неделя '+переход.мало);
   chk(переход.норма===2,'10. добранная неделя двигает план на следующую','стала неделя '+переход.норма);

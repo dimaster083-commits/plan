@@ -3527,6 +3527,10 @@ const MONG = ['января', 'февраля', 'марта', 'апреля', '�
 /* Раньше здесь стояли числа 70 и 75/80/85/90/95 — шкала одного человека.
    Теперь точка отсчёта это первый записанный вес, а вехи строятся от неё
    до цели и в нужную сторону: цель может быть и ниже текущего веса. */
+/* Свой вес — вписанный или из журнала. Без него нормы еды и расчёт не
+   показываются: «Позже» в первой настройке оставлял «расчёт от веса 70 кг»,
+   рост 175 и возраст 30 — чужие цифры, выданные за свои. */
+const ownBw = () => num(S.bw) || num(S.bw0) || (wlog()[0] || [])[1] || 0;
 function startW() {
   if (num(S.bw0)) return num(S.bw0);
   const w = wlog();
@@ -4469,9 +4473,8 @@ const started = ds => weekOfDate(ds || today()) >= 1;
 
 /* Неделя плана считается по закрытым тренировкам, а не по календарю.
    Пропустил неделю — план не убегает вперёд на «Пик», а повторяет текущую
-   и ждёт. Для перехода достаточно WEEK_MIN тренировок из четырёх:
+   и ждёт. Для перехода достаточно на одну тренировку меньше плана (weekNeed):
    человек не станок, одна пропущенная неделю не обнуляет. */
-const WEEK_MIN = 3;   // для шаблона из четырёх дней; сам порог — weekNeed()
 let wkCache = null;
 function weekCounts() {
   if (wkCache) return wkCache;
@@ -4875,10 +4878,16 @@ const paused = ds => !!(S.pause && S.pause[mondayOf(ds)]);
    неделя на паузе (болею, уехал) тренировок не ждёт: незакрытый день
    тренировки там — день отдыха, и норма у него отдыха (своя, если задана
    руками). Раньше больной ел по норме тренировки, и «Разбор» с ней сверял. */
+/* Прошедший день ест по своему типу (dayLook), а не по нынешнему шаблону:
+   сменил вторник на отдых во всех неделях — прошлые тренировочные вторники
+   в «Еде» и «Разборе» сверялись с нормой отдыха, хотя в журнале тренировка. */
 function normDay(ds) {
   const d = dayOf(ds);
-  if (!d || d.t === 'rest' || !paused(ds) || recOf(ds).wo) return d;
-  return S.days.find(x => x.t === 'rest') || Object.assign({}, d, nutriFor('rest'));
+  if (!d) return d;
+  const lt = dayLook(ds).t, rest = lt === 'rest' || (paused(ds) && !recOf(ds).wo);
+  if (rest === (d.t === 'rest')) return d;
+  if (rest) return S.days.find(x => x.t === 'rest') || Object.assign({}, d, nutriFor('rest'));
+  return S.days.find(x => x.t === lt) || S.days.find(x => x.t !== 'rest') || Object.assign({}, d, nutriFor(lt));
 }
 const dayLocked = ds => { const r = S.rec[ds]; return !!(r && (r.wo || dayEntries(ds).length)); };
 /* Отметка добавки — только номер строки в списке дня (r.sp). Перенос меняет
@@ -5202,12 +5211,25 @@ function paintWorkout() {
 
 /* Добавки принадлежат дню, но не тренировке: в зале они только мешали,
    поэтому живут отдельной рамкой в «Еде». Данные и отметки те же самые. */
+/* Неделя на паузе (болею): незакрытый день тренировки ест как отдых
+   (normDay) — и добавки у него дня отдыха. Раньше больному предлагались
+   кофеин и цитруллин «за 45 минут до зала». Прячем строки, которых нет
+   в списке дня отдыха; номера отметок (r.sp) остаются прежними, и
+   закрытая всё-таки тренировка вернёт полный список. */
+function spHidden(ds) {
+  const d = dayOf(ds), nd = normDay(ds);
+  if (!d || !nd || nd === d || nd.t !== 'rest' || !Array.isArray(nd.sp)) return new Set();
+  const keep = new Set(nd.sp.map(x => x && x.n));
+  return new Set(d.sp.map((x, j) => keep.has(x && x.n) ? -1 : j).filter(j => j >= 0));
+}
 function paintSupp() {
-  const d = dayOf(sel), r = recOf(sel);
-  $('spCnt').textContent = Object.keys(r.sp).length + ' / ' + d.sp.length;
+  const d = dayOf(sel), r = recOf(sel), hid = spHidden(sel);
+  const vis = d.sp.map((_, j) => j).filter(j => !hid.has(j));
+  $('spCnt').textContent = vis.filter(j => r.sp[j]).length + ' / ' + vis.length;
   // «Принял всё» есть, пока хоть одна добавка не отмечена
-  $('spAll').hidden = !d.sp.length || d.sp.every((_, j) => r.sp[j]);
-  $('spl').innerHTML = d.sp.map((x, j) =>
+  $('spAll').hidden = !vis.length || vis.every(j => r.sp[j]);
+  $('spl').innerHTML = (hid.size ? '<p class="sphid">Неделя на паузе — без добавок к тренировке: ' +
+    esc([...hid].map(j => d.sp[j].n).join(', ')) + '.</p>' : '') + d.sp.map((x, j) => hid.has(j) ? '' :
     `<div class="win row${r.sp[j] ? ' on' : ''}" data-sp="${j}">
       <button class="box" data-tog="${j}" aria-label="Отметить приём">✓</button>
       <span class="t"><input value="${esc(x.n)}" data-sf="n" aria-label="Добавка">
@@ -6409,8 +6431,8 @@ async function openDayReport(ds) {
 /* ---------- добавки ---------- */
 // Отметить все разом: опыт начисляется только за те, что ещё не отмечены
 $('spAll').addEventListener('click', () => {
-  const snap = snapS(), d = dayOf(sel), r = recRW(sel);
-  d.sp.forEach((_, j) => { if (!r.sp[j]) { r.sp[j] = 1; addXp(XP_SP); } });
+  const snap = snapS(), d = dayOf(sel), r = recRW(sel), hid = spHidden(sel);
+  d.sp.forEach((_, j) => { if (!r.sp[j] && !hid.has(j)) { r.sp[j] = 1; addXp(XP_SP); } });
   save(); paintSupp(); paintStatus(); offerUndo(snap, 'Все добавки отмечены');
 });
 $('spl').addEventListener('click', e => {
@@ -7122,6 +7144,11 @@ $('bmiRow').addEventListener('click', openBmi);
    те же функции, что считают нормы и разбор, только показанные цифрами. */
 function paintCalc() {
   const box = $('calcBox'); if (!box) return;
+  if (!ownBw()) {
+    box.innerHTML = '<div class="wtitle" style="padding:0 0 8px">РАСЧЁТ</div>' +
+      '<p class="clh">Впиши свой вес — от него считаются поддержание, норма еды и темп.</p>';
+    return;
+  }
   const bw = num(S.bw) || startW() || 70, g = num(S.goal) || bw, dir = goalDir();
   const m = maintOf(bw), tr = nutriFor('up1'), rs = nutriFor('rest');
   const [lo, hi] = paceRange(dir);
@@ -7140,8 +7167,9 @@ function paintCalc() {
       Math.max(1, Math.round(left / aHi)) + '–' + Math.max(1, Math.round(left / aLo)) + ' нед') : '') +
     // темп считает paceOf: не меньше 3 взвешиваний за 7+ дней — раньше здесь обещали темп после двух
     row('Сейчас', pc ? (pc.per > 0 ? '+' : '') + dec(pc.per, 2) + ' кг/нед' : 'нужно 3 взвеш. за 7 дн') +
-    '<p class="clh">Поддержание — формула Миффлина — Сан Жеора: вес, рост ' + (num(S.height) || 175) +
-    ' см, возраст ' + (ageOf() || 30) + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
+    '<p class="clh">Поддержание — формула Миффлина — Сан Жеора: вес, рост ' +
+    (num(S.height) ? num(S.height) + ' см' : 'не вписан (взят 175 см)') +
+    ', возраст ' + (ageOf() ? ageOf() : 'не вписан (взят 30)') + ', ' + (S.sex === 'f' ? 'женщина' : 'мужчина') +
     ', ' + actOf()[1] + ' (×' + dec(actOf()[0], 2) + ')' +
     '. Коридор — ' + pctTxt + ' массы в неделю; норма через день тренировки / отдыха.</p>';
 }
@@ -7177,20 +7205,24 @@ function paintCycle() {
   $('cycPh').textContent = cycLabel();
   const done = doneThisWeek();
   /* Почему стоит именно эта неделя, видно только из прошлой: план не
-     двигается, пока в прошедшей неделе не закрыто WEEK_MIN тренировок.
+     двигается, пока в прошедшей неделе не закрыто weekNeed() тренировок.
      Раньше здесь было написано «закрыто 0 из 4» про текущую неделю, и в
      понедельник это читалось как «неделя не сменилась ни с того ни с сего». */
   const prevMon = (() => { const d = at(mondayOf(today())); d.setDate(d.getDate() - 7); return iso(d); })();
   const prev = weekCounts()[prevMon] || 0;
   const repeat = i > 0 || planWeek() > 1 ? false : true;   // первая неделя цикла может и повторяться
+  /* План и порог — из своего расписания, тем же weekNeed, что двигает
+     planWeek. Раньше стояло «из 4» и «нужно 3» при любом шаблоне: при трёх
+     днях неделю засчитывали две тренировки, а экран требовал три. */
+  const pn = planN(), need = weekNeed();
   $('cycNote').innerHTML = go
-    ? esc(c.t) + '<br><span style="color:var(--cy2)">Закрыто на этой неделе: <b>' + done + ' из 4</b>. ' +
-      (done >= WEEK_MIN
+    ? esc(c.t) + '<br><span style="color:var(--cy2)">Закрыто на этой неделе: <b>' + done + ' из ' + pn + '</b>. ' +
+      (done >= need
         ? 'Неделя засчитана — со следующего понедельника идём дальше.'
-        : 'Для перехода на следующую неделю нужно ' + WEEK_MIN + '.') +
+        : 'Для перехода на следующую неделю нужно ' + need + '.') +
       (prev > 0 || !repeat
-        ? ' Прошлая неделя: <b>' + prev + ' из 4</b>' +
-          (prev >= WEEK_MIN ? ' — засчитана.' : ' — не засчитана, поэтому идёт та же неделя плана.')
+        ? ' Прошлая неделя: <b>' + prev + ' из ' + pn + '</b>' +
+          (prev >= need ? ' — засчитана.' : ' — не засчитана, поэтому идёт та же неделя плана.')
         : ' Пропустишь — план не убежит вперёд, а повторит эту неделю.') +
       '</span>'
     : 'Старт ' + fmt(planStart()) + '. До него — свободные тренировки.';
@@ -7203,15 +7235,29 @@ function paintCycle() {
 /* Вес и цель сквозные: и в первичной настройке, и на вкладке «Прогресс»
    это одно значение. Пишем его в одном месте, а поля синхронизируем между собой,
    чтобы не разъезжались две копии одного числа. */
+/* Вес тела — от 30 до 300 кг, как в первичной настройке. Поля «Прогресса»
+   и «Фото» пишут на лету и границ не знали: промах «850» вместо «85» ложился
+   в журнал, норма еды выходила 19 000 ккал, а цель — «достигнута». Вне границ
+   значение не пишется (прежнее остаётся), пустое поле — «не взвешивался». */
+const bwOk = v => { const n = num(v); return n >= 30 && n <= 300; };
+const blank = v => !String(v ?? '').trim();
 function setBw(v) {
-  S.bw = v;
+  if (!blank(v) && !bwOk(v)) return false;
+  S.bw = blank(v) ? '' : v;
   /* Стёр вес — сегодняшняя запись убирается. Раньше при стирании «85» в
      журнале оставалось промежуточное «8», и на графике и в темпе была точка 8 кг. */
-  if (num(v) > 0) recRW(today()).bw = String(v);
+  if (bwOk(v)) recRW(today()).bw = String(v);
   else if (S.rec[today()]) delete S.rec[today()].bw;
   applyNutri(); save();
   syncBwFields(); paintGoal(); paintChart(); paintRem(); paintTotals(); paintKcSrc();
   if (num(v) > 0) checkQuests();
+  return true;
+}
+// ушёл из поля с весом вне границ — поле показывает то, что записано
+function bwBack(el, key, what) {
+  if (blank(el.value) || bwOk(el.value)) return;
+  el.value = S[key] ?? '';
+  note(what + ' — от 30 до 300 кг');
 }
 /* Набор или похудение — это не отдельная настройка, а то, с какой
    стороны стоит цель. Кнопки только двигают цель в нужную сторону,
@@ -7241,7 +7287,8 @@ $('wdir').addEventListener('click', e => dirClick(e,
   v => setGoal(v)));
 
 function setGoal(v) {
-  S.goal = v;
+  if (!blank(v) && !bwOk(v)) return false;
+  S.goal = blank(v) ? '' : v;
   applyNutri(); save();
   syncBwFields(); paintGoal(); paintTotals(); paintKcSrc();
 }
@@ -7259,6 +7306,8 @@ $('bw').addEventListener('input', e => setBw(e.target.value));
 $('goalIn').addEventListener('input', e => setGoal(e.target.value));
 $('anBw').addEventListener('input', e => setBw(e.target.value));
 $('anGoal').addEventListener('input', e => setGoal(e.target.value));
+$('bw').addEventListener('change', e => bwBack(e.target, 'bw', 'Вес'));
+$('goalIn').addEventListener('change', e => bwBack(e.target, 'goal', 'Цель'));
 $('startIn').addEventListener('change', e => {
   $('startTxt').textContent = fmt(e.target.value);
   if (!okDay(e.target.value)) { $('startTxt').textContent = fmt(planStart()); return; }
@@ -7589,7 +7638,9 @@ $('histMore').addEventListener('click', () => { histLimit += 20; paintHistory();
    это жизнь, а не повод обнулять месяцы работы. «Пропуск» тренировкой
    не считается: раньше он засчитывался как закрытый день, и серию можно
    было держать, не заходя в зал вовсе. */
-const weekNeed = () => Math.max(1, (S.days || []).filter(d => d.t !== 'rest' && (d.ex || []).length).length - 1);
+// тренировок в неделю по шаблону; неделя засчитана при одной меньше плана
+const planN = () => (S.days || []).filter(d => d.t !== 'rest' && (d.ex || []).length).length;
+const weekNeed = () => Math.max(1, planN() - 1);
 function streak() {
   const cnt = {};
   Object.keys(S.rec).forEach(d => {
@@ -7968,8 +8019,8 @@ function openSetup() {
   syncBwFields();
   $('setupRows').innerHTML = ANCHORS.map(([k, label, def]) =>
     `<div class="srow"><span>${label}</span>
-      <input id="an-${k}" inputmode="decimal" value="${fresh ? '' : esc(a[k] ?? def)}" placeholder="${def}" aria-label="${label}"><i>кг</i></div>`).join('');
-  $('anH').value = fresh ? '' : (S.height || 177);
+      <input id="an-${k}" inputmode="decimal" value="${fresh ? '' : esc(a[k] || '')}" placeholder="${def}" aria-label="${label}"><i>кг</i></div>`).join('');
+  $('anH').value = fresh ? '' : (S.height || '');   // не вписан — пусто, а не чужие 177
   $('anAge').value = fresh ? '' : (S.age || '');
   paintSex();
   // Пока первая настройка открыта, сквозная синхронизация не возвращает
@@ -8031,7 +8082,7 @@ $('setOk').addEventListener('click', async () => {
     a.b = r25(bw * 0.5); a.s = r25(bw * 0.6); a.d = r25(bw * 0.7);
   }
   S.anchors = a;
-  S.height = hIn || num(S.height) || 175;
+  if (hIn) S.height = hIn;           // не вписан — не пишем чужие 175 см: maintOf возьмёт их сам
   if (num($('anAge').value)) S.age = $('anAge').value;
   S.sex = S.sex || 'm';
   // вес и цель уже записаны сквозными полями; здесь остаётся только точка отсчёта
@@ -9736,10 +9787,11 @@ function itemLine(it) {
 }
 
 function paintFood() {
-  const d = normDay(sel);
+  const d = normDay(sel), none = !ownBw() && !S.kcManual;
   paintCpLast();
-  $('kc').value = d.kc;
-  $('pr').value = d.pr;
+  $('kc').value = none ? '' : d.kc;
+  $('pr').value = none ? '' : d.pr;
+  $('kc').placeholder = $('pr').placeholder = none ? '—' : '';
   paintKcSrc();
   $('mll').innerHTML = mealsOf(sel).map((m, j) => {
     const s = mealSum(m);
@@ -9761,11 +9813,12 @@ function paintFood() {
 }
 
 function paintTotals() {
-  const d = normDay(sel), t = daySum(sel);
-  $('tKc').innerHTML = rnd(t.k) + '<i> / ' + esc(d.kc) + ' ккал</i>';
-  $('tPr').innerHTML = rnd(t.p) + '<i> / ' + esc(d.pr) + ' г</i>';
-  $('bKc').style.width = Math.min(100, t.k / (num(d.kc) || 1) * 100) + '%';
-  $('bPr').style.width = Math.min(100, t.p / (num(d.pr) || 1) * 100) + '%';
+  const d = normDay(sel), t = daySum(sel), none = !ownBw() && !S.kcManual;
+  const kc = none ? '—' : d.kc, pr = none ? '—' : d.pr;
+  $('tKc').innerHTML = rnd(t.k) + '<i> / ' + esc(kc) + ' ккал</i>';
+  $('tPr').innerHTML = rnd(t.p) + '<i> / ' + esc(pr) + ' г</i>';
+  $('bKc').style.width = (none ? 0 : Math.min(100, t.k / (num(d.kc) || 1) * 100)) + '%';
+  $('bPr').style.width = (none ? 0 : Math.min(100, t.p / (num(d.pr) || 1) * 100)) + '%';
   $('tFa').textContent = 'жиры ' + rnd(t.f) + ' г';
   $('tCa').textContent = 'углеводы ' + rnd(t.c) + ' г';
   // пересчитываем подписи, не трогая поля ввода: иначе слетит фокус при наборе
@@ -9783,6 +9836,7 @@ function paintTotals() {
 function paintKcSrc() {
   const dir = goalDir();
   $('kcTxt').textContent = S.kcManual ? 'нормы заданы вручную'
+    : !ownBw() ? 'впиши свой вес в «Прогрессе» — от него считается норма'
     : 'расчёт от веса ' + kg(num(S.bw) || startW()) + ' кг · ' +
       (dir > 0 ? 'набор' : dir < 0 ? 'снижение' : 'удержание');
   $('kcAuto').hidden = !S.kcManual;
@@ -10177,8 +10231,14 @@ $('phW').addEventListener('input', e => {
   // пересчитывались, и «Еда» продолжала считать от старой цифры.
   if (sel === today()) { setBw(e.target.value); return; }
   if (sel > today()) { e.target.value = ''; note('Этот день ещё впереди — взвешивания нет'); return; }
-  if (num(e.target.value) > 0) recRW(sel).bw = e.target.value; else if (S.rec[sel]) delete S.rec[sel].bw;
+  if (!blank(e.target.value) && !bwOk(e.target.value)) return;
+  if (bwOk(e.target.value)) recRW(sel).bw = e.target.value; else if (S.rec[sel]) delete S.rec[sel].bw;
   save(); paintChart(); paintGoal();
+});
+$('phW').addEventListener('change', e => {
+  if (blank(e.target.value) || bwOk(e.target.value)) return;
+  e.target.value = recOf(sel).bw || '';
+  note('Вес — от 30 до 300 кг');
 });
 
 /* ---------- сравнение снимков ---------- */
@@ -11083,7 +11143,9 @@ function buildSummary() {
     const first = pts[0], last = pts[pts.length - 1];
     L.push('Вес: ' + kg(first[1]) + ' кг (' + fmt(first[0]) + ') → ' + kg(last[1]) + ' кг (' + fmt(last[0]) + ').');
   }
-  L.push('План: 4 тренировки в неделю, верх/низ дважды, шестинедельный цикл. ' +
+  const pn = planN(), trd = S.days.filter(d => d.t !== 'rest' && (d.ex || []).length);
+  L.push('План: ' + pn + ' ' + plural(pn, 'тренировка', 'тренировки', 'тренировок') + ' в неделю (' +
+    trd.map(d => d.k + ' — ' + d.s).join(', ') + '), шестинедельный цикл. ' +
     (started() ? 'Сейчас неделя ' + planWeek() + ', фаза ' + cycOf(today()).ph + '.' : 'План ещё не начался.'));
   L.push('За две недели закрыто ' + a14.done + ' из ' + a14.planned + ' тренировок.');
   L.push('');

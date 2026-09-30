@@ -172,6 +172,7 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 .mmleg i.mm0{background:#26374e}.mmleg i.mm1,.mrow i.mm1{background:#4d79af}
 .mmleg i.mm2,.mrow i.mm2{background:#9186d1}.mmleg i.mm3,.mrow i.mm3{background:#8bceff}
 .rrow{padding:12px 0}
+.sphid{margin:0 0 10px;font:500 12px/1.5 var(--f);color:var(--ink3)}
 /* Состояния остаются читаемыми и без движения. */
 @media (prefers-reduced-motion:no-preference){
   .exf{animation:monarch-enter .22s ease-out both}
