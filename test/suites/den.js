@@ -66,8 +66,9 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       document.querySelector('#exl [data-go]').click();
       return { before, after:S.xp };
     });
-    // отмена — отдельным касанием, не двойным тапом (двойной тап защищён 200 мс)
-    await p.waitForTimeout(260);
+    // Отмена — отдельным касанием. Под нагрузкой таймер браузера может
+    // задержаться: ждём снятия защиты, а не время на стороне раннера.
+    await p.waitForFunction(() => !pendingActions.has('go2'));
     xp.back=await p.evaluate(()=>{ exOpen=2; render();
       document.querySelector('#exl [data-go]').click(); return S.xp; });
     chk(xp.after>xp.before && xp.back===xp.before,

@@ -11049,17 +11049,23 @@ function openPhotoHistory() {
 $('phHist').addEventListener('click', openPhotoHistory);
 $('phT').addEventListener('click', () => $('phFile').click());
 $('phAdd').addEventListener('click', () => $('phFile').click());
+// Сжатие асинхронно: последний выбор выигрывает отдельно для каждой даты.
+const phSelections = new Map();
 $('phFile').addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0];
   const day = sel;
   e.target.value = '';
   if (!f) return;
+  const selection = (phSelections.get(day) || 0) + 1;
+  phSelections.set(day, selection);
   try {
     const dat = await compress(f);
+    if (phSelections.get(day) !== selection) return;
     /* Новый снимок дня ложится поверх прежнего. Случайно выбранный файл
        стирал старое фото навсегда — держим прежнее в памяти для отмены. */
     let old = null;
     try { old = PHCACHE.get(day) || (await phGet(day)) || null; } catch (e2) { old = null; }
+    if (phSelections.get(day) !== selection) return;
     const snap = snapS();
     await phPut(day, dat);
     PHCACHE.set(day, dat);
