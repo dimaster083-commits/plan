@@ -4402,6 +4402,10 @@ function scrubKeys() {
 
 let saveTimer = null;
 let undoRec = null, undoTimer = null;   // отмена последнего действия — см. offerUndo
+// страховка от случайного касания — см. ниже у offerUndo
+let undoSeq = 0, noteSeq = 0, undoQuiet = false, undoSay = '', tapDrafts = null;
+let fieldSnap = null, fieldEl = null;
+let shRe = null;                 // как заново открыть шторку, в которой сделано действие
 /* На телефоне один тап иногда приходит дважды до перерисовки. Блокируем
    только повтор одной пишущей операции на короткое время. */
 const pendingActions = new Set();
@@ -4567,7 +4571,7 @@ function levelUp(lv) {
 let noteTimer = null;
 function note(t) {
   const n = $('note');
-  $('noteT').textContent = t;
+  $('noteT').textContent = t; noteSeq++;
   n.classList.add('on');
   clearTimeout(noteTimer);
   noteTimer = setTimeout(() => n.classList.remove('on'), 1900);
@@ -4599,6 +4603,13 @@ function placeUndo() {
     const r = bar.getBoundingClientRect();
     if (r.height && r.bottom > top - 72 && r.top < H) top = Math.min(top, r.top);
   }
+  // таймер отдыха включается тем же закрытием подхода — полоска не ложится на его «СТОП»
+  // (место — по его CSS, а не по прямоугольнику: в первые доли секунды он ещё выезжает снизу)
+  const tm = $('tmr');
+  if (tm && tm.classList.contains('on') && tm.offsetHeight) {
+    const tt = H - (parseFloat(getComputedStyle(tm).bottom) || 0) - tm.offsetHeight;
+    if (tt < H) top = Math.min(top, tt);
+  }
   u.style.bottom = Math.max(8, Math.round(H - top + 8)) + 'px';
 }
 /* opt.back — вернуть то, что живёт не в S (снимок в IndexedDB), opt.again —
@@ -4607,9 +4618,13 @@ function placeUndo() {
 function offerUndo(snap, text, opt) {
   opt = opt || {};
   if (!opt.local && (typeof snap !== 'string' || (!opt.back && snap === snapS()))) return;   // ничего не поменялось — отменять нечего
-  const rec = { s: snap, back: opt.back || null, again: opt.again || null, local: opt.local || null };
+  const rec = { s: snap, back: opt.back || null, again: opt.again || null, local: opt.local || null,
+    drafts: tapDrafts, sel };
   undoDrop();
   undoRec = rec;
+  undoSeq++;
+  // поле, в которое сейчас пишут, считает свою отмену уже от этого места
+  if (fieldSnap !== null && !opt.field) fieldSnap = snapS();
   // простое уведомление говорило бы то же самое поверх полоски
   clearTimeout(noteTimer); $('note').classList.remove('on');
   $('noteT').textContent = text;              // последнее сообщение одно, где бы его ни показали
@@ -4640,6 +4655,8 @@ async function undoNow() {
   if (wasOpen) sheetClose();
   if (exOpen !== null && exOpen >= ((dayOf(sel) || {}).ex || []).length) exOpen = null;
   render();
+  // набранные клетки повторов живут только на экране — возвращаем их как были до касания
+  if (u.drafts && u.sel === sel) putDrafts(u.drafts);
   if (u.again && wasOpen) u.again();
   note('Отменено');
 }
@@ -4647,6 +4664,131 @@ async function undoNow() {
 $('undoB').addEventListener('click', () => { undoNow(); });
 addEventListener('scroll', () => { if (undoRec) placeUndo(); }, { passive: true });
 addEventListener('resize', () => { if (undoRec) placeUndo(); });
+
+/* ---------- страховка от случайного касания ----------
+   Хозяин: «любое случайное нажатие должно отменяться». Крупные действия
+   сами зовут offerUndo со своей подписью. Всё остальное, что одним
+   касанием поменяло S — закрытие подхода галочкой, RPE, тип подхода,
+   «Повторить», суперсет, избранное, добавка, пол, активность, цель, —
+   ловит страховка: копия снимается в фазе захвата, до всех обработчиков,
+   а после них — сравнение. Поменялось, а полоски никто не предложил —
+   предлагаем сами; подпись — уведомление самого действия (рекорд, прибавка),
+   undoSay или надпись кнопки. Поле ввода — так же, но при уходе с поля
+   (change): копия снята при входе, одна отмена возвращает всё набранное.
+   Молчат только галочки строк: второе касание той же галочки и есть отмена,
+   а полоска над строками ловила бы следующий тап (undoQuiet). Клетки
+   повторов до закрытия живут на экране — их снимок (tapDrafts) едет
+   с копией и возвращается после перерисовки. */
+
+
+
+// служебные отметки, которые меняются сами (время копии, показанный совет) — не повод для полоски
+const UNDO_SKIP = ['bkAt', 'bkAsk', 'mig15note'];
+function undoSame(a, b) {
+  if (a === b) return true;
+  try {
+    const x = JSON.parse(a), y = JSON.parse(b);
+    UNDO_SKIP.forEach(k => { delete x[k]; delete y[k]; });
+    return JSON.stringify(x) === JSON.stringify(y);
+  } catch (e) { return false; }
+}
+function draftCells() {
+  const out = {};
+  $('exl').querySelectorAll('.ex[data-j]').forEach(card => {
+    const cells = [...card.querySelectorAll('[data-rs]')];
+    if (cells.length) out[card.dataset.j] = cells.map(x => [x.value, x.dataset.auto]);
+  });
+  return Object.keys(out).length ? out : null;
+}
+function putDrafts(dr) {
+  const lg = recOf(sel).log || {};
+  Object.keys(dr).forEach(j => {
+    if ((lg[j] || {}).done) return;
+    const card = $('exl').querySelector('.ex[data-j="' + j + '"]'); if (!card) return;
+    const cells = [...card.querySelectorAll('[data-rs]')];
+    if (cells.length !== dr[j].length) return;
+    cells.forEach((x, i) => {
+      x.value = dr[j][i][0];
+      if (dr[j][i][1] === undefined) delete x.dataset.auto; else x.dataset.auto = dr[j][i][1];
+      const lb = x.closest('.rbx'); if (lb) lb.classList.toggle('auto', dr[j][i][1] === '1');
+    });
+  });
+}
+function undoLabel(el) {
+  if (el.closest('#ask')) {
+    const q = ($('askT').textContent || '').replace(/\?.*$/, '').trim();
+    return q ? 'Сделано: ' + q.charAt(0).toLowerCase() + q.slice(1).slice(0, 70) : 'Сделано';
+  }
+  const b = el.closest('button,[role=button],label,[data-open]') || el;
+  const t = (b.getAttribute('aria-label') || b.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  return t && t.length > 1 ? 'Сделано: «' + t + '»' : 'Изменение сохранено';
+}
+function tStop() {
+  clearInterval(tInt); tInt = null;
+  clearTimeout(tHide); tHide = null;
+  $('tmr').classList.remove('on');
+}
+/* Двойной тап. Телефон иногда присылает одно касание дважды, а человек
+   мокрыми руками жмёт дважды сам: второй тап по той же кнопке быстрее
+   UNDO_TAP_MS глушится до всех обработчиков — иначе «Суперсет», RPE,
+   добавка, избранное включались и тут же выключались. Сравниваем не
+   элемент, а его имя: после перерисовки это уже новый узел. */
+const UNDO_TAP_MS = 260;
+let lastTap = { k: '', t: 0 };
+function tapKey(el) {
+  return el.tagName + '#' + el.id + [...el.attributes].filter(a => a.name.startsWith('data-'))
+    .map(a => a.name + '=' + a.value).join('&');
+}
+addEventListener('click', e => {
+  if (!e.isTrusted || !e.target.closest) return;
+  const el = e.target.closest('button,[role=button],[data-open],[data-tab]');
+  if (!el || el.closest('#undo')) return;
+  const k = tapKey(el), now = performance.now();
+  if (k === lastTap.k && now - lastTap.t < UNDO_TAP_MS) {
+    e.stopImmediatePropagation(); e.preventDefault(); return;
+  }
+  lastTap = { k, t: now };
+}, true);
+addEventListener('click', e => {
+  const el = e.target;
+  if (!el || !el.closest || el.closest('#undo')) return;
+  const before = snapS(), seq = undoSeq, nseq = noteSeq, tWas = $('tmr').classList.contains('on');
+  const shWas = $('sh').classList.contains('on') ? shRe : null;
+  undoQuiet = false; undoSay = ''; tapDrafts = draftCells();
+  setTimeout(() => {
+    const quiet = undoQuiet, say = undoSay;
+    undoQuiet = false; undoSay = '';
+    if (!quiet && undoSeq === seq && !undoSame(before, snapS())) {
+      const nt = noteSeq !== nseq && $('note').classList.contains('on') ? $('noteT').textContent : '';
+      const timer = !tWas && $('tmr').classList.contains('on');
+      offerUndo(before, nt || say || undoLabel(el), { back: timer ? tStop : null, again: shWas });
+    }
+    tapDrafts = null;
+  }, 0);
+}, true);
+/* Поле ввода: копия при входе, решение — при уходе. Клетки повторов и
+   веса по строкам в карточке — черновик подхода: их правят десятки раз
+   за тренировку, а полоска над ними закрывала бы следующую клетку. */
+const FIELD_QUIET = '[data-rs],[data-ws],[data-f="w"],[data-f="r"],[data-f="s"]';
+document.addEventListener('focusin', e => {
+  const f = e.target;
+  if (!f.matches || !f.matches('input,textarea,select') || f.matches(FIELD_QUIET)) { fieldEl = null; fieldSnap = null; return; }
+  fieldEl = f; fieldSnap = snapS();
+});
+document.addEventListener('change', e => {
+  const f = e.target;
+  if (f !== fieldEl || fieldSnap === null) return;
+  const before = fieldSnap, seq = undoSeq;
+  setTimeout(() => {
+    if (undoSeq !== seq || undoSame(before, snapS())) return;
+    const nm = (f.getAttribute('aria-label') || f.placeholder || (f.labels && f.labels[0] && f.labels[0].textContent) || '')
+      .replace(/\s+/g, ' ').trim().slice(0, 40);
+    offerUndo(before, undoSay || (nm ? 'Поле «' + nm + '» изменено' : 'Запись изменена'), { field: 1, again: $('sh').classList.contains('on') ? shRe : null });
+    undoSay = '';
+    // следующее изменение того же поля без выхода из него считается от этого места
+    if (fieldEl === f) fieldSnap = snapS();
+  }, 0);
+}, true);
 
 /* ---------- подтверждение ---------- */
 let askCb = null;
@@ -4675,17 +4817,29 @@ function askClose(v) {
 }
 $('askY').addEventListener('click', () => askClose(true));
 $('askN').addEventListener('click', () => askClose(false));
-$('ask').addEventListener('click', e => { if (e.target.id === 'ask') askClose(false); });
+// касание мимо окна — «нет»; но не когда в окне поле: набранное название пропадало от промаха
+$('ask').addEventListener('click', e => { if (e.target.id === 'ask' && $('askI').hidden) askClose(false); });
 
 /* ---------- общая шторка ---------- */
 function sheet(title, html) {
+  shRe = null;                  // шторку, которая умеет открыться заново, отмечает её хозяин
   $('shT').textContent = title;
   $('shB').innerHTML = html;
   $('sh').classList.add('on');
   document.body.style.overflow = 'hidden';
 }
 function sheetClose() { $('sh').classList.remove('on'); document.body.style.overflow = ''; }
-$('shX').addEventListener('click', sheetClose);
+/* Шторка с полями и своей кнопкой «Записать» (замеры): × после набранных
+   цифр молча их терял, а отменить нечего — в S они ещё не попали. */
+function sheetDirty() {
+  const b = $('shB');
+  if (!b.querySelector('[data-measave]')) return false;
+  return [...b.querySelectorAll('input')].some(i => i.value !== i.defaultValue);
+}
+$('shX').addEventListener('click', async () => {
+  if (sheetDirty() && !(await ask('Закрыть без записи? Вписанное пропадёт.', 'ЗАКРЫТЬ'))) return;
+  sheetClose();
+});
 
 /* =========================================================================
    НАВИГАЦИЯ: нижние вкладки и общий выбранный день
@@ -5054,6 +5208,7 @@ function openWeekPlan(ds) {
   // выбор под списком: на телефоне он ниже края — показываем, что появилось
   const wt = $('shB').querySelector('.wkt');
   if (wt && wt.scrollIntoView) wt.scrollIntoView({ block: 'nearest' });
+  shRe = wkAgain;
 }
 $('shB').addEventListener('click', e => {
   const m = e.target.closest('[data-wpm]');
@@ -5293,20 +5448,28 @@ $('skipDay').addEventListener('click', () => runOnce('skip', () => {
 /* Листание вбок между упражнениями. Порог в 48 px, чтобы не срабатывало
    при обычном нажатии, и проверка на вертикаль — страница должна
    прокручиваться как обычно. */
+/* Порог подняли: 48 px ловили случайный мазок пальцем по строке подходов —
+   карточка уезжала на соседнее упражнение, и следующая галочка ставилась
+   не туда. Теперь листает только уверенный горизонтальный жест: не короче
+   SWIPE_MIN (и четверти экрана), вдвое шире своей высоты, быстрее
+   SWIPE_MS и начатый не на кнопке, поле или графике. */
+const SWIPE_MIN = 90, SWIPE_MS = 600;
 (function () {
-  let x0 = 0, y0 = 0, on = false;
+  let x0 = 0, y0 = 0, t0 = 0, on = false;
   const el = $('exl');
   el.addEventListener('touchstart', e => {
     if (exOpen === null || e.touches.length !== 1) { on = false; return; }
-    if (e.target.closest('input,textarea')) { on = false; return; }
-    on = true; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    if (e.target.closest('input,textarea,button,label,select,.rbx,.srow,.exfhist,.chart,svg')) { on = false; return; }
+    on = true; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
   }, { passive: true });
+  el.addEventListener('touchcancel', () => { on = false; }, { passive: true });
   el.addEventListener('touchend', e => {
     if (!on || exOpen === null) return;
     on = false;
     const t = e.changedTouches[0];
     const dx = t.clientX - x0, dy = t.clientY - y0;
-    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+    if (Date.now() - t0 > SWIPE_MS) return;
+    if (Math.abs(dx) < Math.max(SWIPE_MIN, innerWidth * 0.25) || Math.abs(dx) < Math.abs(dy) * 2) return;
     const n = (dayOf(sel).ex || []).length;
     if (!n) return;
     exOpen = (exOpen + (dx < 0 ? 1 : -1) + n) % n;
@@ -5566,6 +5729,7 @@ $('exl').addEventListener('click', ev => {
     r.log[j].kinds = [...card.querySelectorAll('[data-rs]')].map(x => x.dataset.kind || '');
     refreshPrevious(card);
     save();
+    undoSay = 'Подход ' + (num(inp.dataset.rs) + 1) + ': ' + (k ? KIND[k][1] : 'обычный');
     return;
   }
 });
@@ -5574,6 +5738,7 @@ $('exl').addEventListener('click', ev => {
   const card = b.closest('.ex'), j = num(card.dataset.j), r = recRW(sel);
   const l = r.log[j] = r.log[j] || {}, v = num(b.dataset.rpe);
   if (num(l.rpe) === v) delete l.rpe; else l.rpe = v;
+  undoSay = l.rpe ? 'RPE ' + l.rpe : 'RPE снят';
   /* Последняя галочка закрывает упражнение сама, и RPE ставят уже после.
      Верх на отказе прибавку не даёт (maybeProgress): отказ после закрытия
      снимает прибавку тем же журналом отката, снятый отказ её возвращает. */
@@ -5608,6 +5773,7 @@ $('exl').addEventListener('click', ev => {
   const b = ev.target.closest('[data-ss]'); if (!b) return;
   const d = dayOf(sel), e = d.ex[num(b.dataset.ss)]; if (!e) return;
   if (e.ss) delete e.ss; else e.ss = 1;
+  undoSay = e.ss ? 'Суперсет: «' + e.n + '» + «' + ((d.ex[num(b.dataset.ss) + 1] || {}).n || '') + '»' : 'Суперсет снят';
   save(); render();
 });
 $('exl').addEventListener('click', ev => {
@@ -5676,6 +5842,7 @@ $('exl').addEventListener('click', ev => {
   fields[i].value = String(ref.r); fields[i].dispatchEvent(new Event('input', { bubbles: true }));
   const l = recRW(sel).log[j];
   l.rs = fields.map(x => String(x.value).trim() === '' ? '' : num(x.value));
+  undoSay = 'Подход ' + (i + 1) + ' повторён: ' + kg(ref.w) + ' кг × ' + ref.r;
   save();
 });
 
@@ -5698,12 +5865,18 @@ $('exl').addEventListener('click', ev => {
     const e = (dayOf(sel).ex || [])[j] || {};
     const rF = card.querySelector('[data-f="r"]');
     const tgt = topRep(rF && String(rF.value).trim() ? rF.value : e.r);
-    if (tgt) { rs.value = tgt; rs.dispatchEvent(new Event('input', { bubbles: true })); }
+    if (tgt) { rs.value = tgt; rs.dispatchEvent(new Event('input', { bubbles: true })); rs.dataset.tickFill = String(tgt); }
+  } else if (!on && rs && rs.dataset.tickFill !== undefined) {
+    // снятая галочка убирает и цифру, которую поставила сама: второе касание — ровно отмена первого
+    if (String(rs.value).trim() === rs.dataset.tickFill) { rs.value = ''; rs.dispatchEvent(new Event('input', { bubbles: true })); }
+    delete rs.dataset.tickFill;
   }
   row.classList.toggle('on', on);
   b.setAttribute('aria-pressed', on ? 'true' : 'false');
   const ck = [...card.querySelectorAll('.srow')].map((x, k) => (x.classList.contains('on') ? k : -1)).filter(k => k >= 0);
   if (ck.length) l.ck = ck; else delete l.ck;
+  // снята последняя галочка — пустая запись, которую создала первая, уходит: как не касались
+  if (!ck.length && !Object.keys(l).length) { delete r.log[j]; if (recBare(r)) delete S.rec[sel]; }
   save();
   /* Рабочие строки — обычные и «до отказа»: отказ — рабочий подход с пометкой.
      Дроп делают после последнего рабочего, поэтому строки за ним тоже ждут
@@ -5714,6 +5887,8 @@ $('exl').addEventListener('click', ev => {
   const work = rows.filter(x => kindAt(x) === '' || kindAt(x) === 'f');
   const need = work.length ? work.concat(rows.slice(rows.indexOf(work[work.length - 1]) + 1)) : [];
   if (need.length && need.every(x => x.classList.contains('on'))) runOnce('go' + j, () => toggleSet(j), 200);
+  // галочка строки отменяется вторым касанием её же; полоска — только когда закрылось упражнение
+  else undoQuiet = true;
 });
 
 // подход, закрытый по верхней границе, подсвечивается сразу
@@ -6015,6 +6190,7 @@ function toggleSet(j) {
     }
     // снята последняя отметка закрытой тренировки — день перестаёт быть тренировкой
     if (r.wo && !Object.values(r.log).some(x => x && x.done)) { r.wo = 0; delete r.t1; addXp(-XP_WO); }
+    undoSay = 'Отметка снята: «' + p.n + '»';
     save(); render(); return;
   }
 
@@ -6156,6 +6332,7 @@ function toggleSet(j) {
   const ssNext = p.ss && d.ex[j + 1] && !(r.log[j + 1] || {}).done ? j + 1 : -1;
   if (ssNext >= 0) { if (exOpen === j) exOpen = ssNext; note('Суперсет: дальше «' + d.ex[ssNext].n + '», без отдыха'); }
   // строка только что закрытого подхода вспыхивает — один раз, в этой отрисовке
+  undoSay = '«' + p.n + '» закрыто';
   justDone = j; save(); render(); justDone = -1;
   syncWake();
 
@@ -6295,9 +6472,16 @@ $('shB').addEventListener('input', e => {
   exQ = e.target.value;
   $('exlist').innerHTML = exPickList();
 });
+/* Двойной тап по «Начать тренировку»: второе касание приходило уже на
+   «Завершить» — тренировка начиналась и тут же закрывалась, с опытом и
+   итогами. Пустую тренировку, начатую этой кнопкой, закрыть можно не
+   раньше чем через FIN_GAP: так быстро закрывать её незачем. */
+const FIN_GAP = 1500;
+let finAt = 0;
 $('fin').addEventListener('click', () => {
   if (sel > today()) { note('Этот день ещё впереди'); return; }
   if (recOf(sel).wo) return;
+  if (woEmpty(sel) && Date.now() - finAt < FIN_GAP) return;
   // копия — до recRW: пустая запись дня тоже часть того, что вернёт отмена
   const snap = snapS();
   const r = recRW(sel);
@@ -6305,7 +6489,7 @@ $('fin').addEventListener('click', () => {
      Раньше отсчёт стартовал молча с первым закрытым подходом, и разминка
      в него не попадала. */
   if (!r.t0) {
-    r.t0 = Date.now();
+    r.t0 = Date.now(); finAt = Date.now();
     save(); render(); keepAwake(true);
     offerUndo(snap, 'Тренировка пошла');
     return;
@@ -6326,14 +6510,17 @@ $('fin').addEventListener('click', () => {
 /* Начатую, но пустую тренировку можно отменить в любой момент, а не только
    пока видна полоска: раньше случайное «Начать» оставляло часы тикать, и
    убрать их было нечем, кроме как закрыть пустую тренировку. */
+// в записи дня нет ничего, кроме пустых журнала и добавок
+function recBare(r) {
+  return Object.keys(r).every(k => (k === 'wo' && !r.wo) || ((k === 'log' || k === 'sp') && !Object.keys(r[k] || {}).length));
+}
 function woEmpty(ds) { const r = S.rec[ds]; return !!(r && r.t0 && !r.wo && !dayEntries(ds).length); }
 $('woCx').addEventListener('click', () => runOnce('wocx', () => {
   if (!woEmpty(sel)) return;
   const snap = snapS(), r = S.rec[sel];
   delete r.t0; delete r.t1;
   // запись, которую создало только «Начать», уходит целиком — как не нажимали
-  const bare = Object.keys(r).every(k => (k === 'wo' && !r.wo) || ((k === 'log' || k === 'sp') && !Object.keys(r[k] || {}).length));
-  if (bare) delete S.rec[sel];
+  if (recBare(r)) delete S.rec[sel];
   save(); render(); keepAwake(false);
   offerUndo(snap, 'Начало тренировки отменено');
 }));
@@ -6511,6 +6698,7 @@ $('spl').addEventListener('click', e => {
   if (t) {
     const j = +t.dataset.tog, r = recRW(sel);
     if (r.sp[j]) { delete r.sp[j]; addXp(-XP_SP); } else { r.sp[j] = 1; addXp(XP_SP); }
+    undoSay = '«' + ((dayOf(sel).sp[j] || {}).n || 'Добавка') + '»: ' + (r.sp[j] ? 'принята' : 'отметка снята');
     save(); paintSupp(); paintStatus(); return;
   }
   const del = e.target.closest('[data-spd]');
@@ -8111,10 +8299,12 @@ function paintSex() {
 $('anAct').addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   S.act = b.dataset.act; applyNutri(); save(); paintSex();
+  undoSay = 'Активность: ' + b.textContent.trim().toLowerCase() + ' — нормы еды пересчитаны';
 });
 $('anSex').addEventListener('click', e => {
   const b = e.target.closest('[data-sex]'); if (!b) return;
   S.sex = b.dataset.sex; applyNutri(); save(); paintSex();
+  undoSay = 'Пол: ' + b.textContent.trim().toLowerCase() + ' — нормы пересчитаны';
 });
 $('anAge').addEventListener('input', e => { S.age = e.target.value; applyNutri(); save(); });
 // рост держится и при «Позже» (раньше сохранялось всё, кроме роста)
@@ -8248,6 +8438,7 @@ function openSettings() {
     '<p class="s" style="color:var(--mut);font-size:12.5px;margin:9px 0 0;line-height:1.5">' +
     'В копии весь журнал, веса, рацион и фотографии. iOS может очистить хранилище, ' +
     'если не заходить месяцами, — сохраняй файл в «Файлы» или iCloud.</p>');
+  shRe = openSettings;
 }
 
 $('shB').addEventListener('click', e => {
@@ -8558,6 +8749,7 @@ function openLib(id) {
         <button class="lgo" data-libadd="${esc(o.id)}">+ В тренировку · ${esc(fmt(inDay, 1))}</button>
         <button class="lfav2${fav ? ' on' : ''}" data-lfav="${esc(o.id)}" aria-pressed="${fav}">${fav ? 'В избранном' : 'В избранное'}</button>
       </div></div>`);
+    shRe = () => openLib(id);
     // два кадра по очереди — как анимация движения; при «уменьшении движения» кадры стоят рядом
     clearInterval(libAnim);
     const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -8593,6 +8785,8 @@ function libToggleFav(id) {
   if (i >= 0) S.fav.splice(i, 1); else S.fav.push(id);
   save();
   const on = i < 0;
+  const o = LIB && LIB.byId.get(id);
+  undoSay = (on ? 'В избранном: ' : 'Убрано из избранного: ') + (o ? o.n : id);
   document.querySelectorAll('[data-lfav="' + CSS.escape(id) + '"]').forEach(b => {
     b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
     if (b.classList.contains('lfav2')) b.textContent = on ? 'В избранном' : 'В избранное';
@@ -9980,6 +10174,7 @@ function openRation() {
      </button>`;
   }).join('') : '<p class="s" style="color:var(--mut);font-size:12px;margin:0 0 4px">Съеденных дней пока нет.</p>';
   sheet('РАЦИОН', h);
+  shRe = openRation;
 }
 $('cpBtn').addEventListener('click', openRation);
 
@@ -10075,7 +10270,12 @@ function paintPickBar() {
 }
 
 $('fq').addEventListener('input', e => drawPick(e.target.value));
-$('fpX').addEventListener('click', closePick);
+// выбранные, но не добавленные продукты живут только здесь — × их молча терял
+$('fpX').addEventListener('click', async () => {
+  const n = picked.length;
+  if (n && !(await ask('Закрыть подбор? Выбрано позиций: ' + n + ' — они не добавятся.', 'ЗАКРЫТЬ'))) return;
+  closePick();
+});
 $('fpAdd').addEventListener('click', () => {
   if (!picked.length) return;
   /* Позиции идут в тот приём и тот день, откуда открыт подбор. Раньше брался
@@ -10274,13 +10474,21 @@ $('phFile').addEventListener('change', async e => {
   if (!f) return;
   try {
     const dat = await compress(f);
+    /* Новый снимок дня ложится поверх прежнего. Случайно выбранный файл
+       стирал старое фото навсегда — держим прежнее в памяти для отмены. */
+    let old = null;
+    try { old = PHCACHE.get(day) || (await phGet(day)) || null; } catch (e2) { old = null; }
+    const snap = snapS();
     await phPut(day, dat);
     PHCACHE.set(day, dat);
     await phSync();
     // вес подписываем только к сегодняшнему снимку: прошлому дню сегодняшний вес чужой
     if (day === today() && !recOf(day).bw && num(S.bw)) { recRW(day).bw = S.bw; save(); }
-    note('Снимок сохранён');
     if (sel === day && tab === 'photo') paintPhotoScreen();
+    offerUndo(snap, old ? 'Снимок за ' + fmt(day, 1) + ' заменён' : 'Снимок сохранён', { back: async () => {
+      if (old) { await phPut(day, old); PHCACHE.set(day, old); } else { await phDelete(day); PHCACHE.delete(day); }
+      await phSync();
+    } });
   } catch (err) { note('Не удалось сохранить фото'); }
 });
 $('phDel').addEventListener('click', async () => {
@@ -10782,6 +10990,7 @@ function openMeas() {
     (Object.keys(td).length ? '<button class="copyb mdel" data-measdel="' + today() + '">Стереть сегодняшние замеры</button>' : '') + '</div>' +
     (have.length ? '<div class="win mhist"><div class="exchb">' + have.map(([k, l]) => '<button data-measch="' + k + '" class="' + (k === measK ? 'on' : '') + '">' + l + '</button>').join('') + '</div>' +
       miniChart(sr, 'var(--acc-2)', v => kg(v) + ' см') + '</div>' : ''));
+  shRe = openMeas;
 }
 
 /* ---------- данные, на которые опирается тренер ---------- */
