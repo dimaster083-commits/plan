@@ -12,6 +12,8 @@ const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
 const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 const PREP=()=>{
   S.setup=1; S.sound=0; document.getElementById('setup').classList.remove('on');
+  // This tests rep defaults, not cycle reductions: the displayed load must really be 60 kg.
+  S.start=addDays(today(),7); S.returning=0; wkCache=null;
   const d=dayOf(today()); if(d.t==='rest'){const x=S.days.find(y=>(y.ex||[]).length);d.t=x.t;d.s=x.s;d.ex=x.ex.map(e=>({...e}));}
   const e=d.ex[0]; e.r='4-6'; e.w=60;
   // то же упражнение в другом дне программы — там своя цель 6-8
@@ -25,6 +27,13 @@ const PREP=()=>{
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   const p=await(await b.newContext({viewport:{width:360,height:780}})).newPage();
+  await p.addInitScript(() => {
+    const RealDate = Date, offset = new RealDate(2026, 9, 15, 12).getTime() - RealDate.now();
+    window.Date = class extends RealDate {
+      constructor(...args) { super(...(args.length ? args : [RealDate.now() + offset])); }
+      static now() { return RealDate.now() + offset; }
+    };
+  });
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto(APP); await p.waitForTimeout(1300);
 

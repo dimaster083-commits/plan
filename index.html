@@ -3420,7 +3420,7 @@ document.documentElement.dataset.skin = 'sl';
 <nav class="tabbar"><div class="in" id="tabs"></div></nav>
 
 <!-- ================= НАКЛАДКИ ================= -->
-<div class="sheet" id="sh"><div class="shin">
+<div class="sheet" id="sh" role="dialog" aria-modal="true" aria-labelledby="shT" tabindex="-1"><div class="shin">
   <div class="shh"><b id="shT">—</b><button class="hib" id="shI" type="button" data-hint="" hidden aria-label="Подсказка"></button><button id="shX" aria-label="Закрыть">×</button></div>
   <div id="shB"></div>
 </div></div>
@@ -4005,7 +4005,7 @@ setTimeout(() => { const b = $('boot'); if (b) { b.classList.add('off'); b.remov
    СОСТОЯНИЕ
    ========================================================================= */
 const KEY = 'sys-gym-v3';       // ключ первой версии: старые данные подхватываются как есть
-let S = null, canSave = true;
+let S = null, canSave = true, storedRaw = null;
 
 function build() {
   return {
@@ -4333,7 +4333,7 @@ function recomputeStats(force) {
 }
 
 function load() {
-  try { const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : build(); }
+  try { const raw = localStorage.getItem(KEY); storedRaw = raw; S = raw ? JSON.parse(raw) : build(); }
   catch (e) { canSave = false; S = build(); setSaveState('failed'); }
   // Раньше здесь стояло S = build(): состояние без расписания стиралось целиком,
   // вместе с журналом, весами и накопленным тоннажем. Теперь восстанавливаем
@@ -4495,6 +4495,7 @@ let undoRec = null, undoTimer = null;   // отмена последнего д�
 let undoSeq = 0, noteSeq = 0, undoQuiet = false, undoSay = '', tapDrafts = null;
 let fieldSnap = null, fieldEl = null;
 let shRe = null;                 // как заново открыть шторку, в которой сделано действие
+let shBack = null;
 /* На телефоне один тап иногда приходит дважды до перерисовки. Блокируем
    только повтор одной пишущей операции на короткое время. */
 const pendingActions = new Set();
@@ -4509,6 +4510,7 @@ function setSaveState(kind) {
   if (!el) return;
   el.dataset.saveState = kind;
   el.textContent = kind === 'saving' ? 'Сохраняем на устройстве…'
+    : kind === 'conflict' ? 'Данные изменились в другом окне — обнови приложение'
     : kind === 'failed' ? 'Не удалось сохранить данные' : 'Сохранено на устройстве';
 }
 function save() {
@@ -4525,7 +4527,18 @@ function save() {
 function flush() {
   if (!canSave) { setSaveState('failed'); return false; }
   clearTimeout(saveTimer);
-  try { localStorage.setItem(KEY, JSON.stringify(S)); setSaveState('saved'); flush.warned = 0; return true; }
+  try {
+    // Уход/возврат старой вкладки не должен стирать записи соседней.
+    // Конфликт не сливаем наугад: свои несохранённые правки остаются в памяти.
+    if (localStorage.getItem(KEY) !== storedRaw) {
+      setSaveState('conflict');
+      if (!flush.conflict) { flush.conflict = 1; note('Данные изменились в другом окне. Сделай копию своих правок и обнови приложение'); }
+      return false;
+    }
+    const raw = JSON.stringify(S);
+    if (raw !== storedRaw) localStorage.setItem(KEY, raw);
+    storedRaw = raw; setSaveState('saved'); flush.warned = 0; flush.conflict = 0; return true;
+  }
   /* Одна неудачная запись (переполнено хранилище) раньше выключала сохранение
      до перезапуска, и все следующие правки терялись, даже когда место было.
      Теперь каждое сохранение пробует снова; предупреждаем один раз. */
@@ -4903,27 +4916,32 @@ document.addEventListener('change', e => {
 }, true);
 
 /* ---------- подтверждение ---------- */
-let askCb = null;
+let askCb = null, askBack = null;
 function ask(text, yesLabel) {
+  askBack = document.activeElement;
   $('askT').textContent = text;
   $('askI').hidden = true;
   $('askY').textContent = yesLabel || 'УДАЛИТЬ';
   $('askY').classList.add('yes');
   $('ask').classList.add('on');
+  $('askN').focus({ preventScroll: true }); // безопасный ответ по умолчанию
   return new Promise(res => { askCb = res; });
 }
 function askText(text, def) {
+  askBack = document.activeElement;
   $('askT').textContent = text;
   const i = $('askI');
   i.hidden = false; i.value = def || '';
   $('askY').textContent = 'СОХРАНИТЬ';
   $('askY').classList.remove('yes');
   $('ask').classList.add('on');
-  setTimeout(() => i.focus(), 100);
+  i.focus({ preventScroll: true });
   return new Promise(res => { askCb = v => res(v ? ($('askI').value.trim() || null) : null); });
 }
 function askClose(v) {
   $('ask').classList.remove('on');
+  const back = askBack; askBack = null;
+  if (back && back.isConnected && back.getClientRects().length) back.focus({ preventScroll: true });
   const cb = askCb; askCb = null;
   if (cb) cb(v);
 }
@@ -4935,6 +4953,7 @@ $('ask').addEventListener('click', e => { if (e.target.id === 'ask' && $('askI')
 /* ---------- общая шторка ---------- */
 /* Третий аргумент — ключ подсказки (HINTS): у шапки шторки появляется «i». */
 function sheet(title, html, hint) {
+  if (!$('sh').classList.contains('on')) shBack = document.activeElement;
   shRe = null;                  // шторку, которая умеет открыться заново, отмечает её хозяин
   $('shT').textContent = title;
   const si = $('shI');
@@ -4942,8 +4961,13 @@ function sheet(title, html, hint) {
   $('shB').innerHTML = html;
   $('sh').classList.add('on');
   document.body.style.overflow = 'hidden';
+  $('shX').focus({ preventScroll: true });
 }
-function sheetClose() { $('sh').classList.remove('on'); document.body.style.overflow = ''; }
+function sheetClose() {
+  $('sh').classList.remove('on'); document.body.style.overflow = '';
+  const b = shBack; shBack = null;
+  if (b && b.isConnected && b.getClientRects().length) b.focus({ preventScroll: true });
+}
 /* Шторка с полями и своей кнопкой «Записать» (замеры): × после набранных
    цифр молча их терял, а отменить нечего — в S они ещё не попали. */
 function sheetDirty() {
@@ -5105,7 +5129,7 @@ async function setDayType(i, nt) {
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && ds < from) from = ds; });
   for (let c = at(from), g = 0; iso(c) < t && g < 4000; c.setDate(c.getDate() + 1), g++) {
     const ds = iso(c);
-    if (dayOf(ds) !== d) continue;
+    if (dayIdx(ds) !== i) continue;
     const r = recRW(ds);
     if (!r.dt) { r.dt = was; r.dn = d.s; }
   }
@@ -5616,7 +5640,7 @@ function exRow(e, j, r, IN) {
   const rs = fc ? fc.vals.map(v => (v === '' ? '—' : v)).join('/')
     : (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + rr);
   const ex = dayOf(sel).ex, ss = !!(e.ss && ex[j + 1]), ss2 = !!(j > 0 && ex[j - 1] && ex[j - 1].ss);
-  return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}">
+  return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}" tabindex="0" role="group" aria-label="Открыть упражнение: ${esc(e.n)}. Enter или пробел" aria-keyshortcuts="Enter Space">
     ${exPic(e.n, 1) ? `<img class="exth" src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">` : ''}
     <span class="t"><span class="n">${esc(e.n)}</span>
       <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}<b class="kg">${w ? kg(w) : '—'}</b>${w ? ' кг' : ''} · ${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
@@ -5783,6 +5807,7 @@ function prFromLog(name) {
     Object.keys(lg).forEach(j => {
       const x = lg[j];
       if (!x || !x.done || (x.n || ((day.ex || [])[j] || {}).n) !== name) return;
+      if (x.s !== undefined && num(x.s) === 0) return; // разминка/дроп без рабочих подходов — не рекорд
       const w = num(pick(x.w, ((day.ex || [])[j] || {}).w));
       const weights = x.rs && x.rs.length ? x.rs.map((_, i) => x.ws && num(x.ws[i]) > 0 ? num(x.ws[i]) : w) : [w];
       best = Math.max(best, ...weights);
@@ -6212,6 +6237,17 @@ function fixedAt(e, g) {
   return rs.slice(0, sets).every(v => num(v) >= top);
 }
 
+// Вес закреплён во всех рабочих строках только на самом лёгком из них.
+// Разминка/дроп уже исключены из rs/ws при закрытии. Старые записи без
+// веса строк по-прежнему используют общий вес упражнения.
+function workWeight(log, fallback) {
+  const n = (log.rs || []).length || num(log.s);
+  if (!n) return 0;
+  return Math.min(...Array.from({ length: n }, (_, i) => {
+    const w = num((log.ws || [])[i]); return w > 0 ? w : fallback;
+  }));
+}
+
 function holdBadge(e, g) {
   const top = topRep(e.r), sets = num(pick(g.s, e.s)), rs = g.rs || [];
   if (!top || !rs.length) return '';
@@ -6219,7 +6255,7 @@ function holdBadge(e, g) {
     // Верх диапазона добран, но на весе ниже рабочего — так по плану идёт
     // облегчённая неделя, и рабочий вес от неё не растёт. Значок обещал
     // «закреплено», прибавки не было, и почему — было неоткуда узнать.
-    const wNow = num(pick(g.w, e.w)), base = num(e.w);
+    const wNow = workWeight(g, num(pick(g.w, e.w))), base = num(e.w);
     if (base && wNow && wNow < base) {
       return '<span class="prb lock soft">закреплено · неделя полегче</span>';
     }
@@ -6418,11 +6454,12 @@ function toggleSet(j) {
   const low = firstRep(pick(l.r, p.r));
   const got = (l.rs || []).map(num).filter(v => v > 0);
   const short = low > 0 && got.some(v => v < low);
-  const raised = short ? 0 : bumpWorking(p.n, w, l);
+  const actualW = workWeight(l, w);
+  const raised = short ? 0 : bumpWorking(p.n, actualW, l);
   if (short && w > num(p.w)) note('Рабочий вес не поднят: низ ' + low + ' повт. на ' + kg(w) + ' кг не добран');
 
   const old = num(S.pr[p.n]);
-  const recordW = l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => wAt(i))) : w;
+  const recordW = sets > 0 ? (l.rs && l.rs.length ? Math.max(...l.rs.map((_, i) => wAt(i))) : w) : 0;
   if (recordW > 0 && recordW > old) { l.prevPr = old; S.pr[p.n] = recordW; }
 
   /* Рекорды по видам: ≈1ПМ, лучший подход и объём сравниваются с лучшим из
@@ -6449,7 +6486,7 @@ function toggleSet(j) {
     l.xp = XP_EX; addXp(XP_EX, 'Подход закрыт'); dingSet();
   }
 
-  if (raised) note('Рабочий вес: ' + p.n + ' → ' + kg(w) + ' кг');
+  if (raised) note('Рабочий вес: ' + p.n + ' → ' + kg(actualW) + ' кг');
   if (rankUp) note('РАНГ СИЛЫ ПОВЫШЕН: ' + p.n + ' → ' + rankUp);
 
   if (!r.t0) r.t0 = Date.now();          // засечка начала тренировки
@@ -6485,11 +6522,12 @@ function failStreak(name, base, upTo) {
       const p = ((day && day.ex) || [])[j] || {};
       if ((l.n || p.n) !== name) return;
       seen = true;
-      const w = num(pick(l.w, p.w));
+      const commonW = num(pick(l.w, p.w)), w = workWeight(l, commonW);
       const bot = botRep(pick(l.r, p.r));
       const sets = num(pick(l.s, p.s));
       const rs = (l.rs || []).slice(0, sets).map(num);
-      if (Math.abs(w - base) < 1e-6 && bot && sets && rs.length >= sets &&
+      const sameLoad = rs.every((_, i) => Math.abs((num((l.ws || [])[i]) > 0 ? num(l.ws[i]) : commonW) - base) < 1e-6);
+      if (sameLoad && Math.abs(w - base) < 1e-6 && bot && sets && rs.length >= sets &&
           rs.every(v => v > 0) && rs.some(v => v < bot)) failed = true;
     });
     if (!seen) continue;
@@ -6508,6 +6546,8 @@ function failStreak(name, base, upTo) {
    рабочий вес опускается на один шаг сетки. Снятая отметка возвращает всё
    назад тем же журналом, что и прибавку. */
 function maybeRegress(l, p, w) {
+  const commonW = w;
+  w = workWeight(l, w);
   if (l.prog || l.down || !w) return;
   const base = num(p.w);
   // провал считается только на рабочем весе: облегчённая неделя — не провал,
@@ -6515,6 +6555,7 @@ function maybeRegress(l, p, w) {
   if (!base || Math.abs(w - base) > 1e-6) return;
   const bot = botRep(p.r), sets = num(pick(l.s, p.s));
   const rs = (l.rs || []).slice(0, sets).map(num);
+  if (!rs.every((_, i) => Math.abs((num((l.ws || [])[i]) > 0 ? num(l.ws[i]) : commonW) - base) < 1e-6)) return;
   if (!bot || !sets || rs.length < sets) return;
   if (!rs.every(v => v > 0)) return;      // повторы не записаны — судить не о чем
   if (rs.every(v => v >= bot)) return;    // низ добран — всё в порядке
@@ -6532,6 +6573,7 @@ function maybeRegress(l, p, w) {
    10/12/12/12 при цели 12 — ещё не повод прибавлять, первый подход не добран.
    И отдельно спрашиваем про запас сил: добил в ноль — вес остаётся. */
 function maybeProgress(l, p, w) {
+  w = workWeight(l, w);
   if (l.prog || !w) return;
   if (w < num(p.w)) return;               // сделано на облегчённом весе — рабочий не трогаем
   const top = topRep(p.r);
@@ -7101,7 +7143,7 @@ const REC_K = ['w', 'e1', 'set', 'vol'];
 function exSessions(name) {
   const out = [];
   Object.keys(S.rec).sort().forEach(ds => {
-    const es = dayEntries(ds).filter(e => e.n === name);
+    const es = dayEntries(ds).filter(e => e.n === name && e.s > 0);
     if (!es.length) return;
     const s = { ds, w: 0, e1: 0, set: 0, sw: 0, sr: 0, vol: 0 };
     es.forEach(e => {
@@ -8263,8 +8305,7 @@ $('exp').addEventListener('click', async () => {
        нужна: раньше сбой чтения фото обрывал всю копию. */
     let photos = {}, noPh = false;
     try {
-      const keys = (await phKeys()) || [], vals = (await phAll()) || [];
-      keys.forEach((k, i) => { photos[k] = vals[i]; });
+      photos = await phSnapshot();
     } catch (e2) { photos = {}; noPh = true; }
     const blob = new Blob([JSON.stringify({ v: 3, saved: new Date().toISOString(), state: S, photos: photos })],
       { type: 'application/json' });
@@ -8335,6 +8376,8 @@ $('impFile').addEventListener('change', e => {
       catch (err2) { S = old; invalidateFood(); throw err2; }
       entCache = null;                    // журнал и отчёты не должны показывать прежнее состояние
       canSave = true;                     // копия починила хранилище — писать снова можно
+      storedRaw = localStorage.getItem(KEY); // замена журнала явно подтверждена владельцем
+      undoDrop();
       if (!flush()) { note('Копия прочитана, но записать её на устройство не вышло'); render(); return; }
       // фото — только после удачного восстановления, только картинки и без замены своих
       for (const k of Object.keys(o.photos || {})) {
@@ -8784,7 +8827,32 @@ document.addEventListener('click', e => {
 }, true);
 $('hshX').addEventListener('click', hintClose);
 $('hsh').addEventListener('click', e => { if (e.target === $('hsh')) hintClose(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('hsh').hidden) { e.stopPropagation(); hintClose(); } }, true);
+document.addEventListener('keydown', e => {
+  const modal = $('ask').classList.contains('on') ? $('ask')
+    : !$('hsh').hidden ? $('hsh') : $('sh').classList.contains('on') ? $('sh') : null;
+  if (modal && e.key === 'Escape') {
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (modal.id === 'ask') askClose(false);
+    else if (modal.id === 'hsh') hintClose();
+    else $('shX').click(); // тот же вопрос о незаписанных замерах, что при касании ×
+    return;
+  }
+  if (modal && e.key === 'Tab') {
+    const stops = [...modal.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]')]
+      .filter(el => el.getClientRects().length && !el.hidden);
+    const first = stops[0], last = stops[stops.length - 1], current = document.activeElement;
+    if (!first) { e.preventDefault(); modal.focus({ preventScroll: true }); }
+    else if (!modal.contains(current) || (e.shiftKey ? current === first : current === last)) {
+      e.preventDefault(); (e.shiftKey ? last : first).focus({ preventScroll: true });
+    }
+    return;
+  }
+  // Вложенная кнопка имеет своё действие: Enter на избранном/галочке
+  // не должен дополнительно раскрывать карточку.
+  if (!modal && (e.key === 'Enter' || e.key === ' ') && e.target.matches('.exrow[data-open],.lcard[data-lib]')) {
+    e.preventDefault(); e.target.click();
+  }
+}, true);
 
 function paintTips() {
   const on = hintsOn();
@@ -8990,7 +9058,7 @@ function libChips() {
 function libCard(o) {
   const src = libPicUrl(o, 0), fav = libFav(o.id);
   const mu = o.pm.map(m => (LIB_MU[m] || [])[0]).filter(Boolean).join(', ');
-  return `<div class="lcard" data-lib="${esc(o.id)}">
+  return `<div class="lcard" data-lib="${esc(o.id)}" tabindex="0" role="group" aria-label="Открыть упражнение: ${esc(o.n)}. Enter или пробел" aria-keyshortcuts="Enter Space">
     <div class="lph">${src ? `<img src="${src}"${o.own ? '' : ' crossorigin="anonymous"'} alt="" loading="lazy">` : '<span>нет фото</span>'}</div>
     <button class="lfav${fav ? ' on' : ''}" data-lfav="${esc(o.id)}" aria-pressed="${fav}" aria-label="${fav ? 'Убрать из избранного' : 'В избранное'}">
       <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.2L6 21z"/></svg></button>
@@ -9388,18 +9456,23 @@ function swapApply(ds, j, name, o, w, all) {
   const own = (ov, k) => !!ov && Object.prototype.hasOwnProperty.call(ov, k);
   // черновик старого движения на этой дате — не про новое
   const r0 = S.rec[ds];
-  if (r0 && r0.log && r0.log[j] && !r0.log[j].done) delete r0.log[j];
   const T = base.n;
   if (!all) {
+    if (r0 && r0.log && r0.log[j] && !r0.log[j].done) delete r0.log[j];
     const ov = S.once[ds] || (S.once[ds] = {});
     if (name === T) delete ov[T]; else ov[T] = mk(cur);       // вернули программное — разовая замена снята
   } else {
+    // В программе нет двух одинаковых движений на одном дне. Если аналог
+    // уже есть, оставляем этот день целиком: иначе имя-ключ разовой замены
+    // переписывает оба места прошлого дня и подменяет чужую запись.
+    const replaceDays = new Set(S.days.filter(d => !(d.ex || []).some(e => e.n === name)));
     const dates = new Set(Object.keys(S.rec).concat(Object.keys(S.once)));
     dates.forEach(x => {
       const t2 = S.days[dayIdx(x)];
-      if (!t2 || !(t2.ex || []).some(e => e.n === T)) return;
+      if (!replaceDays.has(t2) || !(t2.ex || []).some(e => e.n === T)) return;
       const lg = ((S.rec[x] || {}).log) || {}, ov = S.once[x];
       const locked = t2.ex.some((e, i) => e.n === T && lg[i] && lg[i].done);
+      if (x === ds && !locked && lg[j] && !lg[j].done) delete lg[j];
       if (own(ov, T)) {
         // разовая замена другой даты остаётся разовой; на этой — уступает новой программе
         const keep = ov[T]; delete ov[T];
@@ -9412,13 +9485,13 @@ function swapApply(ds, j, name, o, w, all) {
         t2.ex.forEach((e, i) => { if (e.n === T && lg[i] && !lg[i].done) delete lg[i]; });
       }
     });
-    S.days.forEach(d => (d.ex || []).forEach(e => { if (e.n === T) { e.n = name; e.g = g; e.w = W; delete e.fixed; } }));
+    replaceDays.forEach(d => (d.ex || []).forEach(e => { if (e.n === T) { e.n = name; e.g = g; e.w = W; delete e.fixed; } }));
   }
   Object.keys(S.once).forEach(x => { if (!Object.keys(S.once[x] || {}).length) delete S.once[x]; });
   if (!Object.keys(S.once).length) delete S.once;
   entCache = null;
   save(); sheetClose(); render();
-  offerUndo(snap, cur.n + ' → ' + name + (all ? ' · во всех днях' : ' · ' + fmt(ds, 1)));
+  offerUndo(snap, cur.n + ' → ' + name + (all ? ' · в программе (дни, где аналог уже есть, без изменений)' : ' · ' + fmt(ds, 1)));
   return true;
 }
 $('shB').addEventListener('click', e => {
@@ -10955,6 +11028,10 @@ const phDelete = k => tx('readwrite', st => st.delete(k));
 const phGet = k => tx('readonly', st => st.get(k));
 const phKeys = () => tx('readonly', st => st.getAllKeys());
 const phAll = () => tx('readonly', st => st.getAll());
+// Ключи и значения читаются в одной транзакции: удаление снимка в другом
+// окне не может сдвинуть значения относительно дат в резервной копии.
+const phSnapshot = () => tx('readonly', st => ({ keys: st.getAllKeys(), values: st.getAll() }))
+  .then(q => Object.fromEntries(q.keys.result.map((k, i) => [k, q.values.result[i]])));
 
 let PH = [];                       // список дат со снимками
 // Кэш держит только показанное: снимок весит сотни килобайт, весь архив в памяти
@@ -11066,10 +11143,12 @@ $('phFile').addEventListener('change', async e => {
     let old = null;
     try { old = PHCACHE.get(day) || (await phGet(day)) || null; } catch (e2) { old = null; }
     if (phSelections.get(day) !== selection) return;
-    const snap = snapS();
     await phPut(day, dat);
     PHCACHE.set(day, dat);
     await phSync();
+    // Пока IndexedDB писала фото, журнал мог измениться или восстановиться.
+    // Отмена возвращает фото, но не ту устаревшую копию журнала.
+    const snap = snapS();
     // вес подписываем только к сегодняшнему снимку: прошлому дню сегодняшний вес чужой
     if (day === today() && !recOf(day).bw && num(S.bw)) { recRW(day).bw = S.bw; save(); }
     if (sel === day && tab === 'photo') paintPhotoScreen();
@@ -11082,13 +11161,16 @@ $('phFile').addEventListener('change', async e => {
 $('phDel').addEventListener('click', async () => {
   const day = sel;
   if (!await ask('Удалить фото за ' + fmt(day) + '?')) return;
+  // Удаление — более поздняя команда, чем ещё сжимающийся выбор файла.
+  // Отказ в вопросе загрузку не отменяет.
+  phSelections.set(day, (phSelections.get(day) || 0) + 1);
   // снимок живёт в IndexedDB, а не в S: для отмены держим его в памяти
   let dat = null;
   try { dat = PHCACHE.get(day) || (await phGet(day)) || null; } catch (e) { dat = null; }
-  const snap = snapS();
   await phDelete(day);
   PHCACHE.delete(day);
   await phSync();
+  const snap = snapS();
   if (sel === day && tab === 'photo') paintPhotoScreen();
   if (dat) offerUndo(snap, 'Фото за ' + fmt(day, 1) + ' удалено', { back: async () => {
     await phPut(day, dat); PHCACHE.set(day, dat); await phSync();

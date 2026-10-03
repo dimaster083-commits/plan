@@ -6,6 +6,14 @@ const chk=(c,n,d)=>{ if(!c) fails++; console.log('  '+(c?'✓':'✗')+' '+n+(d?'
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   const p=await(await b.newContext({viewport:{width:320,height:700}})).newPage();
+  // Mid-month fixture: the current week and both recorded workouts belong to October.
+  await p.addInitScript(() => {
+    const RealDate = Date, offset = new RealDate(2026, 9, 15, 12).getTime() - RealDate.now();
+    window.Date = class extends RealDate {
+      constructor(...args) { super(...(args.length ? args : [RealDate.now() + offset])); }
+      static now() { return RealDate.now() + offset; }
+    };
+  });
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto(APP); await p.waitForTimeout(1300);
   const r=await p.evaluate(()=>{ if(typeof openMonth!=='function') return null;

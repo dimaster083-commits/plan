@@ -64,6 +64,7 @@ h2.sec{padding:8px 0;border:0;border-radius:0;margin:18px 0 8px}
 .dh::after{display:none}
 .dh .ln{height:36px;width:2px;background:var(--acc-2)}
 .dh h3,.dh h3 input{font-family:var(--f);font-size:30px;line-height:1.2;font-weight:800;letter-spacing:-.035em}
+.dh h3 input{min-height:44px}
 .dh p{font-size:12px;color:var(--ink3);font-weight:500;margin-top:3px}
 .gear{width:44px;height:44px;border-radius:12px;background:var(--s1);border-color:var(--ln);font-size:18px}
 .dateline{font-size:9px;letter-spacing:.08em;margin:10px 0 14px;color:var(--ink3)}
@@ -139,6 +140,10 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 .exf .ssb,.exf .noteb{border-color:var(--ln);border-radius:10px;font-family:var(--f)}
 .exfdel{font:500 12px var(--f);opacity:1;color:var(--ink3);min-height:44px}
 .exfdots .dot{border-radius:6px}
+.exfdots .dot.on{animation:none;background-image:none}
+.fin:not(.done):not(:disabled),:root[data-skin="sl"] #fin:not(.done):not(:disabled){animation:none}
+.fin:not(.done):not(:disabled)::after{display:none;animation:none}
+.exrow:focus-visible,.lcard:focus-visible{outline:2px solid var(--acc-2);outline-offset:3px}
 /* Нижняя панель: действие тренировки и постоянная навигация. */
 :root[data-skin="sl"] #fin:not(.done):not(:disabled){background:var(--acc-fill);color:#fff;box-shadow:0 6px 24px rgba(12,38,89,.3);border:1px solid rgba(139,206,255,.32)}
 .wobar .fin{min-height:52px;border-radius:14px;font-family:var(--f);font-size:14px;letter-spacing:0}
