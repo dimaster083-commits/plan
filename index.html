@@ -3113,9 +3113,9 @@ document.documentElement.dataset.skin = 'sl';
   <div class="wrap">
     <div class="dh"><span class="ln" id="dln"></span>
       <span class="txt"><h3><input id="dnm" aria-label="Название дня"></h3><p id="dsb"></p></span>
-      <button class="gear" id="gear" aria-label="Настройки">⚙</button></div>
-    <div class="dateline"><span id="dt"></span><button id="toToday" hidden>вернуться к сегодня</button>
-      <button id="wkPlan" class="wkpb" aria-label="Перестроить неделю">⇄ Неделя</button></div>
+      <div class="dayactions"><button id="wkPlan" class="wkpb" aria-label="Перестроить неделю"><span aria-hidden="true">⇄</span><span class="wktext">Неделя</span></button>
+        <button class="gear" id="gear" aria-label="Настройки">⚙</button></div></div>
+    <div class="dateline"><span id="dt"></span><button id="toToday" hidden>вернуться к сегодня</button></div>
     <!-- Правка дня (разовая замена и тип дня во всех неделях) живёт в шторке
          «Неделя»: прежняя скрытая панель #dedit была вторым способом того же. -->
   </div>
@@ -3143,12 +3143,13 @@ document.documentElement.dataset.skin = 'sl';
       </div>
       <div class="qprog"><i id="qpf"></i></div>
       <div class="qmeta"><span id="qCnt">—</span><span id="qRew">—</span></div>
-      <div class="qpen" id="qPen"><span id="qPenT">Для серии недель — 3 тренировки в неделю</span><button type="button" class="hib" data-hint="streak" aria-label="Подсказка: серия и пропуск"></button></div>
-      <!-- не пошёл в зал — день помечается пропущенным; тренировкой он не считается -->
-      <button class="add qskip" id="skipDay" hidden>Пропуск</button>
     </div>
     <div id="exl"></div>
     <button class="add" id="addEx">+ Упражнение</button>
+    <!-- Статус серии и пропуск остаются рядом, но не вытесняют первую
+         рабочую карточку за край небольшого телефона. -->
+    <div class="win daynotes"><div class="qpen" id="qPen"><span id="qPenT">Для серии недель — 3 тренировки в неделю</span><button type="button" class="hib" data-hint="streak" aria-label="Подсказка: серия и пропуск"></button>
+      <button class="add qskip" id="skipDay" hidden>Пропуск</button></div></div>
     <!-- совет экрана — под списком, а не над ним: сверху он отодвигал #tw,
          и липкая кнопка тренировки на 320×568 уходила за край -->
     <div class="tip" id="tip-wo" hidden></div>
@@ -5032,6 +5033,7 @@ $('tabs').addEventListener('click', e => {
 
 function render() {
   recomputeStats();          // цифры всегда равны тому, что лежит в журнале
+  document.body.classList.toggle('gym', tab === 'wo');
   document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === 'scr-' + tab));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
   const dayScreen = tab === 'wo' || tab === 'food';
@@ -5485,6 +5487,7 @@ function paintWorkout() {
   $('restW').hidden = tr || jr;
   $('addEx').hidden = jr;
   $('editPast').hidden = !jr;
+  if (jr) $('skipDay').hidden = true;
   paintWoBar(d, r, jr);
 
   if (jr) { exOpen = null; document.body.classList.remove('exopen'); paintJournal(); }
@@ -5560,6 +5563,11 @@ function paintJournal() {
   const ent = dayEntries(sel), r = recOf(sel), d = dayOf(sel);
   const ton = dayTon(sel), st = daySets(sel);
   const mins = (r.t0 && r.t1) ? Math.max(1, Math.round((r.t1 - r.t0) / 60000)) : 0;
+  paintWoHead(d, r);
+  // У истории нет достоверного знаменателя текущего шаблона: упражнения
+  // могли быть заменены. Показываем фактически записанные, не план сегодня.
+  $('woEx').textContent = String(ent.length);
+  $('woTime').textContent = mins ? mins + ' мин' : '—';
 
   $('qType').textContent = (dayLook(sel).s || '').toUpperCase();
   $('qpf').style.width = '100%';
@@ -5639,13 +5647,31 @@ function exRow(e, j, r, IN) {
     ? fillCells(g.rs, Math.max(1, num(pick(g.s, sets)) || 1), lastDone(e.n, sel), topRep(rr), firstRep(rr) || topRep(rr), w) : null;
   const rs = fc ? fc.vals.map(v => (v === '' ? '—' : v)).join('/')
     : (g.rs && g.rs.length) ? g.rs.join('/') : (pick(g.s, sets) + ' × ' + rr);
+  // Строка списка показывает реальные рабочие веса, а не общий вес
+  // карточки. У черновика разминка/дроп ещё находятся в rs/ws и фильтруются;
+  // закрытая запись уже хранит только рабочие строки. Ничего не записываем.
+  const n = (Array.isArray(g.rs) && g.rs.length) || Math.max(0, Math.floor(num(pick(g.s, sets))));
+  const ws = Array.isArray(g.ws) ? g.ws : [], kinds = Array.isArray(g.kinds) ? g.kinds : [];
+  const known = Math.min(n, Math.max(ws.length, g.done ? 0 : kinds.length)), loads = [];
+  for (let i = 0; i < known; i++) {
+    if (!g.done && ['w', 'd'].includes(kinds[i])) continue;
+    loads.push(num(ws[i]) > 0 ? num(ws[i]) : w);
+  }
+  // У остальных строк одинаковый общий вес. Не выделяем массив размером
+  // с число ПОДХ: случайная лишняя цифра не должна ронять или тормозить список.
+  if (n > known) loads.push(w);
+  const hasLoad = loads.some(v => v > 0);
+  const lo = loads.reduce((a, v) => Math.min(a, v), Infinity), hi = loads.reduce((a, v) => Math.max(a, v), -Infinity);
+  const load = hasLoad ? (lo === hi ? kg(lo) : kg(lo) + '–' + kg(hi)) : '—';
+  const unit = hasLoad ? 'кг' : (g.done && !loads.length ? 'нет рабочих' : 'без веса');
   const ex = dayOf(sel).ex, ss = !!(e.ss && ex[j + 1]), ss2 = !!(j > 0 && ex[j - 1] && ex[j - 1].ss);
   return `<div class="win exrow${g.done ? ' done' : ''}${j === justDone ? ' rd-just' : ''}${ss ? ' ss' : ''}${ss2 ? ' ss2' : ''}" data-j="${j}" data-open="${j}" tabindex="0" role="group" aria-label="Открыть упражнение: ${esc(e.n)}. Enter или пробел" aria-keyshortcuts="Enter Space">
-    ${exPic(e.n, 1) ? `<img class="exth" src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">` : ''}
+    ${exPic(e.n, 1) ? `<img class="exth" src="${exPic(e.n, 1)}"${exCors(e.n)} alt="" loading="lazy">` : '<span class="exth exth-empty" aria-hidden="true">◇</span>'}
     <span class="t"><span class="n">${esc(e.n)}</span>
-      <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}<b class="kg">${w ? kg(w) : '—'}</b>${w ? ' кг' : ''} · ${esc(rs)}${e.g ? ' · ' + esc(e.g) : ''}</span></span>
-    <!-- «Заменить» — на месте крупной цифры веса, она ушла в подпись: иначе
-         в 320 px имя сжималось до двух слов. Рядом только отметка, не удаление. -->
+      <span class="exload"><b class="kg">${esc(load)}</b><small>${unit}</small></span>
+      <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}${esc(rs)}${e.g ? '<small class="exmus">' + esc(e.g) + '</small>' : ''}</span></span>
+    <!-- У веса своя строка под названием: две кнопки остаются 44 px,
+         длинное имя и диапазон весов не раздвигают экран. -->
     <button class="swb" data-swap="${j}" aria-label="Заменить: ${esc(e.n)}">${SWAP_ICO}</button>
     <button class="go" data-go="${j}" aria-label="${g.done ? 'Отменить подход' : 'Закрыть подход'}">${g.done ? '✓' : '○'}</button>
   </div>`;

@@ -265,3 +265,118 @@ body.exopen #scr-wo .tip{display:none}
 #hshB p{margin:0 0 10px;font-size:14px;line-height:1.55;color:var(--ink2)}
 .hshs{margin:6px 0 0;padding-top:8px;border-top:1px solid var(--ln);font:500 10.5px/1.5 var(--fn);
   letter-spacing:.04em;color:var(--ink3)}
+
+/* ===== ЗАЛ · ежедневное окно Системы =====
+   Компактная шапка оставляет первый рабочий шаг над постоянной кнопкой.
+   Другие экраны используют прежнюю полную панель статуса. */
+.dayactions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.dayactions #wkPlan{display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  min-width:44px;min-height:44px;padding:0 10px;border:1px solid var(--ln);border-radius:12px;
+  background:var(--s1);color:var(--acc-2);font:600 11px var(--f);text-decoration:none}
+.dayactions #wkPlan>span:first-child{font-size:19px;line-height:1}
+body.gym #statusbar{padding:calc(var(--st) + 8px) 0 4px}
+:root[data-skin="sl"] body.gym .st8{padding:10px 12px;margin:0;border-radius:16px;
+  background:linear-gradient(115deg,rgba(66,127,245,.13),transparent 54%),
+    radial-gradient(ellipse at 100% 0,rgba(176,160,255,.11),transparent 66%),var(--s1);
+  border-color:rgba(139,206,255,.2)}
+body.gym .st8h{gap:10px;min-height:36px}
+body.gym .st8lv{width:36px;height:36px;flex-basis:36px}
+body.gym .st8lv b{font-size:17px}
+body.gym .st8lv svg .hx{animation:none;stroke-dashoffset:0}
+body.gym .st8t{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+body.gym .st8t h1{font-size:14px;line-height:1.25}
+body.gym .st8m{margin:0;gap:4px}
+body.gym .st8r{font-size:8px;padding:3px 6px;letter-spacing:.08em}
+body.gym .st8h .hib{margin:-4px -8px -4px auto;align-self:center}
+body.gym .st8b{grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;padding-top:7px}
+body.gym .st8row{grid-template-columns:auto minmax(12px,1fr) auto;gap:5px;min-width:0}
+body.gym .st8row .bar{height:3px;border:0;border-radius:2px}
+body.gym .st8row .k,body.gym .st8row .v{font-size:8px;letter-spacing:0;white-space:nowrap}
+body.gym .days{padding:5px 0 6px;background:var(--s0)}
+:root[data-skin="sl"] body.gym .chip{min-height:44px;padding:5px 0 4px;border-radius:11px}
+body.gym .chip u{margin-top:5px}
+body.gym .dh{margin:5px 0 0;gap:8px}
+body.gym .dh .ln{height:30px}
+body.gym .dh h3,body.gym .dh h3 input{font-size:26px;line-height:1.15}
+body.gym .dh h3 input{min-height:45px} /* запас от дробной геометрии transform */
+body.gym .dh p{font-size:11px;line-height:1.3;margin:0}
+body.gym .dateline{margin:4px 0 10px;font-size:9px;letter-spacing:.04em}
+body.gym #scr-wo .qbox{padding:11px 12px;margin-bottom:10px;border-radius:16px;
+  background:linear-gradient(115deg,rgba(66,127,245,.13),transparent 50%),
+    radial-gradient(ellipse at 100% 0,rgba(176,160,255,.09),transparent 70%),var(--s1);
+  border-color:rgba(139,206,255,.24)}
+body.gym .qhead{margin:0;align-items:center;gap:6px}
+body.gym .qhead b{font-size:9px;letter-spacing:.09em;white-space:nowrap}
+body.gym .qhead i{font-size:8px;letter-spacing:0;text-align:right;line-height:1.3}
+body.gym .qhead .hib{margin:-14px -8px -14px -4px}
+body.gym .whead{flex-wrap:nowrap;align-items:center;gap:10px;margin:8px 0 10px}
+body.gym .wbig{flex-direction:column;align-items:flex-start;gap:3px;flex:0 0 auto}
+body.gym .wbig b{font:800 30px/1 var(--f);letter-spacing:-.04em;color:var(--ink)}
+body.gym .wbig i{font:500 9px/1.2 var(--f);letter-spacing:0}
+body.gym .wsub{flex-wrap:nowrap;gap:12px}
+body.gym .wsub span{font-size:9px;line-height:1.3;letter-spacing:0}
+body.gym .wsub b{font-size:16px;line-height:1.4;color:var(--acc-2)}
+body.gym .qprog{height:3px;border-radius:3px}
+body.gym .qmeta{display:none} /* те же числа уже видны в woEx/woSets */
+.daynotes{padding:8px 12px;margin:14px 0 0}
+.daynotes .qpen{margin:0;padding:0;border:0;gap:6px;font:500 11px/1.5 var(--f);color:var(--ink3)}
+.daynotes .qpen.done{color:var(--hot-tx)}
+.daynotes .qpen>span{flex:1;min-width:0}
+.daynotes .hib{margin:0 -4px;align-self:center}
+.daynotes #skipDay{flex:0 0 auto;width:auto;min-width:44px;margin:0;padding:0 8px;font-size:11px}
+body.exopen .daynotes{display:none}
+:root[data-skin="sl"] body.gym .exrow{gap:8px;padding:10px;border-radius:16px;
+  grid-template-columns:48px minmax(0,1fr) 44px 44px;min-height:88px;margin-bottom:8px}
+body.gym .exrow .exth{width:48px;height:64px;border-radius:11px;filter:none}
+body.gym .exrow .exth-empty{display:grid;place-items:center;color:var(--mon);font-size:28px;
+  background:linear-gradient(135deg,var(--s2),var(--s1));border:1px solid var(--ln)}
+body.gym .exrow .n{font:700 14px/1.3 var(--f);letter-spacing:-.015em}
+body.gym .exload{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px;line-height:1.2;margin:4px 0 0}
+body.gym .exrow .kg{font:800 23px/1.1 var(--f);letter-spacing:-.04em;color:var(--acc-2);
+  text-shadow:none;overflow-wrap:anywhere}
+body.gym .exload small{font:500 9px/1.3 var(--f);color:var(--ink3)}
+body.gym .exrow .s{font:500 10px/1.4 var(--f);letter-spacing:0;text-transform:none;margin-top:4px}
+body.gym .exmus{display:block;font:500 9px/1.4 var(--f);color:var(--ink3)}
+body.gym .exrow .swb,body.gym .exrow .go{width:44px;min-width:44px;height:44px;
+  border-radius:12px;align-self:center;margin:0;background:var(--s2);box-shadow:none}
+body.gym .exrow .swb{color:var(--ink2);border-color:var(--ln)}
+body.gym .exrow .go{color:var(--acc-2);border-color:rgba(139,206,255,.35)}
+body.gym .exrow.done{opacity:1;border-color:var(--hot-ln);background:var(--s1)}
+body.gym .exrow.done .kg{color:var(--hot-tx)}
+body.gym .exrow.done .exth{opacity:.8}
+body.gym .exrow.done .go{color:var(--hot-tx);background:var(--hot-soft);border-color:var(--hot-ln)}
+body.gym .exrow:active,body.gym .exrow .go:active{transform:translateY(1px)}
+body.gym .exrow:focus-visible{outline:2px solid var(--acc-2);outline-offset:3px}
+body.gym #addEx{margin-top:6px;border-style:dashed;border-color:var(--ln2);background:transparent}
+body.gym .wobar{padding:6px 0;background:linear-gradient(transparent,var(--s0) 40%)}
+body.gym .wobar .fin{min-height:52px;border-radius:14px;border:1px solid rgba(139,206,255,.35);
+  background:linear-gradient(110deg,#245bd0,#3d4ec3);box-shadow:none;font:700 14px var(--f)}
+body.gym .wobar .fin.done{background:var(--s2);border-color:var(--hot-ln);color:var(--hot-tx)}
+@media (max-width:359px){
+  .dayactions #wkPlan{padding:0;width:44px}.dayactions .wktext{display:none}
+  body.gym .st8t h1{font-size:13px}
+  body.gym .dh h3,body.gym .dh h3 input{font-size:24px}
+  :root[data-skin="sl"] body.gym .exrow{grid-template-columns:42px minmax(0,1fr) 44px 44px;gap:6px;padding:9px}
+  body.gym .exrow .exth{width:42px;height:60px}
+  body.gym .exrow .kg{font-size:21px}
+  body.gym .wsub{gap:10px}
+}
+@media (max-width:359px) and (max-height:650px){
+  :root[data-skin="sl"] body.gym .st8{padding-top:6px;padding-bottom:6px}
+  body.gym .st8b{margin-top:6px;padding-top:5px}
+  body.gym .days{padding-top:2px;padding-bottom:3px}
+  body.gym .dh{margin-top:3px}
+  body.gym .dateline{margin-top:2px;margin-bottom:4px}
+  body.gym #scr-wo .qbox{padding-top:8px;padding-bottom:8px;margin-bottom:8px}
+  body.gym .whead{margin-top:6px;margin-bottom:6px}
+  body.gym .exmus{display:inline-block;margin-left:6px}
+}
+@media (prefers-reduced-motion:no-preference){
+  body.gym.rd-enter .scr.on>*,body.gym.rd-enter #statusbar .st8,
+  body.gym.rd-enter #dayctx .dh,body.gym.rd-enter .chip,body.gym.rd-enter #exl>.exrow{
+    animation:gym-rise .26s ease-out both;animation-delay:0s}
+  body.gym.rd-enter #exl>.exrow:nth-child(2){animation-delay:.035s}
+  body.gym.rd-enter #exl>.exrow:nth-child(n+3){animation-delay:.07s}
+  body.gym #exl>.exrow.rd-just,body.gym .exrow.rd-just .go{animation:gym-rise .22s ease-out both}
+  @keyframes gym-rise{from{opacity:.35;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+}
