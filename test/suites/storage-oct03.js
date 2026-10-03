@@ -214,8 +214,11 @@ async function finishPhotoAndUndo(page) {
           ask = async () => true;
           document.getElementById('phDel').click();
         }, OLD_PHOTO);
-        await page.waitForFunction(async () =>
-          !document.getElementById('undo').hidden && (await phGet(fixtureDay)) === undefined);
+        // Poll a synchronous UI signal. An async predicate is a truthy Promise
+        // in this Playwright runtime and can stop polling before deletion ends.
+        await page.waitForFunction(() => !document.getElementById('undo').hidden);
+        assert.equal(await page.evaluate(() => phGet(fixtureDay)), undefined,
+          'photo deletion must finish before releasing the earlier upload');
         const afterUpload = await page.evaluate(async newPhoto => {
           finishCompression(newPhoto);
           await photoHandlerDone;
