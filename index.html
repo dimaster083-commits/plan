@@ -6586,7 +6586,7 @@ function openExPicker() {
   // все группы программы: «Плечи» и «Пресс» раньше нельзя было выбрать фильтром
   const chips = [''].concat(GROUPS.map(([n]) => n));
   sheet('ДОБАВИТЬ УПРАЖНЕНИЕ',
-    `<button class="add libin" data-libpick="1">Вся база упражнений · 876 с фото ›</button>
+    `<button class="add libin" data-libpick="1">Каталог упражнений с фото ›</button>
      <input id="exq" class="exq" placeholder="Поиск упражнения" autocomplete="off" aria-label="Поиск упражнения">
      <div class="chains" id="exgs">${chips.map(g =>
        `<button data-exg="${g}" class="${g ? '' : 'on'}">${g || 'Все'}</button>`).join('')}</div>
@@ -8663,7 +8663,7 @@ const HINTS = {
     'По книге программа держит равновесие противоположностей: горизонтальный жим — горизонтальная тяга, вертикальный жим — вертикальная тяга, колено — таз.',
     'Новичку нужен набор: жим, одна тяга, присед, тазовое движение, вращение плеча наружу и кор. Не больше 6 упражнений в основной части.'], 'f'],
   lib: ['КАТАЛОГ', [
-    '876 упражнений: поиск (можно без «ё»), лента мышц, фильтры по книге и инвентарю, закладка — избранное.',
+    'Почти 600 упражнений для зала: поиск (можно без «ё»), лента мышц, фильтры по книге и инвентарю, закладка — избранное.',
     'Тап по карточке — страница: мышцы, тип движения, лесенка по книге, прошлый раз и твои рекорды. «+ В тренировку» ставит упражнение в выбранный день.',
     '«!» на карточке — книга считает движение вредным.'], 'fs'],
   planes: ['ТИПЫ ДВИЖЕНИЯ', [
@@ -8834,7 +8834,8 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 /* =========================================================================
    КАТАЛОГ УПРАЖНЕНИЙ — экран «Упражнения», как библиотека Lyfta
-   База — free-exercise-db: 876 упражнений с фото и мышцами (Unlicense).
+   База — free-exercise-db: 876 упражнений с фото и мышцами (Unlicense);
+   в списке — около 600 для зала (libGym).
    Файл exlib.js грузится при первом открытии экрана и лежит в офлайн-кэше.
    Русские названия, тип движения по плоскостной системе, лесенки от
    простого к сложному и пометки «вредное» — по книге Д. Смирнова «Фитнес
@@ -8904,8 +8905,17 @@ function indexLib(rows) {
   list.sort((a, b) => rank(a) - rank(b) || (a.own && b.own ? ord.indexOf(a.n) - ord.indexOf(b.n) : 0) ||
     a.lv - b.lv || a.n.localeCompare(b.n, 'ru'));
   const byId = new Map(list.map(o => [o.id, o]));
-  return { list, byId };
+  /* В списке — только то, что делают в обычном зале (владелец: «куча ненужных
+     упражнений»). Растяжка, кардио, стронгмен, плиометрика, гири, резинки,
+     медбол и ролик спрятаны из списка, поиска, лесенки и замены, но остаются
+     в byId: уже добавленное в день, избранное и ссылки открываются как были. */
+  const mine = new Set([].concat(Array.isArray(S && S.fav) ? S.fav : [],
+    Object.values((S && S.libEx) || {}).map(v => v && v[0])));
+  const shown = list.filter(o => libGym(o) || mine.has(o.id));
+  return { list: shown, byId, all: list.length };
 }
+const LIB_OFF_CAT = 'tcgp', LIB_OFF_EQ = 'krno';
+const libGym = o => !!o.own || (LIB_OFF_CAT.indexOf(o.c) < 0 && (!o.eq || LIB_OFF_EQ.indexOf(o.eq) < 0));
 function loadLib() {
   if (LIB) return Promise.resolve(LIB);
   if (!libLoading) {
@@ -9039,9 +9049,9 @@ function openLibFilter() {
   sheet('ФИЛЬТРЫ', `<div class="lflt">
     <div class="cph">ТИП ДВИЖЕНИЯ · ПО КНИГЕ</div>${row('pl', [['', 'Любой']].concat(
       ['hpush', 'hpull', 'vpush', 'vpull', 'knee', 'hip', 'vpn', 'kpch', 'core'].map(k => [k, PLANE[k][0]])))}
-    <div class="cph">ИНВЕНТАРЬ</div>${row('eq', [['', 'Любой']].concat(Object.entries(LIB_EQ)))}
+    <div class="cph">ИНВЕНТАРЬ</div>${row('eq', [['', 'Любой']].concat(Object.entries(LIB_EQ).filter(([k]) => LIB_OFF_EQ.indexOf(k) < 0)))}
     <div class="cph">УРОВЕНЬ</div>${row('lv', [[0, 'Любой'], [1, 'Новичок'], [2, 'Средний'], [3, 'Опытный']])}
-    <div class="cph">ВИД</div>${row('cat', [['', 'Любой']].concat(Object.entries(LIB_CAT)))}
+    <div class="cph">ВИД</div>${row('cat', [['', 'Любой']].concat(Object.entries(LIB_CAT).filter(([k]) => LIB_OFF_CAT.indexOf(k) < 0)))}
     <div class="cph">ЕЩЁ</div>
     <div class="chains"><button data-lf="safe:t" class="${LF.safe ? 'on' : ''}">Без вредных по книге</button>
       <button data-lf="ru:t" class="${LF.ru ? 'on' : ''}">Только с русским описанием</button></div>
