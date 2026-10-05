@@ -150,7 +150,8 @@ function visibleAnimations() {
     await page.waitForSelector('.exf');
     const ws = page.locator('.exf [data-ws]'), rs = page.locator('.exf [data-rs]');
     for (let i = 0; i < 3; i++) { await ws.nth(i).fill(String([60, 80, 100][i])); await rs.nth(i).fill('6'); }
-    await page.locator('.exf [data-go="0"]').click();
+    // как в Lyfta: подходы закрываются галочками, последняя закрывает упражнение
+    for (let i = 0; i < 3; i++) await page.locator(`.exf [data-tick="${i}"]`).click();
     await page.locator('[data-close]').click();
     const done = await page.evaluate(() => ({ done: recOf(sel).log[0].done, rows: recOf(sel).log[0].ws, ton: dayTon(sel), count: document.getElementById('woEx').textContent }));
     check('Закрытие через карточку сохраняет 60/80/100, 1440 кг и 1/5', done, x => {
@@ -161,9 +162,12 @@ function visibleAnimations() {
       assert.deepEqual(x.filter(a => a.iterations === 'Infinity' || Number(a.duration) > 450 || a.unexpected.length), []);
     });
     await page.waitForFunction(() => !pendingActions.has('go0'));
-    await page.locator('.exrow [data-go="0"]').click();
+    await page.waitForTimeout(300);                       // тот же тап быстрее 260 мс — дребезг
+    await page.locator('.exrow[data-open="0"] .n').click();
+    await page.locator('.exf [data-tick="2"]').click();     // повторное касание галочки снимает выполнение
+    await page.locator('[data-close]').click();
     const undone = await page.evaluate(() => ({ done: !!recOf(sel).log[0].done, ton: dayTon(sel), count: document.getElementById('woEx').textContent, open: exOpen }));
-    check('Повторное касание отметки снимает выполнение без открытия карточки', undone, x => {
+    check('Повторное касание галочки снимает выполнение', undone, x => {
       assert.equal(x.done, false); assert.equal(x.ton, 0); assert.equal(x.count, '0/5'); assert.equal(x.open, null);
     });
     await page.emulateMedia({ reducedMotion: 'reduce' });
