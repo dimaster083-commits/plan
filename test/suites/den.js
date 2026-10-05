@@ -19,14 +19,16 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       save();recomputeStats(1);tab='wo';sel=today();exOpen=null;render();},skin);
     await p.waitForTimeout(300);
 
-    // 1. «0 из N» совпадает с числом упражнений дня
+    // 1. Видимое «0/N» совпадает с числом упражнений дня. Старую
+    // дублирующую фразу qCnt компактный дизайн не показывает.
     const q0=await p.evaluate(()=>{
-      const t=document.querySelector('.qbox')?document.querySelector('.qbox').innerText:'';
-      const m=t.match(/(\d+)\s+из\s+(\d+)/);
+      const el=document.getElementById('woEx'), t=el?el.innerText:'';
+      const m=t.match(/(\d+)\/(\d+)/);
       return { m:m?[+m[1],+m[2]]:null, n:(dayOf(sel).ex||[]).length,
+               visible:!!el&&el.getClientRects().length>0,
                done:Object.keys(recOf(sel).log||{}).filter(k=>recOf(sel).log[k].done).length };
     });
-    chk(q0.m && q0.m[0]===q0.done && q0.m[1]===q0.n,
+    chk(q0.visible && q0.m && q0.m[0]===q0.done && q0.m[1]===q0.n,
         '1. счётчик «сделано из» совпадает с журналом',
         q0.m?(q0.m.join(' из ')+' при '+q0.done+'/'+q0.n):'строки нет');
 
@@ -35,12 +37,12 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       const d=dayOf(sel), r=recRW(sel);
       [0,1].forEach(j=>{ r.log[j]={done:1,n:d.ex[j].n,g:d.ex[j].g,s:'3',r:'8',w:'20',rs:['8','8','8'],vol:480,xp:12}; });
       save(); recomputeStats(1); render();
-      const t=document.querySelector('.qbox').innerText;
-      const m=t.match(/(\d+)\s+из\s+(\d+)/);
+      const t=document.getElementById('woEx').innerText;
+      const m=t.match(/(\d+)\/(\d+)/);
       const bar=document.querySelector('.qprog i');
       return { m:m?[+m[1],+m[2]]:null, w:bar?bar.style.width:'нет' };
     });
-    chk(q1.m && q1.m[0]===2, '2. счётчик вырос после двух закрытых подходов', q1.m.join(' из '));
+    chk(q1.m && q1.m[0]===2, '2. счётчик вырос после двух закрытых подходов', q1.m?q1.m.join('/'):'строки нет');
     chk(q1.w!=='нет' && parseFloat(q1.w)>0, '3. шкала дня заполнилась', q1.w);
 
     // 4. галочка на чипе недели совпадает с отметкой тренировки
@@ -66,8 +68,9 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       toggleSet(2);
       return { before, after:S.xp };
     });
-    // отмена — отдельным касанием, не двойным тапом (двойной тап защищён 200 мс)
-    await p.waitForTimeout(260);
+    // Отмена — отдельным касанием. Под нагрузкой таймер браузера может
+    // задержаться: ждём снятия защиты, а не время на стороне раннера.
+    await p.waitForFunction(() => !pendingActions.has('go2'));
     xp.back=await p.evaluate(()=>{ exOpen=2; render();
       toggleSet(2); return S.xp; });
     chk(xp.after>xp.before && xp.back===xp.before,

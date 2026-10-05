@@ -20,6 +20,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 // журнал: тренировочный сегодня, прошлые тренировки, добавки
 const SEED = () => {
   S.setup = 1; S.sound = 0; document.getElementById('setup').classList.remove('on');
+  S.bkAt = Date.now(); // fixture has a current backup; boot reminder must not replace the week dialog
   S.rec = {}; S.map = {}; delete S.pause; S.days = build().days;
   S.bw = '72'; S.bw0 = '70'; S.goal = '80'; S.height = 177; S.age = 30;
   const d0 = dayOf(today());

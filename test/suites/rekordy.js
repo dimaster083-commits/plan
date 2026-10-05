@@ -11,6 +11,14 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   const p=await(await b.newContext({viewport:{width:320,height:700}})).newPage();
+  // Record XP is tested independently of month quests; both sessions stay in October.
+  await p.addInitScript(() => {
+    const RealDate = Date, offset = new RealDate(2026, 9, 15, 12).getTime() - RealDate.now();
+    window.Date = class extends RealDate {
+      constructor(...args) { super(...(args.length ? args : [RealDate.now() + offset])); }
+      static now() { return RealDate.now() + offset; }
+    };
+  });
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto(APP); await p.waitForTimeout(1300);
   const prep=(past)=>p.evaluate((past)=>{ S.setup=1; S.sound=0; document.getElementById('setup').classList.remove('on'); S.rec={}; S.pr={};

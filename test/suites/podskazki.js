@@ -54,7 +54,16 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     '2. «Начать тренировку» видна на 320×568 вместе с советом', JSON.stringify(кнопка));
 
   // 3. «i» открывает подсказку: заголовок, текст, источник; закрывается ×, фоном и Esc
-  const откр=async sel=>{ try { await p.click(sel,{timeout:3000}); } catch(e){ return {нет:sel}; } await p.waitForTimeout(120);
+  const откр=async sel=>{ try {
+    // Повторное открытие после закрытия фоном — второй trusted tap той же
+    // кнопки. Фон не сбрасывает lastTap; не путать защиту от двойного тапа
+    // с неработающей подсказкой и не полагаться на скорость CI/прокрутки.
+    await p.waitForFunction(selector=>{
+      const el=document.querySelector(selector);
+      return !el||tapKey(el)!==lastTap.k||performance.now()-lastTap.t>=UNDO_TAP_MS;
+    },sel,{timeout:3000});
+    await p.click(sel,{timeout:3000});
+  } catch(e){ return {нет:sel}; } await p.waitForTimeout(120);
     return ev(()=>{ const h=$('hsh'); const r=h.querySelector('.hshin');
       return {on:!h.hidden, t:$('hshT').textContent, n:$('hshB').querySelectorAll('p').length, src:$('hshS').textContent,
         влезает:r.scrollWidth<=r.clientWidth&&document.documentElement.scrollWidth<=320,

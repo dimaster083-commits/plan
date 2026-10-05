@@ -16,6 +16,14 @@ const IMG1='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   const p=await(await b.newContext({viewport:{width:320,height:700},hasTouch:true})).newPage();
+  // Keep the previous workout in the same month: unrelated month quests must not replace action labels.
+  await p.addInitScript(() => {
+    const RealDate = Date, offset = new RealDate(2026, 9, 15, 12).getTime() - RealDate.now();
+    window.Date = class extends RealDate {
+      constructor(...args) { super(...(args.length ? args : [RealDate.now() + offset])); }
+      static now() { return RealDate.now() + offset; }
+    };
+  });
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto(APP); await p.waitForTimeout(1300);
   const E=async(fn,arg)=>{ try{ return await p.evaluate(fn,arg); }catch(e){ return {err:String(e.message).slice(0,160)}; } };
