@@ -21,7 +21,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     S.setup=1; S.sound=0; document.getElementById('setup').classList.remove('on');
     delete S.tips; delete S.hints; S.bw='80';
     // сегодня или ближайший прошедший день тренировки: на нём есть кнопка «Начать тренировку»
-    let d=today(); for(let k=0;k<7;k++){ const x=addDays(today(),-k); if(dayOf(x).t!=='rest'&&!dayEntries(x).length){ d=x; break; } }
+    let d=today(); for(let k=0;k<7;k++){ const x=addDays(today(),-k); if(dayOf(x).t!=='rest'&&!dayEntries(x).length&&(dayOf(x).ex[0]||{}).n==='Жим лёжа'){ d=x; break; } }   // жим — со штангой: у него есть разминка, независимо от дня недели
     sel=d; tab='wo'; exOpen=null; save(); render(); window.scrollTo(0,0);
     return d;
   });

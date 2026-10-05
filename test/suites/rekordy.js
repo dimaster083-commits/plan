@@ -18,6 +18,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     const z=new Date(); z.setDate(z.getDate()-5); const ds=iso(z);
     if(past){ S.rec[ds]={log:{0:{done:1,n:'Жим лёжа',g:'Грудь',w:'80',s:'3',r:'8',rs:[8,8,8],vol:1920,sd:1}}}; S.pr['Жим лёжа']=80; }
     const d=dayOf(today()); d.t='up1'; d.s='тест'; d.ex=[{n:'Жим лёжа',s:3,r:'8-10',w:80,g:'Грудь'}];
+    checkQuests=()=>{};   // квест месяца даёт свой опыт и снятой отметкой не снимается — здесь считаем только рекорды
     entCache=null; save(); tab='wo'; sel=today(); exOpen=0; render(); },past);
   const fill=vals=>p.evaluate(vals=>{
     const c=document.querySelector('.ex[data-j="0"]'); c.querySelector('[data-f="w"]').value='80';
