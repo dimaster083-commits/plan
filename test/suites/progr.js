@@ -20,9 +20,9 @@ const CLOSE = ([w, reps]) => {
     i2.value = String(reps[Math.min(k, reps.length - 1)]);
     i2.dispatchEvent(new Event('input', { bubbles:true }));
   });
-  document.querySelector('#exl [data-go]').click();
+  toggleSet(0);   // тот же путь, что у последней галочки
 };
-const TOGGLE = () => { exOpen = 0; render(); document.querySelector('#exl [data-go]').click(); };
+const TOGGLE = () => { exOpen = 0; render(); toggleSet(0); };
 const WS = n => S.days.flatMap(d => (d.ex || [])).filter(x => x.n === n).map(x => num(x.w));
 
 (async()=>{

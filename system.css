@@ -128,6 +128,15 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 .setr .srow .stick{width:44px;height:48px;background:var(--s2);border:1px solid var(--ln2);border-radius:10px;color:var(--ink3)}
 .setr .srow.on .stick{background:var(--hot-soft);color:var(--hot-tx);border-color:var(--hot-ln)}
 .setr .srow.on .swkg,.setr .srow.on .rbx input{border-color:var(--hot-ln)}
+.setr .srow .snum{flex:0 0 auto;width:44px;height:48px;min-height:44px;padding:0;background:transparent;border:1px solid var(--ln);
+  border-radius:10px;font:700 14px var(--fn);color:var(--ink3)}
+.setr .srow .snum.k-w{color:var(--hot-tx);border-style:dashed}
+.setr .srow .snum.k-f{color:#FF8FA6;border-color:rgba(255,107,138,.5)}
+.setr .srow .snum.k-d{color:#C3AEFF;border-color:rgba(195,174,255,.5)}
+.setr .srow .snum:disabled{opacity:.7}
+.exrow .gook{flex:0 0 auto;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;
+  background:var(--hot-soft);border:1px solid var(--hot-ln);color:var(--hot-tx);font-size:17px}
+.setr .setprev:empty{display:none}
 .setr .setprev{gap:8px;min-height:44px;color:var(--ink3)}
 .setprev small{font:500 11px/1.6 var(--f)}
 .setprev button{padding:4px 8px;min-height:44px;border:0;border-radius:8px;background:transparent;color:var(--acc-2);font:600 11px var(--f)}

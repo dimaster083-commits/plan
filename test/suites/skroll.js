@@ -29,8 +29,8 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     const y0=await p.evaluate(()=>window.scrollY);
     chk(y0>50,'0. карточке есть куда прокручиваться','scrollY='+y0);
     const hit=await p.evaluate(()=>{
-      const c=document.querySelector('#exl [data-go]');
-      if(!c) return 'нет кнопки «закрыть подход»';
+      const c=document.querySelector('#exl [data-tick]');      // галочка подхода
+      if(!c) return 'нет галочки подхода';
       c.click(); return '';
     });
     await p.waitForTimeout(500);

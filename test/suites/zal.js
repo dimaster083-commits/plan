@@ -69,7 +69,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       x.value='10'; x.dispatchEvent(new Event('input',{bubbles:true}));
     });
     const w=parseFloat(String(c.querySelector('[data-f="w"]').value).replace(',','.'));
-    c.querySelector('[data-go="0"]').click();
+    toggleSet(0);
     entCache=null; exOpen=null; render();
     return {цифра:document.getElementById('woBig').textContent.trim(),
       подходы:document.getElementById('woSets').textContent.trim(),

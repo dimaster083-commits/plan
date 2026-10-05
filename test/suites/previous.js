@@ -48,18 +48,16 @@ const assert = require('assert/strict');
     assert.match(await p.locator('.setprev').first().innerText(),/110.*6/);
     assert.match(await p.locator('.setprev').nth(1).innerText(),/90.*8/);
     console.log('  ✓ references match kind and ordinal within kind');
-    await p.locator('[data-kindmode]').click();
-    await p.locator('.rbx').first().click(); // отказ → дроп: его вес старый журнал не хранил
+    await p.locator('[data-kindcyc="0"]').click(); // номер подхода: отказ → дроп, его вес старый журнал не хранил
     assert.equal(await p.locator('[data-copy-prev="0"]').count(),0);
-    assert.match(await p.locator('.setprev').first().innerText(),/Нет записанного/);
-    await p.locator('[data-kindmode]').click();
+    assert.equal((await p.locator('.setprev').first().innerText()).trim(),'');
     console.log('  ✓ changing kind refreshes reference; unknown drop weight cannot be copied');
     await p.evaluate(()=>{S.rec['2026-01-01'].log[0].rs=[0,0,0];render();});
     assert.equal(await p.locator('[data-copy-prev]').count(),0);
     console.log('  ✓ explicitly unrecorded repetitions are never invented from target');
     await p.evaluate(()=>{S.rec={};render();});
     assert.equal(await p.locator('[data-copy-prev]').count(),0);
-    assert.match(await p.locator('.setprev').first().innerText(),/Нет/);
-    console.log('  ✓ no previous session has clear empty state');
+    assert.equal(await p.evaluate(()=>[...document.querySelectorAll('.setprev')].every(x=>!x.textContent.trim()&&!x.offsetHeight)),true);
+    console.log('  ✓ no previous session: no empty-state line under each set');
   } finally { await b.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

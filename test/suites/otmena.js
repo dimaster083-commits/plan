@@ -208,19 +208,16 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   const t13b=await E(n=>({в_дне:dayOf(today()).ex.some(e=>e.n===n), свои:!!(S.myEx||{})[n]}), t13.n);
   chk(t13.в_дне&&t13.свои&&p13.on&&u13.same&&!t13b.в_дне&&!t13b.свои, '13. добавленное из каталога убирается отменой вместе с записью в своих', J([t13,p13,u13,t13b]));
 
-  // 14. «Все по N» — клетки возвращаются как были
+  // 14. как в Lyfta: в карточке нет «Все по N», «ТИП» и «Закрыть подход», в списке нет ○ —
+  //     подход закрывается своей галочкой, тип — касанием номера подхода
   await prep();
   const t14=await E(()=>{ exOpen=0; render();
-    const box=document.querySelector('.ex[data-j="0"] .setr'), cells=[...box.querySelectorAll('[data-rs]')];
-    cells[0].value='3'; cells[0].dispatchEvent(new Event('input',{bubbles:true}));
-    const was=cells.map(c=>c.value);
-    box.querySelector('[data-fill]').click();
-    const filled=cells.map(c=>c.value);
-    const on=!document.getElementById('undo').hidden;
-    document.getElementById('undoB').click();
-    return {was, filled, back:cells.map(c=>c.value), on}; });
-  chk(t14&&!t14.err&&t14.on&&t14.filled.every(v=>v==='10')&&J(t14.back)===J(t14.was)&&t14.was[0]==='3',
-    '14. «Все по N» отменяется: набранные руками клетки на месте', J(t14));
+    const card={fill:!!document.querySelector('#exl [data-fill]'), tip:!!document.querySelector('#exl [data-kindmode]'),
+      close:!!document.querySelector('#exl .exfgo'), num:document.querySelectorAll('#exl [data-kindcyc]').length,
+      ticks:document.querySelectorAll('#exl [data-tick]').length};
+    exOpen=null; render(); card.circle=!!document.querySelector('#exl .exrow [data-go]'); return card; });
+  chk(t14&&!t14.fill&&!t14.tip&&!t14.close&&!t14.circle&&t14.num>0&&t14.num===t14.ticks,
+    '14. кнопки прежней версии убраны: только галочки и номер-тип у каждого подхода', J(t14));
 
   // 15. записал что-то после — полоска гаснет, отмена не сотрёт новое
   await prep();

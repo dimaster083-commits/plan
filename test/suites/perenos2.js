@@ -60,7 +60,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     const карт=document.querySelector('.exf');
     if(!карт) return {нет:1};
     const имя=карт.querySelector('.exname').textContent.trim();
-    const кнопка=карт.querySelector('[data-go]').textContent.trim();
+    const кнопка=[...карт.querySelectorAll('[data-tick]')].some(x=>x.getAttribute('aria-pressed')==='true')?'Отменить':'не закрыто';
     return {имя, кнопка};
   },[r.ds]);
   chk(!вид.нет,'3. карточка раскрылась',вид.нет?'нет карточки':вид.имя);

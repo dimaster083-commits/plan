@@ -19,10 +19,8 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   const fill=(vals,kinds,rpe)=>p.evaluate(([vals,kinds,rpe])=>{
     const c=document.querySelector('.ex[data-j="0"]'); c.querySelector('[data-f="w"]').value='100'; c.querySelector('[data-f="s"]').value=String(vals.length);
     c.querySelector('[data-f="s"]').dispatchEvent(new Event('input',{bubbles:true}));
-    c.querySelector('[data-kindmode]').click();
-    const cells=[...c.querySelectorAll('.rbx')];
+    const cells=[...c.querySelectorAll('[data-kindcyc]')];   // номер подхода — его тип
     kinds.forEach((k,i)=>{ const steps={'':0,w:1,f:2,d:3}[k]; for(let t=0;t<steps;t++) cells[i].click(); });
-    c.querySelector('[data-kindmode]').click();
     [...c.querySelectorAll('[data-rs]')].forEach((x,i)=>{ x.value=String(vals[i]); });
     if(rpe) c.querySelector('[data-rpe="'+rpe+'"]').click();
   },[vals,kinds,rpe]);
@@ -30,8 +28,8 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   await prep();
   await fill([10,10,10,10,8],['w','','f','','d']);
   const k1=await p.evaluate(()=>{ const c=document.querySelector('.ex[data-j="0"]');
-    return [...c.querySelectorAll('.rbx i')].map(x=>x.textContent).join(''); });
-  chk(k1==='Р2О4Д','1. «ТИП» и касания меняют клетки: Р, О, Д',k1);
+    return [...c.querySelectorAll('[data-kindcyc]')].map(x=>x.textContent).join(''); });
+  chk(k1==='Р2О4Д','1. касание номера подхода меняет тип: Р, О, Д',k1);
   const r2=await p.evaluate(()=>{ toggleSet(0); const l=recOf(today()).log[0];
     return {wu:l.wu, rs:l.rs, dr:l.dr, fl:l.fl, s:l.s, vol:l.vol, sets:daySets(today()), line:entryLine(dayEntries(today())[0]),
       w:num(dayOf(today()).ex[0].w)}; });
@@ -41,7 +39,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   chk(/разм\. 10/.test(r2.line)&&/10О/.test(r2.line)&&/дроп 8/.test(r2.line),'4. журнал показывает разминку, отказ и дроп',r2.line);
   chk(r2.w>100,'5. рабочие подходы по верху — вес растёт, разминка его не держит',String(r2.w));
   const r6=await p.evaluate(()=>{ toggleSet(0); exOpen=0; render();
-    return [...document.querySelectorAll('.ex[data-j="0"] .rbx i')].map(x=>x.textContent).join(''); });
+    return [...document.querySelectorAll('.ex[data-j="0"] [data-kindcyc]')].map(x=>x.textContent).join(''); });
   chk(r6==='Р2О4Д','6. снятая отметка возвращает клетки с типами',r6);
 
   // RPE 10 на верхе — вес держим

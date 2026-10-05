@@ -31,11 +31,9 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
 
   // 1. разминка / рабочий / отказ / дроп: галочки по порядку — упражнение закрывается на дропе, а не раньше
   await день();
-  await p.click(C + '[data-kindmode]');
-  await p.locator(C + '.rbx').nth(0).click();                                  // Р
-  for (let k = 0; k < 2; k++) await p.locator(C + '.rbx').nth(2).click();      // О
-  for (let k = 0; k < 3; k++) await p.locator(C + '.rbx').nth(3).click();      // Д
-  await p.click(C + '[data-kindmode]');
+  // тип — касанием номера подхода; одна кнопка чаще 260 мс — дребезг, поэтому с паузой
+  const тип = async (i, n) => { for (let k = 0; k < n; k++) { await p.locator(C + `[data-kindcyc="${i}"]`).click(); await p.waitForTimeout(300); } };
+  await тип(0, 1); await тип(2, 2); await тип(3, 3);                           // Р, О, Д
   const вв = [['40', '10'], ['60', '8'], ['65', '6'], ['45', '12']];
   for (let i = 0; i < 4; i++) { await p.locator(C + `[data-ws="${i}"]`).fill(вв[i][0]); await p.locator(C + `[data-rs="${i}"]`).fill(вв[i][1]); }
   const ход = [];
@@ -49,10 +47,7 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   // 2. вписанные повторы — в журнале дня: переход к другому упражнению и перезагрузка их не стирают,
   //    а ○ в списке закрывает ровно черновик — с разминкой, которую отметили в карточке
   await день();
-  await p.click(C + '[data-kindmode]');
-  await p.locator(C + '.rbx').nth(0).click();                                  // первая строка — разминка
-  await p.waitForTimeout(300);                  // тот же «ТИП» второй раз быстрее 260 мс глушится как дребезг
-  await p.click(C + '[data-kindmode]');
+  await p.locator(C + '[data-kindcyc="0"]').click();                          // первая строка — разминка
   await p.locator(C + '[data-rs="0"]').fill('12');
   await p.locator(C + '[data-rs="1"]').fill('9');
   await p.locator(C + '[data-tick="1"]').click();
@@ -66,7 +61,7 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   const галка = await p.evaluate(() => document.querySelectorAll('.ex[data-j="0"] .srow')[1].classList.contains('on'));
   await p.evaluate(() => { exOpen = null; render(); });
   const строка = await p.evaluate(() => document.querySelector('.exrow[data-j="0"] .s').textContent);
-  await p.click('.exrow[data-j="0"] [data-go="0"]'); await p.waitForTimeout(300);
+  await p.evaluate(() => toggleSet(0)); await p.waitForTimeout(300);
   const l2 = await лог(), т2 = await p.evaluate(() => dayTon(today()));
   chk(до2 === '12/9/9/9' && переход === до2 && перезагр === до2 && галка && /12\/9\/9\/9/.test(строка)
       && JSON.stringify(l2.wu) === '[12]' && JSON.stringify(l2.rs) === '[9,9,9]' && т2 === 9 * 60 * 3,
@@ -85,7 +80,7 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   // 4. итоги тренировки: «упражнений» — сделанные по журналу, а не стоящие в плане дня
   await день();
   await p.evaluate(() => { recRW(today()).t0 = Date.now() - 6e5; exOpen = null; render(); });
-  await p.click('.exrow[data-j="0"] [data-go="0"]'); await p.waitForTimeout(300);
+  await p.evaluate(() => toggleSet(0)); await p.waitForTimeout(300);
   await p.evaluate(() => $('fin').click()); await p.waitForTimeout(300);
   const итог = await p.evaluate(() => ({ wo: recOf(today()).wo, упр: document.querySelector('#shB .sum .win b').textContent, журнал: dayEntries(today()).length }));
   await p.evaluate(() => sheetClose());

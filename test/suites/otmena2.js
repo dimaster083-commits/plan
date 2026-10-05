@@ -59,7 +59,7 @@ const IMG1='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
     return {наВкладках:cross(u,tb), l:u.left, r:u.right, h:Math.round(bt.height), w:Math.round(bt.width), экран:document.documentElement.scrollWidth}; });
   const u1=await undo();
   const t1b=await E(()=>({done:!!(recOf(today()).log[0]||{}).done, xp:S.xp, w:dayOf(today()).ex[0].w}));
-  chk(!q1.on&&t1.done&&t1.xp>xp1&&t1.w>100&&p1.on&&/Жим ногами|Закреплено|РЕКОРД/.test(p1.t)&&u1.same&&!t1b.done&&t1b.xp===xp1&&t1b.w===100,
+  chk(!q1.on&&t1.done&&t1.xp>xp1&&t1.w>100&&p1.on&&/Жим ногами|Закреплено|РЕКОРД|КВЕСТ/.test(p1.t)&&u1.same&&!t1b.done&&t1b.xp===xp1&&t1b.w===100,
     '1. последняя галочка закрыла упражнение — «Отменить» возвращает опыт, рекорд и прибавку веса', J([q1,t1,p1,u1,t1b]));
   chk(p1.on&&!pos1.наВкладках&&pos1.l>=0&&pos1.r<=320&&pos1.h>=44&&pos1.w>=44&&pos1.экран<=320,
     '1б. полоска над вкладками, 44 px, в 320', J(pos1));
@@ -85,10 +85,9 @@ const IMG1='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
   chk(p3.on&&/RPE 8/.test(p3.t)&&u3.same&&t3.rpe===undefined&&t3.cell==='7',
     '3. RPE отменяется, набранная руками клетка на месте', J([p3,u3,t3]));
 
-  // 4. тип подхода (ТИП): полоска, отмена
+  // 4. тип подхода (касание номера): полоска, отмена
   await prep(0); await p.waitForTimeout(200); await remember();
-  const t4=await E(()=>{ const c=document.querySelector('.ex[data-j="0"]'); c.querySelector('[data-kindmode]').click();
-    c.querySelector('.rbx').click(); return (recOf(today()).log[0]||{}).kinds; });
+  const t4=await E(()=>{ const c=document.querySelector('.ex[data-j="0"]'); c.querySelector('[data-kindcyc="0"]').click(); return (recOf(today()).log[0]||{}).kinds; });
   await p.waitForTimeout(100);
   const p4=await polo(); const u4=await undo();
   chk(J(t4)==='["w","",""]'&&p4.on&&/разминка/.test(p4.t)&&u4.same, '4. смена типа подхода отменяется', J([t4,p4,u4]));
@@ -122,12 +121,14 @@ const IMG1='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
 
   // 8. два действия подряд: вторая полоска заменяет первую, отмена снимает только второе
   await prep(); await p.waitForTimeout(250);
-  await E(()=>{ exOpen=null; render(); document.querySelector('[data-go="0"]').click(); }); await p.waitForTimeout(300);
+  // закрытие — галочками карточки (как в Lyfta): касание проходит через страховку отмены
+  const ticks=j=>E(j=>{ exOpen=j; render(); document.querySelectorAll('.ex[data-j="'+j+'"] [data-tick]').forEach(x=>x.click()); }, j);
+  await ticks(0); await p.waitForTimeout(300);
   const a8=await E(()=>({xp:S.xp, s:JSON.stringify(S)}));
-  await E(()=>{ window.__b=JSON.stringify(S); document.querySelector('[data-go="1"]').click(); }); await p.waitForTimeout(300);
+  await E(()=>{ window.__b=JSON.stringify(S); }); await ticks(1); await p.waitForTimeout(300);
   const p8=await polo(); const u8=await undo();
   const t8=await E(()=>({a:!!(recOf(today()).log[0]||{}).done, b:!!(recOf(today()).log[1]||{}).done, xp:S.xp}));
-  chk(p8.on&&/Сгибания ног/.test(p8.t)&&u8.same&&t8.a&&!t8.b&&t8.xp===a8.xp, '8. быстрые два закрытия: отмена снимает только второе, первое с опытом на месте', J([p8,u8,t8,a8.xp]));
+  chk(p8.on&&/Сгибания ног|КВЕСТ/.test(p8.t)&&u8.same&&t8.a&&!t8.b&&t8.xp===a8.xp, '8. быстрые два закрытия: отмена снимает только второе, первое с опытом на месте', J([p8,u8,t8,a8.xp]));
 
   // 9. избранное в каталоге
   await prep(); await p.waitForTimeout(200);

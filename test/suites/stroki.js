@@ -68,7 +68,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     [...c.querySelectorAll('[data-rs]')].forEach(x=>{
       x.value='10'; x.dispatchEvent(new Event('input',{bubbles:true}));
     });
-    c.querySelector('[data-go="0"]').click();
+    toggleSet(0);
     entCache=null;
     return {считано:dayTon(today()), ожидание:10*100+10*110+10*120};
   });
@@ -97,7 +97,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       x.value='10'; x.dispatchEvent(new Event('input',{bubbles:true}));
     });
     const wCard=parseFloat(String(c.querySelector('[data-f="w"]').value).replace(',','.'));
-    c.querySelector('[data-go="0"]').click();
+    toggleSet(0);
     entCache=null;
     return {строка:entryLine(dayEntries(today())[0]), тонн:dayTon(today()), вес:wCard};
   });

@@ -130,7 +130,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
     const before=vol7m()['Грудь'];
     swapApply(today(),1,x.o.n,x.o,20,false);
     exOpen=null; render();
-    document.querySelector('.exrow [data-go="1"]').click(); await new Promise(r=>setTimeout(r,120));
+    toggleSet(1); await new Promise(r=>setTimeout(r,120));
     const en=dayEntries(today()).find(e=>e.j===1);
     return {name:x.o.n, en:en&&en.n, mu:muscleOf(x.o.n), lib:!!(S.libEx&&S.libEx[x.o.n]), after:vol7m()['Грудь'], before,
       l:recOf(today()).log[1].n};
@@ -159,7 +159,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
     recRW(past).log[1]={done:1,n:'Жим лёжа',g:'Грудь',s:'3',r:'6-8',w:'80',rs:[8,8,7],vol:1840,xp:12};
     S.pr['Жим лёжа']=80;
     // сегодня: жим лёжа закрыт через кнопку
-    exOpen=null; render(); document.querySelector('.exrow [data-go="1"]').click(); await new Promise(r=>setTimeout(r,120));
+    exOpen=null; render(); toggleSet(1); await new Promise(r=>setTimeout(r,120));
     const ton0=dayTon(t), sess0=exSessions('Жим лёжа').length, pr0=prOf('Жим лёжа');
     // шторка: «только сегодня» закрыто, по умолчанию — во всех днях
     openSwap(1,'Жим гантелей лёжа'); await new Promise(r=>setTimeout(r,500));

@@ -82,10 +82,11 @@ const CLOSE=([ds,j,w,rs,r])=>{ sel=ds; tab='wo'; editPast=ds<today(); exOpen=j; 
     return {ro:f.readOnly, fill:!!document.querySelector('.ex[data-j="0"] [data-fill]')}; }, [ds[1], CLOSE.toString()]);
   chk(r9.ro && !r9.fill,'9. поля закрытого подхода только для чтения, «Все по N» скрыта',JSON.stringify(r9));
 
-  // 10. двойной тап по «Закрыть подход» закрывает, а не закрывает-и-снимает
+  // 10. двойной тап по последней галочке закрывает, а не закрывает-и-снимает
   ds=await prep();
   const r10=await p.evaluate(d=>{ sel=d; tab='wo'; exOpen=0; render();
-    const bt=document.querySelector('#exl [data-go]'); bt.click(); document.querySelector('#exl [data-go]').click();
+    [...document.querySelectorAll('#exl [data-tick]')].forEach(x=>x.click());          // последняя галочка закрыла
+    const t=[...document.querySelectorAll('#exl [data-tick]')]; t[t.length-1].click();  // второй приход того же тапа
     return !!(recOf(d).log[0]||{}).done; }, ds[1]);
   chk(r10,'10. двойной тап — подход закрыт',String(r10));
   chk(errs.length===0,'11. без ошибок страницы',errs.join(' | ')||'чисто');

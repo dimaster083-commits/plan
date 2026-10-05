@@ -37,7 +37,7 @@ const PREP=()=>{
     out.plan=S.days.flatMap(x=>x.ex||[]).filter(x=>x.n===n).map(x=>x.r);
     out.rs=(recOf(today()).log[0]||{}).rs; return out; }, PREP.toString());
   chk(a.field==='10','1. в графе ПОВТ — повторы прошлой тренировки',a.field);
-  chk(a.cells==='10/10/10/10' && /10/.test(a.fill),'2. клетки и «Все по N» — та же цель, что в графе',a.cells+' · '+a.fill);
+  chk(a.cells==='10/10/10/10' && a.fill===undefined,'2. клетки — та же цель, что в графе; «Все по N» больше нет (как в Lyfta)',a.cells+' · '+a.fill);
   // сколько раз упражнение в программе, зависит от дня недели (день отдыха тест заполняет копией) —
   // проверяем суть: подставленное «10» в программу не ушло, свои цели на месте
   chk(a.plan.every(x=>x==='4-6'||x==='6-8') && a.plan.includes('6-8'),'3. закрыл как есть — цели программы на месте во всех днях',JSON.stringify(a.plan));
@@ -49,13 +49,13 @@ const PREP=()=>{
     toggleSet(0); return S.days.flatMap(x=>x.ex||[]).filter(x=>x.n===n).map(x=>x.r); }, PREP.toString());
   chk(b2.every(x=>x==='12'),'5. исправил графу на 12 — цель ушла во все дни',JSON.stringify(b2));
 
-  // 6-7. кнопка ○ в строке списка записывает то, что показано в строке
+  // 6-7. в строке списка нет ○ (закрытие — галочками в карточке), закрытое отмечено ✓
   const c3=await p.evaluate(PREP=>{ eval('('+PREP+')')(); exOpen=null; render();
-    const row=document.querySelector('.exrow[data-j="0"]'); const shown=row.querySelector('.kg').textContent;
-    row.querySelector('[data-go="0"]').click(); const l=recOf(today()).log[0]||{};
-    return {shown, w:kg(num(l.w)), rs:l.rs, done:l.done}; }, PREP.toString());
-  chk(c3.done && c3.w===c3.shown,'6. ○ в списке пишет вес из строки',c3.shown+' → '+c3.w);
-  chk(Array.isArray(c3.rs)&&c3.rs.length>0,'7. ○ в списке пишет повторы по подходам',JSON.stringify(c3.rs));
+    const row=document.querySelector('.exrow[data-j="0"]'); const circle=!!row.querySelector('[data-go]');
+    toggleSet(0); exOpen=null; render(); const done=!!document.querySelector('.exrow[data-j="0"] .gook');
+    return {circle, done}; }, PREP.toString());
+  chk(!c3.circle,'6. в строке списка нет кружка ○',JSON.stringify(c3));
+  chk(c3.done,'7. закрытое упражнение в списке отмечено ✓',JSON.stringify(c3));
 
   // 8. вес с прошлого раза вырос — клетки начинают с низа, а не с верха
   const d4=await p.evaluate(PREP=>{ eval('('+PREP+')')();

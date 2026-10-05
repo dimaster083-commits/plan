@@ -57,7 +57,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   await p.waitForTimeout(300);
   await заполнить('62.5','5-6',[5,5,5]);
   const откат=await p.evaluate(wd=>{
-    document.querySelector('.ex[data-j="0"] [data-go="0"]').click();
+    toggleSet(0);
     const подня=dayOf(today()).ex[0].w, цель=dayOf(today()).ex[0].r;
     const k=S.days.findIndex((d,i)=>i!==wd&&d.t==='rest');
     swapWeekdays(wd,k); save(); render();
@@ -66,7 +66,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
   await p.waitForTimeout(300);
   const назад=await p.evaluate(k=>{
     exOpen=0; render();
-    document.querySelector('.ex[data-j="0"] [data-go="0"]').click();
+    toggleSet(0);
     const e=S.days[k].ex[0];
     return {снят:!(recOf(today()).log[0]||{}).done, w:e.w, r:e.r, сегодня:dayOf(today()).ex[0].n};
   },откат.k);
@@ -115,14 +115,14 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     const ws=[...c.querySelectorAll('[data-ws]')], rs=[...c.querySelectorAll('[data-rs]')];
     [100,100,110].forEach((v,i)=>{ ws[i].value=String(v); ws[i].dispatchEvent(new Event('input',{bubbles:true})); });
     rs.forEach(x=>{ x.value='8'; x.dispatchEvent(new Event('input',{bubbles:true})); });
-    c.querySelector('[data-go="0"]').click();
+    toggleSet(0);
     entCache=null;
     const b=recordsOf(exSessions('Жим лёжа'));
     return {тонн:dayTon(today()), вес:b.w&&b.w.w, днём:b.w&&b.w.ds===today(), e1:b.e1&&Math.round(b.e1.e1*10)/10,
       pr:S.pr['Жим лёжа'], график:(exHistory('Жим лёжа').find(x=>x[0]===today())||[])[1], лента:recFeed(6).filter(x=>x.ds===today()).map(x=>x.t).join(' | ')};
   });
   await p.waitForTimeout(300);
-  const снял=await p.evaluate(()=>{ document.querySelector('.ex[data-j="0"] [data-go="0"]').click(); return S.pr['Жим лёжа']; });
+  const снял=await p.evaluate(()=>{ toggleSet(0); return S.pr['Жим лёжа']; });
   chk(строки.тонн===8*310&&строки.вес===110&&строки.днём&&строки.e1===Math.round(110*(1+8/30)*10)/10&&строки.pr===110&&строки.график===110
       &&/вес 110/.test(строки.лента)&&снял===100,
     '4. самый тяжёлый подход строкой — рекорд веса, ≈1ПМ и график; снятая отметка возвращает прежний', JSON.stringify({...строки,снял}));
@@ -143,7 +143,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     return {закрыт, прибавка, отказ, снова, ещё};
   });
   await p.waitForTimeout(300);
-  const сброс5=await p.evaluate(()=>{ document.querySelector('.ex[data-j="0"] [data-go="0"]').click(); return dayOf(today()).ex[0].w; });
+  const сброс5=await p.evaluate(()=>{ toggleSet(0); return dayOf(today()).ex[0].w; });
   chk(rpe.закрыт&&+rpe.прибавка===62.5&&+rpe.отказ===60&&+rpe.снова===62.5&&+rpe.ещё===60&&+сброс5===60,
     '5. RPE 10 после закрытия держит вес, снятый RPE возвращает прибавку, отмена — всё назад', JSON.stringify({...rpe,сброс5}));
 
