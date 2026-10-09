@@ -9,6 +9,9 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
+  // Friday contains bench exercises already present in the catalog.
+  // Keep this date stable across Windows and UTC CI to cover disabled duplicates.
+  await p.clock.setFixedTime(new Date('2026-10-09T02:00:00Z'));
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto(APP); await p.waitForTimeout(1400);
   await p.evaluate(()=>{S.setup=1;document.getElementById('setup').classList.remove('on');
@@ -62,7 +65,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     edit=false; exOpen=null; tab='wo'; render();
     openExPicker();
     await new Promise(r=>setTimeout(r,300));
-    const btn=document.querySelector('#sh [data-addex]');
+    const btn=document.querySelector('#sh [data-addex]:not(:disabled)');
     if(!btn) return {err:'каталог не открылся'};
     const name=btn.dataset.addex;
     btn.click();
