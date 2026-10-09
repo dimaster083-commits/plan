@@ -97,7 +97,9 @@ const ПРАВИЛА = () => {
       const кн=document.getElementById('addEx');
       if(!кн||кн.hidden) return {err:'кнопки «добавить» нет'};
       кн.click(); await new Promise(r=>setTimeout(r,250));
-      const поз=document.querySelector('#shB [data-addex]');
+      // Duplicates are now visibly disabled; this case adds a NEW exercise.
+      // catalog-oct09 covers refusal of an existing name/id separately.
+      const поз=document.querySelector('#shB [data-addex]:not(:disabled)');
       if(!поз) return {err:'каталог не открылся'};
       const имя=поз.dataset.addex;
       поз.click(); await new Promise(r=>setTimeout(r,300));

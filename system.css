@@ -3,15 +3,16 @@
    Цвета статуса: голубой — действие, сиреневый — система, мятный — выполнено. */
 :root,:root[data-skin="sl"]{
   color-scheme:dark;
-  --s0:#080b14;--s1:#101725;--s2:#182237;--s3:#21324c;
-  --panel-solid:#101725;--btn:#151f31;--glass:rgba(8,11,20,.94);--glass2:rgba(16,23,37,.96);
-  --ink:#edf3fc;--ink2:#b9c8de;--ink3:#91a3bf;
-  --ln:rgba(153,179,221,.14);--ln2:rgba(153,179,221,.3);
-  --acc:#427ff5;--acc-2:#8bceff;--acc-fill:#245bd0;--acc-soft:rgba(66,127,245,.14);
+  --s0:#080f20;--s1:#121d34;--s2:#192842;--s3:#263653;--field:#0b1528;
+  --panel-solid:#121d34;--btn:#192842;--glass:rgba(8,15,32,.94);--glass2:rgba(18,29,52,.96);
+  --ink:#f2f6ff;--ink2:#b6c5de;--ink3:#97abc9;
+  --ln:#263653;--ln2:#304564;
+  --acc:#427ff5;--acc-2:#92d5ff;--acc-fill:#2f63da;--acc-soft:rgba(66,127,245,.14);
   --acc-ink:#c9e7ff;--onacc:#fff;
-  --hot:#77dfcb;--hot-ink:#06221f;--hot-tx:#8de7d5;
-  --hot-soft:rgba(119,223,203,.1);--hot-ln:rgba(119,223,203,.38);
-  --ok:#8de7d5;--ok-soft:var(--hot-soft);--ok-ln:var(--hot-ln);--mon:#b0a0ff;
+  --hot:#70e0c1;--hot-ink:#06221f;--hot-tx:#70e0c1;
+  --hot-soft:#102e2e;--hot-ln:rgba(112,224,193,.38);
+  --ok:#70e0c1;--ok-soft:var(--hot-soft);--ok-ln:var(--hot-ln);--mon:#b4a0ff;
+  --primary:linear-gradient(110deg,#2f63da,#4c49ba);
   --r-s:10px;--r-m:14px;--r-l:18px;--r-x:22px;
   --wt:500;--wtd:700;--glow-sys:none;--glow-t:none;--shacc:0 8px 28px rgba(22,73,175,.2);
   --grad:linear-gradient(90deg,#467ff2,#8bccff);--bar2:var(--grad);
@@ -113,7 +114,7 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 .exfu{font:500 11px var(--f);color:var(--ink3);align-self:center}
 .exfsm{gap:6px}
 .exfsm .fl label{font:500 8px var(--fn);letter-spacing:.08em;color:var(--ink3)}
-.exfsm .fl input{font-family:var(--f);font-size:16px;background:var(--s2);border:1px solid var(--ln);border-radius:9px;padding:10px 0;font-weight:600}
+.exfsm .fl input{font-family:var(--f);font-size:16px;background:var(--field);border:1px solid var(--ln2);border-radius:9px;padding:10px 0;font-weight:600}
 .exf .pl{font-size:11px;color:var(--ink3);line-height:1.65;margin:10px 0 14px;font-weight:500}
 .exf .wu{border-radius:10px;background:transparent;border-color:var(--ln);margin-top:10px}
 .wu summary{font-size:10px;letter-spacing:.06em}
@@ -122,7 +123,7 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 .setr .rb{gap:0}
 .setr .srow{padding:12px 0;border-bottom:1px solid var(--ln);gap:7px}
 .setr .srow:last-child{border-bottom:0}
-.setr .srow .swkg,.setr .rb .rbx input{height:48px;min-height:48px;background:#0b1220;border:1px solid var(--ln2);border-radius:10px;font:700 18px var(--f);color:var(--ink);box-shadow:none}
+.setr .srow .swkg,.setr .rb .rbx input{height:48px;min-height:48px;background:var(--field);border:1px solid var(--ln2);border-radius:10px;font:700 18px var(--f);color:var(--ink);box-shadow:none}
 .setr .srow .swkg::placeholder{color:#9badc7;opacity:1}
 .setr .rb .rbx input{padding:10px 18px 10px 24px}
 .setr .rb .rbx i{font:500 9px var(--fn);color:var(--ink3)}
@@ -163,6 +164,40 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 :root[data-skin="sl"] .tab.on{background:rgba(66,127,245,.16);color:var(--acc-2);box-shadow:none}
 .tabbar .tab i{font-family:var(--f);font-size:10px;font-weight:600}
 .tab.on::before,.tab.on::after{display:none}
+/* ===== КАТАЛОГ · компактный список и три вида · 06.10.2026 ===== */
+#scr-ex .lscopes{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(44px,.7fr) minmax(0,1fr);
+  gap:4px;padding:4px;border:1px solid var(--ln);border-radius:14px;background:var(--s1);margin-bottom:8px}
+#scr-ex .lscopes button{min-height:44px;min-width:44px;padding:6px;border:0;border-radius:10px;
+  background:transparent;color:var(--ink3);font:600 11px/1.3 var(--f);overflow-wrap:anywhere}
+#scr-ex .lscopes button.on{background:var(--acc-soft);color:var(--acc-2);box-shadow:inset 0 0 0 1px var(--ln2)}
+#scr-ex .lscopenote{margin:0 2px 12px;font:500 11px/1.45 var(--f);color:var(--ink3)}
+#scr-ex .exmu{gap:4px;padding-bottom:5px;margin-bottom:6px}
+#scr-ex .lmu{width:64px;min-height:76px;padding:4px 2px;border-radius:10px}
+#scr-ex .lmu .bmap{height:44px;width:28px}
+#scr-ex .lico{height:44px;width:26px}
+#scr-ex .lpill{min-height:44px;border-color:var(--ln2);color:var(--acc-2)}
+#scr-ex .exgrid{grid-template-columns:minmax(0,1fr);gap:7px}
+#scr-ex .lcard{display:grid;grid-template-columns:60px minmax(0,1fr) 44px;gap:9px;align-items:center;
+  min-height:78px;padding:8px;border-radius:14px;background:var(--s1);border-color:var(--ln)}
+#scr-ex .lph{width:60px;height:60px;aspect-ratio:1;border-radius:9px;grid-column:1;grid-row:1;
+  background:linear-gradient(135deg,var(--s3),var(--s1));border:1px solid var(--ln)}
+#scr-ex .lph img{object-fit:cover;background:#fff}
+#scr-ex .lph span{font-size:9px;color:var(--ink3);text-align:center}
+#scr-ex .lcopy{grid-column:2;grid-row:1;min-width:0}
+#scr-ex .lcopy b{padding:0;font:700 13px/1.3 var(--f);color:var(--ink);overflow-wrap:anywhere}
+#scr-ex .lcopy>span{display:block;margin-top:4px;font:500 10px/1.35 var(--f);color:var(--ink3)}
+#scr-ex .lfav{position:static;grid-column:3;grid-row:1;width:44px;height:44px;border-radius:11px;
+  background:var(--s2);border:1px solid var(--ln)}
+#scr-ex .lfav svg{fill:transparent;stroke:var(--ink3);stroke-width:1.5}
+#scr-ex .lfav.on{background:var(--acc-soft);border-color:var(--ln2)}
+#scr-ex .lfav.on svg{fill:var(--acc-2);stroke:var(--acc-2)}
+#scr-ex .lwarn{left:12px;top:12px;right:auto;width:18px;height:18px;font-size:11px;line-height:18px}
+#scr-ex .lcard:has(.ladd){grid-template-columns:48px minmax(0,1fr) 44px 44px;gap:6px}
+#scr-ex .lcard:has(.ladd) .lph{width:48px;height:60px}
+#scr-ex .ladd{position:static;grid-column:4;grid-row:1;width:44px;height:44px;border-radius:11px;
+  background:var(--acc-soft);border:1px solid var(--ln2);color:var(--acc-2);box-shadow:none}
+#scr-ex .lscopes button:focus-visible{outline:2px solid var(--acc-2);outline-offset:2px}
+/* ===== конец блока каталога ===== */
 /* Прогресс и карта: ограниченное свечение только на нагруженной мышце. */
 .shead h2{font-family:var(--f);font-size:28px;letter-spacing:-.03em}
 .pseg{border-radius:12px;padding:4px;background:var(--s1);border:1px solid var(--ln)}
@@ -178,6 +213,8 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 .bmap .bn,.bmap .mm0{fill:#26374e}
 .bmap .mm1{fill:#4d79af}.bmap .mm2{fill:#9186d1}
 .bmap .mm3{fill:#8bceff;filter:drop-shadow(0 0 5px rgba(139,206,255,.45))}
+.bmap[data-mode="load"] [data-mm-mus]{fill:var(--mm-color);filter:drop-shadow(0 0 4px var(--mm-color))}
+.bmap[data-mode="load"] .mm0{filter:none}
 .mlist{gap:6px;margin-top:12px}
 .mrow{border-color:var(--ln);background:rgba(17,26,43,.8);border-radius:10px;font-size:12px;padding:6px 10px}
 .mrow i{width:7px;height:7px;border-radius:50%;border-color:var(--ink3)}
@@ -185,6 +222,20 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 .mmleg{font-size:10px;line-height:1.5}
 .mmleg i.mm0{background:#26374e}.mmleg i.mm1,.mrow i.mm1{background:#4d79af}
 .mmleg i.mm2,.mrow i.mm2{background:#9186d1}.mmleg i.mm3,.mrow i.mm3{background:#8bceff}
+.mrow i[data-mm-mus],.wkm u[data-mm-mus],.bal .bb i[data-mm-mus]{background:var(--mm-color)}
+.musl[data-mm-mus]{color:var(--ink2);border-left:3px solid var(--mm-color);padding-left:8px}
+.mmheat{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;margin-top:12px}
+.mmzero{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.mmheat .mmzero i{margin:0;border-color:var(--ln)}
+.mmheatscale{display:block;min-width:0}
+.mmheat .mmheatbar{display:block;width:100%;height:8px;border:0;border-radius:4px;margin:0 0 4px}
+.mmheatscale>span{display:flex;justify-content:space-between;gap:4px;font-size:9px}
+.mmheat small{grid-column:1/-1;font-size:10px;line-height:1.5}
+.mmbright{margin-top:12px;padding:10px 12px 6px;background:rgba(17,26,43,.55);border:1px solid var(--ln);border-radius:10px}
+.mmbright label{display:flex;justify-content:space-between;align-items:center;gap:8px;font:500 12px var(--f);color:var(--ink2)}
+.mmbright output{font:600 12px var(--fn);color:var(--acc-2);white-space:nowrap}
+.mmbright input[type="range"]{display:block;box-sizing:border-box;width:100%;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;border:0;background:transparent;accent-color:var(--acc-2);cursor:pointer}
+.mmbright p{margin:0 0 4px;font-size:10px;line-height:1.5;color:var(--ink3)}
 .rrow{padding:12px 0}
 .sphid{margin:0 0 10px;font:500 12px/1.5 var(--f);color:var(--ink3)}
 /* Состояния остаются читаемыми и без движения. */
@@ -337,6 +388,7 @@ body.exopen .daynotes{display:none}
 :root[data-skin="sl"] body.gym .exrow{gap:8px;padding:10px;border-radius:16px;
   grid-template-columns:48px minmax(0,1fr) 44px 44px;min-height:88px;margin-bottom:8px}
 body.gym .exrow .exth{width:48px;height:64px;border-radius:11px;filter:none}
+:root[data-skin="sl"] body.gym .exrow:not(.done){grid-template-columns:48px minmax(0,1fr) 44px}
 body.gym .exrow .exth-empty{display:grid;place-items:center;color:var(--mon);font-size:28px;
   background:linear-gradient(135deg,var(--s2),var(--s1));border:1px solid var(--ln)}
 body.gym .exrow .n{font:700 14px/1.3 var(--f);letter-spacing:-.015em}
@@ -359,7 +411,7 @@ body.gym .exrow:focus-visible{outline:2px solid var(--acc-2);outline-offset:3px}
 body.gym #addEx{margin-top:6px;border-style:dashed;border-color:var(--ln2);background:transparent}
 body.gym .wobar{padding:6px 0;background:linear-gradient(transparent,var(--s0) 40%)}
 body.gym .wobar .fin{min-height:52px;border-radius:14px;border:1px solid rgba(139,206,255,.35);
-  background:linear-gradient(110deg,#245bd0,#3d4ec3);box-shadow:none;font:700 14px var(--f)}
+  background:var(--primary);box-shadow:none;font:700 14px var(--f)}
 body.gym .wobar .fin.done{background:var(--s2);border-color:var(--hot-ln);color:var(--hot-tx)}
 @media (max-width:359px){
   .dayactions #wkPlan{padding:0;width:44px}.dayactions .wktext{display:none}
@@ -367,6 +419,7 @@ body.gym .wobar .fin.done{background:var(--s2);border-color:var(--hot-ln);color:
   body.gym .dh h3,body.gym .dh h3 input{font-size:24px}
   :root[data-skin="sl"] body.gym .exrow{grid-template-columns:42px minmax(0,1fr) 44px 44px;gap:6px;padding:9px}
   body.gym .exrow .exth{width:42px;height:60px}
+  :root[data-skin="sl"] body.gym .exrow:not(.done){grid-template-columns:42px minmax(0,1fr) 44px}
   body.gym .exrow .kg{font-size:21px}
   body.gym .wsub{gap:10px}
 }
@@ -389,3 +442,53 @@ body.gym .wobar .fin.done{background:var(--s2);border-color:var(--hot-ln);color:
   body.gym #exl>.exrow.rd-just,body.gym .exrow.rd-just .go{animation:gym-rise .22s ease-out both}
   @keyframes gym-rise{from{opacity:.35;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
 }
+
+/* ===== КНОПКИ СИСТЕМЫ · 06.10.2026 =====
+   Один размер касания и спокойный контур у оставшихся старых элементов.
+   Основные, выбранные и опасные действия сохраняют свой цвет. */
+:root[data-skin="sl"] button{min-width:44px;min-height:44px}
+.shh #shX,.ovh #ovX,.fph #fpX{
+  width:44px;height:44px;flex:0 0 44px;padding:0;border:1px solid var(--ln);
+  border-radius:12px;background:var(--s2);color:var(--ink2);box-shadow:none}
+#rd,.chains button,.lpill[data-lclr],.cpi,.fpi,.pick button,.strip button,.pane select,
+.fph input,.fpn,.fpn input,.fpn button,.phthumb,.pane .pic{
+  border-radius:12px}
+.chains button,.lpill[data-lclr],.pane select,.pick button{min-width:44px;min-height:44px}
+.chains button,.lpill[data-lclr]{padding:0 12px;font:500 12px var(--f);border-color:var(--ln);color:var(--ink2);background:var(--s2)}
+.chains button.on,.lpill[data-lclr]{border-color:rgba(139,206,255,.4);color:var(--acc-2);background:var(--acc-soft)}
+#rd{background:var(--s2);border:1px solid var(--ln);color:var(--ink2);font:600 11px var(--f);letter-spacing:.04em}
+.cpi,.fpi{background:var(--s2);border-color:var(--ln);color:var(--ink)}
+.fpi.sel{border-color:var(--hot-ln);background:var(--hot-soft)}
+.fpi .mk{border-radius:6px;border-color:var(--ln2)}
+.fpi.sel .mk{background:var(--hot);border-color:var(--hot);color:var(--hot-ink)}
+.fph input,.fpn input,.pane select{min-height:44px;background:var(--s2);border-color:var(--ln2);color:var(--ink);font:500 16px var(--f)}
+.fph input{min-width:0}
+.fpn input{font-size:16px}
+.fpn button{min-height:44px;background:var(--acc-soft);border-color:rgba(139,206,255,.4);color:var(--acc-2)}
+.fpbar button{min-height:48px;border:1px solid rgba(139,206,255,.35);border-radius:14px;
+  clip-path:none;background:var(--primary);color:var(--onacc);box-shadow:none;font:700 14px var(--f);letter-spacing:0}
+.pick button{background:var(--s2);border-color:var(--ln);color:var(--ink2);font:500 11px var(--f);padding:8px}
+.strip button{border-color:var(--ln);background:var(--s2)}
+.pane select:focus-visible{outline:2px solid var(--acc-2);outline-offset:3px}
+/* Полноэкранные окна над шторкой; вопрос остаётся выше подсказки. */
+#fp,#ov{z-index:160}
+#ask{z-index:220}
+
+/* Завершение упражнения — часть карточки, не перекрывающая подходы панель. */
+body.exopen .wobar{position:static;bottom:auto;margin-top:12px;background:none}
+.excompletion{margin:8px 0 18px;padding:14px 0 0;border-top:1px solid var(--ln)}
+.excompletion-status{display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;
+  font:600 11px/1.5 var(--f);color:var(--ink2)}
+.excompletion-status [data-exstate]{color:var(--mon)}
+.excompletebtn{display:block;width:100%;min-height:52px;padding:12px 10px;border:1px solid rgba(146,213,255,.4);
+  border-radius:14px;background:var(--primary);color:var(--onacc);font:700 14px/1.4 var(--f);
+  box-shadow:0 4px 16px rgba(47,99,218,.16);letter-spacing:0}
+.excompletion-hint{margin:8px 2px 0;font:500 11px/1.5 var(--f);color:var(--ink2)}
+.excompletion.done .excompletion-status,.excompletion.done [data-exstate]{color:var(--hot-tx)}
+.excompletion.done .excompletebtn{background:var(--hot-soft);border-color:var(--hot-ln);color:var(--hot-tx);box-shadow:none}
+.excompletebtn:disabled{background:var(--s2);border-color:var(--ln2);color:var(--ink3);box-shadow:none}
+.ex-present{opacity:.65;cursor:default}
+.ex-present-label{display:block;margin-top:4px;color:var(--hot-tx);font:500 10px/1.5 var(--f);font-style:normal}
+.lib-rest-note{padding:12px;border:1px solid var(--ln2);border-radius:12px;background:var(--field);
+  color:var(--ink2);font:500 12px/1.6 var(--f)}
+.mlh input[data-mf="n"]{min-height:44px;height:44px;font:700 16px var(--f)}

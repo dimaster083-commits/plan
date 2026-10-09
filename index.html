@@ -3160,7 +3160,6 @@ document.documentElement.dataset.skin = 'sl';
      Библиотека, как в Lyfta: поиск, лента мышц с фигуркой, фильтры,
      карточки с фото. База грузится при первом открытии экрана. -->
 <section class="scr" id="scr-ex">
-  <div class="tip" id="tip-ex" hidden></div>
   <div class="lpick win" id="lpick" hidden><span id="lpickT">Выбор упражнения</span>
     <button class="lpickx" id="lpickX" aria-label="Отменить выбор">Отмена</button></div>
   <div class="exhd">
@@ -3172,7 +3171,8 @@ document.documentElement.dataset.skin = 'sl';
   <div class="exact" id="exact"></div>
   <div class="exgrid" id="exgrid"></div>
   <button class="add" id="exmore" hidden>Показать ещё</button>
-  <p class="lsrc">Упражнения и фото — открытая база free-exercise-db. Типы движения и пометки — по книге Д. Смирнова «Фитнес для умных».</p>
+  <div class="tip" id="tip-ex" hidden></div>
+  <p class="lsrc">Упражнения и фото — открытая база free-exercise-db. Типы движения и пометки — по сохранённому конспекту «Фитнес для умных»; соответствие оригиналу книги не проверено.</p>
 </section>
 
 <!-- ================= ЕДА ================= -->
@@ -3427,7 +3427,7 @@ document.documentElement.dataset.skin = 'sl';
 </div></div>
 
 
-<div class="fp" id="fp">
+<div class="fp" id="fp" role="dialog" aria-modal="true" aria-label="Подбор продуктов" tabindex="-1">
   <div class="fph"><input id="fq" placeholder="Поиск продукта" autocomplete="off" aria-label="Поиск продукта">
     <button id="fpX" aria-label="Закрыть">×</button></div>
   <div class="fpl" id="fpl"></div>
@@ -3435,8 +3435,8 @@ document.documentElement.dataset.skin = 'sl';
     <button id="fpAdd">Добавить выбранное</button></div></div>
 </div>
 
-<div class="ov" id="ov"><div class="ovin">
-  <div class="ovh"><b>СРАВНЕНИЕ</b><button id="ovX" aria-label="Закрыть">×</button></div>
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-labelledby="ovT" tabindex="-1"><div class="ovin">
+  <div class="ovh"><b id="ovT">СРАВНЕНИЕ</b><button id="ovX" aria-label="Закрыть">×</button></div>
   <div class="pick" id="quick"></div>
   <div class="pair" style="margin-top:10px">
     <div class="pane"><div class="pic" id="picA"><span>нет фото</span></div>
@@ -4289,6 +4289,20 @@ function migrate() {
    счётчиком. Поэтому случайное нажатие, отменённый подход или удалённый день
    автоматически приводят цифры в порядок — расходиться им больше негде. */
 let statsDirty = true;
+/* Тоннаж закрытой записи один для общего прогресса и журнала дня.
+   rs/ws уже содержат только рабочие строки; разминка/дроп лежат отдельно.
+   Сохранённый объём не меняем: в нём могут быть уже учтены обе стороны. */
+function recordedVolume(l, plan) {
+  if (l.vol !== undefined) return num(l.vol);
+  const p = plan || {}, w = num(pick(l.w, p.w));
+  const rs = Array.isArray(l.rs) && l.rs.some(v => num(v) > 0) ? l.rs : null;
+  const ws = Array.isArray(l.ws) ? l.ws : null;
+  const reps = firstRep(pick(l.r, p.r));
+  // 60/70/80 — это три своих веса; пустой вес строки берёт общий.
+  // Пустая клетка повторов — низ цели, как при закрытии новой записи.
+  return rs ? rs.reduce((a, r, i) => a + (num(r) || reps) * (ws && num(ws[i]) > 0 ? num(ws[i]) : w), 0)
+    : num(pick(l.s, p.s)) * reps * w;
+}
 function recomputeStats(force) {
   // Пересчёт идёт по всему журналу. Раньше он запускался на каждую
   // перерисовку — при годе записей это тысячи проходов на каждое нажатие.
@@ -4305,11 +4319,7 @@ function recomputeStats(force) {
       if (!l || !l.done) return;
       const e = (day && day.ex[j]) || {};
       const g = l.g || e.g;
-      // без готового объёма — тем же счётом, что dayEntries: по записанным
-      // повторам, иначе плитка «тонн» и журнал расходились
-      const rs = (Array.isArray(l.rs) && l.rs.some(x => num(x) > 0)) ? l.rs.map(num) : null;
-      const v = (l.vol !== undefined) ? num(l.vol)
-        : (g ? (rs ? rs.reduce((a, x) => a + x, 0) : num(pick(l.s, e.s)) * firstRep(pick(l.r, e.r))) * num(pick(l.w, e.w)) : 0);
+      const v = recordedVolume(l, e);
       if (g && vol[g] !== undefined) vol[g] += v;
       xp += num(l.xp) || XP_EX;
     });
@@ -4356,6 +4366,8 @@ function scrubKeys() {
      повторов, null вместо записи или приёма пищи — и «Прогресс», «Еда» и
      карточка падали при каждом запуске. Чиним форму, данные не выдумываем. */
   const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  // Яркость карты — настройка отображения, не часть нагрузки или журнала.
+  S.mapBrightness = mmBrightness(S.mapBrightness);
   ['vol', 'pr'].forEach(k => { if (!plain(S[k])) S[k] = {}; });
   if (S.meas !== undefined) {
     if (!plain(S.meas)) S.meas = {};
@@ -4623,7 +4635,7 @@ function planWeek(ds) {
   const c = at(start);
   let w = 1, guard = 0;
   while (iso(c) < target) {
-    if ((cnt[iso(c)] || 0) >= weekNeed()) w++;      // неделя засчитана — идём дальше
+    if ((cnt[iso(c)] || 0) >= weekNeed(iso(c))) w++; // порог этой недели, с сохранёнными типами дней
     c.setDate(c.getDate() + 7);
     if (++guard > 5200) break;                   // сто лет плана — дальше только петля
   }
@@ -5511,6 +5523,8 @@ function paintWorkout() {
       ? d.ex.map((e, j) => exRow(e, j, r, IN)).join('')
       : exFull(d.ex[exOpen], exOpen, r, IN, d);
     $('exl').classList.toggle('full', exOpen !== null);
+    const card = $('exl').querySelector('.ex[data-j]');
+    if (card) syncExCompletion(card);
     $('addEx').hidden = exOpen !== null;
     // раскрытое упражнение занимает экран целиком: всё остальное уходит
     document.body.classList.toggle('exopen', exOpen !== null);
@@ -5663,7 +5677,7 @@ function exRow(e, j, r, IN) {
     <span class="t"><span class="n">${esc(e.n)}</span>
       <span class="exload"><b class="kg">${esc(load)}</b><small>${unit}</small></span>
       <span class="s">${ss || ss2 ? '<em class="sstag">суперсет</em> ' : ''}${esc(rs)}${e.g ? '<small class="exmus">' + esc(e.g) + '</small>' : ''}</span></span>
-    <!-- У веса своя строка под названием: две кнопки остаются 44 px,
+    <!-- У веса своя строка под названием: кнопка и статус остаются 44 px,
          длинное имя и диапазон весов не раздвигают экран. -->
     <button class="swb" data-swap="${j}" aria-label="Заменить: ${esc(e.n)}">${SWAP_ICO}</button>
     ${g.done ? '<span class="gook" aria-label="Сделано">✓</span>' : ''}
@@ -5671,6 +5685,27 @@ function exRow(e, j, r, IN) {
 }
 
 /* Упражнение на весь экран: то же самое, только крупно и с историей. */
+function exCompletionHtml(j) {
+  return `<div class="excompletion" aria-label="Завершение упражнения">
+    <div class="excompletion-status"><span data-excount aria-live="polite"></span><span data-exstate></span></div>
+    <button type="button" class="excompletebtn" data-complete="${j}"></button>
+    <p class="excompletion-hint" data-excaption></p>
+  </div>`;
+}
+function syncExCompletion(card) {
+  const box = card.querySelector('.excompletion'); if (!box) return;
+  const j = num(card.dataset.j), done = !!((recOf(sel).log || {})[j] || {}).done;
+  const rows = [...card.querySelectorAll('.srow')], count = rows.filter(x => x.classList.contains('on')).length;
+  const future = sel > today(), button = box.querySelector('[data-complete]');
+  box.classList.toggle('done', done);
+  box.querySelector('[data-excount]').textContent = done ? 'Упражнение выполнено' : 'Отмечено ' + count + ' из ' + rows.length;
+  box.querySelector('[data-exstate]').textContent = done ? '✓' : future ? 'План' : 'В процессе';
+  button.textContent = done ? '↶ Снять выполнение' : '✓ Завершить упражнение';
+  button.disabled = future;
+  box.querySelector('[data-excaption]').textContent = future ? 'Этот день ещё впереди — выполнение пока не отмечается'
+    : done ? 'Отмена вернёт вес, опыт и рекорды' : 'Все ' + rows.length + ' ' + plural(rows.length, 'подход', 'подхода', 'подходов') + ' с указанными значениями';
+}
+
 function exFull(e, j, r, IN, d) {
   const g = r.log[j] || {};
   const pv = (!g.done && g.w === undefined) ? lastDone(e.n, sel) : null;
@@ -5713,6 +5748,7 @@ function exFull(e, j, r, IN, d) {
         e1rmOf(pv) ? ' · <span class="e1">≈1ПМ ' + kg(roundW(e1rmOf(pv))) + '</span>' + hib('e1rm') : ''}</div>
       ${g.done ? '' : brainHtml(e, pv, pick(g.w, sug)) + warmupHtml(e, pick(g.w, sug), d, j)}
       <div class="setr">${repBoxes(e, g, pick(g.s, sets), lastDone(e.n, sel), null, pick(g.r, repsDefault(e)), pick(g.w, sug))}</div>
+      ${exCompletionHtml(j)}
       ${rpeHtml(g)}
       ${d.ex[j + 1] ? `<div class="hrow"><button class="ssb${e.ss ? ' on' : ''}" data-ss="${j}" aria-pressed="${!!e.ss}">${e.ss
         ? 'Суперсет с «' + esc(d.ex[j + 1].n) + '» — снять' : 'Суперсет со следующим: «' + esc(d.ex[j + 1].n) + '»'}</button>${hib('ss')}</div>` : ''}
@@ -5754,6 +5790,10 @@ $('exl').addEventListener('blur', e => {
 
 $('exl').addEventListener('click', e => {
 
+  // Явное завершение и галочки используют одну запись и один откат.
+  const complete = e.target.closest('[data-complete]');
+  if (complete) { runOnce('go' + complete.dataset.complete, () => toggleSet(+complete.dataset.complete), 200); return; }
+
   const cl = e.target.closest('[data-close]');
   if (cl) { exOpen = null; render(); enterFx(); window.scrollTo(0, 0); return; }
 
@@ -5773,16 +5813,22 @@ $('exl').addEventListener('click', e => {
 
   const x = e.target.closest('[data-del]');
   if (x) {
-    const j = +x.dataset.del, d = dayOf(sel);
+    const day = sel, j = +x.dataset.del, d = dayOf(day);
     const name = (d.ex[j] || {}).n;
     ask('Убрать упражнение «' + name + '»?').then(async ok => {
       if (!ok) return;
       const snap = snapS();              // одна отмена вернёт и упражнение, и стёртые записи
-      const r = recRW(sel), l = r.log[j];
+      const r = recRW(day), l = r.log[j], di = dayIdx(day);
+      // У каждой даты свои разовые замены; черновик ещё не хранит имя.
+      // Снимки снимаются до изменения общего шаблона, а Proxy не ищется
+      // через indexOf среди настоящих объектов S.days.
+      const old = new Map();
+      Object.keys(S.rec).forEach(ds => {
+        if (dayIdx(ds) === di) old.set(ds, ((dayOf(ds) || {}).ex || []).slice());
+      });
       // снимаем вклад закрытого подхода, иначе объём и опыт останутся висеть
       if (l && l.done) rollback(l);
       delete r.log[j];
-      const old = d.ex.slice();          // имена черновиков других дат — до сдвига
       d.ex.splice(j, 1);
       /* Отметки сдвигались только в открытом дне. Но день недели — общий
          шаблон на все недели: во всех остальных датах номера оставались
@@ -5790,8 +5836,7 @@ $('exl').addEventListener('click', e => {
          журнал утверждал, что закрыт был не тот жим, а отмена такого
          подхода откатывала чужой тоннаж и чужой рекорд.
          Переставляем записи по названию во всех датах этого дня недели. */
-      const di = S.days.indexOf(d);
-      Object.keys(S.rec).forEach(ds => { if (dayIdx(ds) === di) remapLog(ds, old); });
+      old.forEach((ex, ds) => remapLog(ds, ex));
       save(); render();
 
       // прошлые тренировки с этим упражнением остаются в тоннаже и опыте —
@@ -5988,8 +6033,13 @@ $('exl').addEventListener('click', ev => {
 $('exl').addEventListener('click', ev => {
   const b = ev.target.closest('[data-tick]'); if (!b) return;
   ev.preventDefault();
+  if (sel > today()) { note('Этот день ещё впереди — отмечать нечего'); return; }
   const card = b.closest('.ex'); if (!card) return;
   const j = num(card.dataset.j), i = num(b.dataset.tick);
+  const existing = (recOf(sel).log || {})[j] || {};
+  // У отдельной галочки готова только её строка; остальные ещё черновик.
+  // Снимать галочку можно и после ошибочного ввода, чтобы исправить запись.
+  if (!existing.done && !b.closest('.srow').classList.contains('on') && !canCompleteEx(j, card, i)) return;
   const r = recRW(sel), l = r.log[j] = r.log[j] || {};
   // снять отметку со всего упражнения — под той же защитой от двойного тапа,
   // что и закрытие: второй приход тапа по последней галочке снимал только что закрытое
@@ -6020,10 +6070,10 @@ $('exl').addEventListener('click', ev => {
   const rows = [...card.querySelectorAll('.srow')];
   const kindAt = x => { const q = x.querySelector('[data-rs]'); return (q && q.dataset.kind) || ''; };
   const work = rows.filter(x => kindAt(x) === '' || kindAt(x) === 'f');
-  const need = work.length ? work.concat(rows.slice(rows.indexOf(work[work.length - 1]) + 1)) : [];
+  const need = work.length ? work.concat(rows.slice(rows.indexOf(work[work.length - 1]) + 1)) : rows;
   if (need.length && need.every(x => x.classList.contains('on'))) runOnce('go' + j, () => toggleSet(j), 200);
   // галочка строки отменяется вторым касанием её же; полоска — только когда закрылось упражнение
-  else undoQuiet = true;
+  else { syncExCompletion(card); undoQuiet = true; }
 });
 
 // подход, закрытый по верхней границе, подсвечивается сразу
@@ -6064,6 +6114,7 @@ $('exl').addEventListener('input', ev => {
   const keep = [...box.querySelectorAll('[data-rs]')].map(x => (x.dataset.auto === '1' ? '' : x.value));
   box.innerHTML = repBoxes(e, recOf(sel).log[j] || {}, sF ? sF.value : undefined,
     lastDone(e.n, sel), keep.some(v => String(v).trim()) ? keep : null, rF ? rF.value : undefined, wF ? wF.value : undefined);
+  syncExCompletion(card);
 });
 
 /* Повторы по каждому подходу. Без них правило «закрепить 4x10» непроверяемо:
@@ -6315,11 +6366,45 @@ function setReps(name, r, log) {
   return undo.length;
 }
 
+/* Не начисляем завершение за несуществующие строки или пустую цель.
+   Проверка до recRW: неудачный тап не создаёт пустую запись в журнале.
+   Записанные повторы важнее цели; без цели можно закрыть свои полные строки. */
+function canCompleteEx(j, card, rowIndex = null) {
+  const p = (dayOf(sel).ex || [])[j]; if (!p) return false;
+  const l = (recOf(sel).log || {})[j] || {};
+  const rawS = card ? card.querySelector('[data-f="s"]').value : pick(l.s, setsOf(sel, num(p.s), j));
+  const count = num(rawS);
+  if (!/^\d+$/.test(String(rawS).trim()) || count < 1 || count > 12) {
+    note('Укажи число подходов от 1 до 12'); return false;
+  }
+  const target = String((card ? card.querySelector('[data-f="r"]').value : pick(l.r, repsDefault(p))) ?? '').trim();
+  const range = target.match(/^(\d+)\s*(?:-\s*(\d+))?$/);
+  if (target && (!range || +range[1] < 1 || (range[2] && +range[2] < +range[1]))) {
+    note('Повторы: целое число или диапазон, например 8-10'); return false;
+  }
+  const validWeight = v => !String(v ?? '').trim() || /^(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(String(v).trim());
+  const weight = card ? card.querySelector('[data-f="w"]').value : pick(l.w, p.w);
+  if (!validWeight(weight)) { note('Вес: число от нуля, например 60 или 2,5'); return false; }
+  const reps = card ? [...card.querySelectorAll('[data-rs]')].map(x => x.value) : (l.rs || []);
+  const weights = card ? [...card.querySelectorAll('[data-ws]')].map(x => x.value) : (l.ws || []);
+  const indices = rowIndex === null ? Array.from({ length: count }, (_, i) => i) : [rowIndex];
+  if (indices.some(i => !validWeight(weights[i]))) { note('Проверь вес в строках подходов'); return false; }
+  if (indices.some(i => String(reps[i] ?? '').trim() && (!/^\d+$/.test(String(reps[i]).trim()) || +reps[i] < 1))) {
+    note('Повторы в подходе: целое число больше нуля'); return false;
+  }
+  if (!target && indices.some(i => !String(reps[i] ?? '').trim())) {
+    note('Укажи повторы в подходах или цель по повторам'); return false;
+  }
+  return true;
+}
+
 function toggleSet(j) {
   // Будущий день — это план, а не журнал. Раньше подход там закрывался
   // как обычно, и опыт с тоннажем начислялись за тренировку, которой
   // ещё не было.
   if (sel > today()) { note('Этот день ещё впереди — отмечать нечего'); return; }
+  const card = $('exl').querySelector('.ex[data-j="' + j + '"]');
+  if (!((recOf(sel).log || {})[j] || {}).done && !canCompleteEx(j, card)) return;
   const d = dayOf(sel), r = recRW(sel), p = d.ex[j] || {};
   const l = r.log[j] = r.log[j] || {};
 
@@ -6343,7 +6428,6 @@ function toggleSet(j) {
 
   // Записываем ровно то, что стоит в полях карточки. Иначе в журнал уходил бы
   // рабочий вес из программы, а на экране всё это время висел вес по интенсивности.
-  const card = $('exl').querySelector('.ex[data-j="' + j + '"]');
   const rDef = repsDefault(p);
   let rows = null;                 // строки подходов: повторы, тип, вес строки
   if (card) {
@@ -6589,22 +6673,32 @@ let exQ = '', exG = '';
    рекорды, баланс по мышцам (мышца — по группе и названию, muscleOf). */
 const myEx = () => (S.myEx && typeof S.myEx === 'object' && !Array.isArray(S.myEx) ? S.myEx : {});
 const grpOf = n => (EXDB[n] ? EXDB[n][1] : myEx()[n] || null);
+function exPersonalNames() {
+  const names = new Set(Object.keys(myEx()).concat(Object.keys(S.libEx || {})));
+  S.days.forEach(d => (d.ex || []).forEach(e => { if (e && e.n) names.add(e.n); }));
+  Object.values(S.rec || {}).forEach(r => Object.values(r.log || {}).forEach(l => { if (l && l.n) names.add(l.n); }));
+  Object.values(S.once || {}).forEach(r => Object.values(r || {}).forEach(e => { if (e && e.n) names.add(e.n); }));
+  if (LIB) (S.fav || []).forEach(id => { const o = libResolve(id); if (o) names.add(libExerciseName(o)); });
+  return names;
+}
 function exPickList() {
-  const q = exQ.trim().toLowerCase();
-  const have = dayOf(sel).ex.map(e => e.n);
-  const all = Object.keys(EXDB).concat(Object.keys(myEx()).filter(n => !EXDB[n]));
+  const q = libNorm(exQ).trim(), personal = exPersonalNames();
+  const all = [...new Set(Object.keys(EXDB).filter(n => LIB_CORE_OWN.has(EXDB[n][0]) || personal.has(n)).concat([...personal]))];
   const list = all
     .filter(n => !exG || grpOf(n) === exG)
-    .filter(n => !q || n.toLowerCase().includes(q));
-  const exact = all.some(n => n.toLowerCase() === q);
+    .filter(n => !q || libNorm(n).includes(q));
+  const exact = Object.keys(EXDB).concat([...personal]).some(n => libNorm(n) === q);
   const mine = q && !exact ? `<div class="win myex"><b>Своё упражнение: «${esc(exQ.trim().slice(0, 60))}»</b>
       <span>Выбери группу — и оно встанет в день:</span>
       <div class="chains">${GROUPS.map(([g]) => `<button data-myex="${g}">${g}</button>`).join('')}</div></div>` : '';
-  if (!list.length) return mine || '<p style="color:var(--mut);font-size:12px">Ничего не найдено</p>';
+  if (!list.length) return mine + '<p class="lnote">Среди основных и ваших упражнений ничего не найдено. Другие движения — в «Все варианты с фото».</p>';
   return mine + list.map(n => {
-    const w = startWeight(n), used = have.indexOf(n) >= 0, own = !EXDB[n];
-    return `<button class="cpi" data-addex="${esc(n)}">
-      <b>${esc(n)}${used ? ' <i style="font-style:normal;color:var(--mut);font-size:10px">уже в дне</i>' : ''}</b>
+    const w = startWeight(n), used = exAlreadyInDay(sel, n, '', true), own = !EXDB[n];
+    const linked = !EXDB[n] && LIB && ((S.libEx && S.libEx[n] || [])[0] || (S.fav || []).find(id => {
+      const o = libResolve(id); return o && libExerciseName(o) === n;
+    }));
+    return `<button class="cpi${used ? ' ex-present' : ''}" data-addex="${esc(n)}"${linked ? ` data-exlib="${esc(linked)}"` : ''}${used ? ' disabled' : ''}>
+      <b>${esc(n)}${used ? ' <i class="ex-present-label">Уже в этом дне</i>' : ''}</b>
       <span>${esc(grpOf(n) || '')}${own ? ' · своё' : w ? ' · старт ' + kg(w) + ' кг' : ' · свой вес'}</span></button>`;
   }).join('');
 }
@@ -6613,11 +6707,16 @@ function openExPicker() {
   // все группы программы: «Плечи» и «Пресс» раньше нельзя было выбрать фильтром
   const chips = [''].concat(GROUPS.map(([n]) => n));
   sheet('ДОБАВИТЬ УПРАЖНЕНИЕ',
-    `<button class="add libin" data-libpick="1">Каталог упражнений с фото ›</button>
+    `<button class="add libin" data-libpick="1">Все варианты с фото ›</button>
+     ${dayOf(sel).t === 'rest' ? '<p class="lnote lib-rest-note">Выбран день отдыха. В «Неделе» выберите тренировочный тип для этой даты, затем вернитесь к добавлению упражнения.</p>' : ''}
      <input id="exq" class="exq" placeholder="Поиск упражнения" autocomplete="off" aria-label="Поиск упражнения">
      <div class="chains" id="exgs">${chips.map(g =>
        `<button data-exg="${g}" class="${g ? '' : 'on'}">${g || 'Все'}</button>`).join('')}</div>
      <div id="exlist">${exPickList()}</div>`, 'addex');
+  const input = $('exq');
+  if (!LIB) loadLib().then(() => {
+    if ($('exq') === input && $('sh').classList.contains('on')) $('exlist').innerHTML = exPickList();
+  }).catch(() => {}); // основа и свои доступны без загрузки полной базы
 }
 $('addEx').addEventListener('click', openExPicker);
 $('shB').addEventListener('input', e => {
@@ -6736,13 +6835,8 @@ function dayEntries(ds) {
     const p = ex[j] || {};
     const sets = num(pick(l.s, p.s)), reps = String(pick(l.r, p.r) ?? ''), w = num(pick(l.w, p.w));
     const rs = (l.rs && l.rs.length && l.rs.some(v => num(v) > 0)) ? l.rs.map(num) : null;
-    /* Вес мог отличаться от подхода к подходу: 60/70/80 — это не 3×80
-       и не 3×60. Где своего веса нет, берётся вес упражнения. */
     const ws = Array.isArray(l.ws) ? l.ws : null;
-    const vol = (l.vol !== undefined) ? num(l.vol)
-      : (rs
-        ? rs.reduce((a, b, i) => a + b * (ws && num(ws[i]) > 0 ? num(ws[i]) : w), 0)
-        : sets * firstRep(reps) * w);
+    const vol = recordedVolume(l, p);
     out.push({ j: j, n: l.n || p.n || 'Упражнение', s: sets, r: reps, w: w, rs: rs, ws: ws,
       vol: vol, g: l.g || p.g || null, pr: (l.prevPr !== undefined && l.prevPr > 0) || (Array.isArray(l.recs) && l.recs.length > 0),
       wu: Array.isArray(l.wu) ? l.wu : null, dr: Array.isArray(l.dr) ? l.dr : null,
@@ -7321,9 +7415,11 @@ $('shB').addEventListener('click', e => {
 
   const mx = e.target.closest('[data-myex]');
   if (mx) {
+    if (!exCanAdd(sel)) return;
     const n = exQ.trim().replace(/\s+/g, ' ').slice(0, 60), g = mx.dataset.myex;
     if (!n) return;
     const name = n[0].toUpperCase() + n.slice(1);
+    if (exAlreadyInDay(sel, name)) return;
     runOnce('myex:' + sel + ':' + name, () => {
       S.myEx = myEx(); S.myEx[name] = g;
       dayOf(sel).ex.push({ n: name, s: 3, r: '8-10', w: 0, g: g });
@@ -7332,10 +7428,13 @@ $('shB').addEventListener('click', e => {
     return;
   }
 
-  if (e.target.closest('[data-libpick]')) { libOpenPick(sel); return; }
+  if (e.target.closest('[data-libpick]')) { libOpenPick(sel, 'all', exQ); return; }
   const ax = e.target.closest('[data-addex]');
   if (ax) {
+    if (ax.disabled || !exCanAdd(sel)) return;
+    if (ax.dataset.exlib) { libAdd(ax.dataset.exlib, sel); return; }
     const n = ax.dataset.addex;
+    if (exAlreadyInDay(sel, n)) return;
     runOnce('addex:' + sel + ':' + n, () => {
       dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: grpOf(n) });
       save(); sheetClose(); render(); note('Добавлено: ' + n);
@@ -7742,7 +7841,7 @@ function paintRem() {
   const pts = wlog(), el = $('rem');
   if (!pts.length) {
     el.classList.add('on');
-    $('remT').innerHTML = 'Впиши текущий вес в поле выше — <b>без этого не будет ни графика, ни контроля темпа</b>.';
+    $('remT').innerHTML = 'Впиши текущий вес в разделе «Цель» — <b>без этого не будет ни графика, ни контроля темпа</b>.';
     return;
   }
   const days = daysBetween(pts[pts.length - 1][0], today());
@@ -7946,10 +8045,21 @@ function paintMusMap() {
   const box = $('bmapBox'); if (!box) return;
   const acc = vol7m();
   box.innerHTML = bodyMap(acc, 1, { tap: true, label: 'Карта мышц за 7 дней' });
+  const map = $('mapw');
+  const legend = map.querySelector('.mmleg');
+  if (legend) legend.outerHTML = mmLegend();
+  if (!map.querySelector('.mmbright')) {
+    map.querySelector('.mmleg').insertAdjacentHTML('afterend', '<div class="mmbright">' +
+      '<label for="mmBrightness">Яркость карты <output id="mmBrightnessValue" for="mmBrightness"></output></label>' +
+      '<input id="mmBrightness" type="range" min="40" max="100" step="1" aria-describedby="mmBrightnessNote">' +
+      '<p id="mmBrightnessNote">Меняет яркость цветов, подходы остаются прежними.</p></div>');
+  }
+  $('mmBrightness').value = mmBrightness(S.mapBrightness);
+  $('mmBrightnessValue').textContent = mmBrightness(S.mapBrightness) + ' %';
   $('mlist').innerHTML = MUSCLES.map(m => {
     const n = acc[m] || 0, t = volTargetM(m), l = mmLevel(m, n, 1);
-    return '<button class="mrow" data-mus="' + m + '"><i class="mm' + l + '"></i><span>' + m +
-      '</span><b>' + n + '<small>' + (t ? ' / ' + t : '') + '</small></b></button>';
+    return '<button class="mrow" data-mus="' + m + '"><i class="mm' + l + '" ' + mmAttrs(m, n, 1) + '></i><span>' + m +
+      '</span><b>' + n + '<small>' + (t ? ' / ' + t : ' / —') + '</small></b></button>';
   }).join('');
 }
 
@@ -7959,7 +8069,8 @@ function paintMusMap() {
 function openMuscle(m) {
   if (MUSCLES.indexOf(m) < 0) return;
   const acc = vol7m(), n = acc[m] || 0, t = volTargetM(m), l = mmLevel(m, n, 1);
-  const LV = ['не работала', 'мало — меньше половины нормы', 'почти норма', 'норма добрана'];
+  const status = t ? Math.round(n / t * 100) + ' % нормы программы' + (n >= t ? ' · норма добрана' : '')
+    : 'Норма не задана в программе';
   const from = new Date(); from.setDate(from.getDate() - 6);
   const f7 = iso(from), td = today();
   const ex = {};
@@ -7979,9 +8090,10 @@ function openMuscle(m) {
   const rows = Object.keys(ex).sort((a, b) => ex[b] - ex[a])
     .map(k => '<li>' + esc(k) + ' <b>' + ex[k] + ' ' + plural(ex[k], 'подход', 'подхода', 'подходов') + '</b></li>').join('');
   sheet(m.toUpperCase(), '<div class="win musd">' +
-    bodyMap(null, null, { focus: m, small: true, label: m }) +
+    bodyMap(null, null, { focus: m, small: true, label: 'Расположение: ' + m }) +
+    '<p class="musw">На рисунке — расположение мышцы.</p>' +
     '<div class="musn"><b>' + n + '</b><span>' + (t ? 'из ' + t + ' подходов за 7 дней' : 'подходов за 7 дней') + '</span></div>' +
-    '<p class="musl mm' + l + '">' + LV[l] + '</p>' +
+    '<p class="musl mm' + l + '" ' + mmAttrs(m, n, 1) + '>' + status + '</p>' +
     '<p class="musw">' + (last ? 'Последний раз — ' + fmt(last) + '.' : 'В журнале этой мышцы ещё нет.') + '</p>' +
     (rows ? '<div class="cph">ЗА 7 ДНЕЙ</div><ul class="musx">' + rows + '</ul>' : '') +
     (plan.length ? '<div class="cph">В ПРОГРАММЕ</div><ul class="musx">' + plan.join('') + '</ul>'
@@ -7991,6 +8103,9 @@ function openMuscle(m) {
 $('mapw').addEventListener('click', e => {
   const b = e.target.closest('[data-mus]'); if (!b) return;
   openMuscle(b.dataset.mus);
+});
+$('mapw').addEventListener('input', e => {
+  if (e.target.id === 'mmBrightness') setMapBrightness(e.target.value);
 });
 
 function paintRadar() {
@@ -8005,7 +8120,7 @@ function paintRadar() {
   });
   box.innerHTML = rows.map(r => `<div class="br ${r.st}" data-g="${r.n}">
       <span class="bn">${r.n}</span>
-      <span class="bb"><i style="width:${(Math.min(r.k, BAL_SPAN) / BAL_SPAN * 100).toFixed(1)}%"></i>
+      <span class="bb"><i ${mmAttrs(r.n, r.v, 1, 'width:' + (Math.min(r.k, BAL_SPAN) / BAL_SPAN * 100).toFixed(1) + '%')}></i>
         <s style="left:${(100 / BAL_SPAN).toFixed(1)}%"></s></span>
       <span class="bv"><b>${r.v}</b>/${r.goal}${r.st === 'full' ? ' ✓' : ''}</span></div>`).join('');
   const note = $('radn');
@@ -8057,7 +8172,16 @@ $('histMore').addEventListener('click', () => { histLimit += 20; paintHistory();
    было держать, не заходя в зал вовсе. */
 // тренировок в неделю по шаблону; неделя засчитана при одной меньше плана
 const planN = () => (S.days || []).filter(d => d.t !== 'rest' && (d.ex || []).length).length;
-const weekNeed = () => Math.max(1, planN() - 1);
+const weekNeed = ds => {
+  if (!ds) return Math.max(1, planN() - 1);
+  const mon = mondayOf(ds);
+  let n = 0;
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(mon, i), d = dayOf(date);
+    if (dayLook(date).t !== 'rest' && d && (d.ex || []).length) n++;
+  }
+  return Math.max(1, n - 1);
+};
 function streak() {
   const cnt = {};
   Object.keys(S.rec).forEach(d => {
@@ -8654,7 +8778,8 @@ const HINTS = {
     'Диапазоны по книге: сила — 1–5 повторов, масса — 8–15 (в приоритете 10–15), новичку — путь от 6–8 к 15.'], 'fs'],
   sets: ['ПОДХОДЫ', [
     'Клетки заранее заполнены целью от прошлого раза: закрыл, ничего не трогая, — значит сделал по плану. Пустая клетка — «не записал», в тоннаж идёт низом диапазона.',
-    'Галочка ✓ отмечает подход: пустая клетка заполняется целью. Последняя рабочая галочка закрывает упражнение, второе касание снимает. Номер подхода слева — его тип: касание меняет на Р — разминка, О — до отказа, Д — дроп-сет. Р и Д не идут ни в тоннаж, ни в прогрессию; О — рабочий подход.',
+    'Галочка ✓ отмечает подход, пустые повторы заполняются целью. Последняя рабочая галочка или «Завершить упражнение» закрывает запись. Повторное касание снимает выполнение. До закрытия строки сохраняются как черновик; тоннаж, карта и итоги учитывают завершённое упражнение.',
+    'Номер слева — тип подхода: касание меняет на Р — разминка, О — до отказа, Д — дроп-сет. Р и Д не идут в рабочий тоннаж и прогрессию; О — рабочий подход.',
     'Под каждым подходом — прошлый результат с датой; «Повторить» копирует его в строку, без отметки.',
     'По книге: дроп — до 3 ступеней по −15–20 % веса, не в становой; чем ближе к отказу, тем проще должно быть упражнение.'], 'fs'],
   warmup: ['РАЗМИНКА // БЛИНЫ', [
@@ -8693,15 +8818,15 @@ const HINTS = {
     'По книге программа держит равновесие противоположностей: горизонтальный жим — горизонтальная тяга, вертикальный жим — вертикальная тяга, колено — таз.',
     'Новичку нужен набор: жим, одна тяга, присед, тазовое движение, вращение плеча наружу и кор. Не больше 6 упражнений в основной части.'], 'f'],
   lib: ['КАТАЛОГ', [
-    'Почти 600 упражнений для зала: поиск (можно без «ё»), лента мышц, фильтры по книге и инвентарю, закладка — избранное.',
-    'Тап по карточке — страница: мышцы, тип движения, лесенка по книге, прошлый раз и твои рекорды. «+ В тренировку» ставит упражнение в выбранный день.',
-    '«!» на карточке — книга считает движение вредным.'], 'fs'],
+    '«Основа приложения» — короткий список движений с собственной техникой и совпавших примеров из конспекта. «Мои» — избранное, использованные и свои упражнения. «Вся база» — все 876 движений, включая кардио и растяжку.',
+    'Тап по карточке — мышцы, тип движения, доступные примеры лесенки, прошлый раз и твои рекорды. «+ В тренировку» ставит упражнение в выбранный день. Названия из старого журнала сохраняются.',
+    '«!» — предостережение из сохранённого конспекта, а не индивидуальное медицинское заключение. Фильтры и поиск работают внутри выбранного списка.'], 'fs'],
   planes: ['ТИПЫ ДВИЖЕНИЯ', [
     'ГЖ — горизонтальный жим, ВЖ — вертикальный жим, ГТ — горизонтальная тяга, ВТ — вертикальная тяга, КД — колено-доминантные (приседы, выпады), ТД — таз-доминантные (становые, мостики), ВПН — вращают плечо наружу, стабилизаторы плеча, кор — корпус.',
     'Правило книги: противоположные типы уравнивают по числу подъёмов за неделю (ГЖ = ГТ, ВЖ = ВТ, КД = ТД), с небольшим перекосом в сторону тяг, вертикальных жимов и таза.',
     'Вредные по книге — присед Сизифа, силовой жим ногами, тяга к подбородку стоя, французский жим, гакк-машина, концентрированные сгибания, разводки лёжа. Фильтр «Без вредных» их прячет.'], 'f'],
   ladder: ['ЛЕСЕНКА // МЫШЦЫ', [
-    'Каждый тип движения — лесенка: 1 — самое простое, для новичка; 5 — самое тяжёлое по весу; 6 — на одну сторону, сложное по координации. Выше — когда техника стабильна.',
+    'Лесенка показывает доступные совпавшие примеры в порядке сохранённого конспекта. Некоторые ступени отсутствуют: похожее название ещё не означает ту же технику. Номер не даёт команды автоматически повышать вес или менять упражнение.',
     'По книге нет «базовых» и «изолирующих»: базовое — то, что ты сейчас развиваешь.',
     'На фигуре ярко — основные мышцы, вполсилы — помощники. В баланс недели подходы идут основной мышце.'], 'fs'],
   recap: ['ИТОГИ', [
@@ -8712,7 +8837,8 @@ const HINTS = {
     'Четыре вида: вес, ≈1ПМ (формула Эпли), лучший подход (вес × повторы) и объём упражнения за тренировку.',
     'Всё — по журналу: снимешь отметку — рекорд вернётся к прежнему. Первая запись упражнения — точка отсчёта, не рекорд.'], 's'],
   musmap: ['КАРТА МЫШЦ', [
-    'Цвет — рабочие подходы мышцы за 7 дней против её нормы: столько ставит на мышцу сама программа. Серая — не было, дальше «мало», «почти», «норма».',
+    'Цвет плавно меняется от синего через фиолетовый к красному по рабочим подходам за 7 дней относительно плана. Красный — 100 % плана и больше; без подходов цвет нейтральный. Если нормы нет, это указано отдельно. Это выполнение плана, не оценка восстановления.',
+    'Яркость подсветки регулируется отдельно от 40 до 100 % и сохраняется на устройстве и в резервной копии. Карта, баланс и итоги используют один счёт и одну шкалу.',
     'Касание мышцы — что делал, когда в последний раз и что стоит в программе. Предплечья, ягодицы, голень и приводящие не красятся: таких мышц нет в журнале.'], 's'],
   balance: ['ПОДХОДЫ ЗА 7 ДНЕЙ', [
     'Столбец — рабочие подходы мышцы за неделю, риска — норма программы. Разминка и дроп не считаются.',
@@ -8776,7 +8902,7 @@ const HINTS = {
 // советы экранов: показываются, пока их не закрыли «Понятно»
 const TIPS = {
   wo: ['Здесь тренировка дня. Тап по упражнению — подходы строками, галочка ✓ — подход сделан. Значок «i» объясняет любую графу.', 'day'],
-  ex: ['Каталог по книге: тип движения, лесенка от простого к тяжёлому, вредные помечены «!». Тап по карточке — страница упражнения.', 'lib'],
+  ex: ['Начни с «Основы приложения»; избранное и свои движения — в «Мои», полный поиск — во «Всей базе». Тап по карточке — техника, мышцы и твой журнал.', 'lib'],
   prog: ['Сверху — итоги и рекорды, ниже — нагрузка, цель и веса. Всё считается по журналу, вводить дважды ничего не нужно.', 'recap'],
   food: ['Нормы калорий и белка считаются от твоего веса и цели. Вписывай еду — полосы заполнятся.', 'kcal'],
   photo: ['Одно место, один свет, одна поза — раз в неделю. Потом «Сравнить».', 'photo']
@@ -8814,19 +8940,41 @@ document.addEventListener('click', e => {
 }, true);
 $('hshX').addEventListener('click', hintClose);
 $('hsh').addEventListener('click', e => { if (e.target === $('hsh')) hintClose(); });
+/* Клавиатура работает с тем же верхним окном, которое видно человеку.
+   Еда и фото могут открыться поверх шторки; подтверждение — выше подсказки. */
+function currentModal() {
+  return ['sh', 'hsh', 'fp', 'ov', 'ask'].map($).filter(el =>
+    el && (el.id === 'hsh' ? !el.hidden : el.classList.contains('on')) && el.getClientRects().length)
+    .reduce((top, el) => !top || +getComputedStyle(el).zIndex >= +getComputedStyle(top).zIndex ? el : top, null);
+}
+function modalStops(modal) {
+  return [...modal.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]')]
+    .filter(el => el.getClientRects().length && !el.hidden);
+}
+function returnModalFocus(back) {
+  const modal = currentModal();
+  if (back && back.isConnected && back.getClientRects().length && (!modal || modal.contains(back))) {
+    back.focus({ preventScroll: true });
+  } else if (modal) {
+    (modalStops(modal)[0] || modal).focus({ preventScroll: true });
+  }
+}
+function syncModalScroll() {
+  document.body.style.overflow = currentModal() ? 'hidden' : '';
+}
 document.addEventListener('keydown', e => {
-  const modal = $('ask').classList.contains('on') ? $('ask')
-    : !$('hsh').hidden ? $('hsh') : $('sh').classList.contains('on') ? $('sh') : null;
+  const modal = currentModal();
   if (modal && e.key === 'Escape') {
     e.preventDefault(); e.stopImmediatePropagation();
     if (modal.id === 'ask') askClose(false);
     else if (modal.id === 'hsh') hintClose();
+    else if (modal.id === 'fp') $('fpX').click(); // сохраняем вопрос о выбранной, но не добавленной еде
+    else if (modal.id === 'ov') $('ovX').click();
     else $('shX').click(); // тот же вопрос о незаписанных замерах, что при касании ×
     return;
   }
   if (modal && e.key === 'Tab') {
-    const stops = [...modal.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]')]
-      .filter(el => el.getClientRects().length && !el.hidden);
+    const stops = modalStops(modal);
     const first = stops[0], last = stops[stops.length - 1], current = document.activeElement;
     if (!first) { e.preventDefault(); modal.focus({ preventScroll: true }); }
     else if (!modal.contains(current) || (e.shiftKey ? current === first : current === last)) {
@@ -8890,11 +9038,11 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 /* =========================================================================
    КАТАЛОГ УПРАЖНЕНИЙ — экран «Упражнения», как библиотека Lyfta
    База — free-exercise-db: 876 упражнений с фото и мышцами (Unlicense);
-   в списке — около 600 для зала (libGym).
+   первый вид — компактная основа приложения, полная база доступна рядом.
    Файл exlib.js грузится при первом открытии экрана и лежит в офлайн-кэше.
    Русские названия, тип движения по плоскостной системе, лесенки от
-   простого к сложному и пометки «вредное» — по книге Д. Смирнова «Фитнес
-   для умных». Упражнение из базы встаёт в день как своё: S.myEx (группа) и
+   простого к сложному и пометки «вредное» — по сохранённой выжимке книги
+   Д. Смирнова «Фитнес для умных». Упражнение из базы встаёт в день как своё: S.myEx (группа) и
    S.libEx (id базы и мышца для баланса). Дальше журнал, рекорды и баланс
    считают его так же, как любое другое.
    ========================================================================= */
@@ -8937,7 +9085,19 @@ const LIB_CHIPS = [['fav', 'Избранное'], ['ch', 'Грудь'], ['back',
   ['tri', 'Трицепс'], ['qu', 'Квадрицепс'], ['ha', 'Бицепс бедра'], ['gl', 'Ягодицы'], ['ca', 'Икры'],
   ['ab', 'Пресс'], ['fo', 'Предплечья'], ['cardio', 'Кардио'], ['stretch', 'Растяжка']];
 const LIB_BACK = ['la', 'mb', 'lb', 'tr'];
-const LF = { q: '', mu: '', eq: '', lv: 0, pl: '', cat: '', safe: false, ru: false };
+const LF = { scope: 'core', q: '', mu: '', eq: '', lv: 0, pl: '', cat: '', safe: false, ru: false };
+const LIB_SCOPES = [['core', 'Основные · 40'], ['mine', 'Мои'], ['all', 'Все варианты']];
+// Явный компактный выбор для зала. Все движения стартовой программы остаются
+// здесь; пометки выжимки — отдельный фильтр, а не повод менять личный план.
+const LIB_CORE_OWN = new Set([
+  'bench', 'benchdb', 'incline', 'flyes', 'chestpress', 'butterfly', 'pushup',
+  'row', 'dbrow', 'pulldown', 'cablerow', 'pullup', 'hyper',
+  'ohp', 'lateral', 'reardelt', 'facepull',
+  'curl', 'hammer', 'preacher', 'skull', 'pushdown', 'overhead',
+  'squat', 'frontsquat', 'legpress', 'lunge', 'split', 'legext',
+  'dead', 'rdl', 'legcurl', 'legcurlseat', 'glute', 'calfstand', 'calfseat',
+  'crunch', 'hangleg', 'cablecrunch', 'plank'
+]);
 let LIB = null, libLoading = null, libN = 40, libPick = null;
 const libNorm = s => String(s || '').toLowerCase().replace(/ё/g, 'е');
 const OWN_NAME = {};
@@ -8950,8 +9110,7 @@ function indexLib(rows) {
       harm: r[11], own: r[12], ins: r[13] || [], pic: r[14] };
     // своё упражнение приложения показывается под своим русским именем
     if (o.own && OWN_NAME[o.own]) o.n = OWN_NAME[o.own];
-    o.hay = libNorm([o.n, o.en, LIB_EQ[o.eq], LIB_CAT[o.c], (PLANE[o.pl] || [])[0]]
-      .concat(o.pm.concat(o.sm).map(m => (LIB_MU[m] || [])[0])).join(' '));
+    o.baseName = o.n;
     return o;
   });
   // порядок: упражнения программы (русское описание) → сила → остальное; внутри — по уровню и имени
@@ -8959,18 +9118,66 @@ function indexLib(rows) {
   const ord = Object.keys(EXDB);   // упражнения программы — в привычном порядке каталога
   list.sort((a, b) => rank(a) - rank(b) || (a.own && b.own ? ord.indexOf(a.n) - ord.indexOf(b.n) : 0) ||
     a.lv - b.lv || a.n.localeCompare(b.n, 'ru'));
+  // Одинаковый перевод не означает одно движение. У новых выборов — своё
+  // стабильное имя; уже сохранённое имя по id восстанавливает libExerciseName.
+  const names = new Map();
+  list.forEach(o => { if (!names.has(o.n)) names.set(o.n, []); names.get(o.n).push(o); });
+  names.forEach(items => {
+    if (items.length > 1) {
+      let variant = 1;
+      items.slice().sort((a, b) => a.id.localeCompare(b.id)).forEach(o => {
+        if (!o.own) o.n = o.baseName + ' · вариант ' + variant++;
+      });
+    }
+  });
+  list.forEach(o => {
+    o.hay = libNorm([o.n, o.en, LIB_EQ[o.eq], LIB_CAT[o.c], (PLANE[o.pl] || [])[0]]
+      .concat(o.pm.concat(o.sm).map(m => (LIB_MU[m] || [])[0])).join(' '));
+  });
   const byId = new Map(list.map(o => [o.id, o]));
-  /* В списке — только то, что делают в обычном зале (владелец: «куча ненужных
-     упражнений»). Растяжка, кардио, стронгмен, плиометрика, гири, резинки,
-     медбол и ролик спрятаны из списка, поиска, лесенки и замены, но остаются
-     в byId: уже добавленное в день, избранное и ссылки открываются как были. */
-  const mine = new Set([].concat(Array.isArray(S && S.fav) ? S.fav : [],
-    Object.values((S && S.libEx) || {}).map(v => v && v[0])));
-  const shown = list.filter(o => libGym(o) || mine.has(o.id));
-  return { list: shown, byId, all: list.length };
+  // Личный список зависит от текущего S, в том числе после отмены/восстановления.
+  // Полный индекс не ограничивается видом и нужен технике, истории и замене.
+  return { list, byId, all: list.length };
 }
-const LIB_OFF_CAT = 'tcgp', LIB_OFF_EQ = 'krno';
-const libGym = o => !!o.own || (LIB_OFF_CAT.indexOf(o.c) < 0 && (!o.eq || LIB_OFF_EQ.indexOf(o.eq) < 0));
+const libCore = o => LIB_CORE_OWN.has(o.own);
+function libExerciseName(o) {
+  if (o.custom) return o.n;
+  const saved = Object.keys(S.libEx || {}).find(n => S.libEx[n] && S.libEx[n][0] === o.id && !EXDB[n]);
+  if (saved) return saved;
+  if (o.own && OWN_NAME[o.own] && EXDB[OWN_NAME[o.own]]) return OWN_NAME[o.own];
+  const used = new Set(Object.keys(myEx()).concat(Object.keys(S.libEx || {}), Object.keys(EXDB)));
+  S.days.forEach(d => (d.ex || []).forEach(e => used.add(e.n)));
+  Object.values(S.rec || {}).forEach(r => Object.values(r.log || {}).forEach(l => { if (l && l.n) used.add(l.n); }));
+  Object.values(S.once || {}).forEach(r => Object.values(r || {}).forEach(e => { if (e && e.n) used.add(e.n); }));
+  if (!used.has(o.n)) return o.n;
+  let name = o.n + ' (каталог)', i = 2;
+  while (used.has(name)) name = o.n + ' (каталог ' + i++ + ')';
+  return name;
+}
+function libCustom(name) {
+  const group = myEx()[name];
+  if (!group || EXDB[name] || (S.libEx && S.libEx[name])) return null;
+  const muscle = muscleOf(name, group), code = Object.keys(LIB_MU).find(k => LIB_MU[k][1] === muscle);
+  return { id: 'custom:' + encodeURIComponent(name), n: name, baseName: name, en: '', c: '', eq: '', lv: 0,
+    iso: 0, pm: code ? [code] : [], sm: [], pl: 'other', st: 0, harm: '', own: '', ins: [], pic: 0,
+    custom: true, group, hay: libNorm(name + ' ' + group) };
+}
+function libResolve(id) {
+  const o = LIB && LIB.byId.get(id); if (o) return o;
+  if (String(id).startsWith('custom:')) {
+    try { return libCustom(decodeURIComponent(id.slice(7))); } catch (e) { return null; }
+  }
+  return null;
+}
+function libMineIds() {
+  const ids = new Set(Array.isArray(S.fav) ? S.fav : []), names = new Set();
+  Object.values(S.libEx || {}).forEach(v => { if (v) ids.add(v[0]); });
+  S.days.forEach(d => (d.ex || []).forEach(e => names.add(e.n)));
+  Object.values(S.rec || {}).forEach(r => Object.values(r.log || {}).forEach(l => { if (l && l.n) names.add(l.n); }));
+  Object.values(S.once || {}).forEach(r => Object.values(r || {}).forEach(e => { if (e && e.n) names.add(e.n); }));
+  LIB.list.forEach(o => { if (names.has(o.n) || (o.own && names.has(OWN_NAME[o.own]))) ids.add(o.id); });
+  return ids;
+}
 function loadLib() {
   if (LIB) return Promise.resolve(LIB);
   if (!libLoading) {
@@ -9004,6 +9211,7 @@ function libMuscle(o) {
   return null;
 }
 function libGroup(o) {
+  if (o.custom) return o.group;
   const m = libMuscle(o), p = o.pm[0];
   if (m === 'Грудь' || m === 'Спина' || m === 'Плечи' || m === 'Пресс') return m;
   if (m === 'Бицепс' || m === 'Трицепс' || p === 'fo') return 'Руки';
@@ -9028,7 +9236,13 @@ function libMatch(o) {
   const q = libNorm(f.q).trim().split(/\s+/).filter(Boolean);
   return q.every(w => o.hay.indexOf(w) >= 0);
 }
-const libList = () => (LIB ? LIB.list.filter(libMatch) : []);
+function libList() {
+  if (!LIB) return [];
+  const mine = LF.scope === 'mine' ? libMineIds() : null;
+  const list = LIB.list.filter(o => LF.scope === 'all' || (mine ? mine.has(o.id) : libCore(o)));
+  if (mine) Object.keys(myEx()).forEach(n => { const o = libCustom(n); if (o) list.push(o); });
+  return list.filter(libMatch);
+}
 
 // значки ленты мышц рисуются один раз: карта тела на одну сторону
 let libChipHtml = null;
@@ -9054,21 +9268,33 @@ function libChips() {
 
 function libCard(o) {
   const src = libPicUrl(o, 0), fav = libFav(o.id);
+  const used = !!libPick && exAlreadyInDay(libPick, libExerciseName(o), o.custom ? '' : o.id, true);
+  const rest = !!libPick && dayOf(libPick).t === 'rest';
   const mu = o.pm.map(m => (LIB_MU[m] || [])[0]).filter(Boolean).join(', ');
   return `<div class="lcard" data-lib="${esc(o.id)}" tabindex="0" role="group" aria-label="Открыть упражнение: ${esc(o.n)}. Enter или пробел" aria-keyshortcuts="Enter Space">
     <div class="lph">${src ? `<img src="${src}"${o.own ? '' : ' crossorigin="anonymous"'} alt="" loading="lazy">` : '<span>нет фото</span>'}</div>
     <button class="lfav${fav ? ' on' : ''}" data-lfav="${esc(o.id)}" aria-pressed="${fav}" aria-label="${fav ? 'Убрать из избранного' : 'В избранное'}">
       <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.2L6 21z"/></svg></button>
     ${o.harm ? '<em class="lwarn" title="Книга считает вредным">!</em>' : ''}
-    <b>${esc(o.n)}</b><span>${esc(mu || LIB_CAT[o.c] || '')}</span>
-    ${libPick ? `<button class="ladd" data-libadd="${esc(o.id)}" aria-label="Добавить: ${esc(o.n)}">+</button>` : ''}
+    <div class="lcopy"><b>${esc(o.n)}</b><span>${esc(o.custom ? (o.group + ' · своё') : mu || LIB_CAT[o.c] || '')}</span>${used ? '<small class="ex-present-label">Уже в этом дне</small>' : ''}</div>
+    ${libPick ? `<button class="ladd${used ? ' ex-present' : ''}" data-libadd="${esc(o.id)}"${used || rest ? ' disabled' : ''} aria-label="${used ? 'Уже в этом дне: ' : rest ? 'Выбран день отдыха: ' : 'Добавить: '}${esc(o.n)}">${used ? '✓' : '+'}</button>` : ''}
   </div>`;
 }
 
 function paintLib() {
   const box = $('exgrid'); if (!box) return;
+  if (!$('exscope')) $('exs').closest('.exhd').insertAdjacentHTML('beforebegin',
+    `<div class="lscopes" id="exscope" role="group" aria-label="Вид каталога">${LIB_SCOPES.map(([k, n]) =>
+      `<button data-lscope="${k}" aria-pressed="false">${n}</button>`).join('')}</div><p class="lscopenote" id="exscopeNote"></p>`);
+  $('exscope').querySelectorAll('[data-lscope]').forEach(b => {
+    const on = b.dataset.lscope === LF.scope; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  });
+  $('exscopeNote').textContent = LF.scope === 'all' ? 'Все 876 упражнений: поиск, кардио и растяжка.'
+    : LF.scope === 'mine' ? 'Избранное, использованные и свои упражнения.' : '40 обычных упражнений для зала. Другие варианты доступны отдельно.';
   $('lpick').hidden = !libPick;
-  if (libPick) $('lpickT').textContent = 'Выбор упражнения на ' + fmt(libPick, 1) + ' · ' + (dayOf(libPick).k || '');
+  if (libPick) $('lpickT').textContent = dayOf(libPick).t === 'rest'
+    ? fmt(libPick, 1) + ' · День отдыха. В «Неделе» выберите тренировочный тип для этой даты.'
+    : 'Выбор упражнения на ' + fmt(libPick, 1) + ' · ' + (dayOf(libPick).k || '');
   if (!$('exmu').firstChild) $('exmu').innerHTML = libChips();
   $('exmu').querySelectorAll('[data-lmu]').forEach(b => {
     const on = b.dataset.lmu === LF.mu; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
@@ -9094,6 +9320,7 @@ function paintLib() {
   $('exf').classList.toggle('on', act.length > 0);
   box.innerHTML = list.length ? list.slice(0, libN).map(libCard).join('')
     : `<p class="lmsg">Ничего не нашлось.${LF.q ? '' : ' Сними часть фильтров.'}</p>` +
+      (LF.scope !== 'all' ? '<button class="add" data-lall="1">Поискать среди всех вариантов</button>' : '') +
       (LF.q.trim() && libPick ? `<button class="add" data-lmine="1">Своё упражнение: «${esc(LF.q.trim().slice(0, 60))}»</button>` : '');
   $('exmore').hidden = list.length <= libN;
 }
@@ -9104,9 +9331,9 @@ function openLibFilter() {
   sheet('ФИЛЬТРЫ', `<div class="lflt">
     <div class="cph">ТИП ДВИЖЕНИЯ · ПО КНИГЕ</div>${row('pl', [['', 'Любой']].concat(
       ['hpush', 'hpull', 'vpush', 'vpull', 'knee', 'hip', 'vpn', 'kpch', 'core'].map(k => [k, PLANE[k][0]])))}
-    <div class="cph">ИНВЕНТАРЬ</div>${row('eq', [['', 'Любой']].concat(Object.entries(LIB_EQ).filter(([k]) => LIB_OFF_EQ.indexOf(k) < 0)))}
+    <div class="cph">ИНВЕНТАРЬ</div>${row('eq', [['', 'Любой']].concat(Object.entries(LIB_EQ)))}
     <div class="cph">УРОВЕНЬ</div>${row('lv', [[0, 'Любой'], [1, 'Новичок'], [2, 'Средний'], [3, 'Опытный']])}
-    <div class="cph">ВИД</div>${row('cat', [['', 'Любой']].concat(Object.entries(LIB_CAT).filter(([k]) => LIB_OFF_CAT.indexOf(k) < 0)))}
+    <div class="cph">ВИД</div>${row('cat', [['', 'Любой']].concat(Object.entries(LIB_CAT)))}
     <div class="cph">ЕЩЁ</div>
     <div class="chains"><button data-lf="safe:t" class="${LF.safe ? 'on' : ''}">Без вредных по книге</button>
       <button data-lf="ru:t" class="${LF.ru ? 'on' : ''}">Только с русским описанием</button></div>
@@ -9124,41 +9351,44 @@ function libLast(name) {
 }
 let libAnim = null;
 function openLib(id) {
-  loadLib().then(L => {
-    const o = L.byId.get(id); if (!o) return;
-    const name = o.n, fav = libFav(o.id);
+  return loadLib().then(L => {
+    const o = libResolve(id); if (!o) return;
+    const name = libExerciseName(o), fav = libFav(o.id);
     const src0 = libPicUrl(o, 0), src1 = libPicUrl(o, 1), cors = o.own ? '' : ' crossorigin="anonymous"';
     const tag = (m, cls) => `<span class="ltag ${cls}">${esc((LIB_MU[m] || [m])[0])}</span>`;
     const focus = [], focus2 = [], part = [], part2 = [];
     o.pm.forEach(m => { const x = LIB_MU[m] || []; if (x[2]) part.push(x[2]); else if (x[1]) focus.push(x[1]); });
     o.sm.forEach(m => { const x = LIB_MU[m] || []; if (x[2]) part2.push(x[2]); else if (x[1] && focus.indexOf(x[1]) < 0) focus2.push(x[1]); });
     const pl = PLANE[o.pl] || PLANE.other;
-    const ladder = o.st || LIB.list.some(x => x.pl === o.pl && x.st)
-      ? LIB.list.filter(x => x.pl === o.pl && x.st).sort((a, b) => a.st - b.st) : [];
+    const ladder = LIB.list.filter(x => x.pl === o.pl && x.st).sort((a, b) => a.st - b.st);
     const pair = pl[2] ? `<p class="lpair">В пару по книге — <b>${esc(PLANE[pl[2]][0].toLowerCase())}</b>: противоположные
       движения уравнивают по числу подъёмов за неделю, с небольшим перекосом в сторону тяг, вертикальных жимов и таза.</p>` : '';
     const last = libLast(name);
-    const text = EXDB[name] ? `<p class="lru">${EXDB[name][4]}</p>`
+    const text = EXDB[name] && o.own ? `<p class="lru">${EXDB[name][4]}</p>`
+      : o.custom ? '<p class="lnote">Ваше упражнение. Описание техники пока не добавлено.</p>'
       : `<ol class="len">${o.ins.map(s => '<li>' + esc(s) + '</li>').join('')}</ol>
          <p class="lnote">Описание из открытой базы free-exercise-db, пока на английском.</p>`;
     const inDay = libPick || sel;
+    const used = exAlreadyInDay(inDay, name, o.custom ? '' : o.id, true), rest = dayOf(inDay).t === 'rest';
     sheet('УПРАЖНЕНИЕ', `<div class="lpage">
       ${src0 ? `<div class="lanim" id="lanim"><img src="${src0}"${cors} alt="${esc(name)}, начало">${src1 ? `<img src="${src1}"${cors} alt="${esc(name)}, рабочая точка">` : ''}</div>` : ''}
-      <h5 class="lname">${esc(name)}</h5><p class="lenname">${esc(o.en)}</p>
+      <h5 class="lname">${esc(o.n)}</h5>${o.en ? `<p class="lenname">${esc(o.en)}</p>` : ''}
       <div class="ltags">${o.pm.map(m => tag(m, 'p')).join('')}${o.sm.map(m => tag(m, 's')).join('')}</div>
-      <p class="lmeta">${[LIB_EQ[o.eq], LIB_LV[o.lv], LIB_CAT[o.c], o.iso ? 'односуставное' : 'многосуставное'].filter(Boolean).map(esc).join(' · ')}</p>
+      <p class="lmeta">${(o.custom ? ['Своё упражнение', o.group] : [LIB_EQ[o.eq], LIB_LV[o.lv], LIB_CAT[o.c], o.iso ? 'односуставное' : 'многосуставное']).filter(Boolean).map(esc).join(' · ')}</p>
       <div class="lmap">${bodyMap(null, null, { focus: focus, focus2: focus2, part: part, part2: part2, small: true, label: 'Мышцы: ' + name })}
         <div class="mmleg"><i class="mm3"></i>основные<i class="mm1"></i>вспомогательные</div></div>
       ${o.harm ? `<div class="lharm"><b>Книга против</b><p>${esc(o.harm)}</p></div>` : ''}
-      <div class="cph">ПО КНИГЕ «ФИТНЕС ДЛЯ УМНЫХ»</div>
+      ${o.custom ? '' : `<div class="cph">ТИП ДВИЖЕНИЯ И ПРИМЕРЫ</div>
       <div class="win lbook"><b>${esc(pl[0])}</b><p>${esc(pl[1])}</p>${pair}
-        ${ladder.length ? `<div class="lstep"><span>От простого к тяжёлому, последнее — на одну сторону:</span>
-          ${ladder.map(x => `<button data-lib="${esc(x.id)}" class="${x.id === o.id ? 'on' : ''}"><i>${x.st}</i>${esc(x.n)}</button>`).join('')}</div>` : ''}</div>
+        <p class="lnote">По сохранённой выжимке «Фитнес для умных». Примеры из базы; вариант техники может отличаться.</p>
+        ${ladder.length ? `<div class="lstep"><span>Доступные примеры в порядке выжимки. Набор неполный:</span>
+          ${ladder.map(x => `<button data-lib="${esc(x.id)}" class="${x.id === o.id ? 'on' : ''}"><i>${x.st}</i>${esc(x.n)}</button>`).join('')}</div>` : ''}</div>`}
       ${last ? `<div class="cph">В ПРОШЛЫЙ РАЗ</div><div class="win llast"><b>${fmt(last.ds, 1)}</b><span>${esc(last.line)}</span></div>` : ''}
       ${recHtml(name)}
       <div class="cph">ТЕХНИКА</div>${text}
+      ${rest ? '<p class="lnote lib-rest-note">Выбран день отдыха. В «Неделе» выберите тренировочный тип для этой даты, затем вернитесь к добавлению упражнения.</p>' : ''}
       <div class="lbtns">
-        <button class="lgo" data-libadd="${esc(o.id)}">+ В тренировку · ${esc(fmt(inDay, 1))}</button>
+        <button class="lgo${used ? ' ex-present' : ''}" data-libadd="${esc(o.id)}"${used || rest ? ' disabled' : ''}>${rest ? 'День отдыха · ' + esc(fmt(inDay, 1)) : used ? 'Уже в этом дне' : '+ В тренировку · ' + esc(fmt(inDay, 1))}</button>
         <button class="lfav2${fav ? ' on' : ''}" data-lfav="${esc(o.id)}" aria-pressed="${fav}">${fav ? 'В избранном' : 'В избранное'}</button>
       </div></div>`, 'ladder');
     shRe = () => openLib(id);
@@ -9173,12 +9403,37 @@ function openLib(id) {
 }
 
 // упражнение из базы встаёт в выбранный день (день недели — общий шаблон)
+function exCanAdd(ds) {
+  if (dayOf(ds).t !== 'rest') return true;
+  note('Выбран день отдыха. В «Неделе» выберите тренировочный тип для этой даты, затем добавьте упражнение.');
+  return false;
+}
+function exAlreadyInDay(ds, name, id, quiet) {
+  const base = S.days[dayIdx(ds)], effective = dayOf(ds);
+  const idOf = n => {
+    if (EXDB[n]) {
+      const o = LIB && LIB.list.find(x => x.own === EXDB[n][0]);
+      return o ? o.id : '';
+    }
+    const link = S.libEx && S.libEx[n];
+    return link ? link[0] : '';
+  };
+  const wanted = id || idOf(name);
+  // Добавление пишет в шаблон. Проверяем и его имена-ключи, и разовые
+  // замены выбранной даты: повтор одного имени иначе заменяет сразу два места.
+  const entries = ((base && base.ex) || []).concat((effective && effective.ex) || []);
+  const have = entries.some(e => e && (e.n === name || (wanted && idOf(e.n) === wanted)));
+  if (have && !quiet) note('«' + name + '» уже есть в программе этого дня. Измените существующее упражнение.');
+  return have;
+}
 function libAdd(id, ds) {
-  const o = LIB && LIB.byId.get(id); if (!o) return;
-  const name = o.n;
+  const o = libResolve(id); if (!o) return;
+  if (!exCanAdd(ds)) return;
+  const name = libExerciseName(o);
+  if (exAlreadyInDay(ds, name, o.custom ? '' : o.id)) return;
   runOnce('libadd:' + ds + ':' + name, () => {
     const snap = snapS();
-    if (!EXDB[name]) {
+    if (!EXDB[name] && !o.custom) {
       S.myEx = myEx(); if (!S.myEx[name]) S.myEx[name] = libGroup(o);
       if (!S.libEx || typeof S.libEx !== 'object') S.libEx = {};
       S.libEx[name] = [o.id, libMuscle(o)];
@@ -9192,22 +9447,32 @@ function libAdd(id, ds) {
   });
 }
 function libToggleFav(id) {
+  const focused = document.activeElement && document.activeElement.dataset.lfav === id;
   S.fav = Array.isArray(S.fav) ? S.fav : [];
   const i = S.fav.indexOf(id);
   if (i >= 0) S.fav.splice(i, 1); else S.fav.push(id);
   save();
   const on = i < 0;
-  const o = LIB && LIB.byId.get(id);
+  const o = libResolve(id);
   undoSay = (on ? 'В избранном: ' : 'Убрано из избранного: ') + (o ? o.n : id);
   document.querySelectorAll('[data-lfav="' + CSS.escape(id) + '"]').forEach(b => {
     b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
     if (b.classList.contains('lfav2')) b.textContent = on ? 'В избранном' : 'В избранное';
     else b.setAttribute('aria-label', on ? 'Убрать из избранного' : 'В избранное');
   });
-  if (LF.mu === 'fav' && tab === 'ex') paintLib();
+  if (tab === 'ex' && LF.scope === 'mine') {
+    paintLib();
+    if (focused) {
+      const next = $('exgrid').querySelector('[data-lfav="' + CSS.escape(id) + '"]') ||
+        $('exgrid').querySelector('[data-lfav]') || $('exscope').querySelector('[data-lscope="mine"]');
+      if (next) next.focus({ preventScroll: true });
+    }
+  }
 }
-function libOpenPick(ds) {
-  libPick = ds; LF.q = ''; libN = 40;
+function libOpenPick(ds, scope = 'core', q = '') {
+  libPick = ds;
+  Object.assign(LF, { scope, q, mu: '', eq: '', lv: 0, pl: '', cat: '', safe: false, ru: false });
+  libN = 40;
   sheetClose();
   tab = 'ex'; exOpen = null; render(); enterFx(); window.scrollTo(0, 0);
 }
@@ -9216,12 +9481,23 @@ $('exf').addEventListener('click', openLibFilter);
 $('exmore').addEventListener('click', () => { libN += 40; paintLib(); });
 $('lpickX').addEventListener('click', () => { libPick = null; tab = 'wo'; render(); window.scrollTo(0, 0); });
 document.addEventListener('click', e => {
+  const scope = e.target.closest('[data-lscope]');
+  if (scope) {
+    LF.scope = scope.dataset.lscope;
+    LF.mu = ''; LF.eq = ''; LF.lv = 0; LF.pl = ''; LF.cat = ''; LF.safe = false; LF.ru = false;
+    libN = 40; paintLib(); return;
+  }
+  if (e.target.closest('[data-lall]')) { LF.scope = 'all'; libN = 40; paintLib(); return; }
   const fv = e.target.closest('[data-lfav]');
   if (fv) { e.stopPropagation(); libToggleFav(fv.dataset.lfav); return; }
   const ad = e.target.closest('[data-libadd]');
-  if (ad) { libAdd(ad.dataset.libadd, libPick || sel); return; }
+  if (ad) { if (!ad.disabled) libAdd(ad.dataset.libadd, libPick || sel); return; }
   const mu = e.target.closest('[data-lmu]');
-  if (mu) { LF.mu = LF.mu === mu.dataset.lmu ? '' : mu.dataset.lmu; libN = 40; paintLib(); return; }
+  if (mu) {
+    LF.mu = LF.mu === mu.dataset.lmu ? '' : mu.dataset.lmu;
+    if (LF.mu === 'fav') LF.scope = 'mine';
+    libN = 40; paintLib(); return;
+  }
   const lc = e.target.closest('[data-lclr]');
   if (lc) { const k = lc.dataset.lclr; LF[k] = typeof LF[k] === 'boolean' ? false : k === 'lv' ? 0 : ''; paintLib(); return; }
   const lf = e.target.closest('[data-lf]');
@@ -9246,7 +9522,8 @@ document.addEventListener('click', e => {
    ЗАМЕНА УПРАЖНЕНИЯ — «Replace exercise» из Lyfta, но по книге Смирнова.
    Аналоги — из каталога, по плоскостной системе: сначала тот же тип
    движения и та же основная мышца, потом тот же тип, потом другое движение
-   на ту же мышцу. Ступень лесенки книги говорит, легче замена или тяжелее.
+   на ту же мышцу. Номер примера задаёт порядок сохранённой выжимки;
+   он не оценивает готовность человека к более сложной технике.
    «Только сегодня» — S.once поверх шаблона (dayOf), программа не меняется.
    «Во всех днях программы» — сама программа, как setReps. Журнал остаётся
    под старым именем: записи сами себя описывают, рекорды и прогресс —
@@ -9271,7 +9548,7 @@ function libByName(name) {
   if (!LIB.byName) { LIB.byName = new Map(); LIB.list.forEach(o => { if (!LIB.byName.has(o.n)) LIB.byName.set(o.n, o); }); }
   return LIB.byName.get(name) || null;
 }
-// ступень лесенки книги относительно заменяемого: 1 — простейшее, 5 — самое тяжёлое, 6 — на одну сторону
+// Относительный порядок только для доступных сопоставленных примеров выжимки.
 function swapStep(o, oo) {
   if (!o || !oo || !o.st || !oo.st || o.pl !== oo.pl) return null;
   return { st: o.st, rel: o.st === oo.st ? 'так же' : o.st < oo.st ? 'легче' : 'тяжелее' };
@@ -9283,7 +9560,9 @@ function swapCands(name, ds) {
   const str = !oo || SW_STR.indexOf(oo.c) >= 0;
   const pl = oo && oo.pl && oo.pl !== 'other' ? oo.pl : '';
   const out = [];
-  LIB.list.forEach(o => {
+  LIB.list.forEach(row => {
+    const nameForRow = libExerciseName(row);
+    const o = nameForRow === row.n ? row : Object.assign({}, row, { n: nameForRow });
     if (o.n === name || have.has(o.n)) return;
     if (str ? SW_STR.indexOf(o.c) < 0 : o.c !== oo.c) return;
     const samePl = !!pl && o.pl === pl;
@@ -9345,7 +9624,7 @@ function openSwap(j, pickName) {
   const e = ((dayOf(sel) || {}).ex || [])[j];
   if (!e) return;
   Object.assign(SW, { ds: sel, j, eq: '', q: '', n: 30, pick: null, all: false, w: '', cands: null, from: e.n });
-  sheet('ЗАМЕНА', '<div class="swap" id="swBox"><p class="lmsg">Подбираю аналоги по книге…</p></div>');
+  sheet('ЗАМЕНА', '<div class="swap" id="swBox"><p class="lmsg">Подбираю аналоги по типу движения…</p></div>');
   const go = () => {
     if (!$('swBox') || SW.from !== e.n) return;
     if (pickName) {
@@ -9376,7 +9655,7 @@ function swapRowsHtml() {
     h += `<button class="swrow" data-swpick="${k}">${swapThumb(o)}
       <span class="swt"><b>${esc(o.n)}</b>
         <span>${[LIB_EQ[o.eq], LIB_LV[o.lv]].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</span>
-        ${st ? `<span class="swst s-${st.rel === 'так же' ? 'eq' : st.rel === 'легче' ? 'lo' : 'hi'}">ступень ${st.st} · ${st.rel}</span>` : ''}
+        ${st ? `<span class="swst s-${st.rel === 'так же' ? 'eq' : st.rel === 'легче' ? 'lo' : 'hi'}">пример ${st.st} в выжимке</span>` : ''}
         ${o.harm ? '<span class="swharm">! вредно по книге</span>' : ''}</span></button>`;
   });
   if (list.length > SW.n) h += `<button class="add swmore" data-swmore="1">Показать ещё · ${list.length - SW.n}</button>`;
@@ -9388,12 +9667,12 @@ function paintSwap() {
   const e = swapCur(); if (!e) { sheetClose(); return; }
   const oo = libByName(e.n), pl = oo && PLANE[oo.pl];
   box.innerHTML = `<div class="win swcur"><span>ВМЕСТО</span><b>${esc(e.n)}</b>
-      <i>${[pl && pl[0], oo && oo.st ? 'ступень ' + oo.st + ' из 6' : '', num(e.s) + ' × ' + esc(e.r)].filter(Boolean).join(' · ')}</i></div>
+      <i>${[pl && pl[0], oo && oo.st ? 'пример ' + oo.st + ' в выжимке' : '', num(e.s) + ' × ' + esc(e.r)].filter(Boolean).join(' · ')}</i></div>
     ${SW.offline ? '<p class="lmsg">База каталога не загрузилась — нужна сеть. Пока — аналоги из программы.</p>' : ''}
     <input id="swQ" class="exs swq" type="search" enterkeyhint="search" placeholder="Поиск аналога" value="${esc(SW.q)}" aria-label="Поиск аналога">
     <div class="chains sweq">${SW_EQ.map(([k, l]) =>
       `<button data-sweq="${k}" class="${SW.eq === k ? 'on' : ''}" aria-pressed="${SW.eq === k}">${l}</button>`).join('')}</div>
-    <p class="swhint">По книге «Фитнес для умных»: сначала тот же тип движения и та же мышца. Ступень — по лесенке книги: 1 — простейшее, 5 — самое тяжёлое, 6 — на одну сторону.</p>
+    <p class="swhint">Сначала тот же тип движения и та же мышца. Номера — порядок доступных примеров по сохранённой выжимке «Фитнес для умных». Набор неполный, варианты техники могут отличаться; номер не оценивает готовность к замене.</p>
     <div id="swL">${swapRowsHtml()}</div>`;
 }
 function swapPick(x) {
@@ -9416,7 +9695,7 @@ function swapConfirmHtml() {
     <div class="swhd">${swapThumb(o)}<div><b class="lname">${esc(o.n)}</b>
       <p class="lmeta">${[mu, LIB_EQ[o.eq], LIB_LV[o.lv]].filter(Boolean).map(esc).join(' · ')}</p></div></div>
     <div class="win lbook swbook"><b>${pl ? esc(pl[0]) : 'Аналог'}</b>
-      <p>${st ? `Ступень ${st.st} из 6 по лесенке книги — <b class="s-${st.rel === 'так же' ? 'eq' : st.rel === 'легче' ? 'lo' : 'hi'}">${st.rel}</b>, чем «${esc(e.n)}» (ступень ${oo.st}).`
+      <p>${st ? `Пример ${st.st} в порядке сохранённой выжимки; у «${esc(e.n)}» — пример ${oo.st}. Номер не оценивает ваш рабочий вес или готовность к замене.`
         : `Вместо «${esc(e.n)}»${oo && o.pl === oo.pl ? ' — тот же тип движения' : ''}.`}</p></div>
     ${o.harm ? `<div class="lharm"><b>Книга против</b><p>${esc(o.harm)}</p></div>` : ''}
     <label class="swwl" for="swW">ВЕС НА СТАРТ, КГ</label>
@@ -9434,9 +9713,14 @@ function swapConfirmHtml() {
 /* Сама замена. ds и j — дата и место в дне; o — упражнение каталога (или null
    для своего из программы); w — стартовый вес; all — во всех днях программы. */
 function swapApply(ds, j, name, o, w, all) {
+  if (o && o.id) name = libExerciseName(o);
   const cur = (((dayOf(ds) || {}).ex || [])[j]);
   const tpl = S.days[dayIdx(ds)], base = ((tpl || {}).ex || [])[j];
   if (!cur || !base || !name || name === cur.n) return false;
+  if (!all && tpl.ex.filter(e => e.n === base.n).length > 1) {
+    note('В программе этого дня есть одинаковые имена: «' + base.n + '». Разовая замена не различает их. Сначала уберите дубликат из дня.');
+    return false;
+  }
   const done = !!(recOf(ds).log[j] || {}).done;
   if (done && !all) { note('«' + cur.n + '» уже закрыто в этот день — замени во всех днях или сними отметку'); return false; }
   const snap = snapS();
@@ -10847,20 +11131,23 @@ $('cpLast').addEventListener('click', () => {
 });
 
 /* ---------- поиск и добавление продукта ---------- */
-let pickMeal = null, pickDs = null, picked = [], chainFilter = '';
+let pickMeal = null, pickDs = null, picked = [], chainFilter = '', pickBack = null;
 
 function openPick(j) {
+  if (!$('fp').classList.contains('on')) pickBack = document.activeElement;
   pickMeal = j; pickDs = sel; picked = []; chainFilter = '';
   $('fq').value = '';
   drawPick('');
   $('fp').classList.add('on');
   document.body.style.overflow = 'hidden';
-  setTimeout(() => $('fq').focus(), 80);
+  $('fq').focus({ preventScroll: true });
 }
 function closePick() {
   picked = []; paintPickBar();
   $('fp').classList.remove('on');
-  document.body.style.overflow = '';
+  syncModalScroll();
+  const back = pickBack; pickBack = null;
+  returnModalFocus(back);
 }
 
 function drawPick(raw) {
@@ -11190,15 +11477,23 @@ $('phW').addEventListener('change', e => {
 });
 
 /* ---------- сравнение снимков ---------- */
-let A = null, B = null;
+let A = null, B = null, cmpBack = null;
+let cmpRequest = 0, cmpPaint = 0;
 async function openCmp() {
+  const request = ++cmpRequest, day = sel, view = tab;
+  const back = document.activeElement, modal = currentModal();
   await phSync();
+  // Чтение базы может закончиться уже после ухода, нового вопроса или
+  // более позднего сравнения. Такое окно не возвращает выбор и фокус назад.
+  if (request !== cmpRequest || sel !== day || tab !== view || currentModal() !== modal ||
+      document.activeElement !== back) return;
   if (!PH.length) { note('Сначала загрузи хотя бы одно фото'); return; }
+  if (!$('ov').classList.contains('on')) cmpBack = back;
   // «Первое и последнее». Раньше вторым снимком бралась выбранная дата,
   // и если стоять на самом раннем снимке, обе половины показывали одно
   // и то же фото — сравнивать было не с чем.
   A = PH[0];
-  B = (PH.includes(sel) && sel !== A) ? sel : PH[PH.length - 1];
+  B = (PH.includes(day) && day !== A) ? day : PH[PH.length - 1];
   if (B === A) B = PH.length > 1 ? PH[PH.length - 1] : null;
   const opts = d => PH.map(p => `<option value="${p}"${p === d ? ' selected' : ''}>${fmt(p)}</option>`).join('');
   $('selA').innerHTML = opts(A);
@@ -11209,30 +11504,33 @@ async function openCmp() {
     `<button data-s="${p}"><img data-lazy="${p}" alt=""><em>${fmt(p, 1)}</em></button>`).join('');
   $('ov').classList.add('on');
   document.body.style.overflow = 'hidden';
+  $('ovX').focus({ preventScroll: true });
   lazyStrip($('strip'));
   paintCmp();
 }
 async function paintCmp() {
-  const a = await phLoad(A), b = await phLoad(B);
+  const paint = ++cmpPaint, left = A, right = B;
+  const [a, b] = await Promise.all([phLoad(left), phLoad(right)]);
+  if (paint !== cmpPaint || A !== left || B !== right || !$('ov').classList.contains('on')) return;
   $('picA').innerHTML = a ? `<img src="${esc(a)}" alt="">` : '<span>нет фото</span>';
   $('picB').innerHTML = b ? `<img src="${esc(b)}" alt="">` : '<span>нет фото</span>';
-  $('dtA').textContent = fmt(A);
-  $('dtB').textContent = fmt(B);
-  const wa = num(recOf(A).bw), wb = num(recOf(B).bw);
+  $('dtA').textContent = fmt(left);
+  $('dtB').textContent = fmt(right);
+  const wa = num(recOf(left).bw), wb = num(recOf(right).bw);
   $('wA').textContent = wa ? dec(wa) + ' кг' : '—';
   $('wB').textContent = wb ? dec(wb) + ' кг' : '—';
   if (wa && wb) {
     const d = wb - wa;
     $('dlt').textContent = (d > 0 ? '+' : '') + dec(d) + ' кг';
     $('dlt').style.color = d > 0 ? 'var(--legs)' : (d < 0 ? 'var(--arms)' : 'var(--cy2)');
-    $('dltS').textContent = 'ЗА ' + Math.abs(daysBetween(A, B)) + ' ДН.';
+    $('dltS').textContent = 'ЗА ' + Math.abs(daysBetween(left, right)) + ' ДН.';
   } else {
     $('dlt').textContent = '—';
     $('dlt').style.color = 'var(--cy2)';
     $('dltS').textContent = 'ВПИШИ ВЕС В ЭТИ ДНИ';
   }
-  $('selA').value = A;
-  $('selB').value = B;
+  $('selA').value = left;
+  $('selB').value = right;
 }
 $('selA').addEventListener('change', e => { A = e.target.value; paintCmp(); });
 $('selB').addEventListener('change', e => { B = e.target.value; paintCmp(); });
@@ -11253,7 +11551,12 @@ $('quick').addEventListener('click', e => {
   paintCmp();
 });
 $('phCmp').addEventListener('click', openCmp);
-$('ovX').addEventListener('click', () => { $('ov').classList.remove('on'); document.body.style.overflow = ''; });
+$('ovX').addEventListener('click', () => {
+  cmpRequest++; cmpPaint++;
+  $('ov').classList.remove('on'); syncModalScroll();
+  const back = cmpBack; cmpBack = null;
+  returnModalFocus(back);
+});
 
 
 /* =========================================================================
@@ -11391,13 +11694,52 @@ function rangeData(mon, n) {
 const addDays = (ds, n) => { const x = at(ds); x.setDate(x.getDate() + n); return iso(x); };
 const wkLabel = mon => { const a = at(mon), b = at(addDays(mon, 6));
   return a.getMonth() === b.getMonth() ? a.getDate() + '–' + fmt(iso(b), 1) : fmt(mon, 1) + ' – ' + fmt(iso(b), 1); };
-// уровень заливки мышцы: 0 — не работала, 1 — меньше половины нормы, 2 — почти, 3 — норма
-// k — во сколько недель норма: для месяца норма недели × дней / 7
+// Классы сохраняют состояния; сам цвет непрерывный. k — дней / 7 для месяца.
+function mmTarget(m, k) {
+  const scale = k == null ? 1 : Math.max(0, Number(k) || 0);
+  return Math.max(0, Math.round(volTargetM(m) * scale));
+}
 function mmLevel(m, sets, k) {
-  const t = Math.round(volTargetM(m) * (k || 1));
-  if (!sets) return 0;
-  if (!t) return 3;
+  const t = mmTarget(m, k);
+  if (!(sets > 0)) return 0;
+  if (!t) return 1; // есть подходы, но сравнивать с нормой нечего
   return sets >= t ? 3 : sets >= t / 2 ? 2 : 1;
+}
+function mmBrightness(v) {
+  const n = typeof v === 'number' || (typeof v === 'string' && v.trim()) ? Number(v) : NaN;
+  return Number.isFinite(n) ? Math.round(Math.max(40, Math.min(100, n))) : 80;
+}
+// Синий → фиолетовый → красный: рабочие подходы относительно плана,
+// не оценка усталости мышцы. Насыщение — на 100 % и выше.
+function mmTone(ratio) {
+  const r = Math.max(0, Math.min(1, ratio)), colors = [[77, 132, 244], [167, 113, 245], [244, 88, 105]];
+  const i = r < .5 ? 0 : 1, f = r < .5 ? r * 2 : (r - .5) * 2;
+  const light = mmBrightness(S && S.mapBrightness) / 100;
+  return 'rgb(' + colors[i].map((v, j) => Math.round((v + (colors[i + 1][j] - v) * f) * light)).join(', ') + ')';
+}
+function mmColor(m, sets, k) {
+  if (!(sets > 0)) return 'rgb(38, 55, 78)';
+  const t = mmTarget(m, k);
+  return mmTone(t ? sets / t : 0);
+}
+function mmAttrs(m, sets, k, extraStyle) {
+  return 'data-mm-mus="' + esc(m) + '" data-mm-sets="' + sets + '" data-mm-k="' + (k == null ? 1 : k) +
+    '" style="--mm-color:' + mmColor(m, sets, k) + (extraStyle ? ';' + extraStyle : '') + '"';
+}
+function mmGradient() { return 'linear-gradient(90deg,' + mmTone(0) + ',' + mmTone(.5) + ',' + mmTone(1) + ')'; }
+function mmLegend() {
+  return '<div class="mmleg mmheat"><span class="mmzero"><i class="mm0"></i>0 подходов</span>' +
+    '<span class="mmheatscale"><i class="mmheatbar" style="background:' + mmGradient() + '"></i>' +
+    '<span>меньше нормы<span>норма и выше</span></span></span>' +
+    '<small>Рабочие подходы относительно плана. — норма не задана; цвет синий.</small></div>';
+}
+function setMapBrightness(v) {
+  S.mapBrightness = mmBrightness(v); save(); paintMusMap();
+  // Уже открытые итоги и подробности тоже получают новую яркость.
+  document.querySelectorAll('[data-mm-mus]').forEach(el => {
+    el.style.setProperty('--mm-color', mmColor(el.dataset.mmMus, +el.dataset.mmSets, +el.dataset.mmK));
+  });
+  document.querySelectorAll('.mmheatbar').forEach(el => { el.style.background = mmGradient(); });
 }
 /* Карта мышц на анатомическом теле — спереди и сзади.
    Контуры тела — react-native-body-highlighter (MIT, © 2022 ELABBASSI Hicham,
@@ -11426,6 +11768,7 @@ const BODY={"a":[["Грудь","M272.91 422.84c-18.95-17.19-22-57-12.64-78.79 5.
    одна сторона тела ('a' спереди, 'p' сзади): значок в ленте фильтров. */
 function bodyMap(ms, k, opts) {
   opts = opts || {};
+  const focused = opts.focus !== undefined;
   const f2 = opts.focus2 || [], parts = [].concat(opts.part || []), parts2 = [].concat(opts.part2 || []);
   const lvl = m => opts.focus !== undefined
     ? (m === opts.focus || (Array.isArray(opts.focus) && opts.focus.indexOf(m) >= 0) ? 3 : f2.indexOf(m) >= 0 ? 1 : 0)
@@ -11439,13 +11782,14 @@ function bodyMap(ms, k, opts) {
       const pt = m.slice(1), on = parts.indexOf(pt) >= 0 ? 3 : parts2.indexOf(pt) >= 0 ? 1 : 0;
       return '<path class="' + (on ? 'mm' + on : 'bn') + '" data-part="' + pt + '" d="' + x[1] + '"/>';
     }
-    return '<path class="mm' + lvl(m) + '" data-mus="' + m + '" d="' + x[1] + '"/>';
+    return '<path class="mm' + lvl(m) + '" data-mus="' + m + '"' +
+      (focused ? '' : ' ' + mmAttrs(m, (ms || {})[m] || 0, k)) + ' d="' + x[1] + '"/>';
   };
   const side = opts.side === 'a' || opts.side === 'p' ? opts.side : '';
   const all = side ? BODY[side] : BODY.a.concat(BODY.p);
   const vb = side === 'a' ? '0 0 724 1460' : side === 'p' ? '724 0 724 1460' : '0 0 1448 1520';
   return '<svg class="bmap' + (opts.tap ? ' tap' : '') + (opts.small ? ' sm' : '') + (side ? ' one' : '') +
-    '" viewBox="' + vb + '" role="img" aria-label="' + esc(opts.label || 'Карта мышц') + '">' +
+    '" data-mode="' + (focused ? 'focus' : 'load') + '" viewBox="' + vb + '" role="img" aria-label="' + esc(opts.label || 'Карта мышц') + '">' +
     (side ? [BODY.o[side === 'a' ? 0 : 1]] : BODY.o).map(d => '<path class="bo" d="' + d + '"/>').join('') +
     // нейтральные части — под мышцами, иначе перекроют их края
     all.filter(x => !x[0] || x[0][0] === '~').map(one).join('') +
@@ -11475,10 +11819,10 @@ function openMonth(ym) {
     </div>
     ${bd ? '<p class="s wkmin">Самый тяжёлый день — ' + fmt(bd.ds, 1) + ': ' + kgTon(best) + '.' + (w.mins ? ' В зале — ' + Math.round(w.mins / 60 * 10) / 10 + ' ч за месяц.' : '') + '</p>' : ''}
     <div class="win wkmap"><div class="wtitle">КАРТА МЫШЦ<em class="bleg">норма недели × ${dec(k)}</em></div>${bodyMap(w.m, k)}
-      <div class="mmleg"><i class="mm0"></i>не было<i class="mm1"></i>мало<i class="mm2"></i>почти<i class="mm3"></i>норма</div></div>
+      ${mmLegend()}</div>
     <div class="win wkdist"><div class="wtitle">ПОДХОДЫ ПО МЫШЦАМ</div>
       ${MUSCLES.map(m => { const t = Math.round(volTargetM(m) * k), v = w.m[m] || 0;
-        return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v, k)}" style="transform:scaleX(${Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3)})"></u></s><b>${v}${t ? '/' + t : ''}</b></div>`; }).join('')}
+        return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v, k)}" ${mmAttrs(m, v, k, 'transform:scaleX(' + Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3) + ')')}></u></s><b>${v}${t ? '/' + t : '/—'}</b></div>`; }).join('')}
     </div>
     <button class="copyb" data-wk="${mondayOf(ym === cur ? today() : ym + '-' + String(dim).padStart(2, '0'))}">Итоги недели</button>`, 'recap');
 }
@@ -11514,10 +11858,10 @@ function openWeek(mon) {
     <div class="wkdays">${w.days.map((x, i) => `<div class="${x.wo ? 'wo' : x.ton ? 'part' : ''}${x.ds === today() ? ' td' : ''}">
       <s><u style="transform:scaleY(${(x.ton / mx).toFixed(3)})"></u></s><span>${WD[i]}</span></div>`).join('')}</div>
     <div class="win wkmap"><div class="wtitle">КАРТА МЫШЦ<em class="bleg">по норме программы</em></div>${bodyMap(w.m)}
-      <div class="mmleg"><i class="mm0"></i>не было<i class="mm1"></i>мало<i class="mm2"></i>почти<i class="mm3"></i>норма</div></div>
+      ${mmLegend()}</div>
     <div class="win wkdist"><div class="wtitle">ПОДХОДЫ ПО МЫШЦАМ</div>
       ${MUSCLES.map(m => { const t = volTargetM(m), v = w.m[m] || 0;
-        return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v)}" style="transform:scaleX(${Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3)})"></u></s><b>${v}${t ? '/' + t : ''}</b></div>`; }).join('')}
+        return `<div class="wkm"><span>${m}</span><s><u class="mm${mmLevel(m, v)}" ${mmAttrs(m, v, 1, 'transform:scaleX(' + Math.min(1, t ? v / t : (v ? 1 : 0)).toFixed(3) + ')')}></u></s><b>${v}${t ? '/' + t : '/—'}</b></div>`; }).join('')}
     </div>
     ${pz ? '<p class="s wkmin">Неделя на паузе — плана нет, серия не рвётся.</p>' : ''}
     ${w.mins ? '<p class="s wkmin">В зале — ' + w.mins + ' мин за неделю.</p>' : ''}
@@ -11550,8 +11894,8 @@ function wkPng(mon) {
     const y = 760 + i * 52, t = volTargetM(m), v = w.m[m] || 0, k = Math.min(1, t ? v / t : (v ? 1 : 0));
     x.fillStyle = '#d8e8ff'; x.font = '500 28px ' + F; x.fillText(m, 100, y + 26);
     x.fillStyle = 'rgba(90,180,255,.15)'; x.fillRect(400, y + 6, 470, 24);
-    x.fillStyle = ['#2a3a5a', '#5a7fd0', '#7a6dff', '#3fb8ff'][mmLevel(m, v)]; x.fillRect(400, y + 6, 470 * k, 24);
-    x.fillStyle = '#ffffff'; x.fillText(v + (t ? '/' + t : ''), 895, y + 28);
+    x.fillStyle = mmColor(m, v); x.fillRect(400, y + 6, 470 * k, 24);
+    x.fillStyle = '#ffffff'; x.fillText(v + (t ? '/' + t : '/—'), 895, y + 28);
   });
   const st = streak(), plan = w.days.filter(d => d.tr).length;
   x.fillStyle = '#8fb8e8'; x.font = '500 26px ' + F;

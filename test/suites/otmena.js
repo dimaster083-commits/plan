@@ -201,12 +201,13 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 
   // 13. упражнение из каталога
   await prep();
-  const t13=await E(async()=>{ await loadLib(); const o=LIB.list.find(x=>!EXDB[x.n]); window.__b=JSON.stringify(S);
+  const t13=await E(async()=>{ await loadLib(); const o=LIB.byId.get('Zercher_Squats'), n=libExerciseName(o);
+    const before=dayOf(today()).ex.some(e=>e.n===n); window.__b=JSON.stringify(S);
     libAdd(o.id, today()); await new Promise(r=>setTimeout(r,200));
-    return {n:o.n, в_дне:dayOf(today()).ex.some(e=>e.n===o.n), свои:!!(S.myEx||{})[o.n]}; });
+    return {n, before, в_дне:dayOf(today()).ex.some(e=>e.n===n), свои:!!(S.myEx||{})[n]}; });
   const p13=await polo(); const u13=await undo();
   const t13b=await E(n=>({в_дне:dayOf(today()).ex.some(e=>e.n===n), свои:!!(S.myEx||{})[n]}), t13.n);
-  chk(t13.в_дне&&t13.свои&&p13.on&&u13.same&&!t13b.в_дне&&!t13b.свои, '13. добавленное из каталога убирается отменой вместе с записью в своих', J([t13,p13,u13,t13b]));
+  chk(!t13.before&&t13.в_дне&&t13.свои&&p13.on&&u13.same&&!t13b.в_дне&&!t13b.свои, '13. добавленное из каталога убирается отменой вместе с записью в своих', J([t13,p13,u13,t13b]));
 
   // 14. как в Lyfta: в карточке нет «Все по N», «ТИП» и «Закрыть подход», в списке нет ○ —
   //     подход закрывается своей галочкой, тип — касанием номера подхода

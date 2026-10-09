@@ -1,5 +1,5 @@
-/* Неделя разгрузки по плану идёт на 60% весов. Таблица «Прогрессия» и
-   разбор не должны из-за этого показывать откат: рекорд-то вырос. */
+/* Последняя облегчённая тренировка не должна скрывать рост лучшего веса.
+   Здесь нормировка нейтральная; 60% разгрузки цикла проверяет cikl.js. */
 const { chromium } = require('playwright-core');
 const { LAUNCH, APP } = require('../env');
 let fails=0;
@@ -9,30 +9,33 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
   const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
+  // Keep the fixture inside its 30-day window in future CI runs as well.
+  await p.clock.setFixedTime(new Date('2026-10-10T02:00:00Z'));
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto(APP); await p.waitForTimeout(1300);
 
-  // история жима: 80 → 85 → 90 → и разгрузка 55
+  // история жима: 80 → 85 → 90 → и облегчённая тренировка 55
   const seed=await p.evaluate(()=>{
     S.setup=1; document.getElementById('setup').classList.remove('on'); S.sound=0;
-    S.rec={};
+    S.rec={}; S.start='2026-10-05'; S.returning=0;
     const день=S.days.find(d=>(d.ex||[]).some(e=>e.n==='Жим лёжа'));
     const j=день.ex.findIndex(e=>e.n==='Жим лёжа');
     const веса=[80,85,90,55];
+    const даты=['2026-09-19','2026-09-24','2026-09-29','2026-10-04'];
     веса.forEach((w,i)=>{
-      const d=new Date(); d.setDate(d.getDate()-(веса.length-i)*5);
-      const ds=iso(d), r=recRW(ds);
+      const ds=даты[i], r=recRW(ds);
+      r.dt='up1';
       r.wo=1; r.log={}; r.log[j]={done:1,n:'Жим лёжа',g:'Грудь',s:'4',r:'8',w:w,rs:[8,8,8,8],vol:32*w,xp:12};
     });
     entCache=null; statsDirty=true; save(); recomputeStats(1);
     return bestByDate('Жим лёжа').map(x=>x[1]);
   });
   chk(JSON.stringify(seed)==='[80,85,90,55]','1. история засеяна',seed.join(' → '));
+  const factors=await p.evaluate(()=>Object.keys(S.rec).sort().map(ds=>intFactor(ds)));
+  chk(factors.length===4&&factors.every(k=>k===1),'нормировка фиксированной истории нейтральная',factors.join(', '));
 
-  /* Вес приводится к полной интенсивности недели (bestByDate с norm), а какая
-     неделя цикла выпадет на засеянные даты — зависит от сегодняшней даты.
-     Поэтому ждём не жёсткую цифру, а то, ради чего правка делалась: конец
-     берётся по лучшему весу, а не по последнему (разгрузочному). */
+  /* История до старта плана имеет интенсивность 1. Проверяем независимо
+     от календаря: конец берётся по лучшему весу, а не последнему облегчённому. */
   const r=await p.evaluate(()=>{
     const sh=strengthShift('Жим лёжа',30);
     const row=progressionRows().find(x=>x.n==='Жим лёжа');
@@ -44,7 +47,7 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
       последний:roundW(norm[norm.length-1][1]),
       дат:порядок.length};
   });
-  chk(r.месяц>0,'2. «за месяц» не уходит в минус из-за разгрузки','за месяц '+r.месяц);
+  chk(r.месяц>0,'2. «за месяц» не уходит в минус из-за облегчённой тренировки','за месяц '+r.месяц);
   chk(r.месяц===r.лучшийНорм-r.первый,'3. и равен росту лучшего веса, а не последнего',r.первый+' → '+r.лучшийНорм);
   chk(r.всего===10,'4. «всего» тоже считает по лучшему',String(r.всего));
   chk(r.sh&&r.sh.to===r.лучшийНорм&&r.sh.to>r.последний,

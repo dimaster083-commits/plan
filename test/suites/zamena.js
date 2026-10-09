@@ -76,7 +76,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   });
   chk(ui&&ui.w>=44&&ui.h>=44&&ui.title==='ЗАМЕНА'&&ui.rows>5,'4. «Заменить» в строке — 44×44, открывает шторку ЗАМЕНА',JSON.stringify(ui&&{w:ui.w,h:ui.h,t:ui.title,rows:ui.rows}));
   chk(ui&&ui.page<=320&&ui.sh<=0&&!ui.small.length,'5. шторка влезает в 320 px, все кнопки ≥ 44 px',JSON.stringify(ui&&{page:ui.page,sh:ui.sh,small:ui.small}));
-  chk(ui&&/ступень 3 · легче/.test(ui.step)&&ui.harm&&ui.imgs>=3&&ui.q,'6. ступень лесенки относительно жима лёжа, отметка «вредно», фото, поиск',JSON.stringify(ui&&{step:ui.step.replace(/\s+/g,' '),harm:ui.harm,imgs:ui.imgs}));
+  chk(ui&&/пример 3 в выжимке/.test(ui.step)&&ui.harm&&ui.imgs>=3&&ui.q,'6. номер доступного примера выжимки, отметка «вредно», фото, поиск',JSON.stringify(ui&&{step:ui.step.replace(/\s+/g,' '),harm:ui.harm,imgs:ui.imgs}));
 
   // 7. фильтр оборудования и поиск
   const flt=await p.evaluate(async()=>{

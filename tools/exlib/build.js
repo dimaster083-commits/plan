@@ -20,6 +20,7 @@ function plane(e) {
   if (has(id, /Clean|Snatch|External_Rotation|Cuban_Press|Bottoms-Up/)) return 'vpn';
   if (has(id, /Face_Pull|Band_Pull_Apart|Internal_Rotation|Scapular_Pull/)) return 'kpch';
   if (has(id, /Jerk|Push_Press/)) return 'vpush';
+  if (id === 'Kettlebell_Sumo_High_Pull') return 'vpush';
   if (c === 'plyometrics') return 'plyo';
   if (has(id, /Shrug/)) return 'shrug';
   if (has(id, /Upright/)) return 'vpush';
@@ -50,11 +51,16 @@ const HARM = [
   [/^(Dumbbell_Flyes|Decline_Dumbbell_Flyes|Incline_Dumbbell_Flyes|Incline_Dumbbell_Flyes_-_With_A_Twist|One-Arm_Flat_Bench_Dumbbell_Flye)$/, 'Разводки лёжа перегружают плечевой сустав и не растят силу. Замена — отжимания или жим гантелей.']
 ];
 
-// Лесенки книги: от простого к тяжёлому, последнее — одностороннее.
+// Порядок примеров из docs/fitnes-dlya-umnyh.md — сохранённой выжимки,
+// а не оригинала книги. Пустой слот означает неподтверждённое соответствие:
+// двухручный Standing_Cable_Chest_Press не одноручный жим;
+// Handstand_Push-Ups не отжимания уголком; Kettlebell_Sumo_High_Pull
+// начинается с пола, не от колен; One-Arm_Dumbbell_Row выполняется с опорой.
+// У этих четырёх техника сохранена в полной базе, точная ступень не назначена.
 const LADDER = {
-  hpush: ['Machine_Bench_Press', 'Pushups', 'Dumbbell_Bench_Press', 'Parallel_Bar_Dip', 'Barbell_Bench_Press_-_Medium_Grip', 'Standing_Cable_Chest_Press'],
-  vpush: ['Side_Lateral_Raise', 'Handstand_Push-Ups', 'Seated_Dumbbell_Press', 'Kettlebell_Sumo_High_Pull', 'Push_Press', 'One-Arm_Kettlebell_Push_Press'],
-  hpull: ['Leverage_Iso_Row', 'Inverted_Row', 'Dumbbell_Incline_Row', 'Seated_Cable_Rows', 'Bent_Over_Barbell_Row', 'One-Arm_Dumbbell_Row'],
+  hpush: ['Machine_Bench_Press', 'Pushups', 'Dumbbell_Bench_Press', 'Parallel_Bar_Dip', 'Barbell_Bench_Press_-_Medium_Grip', null],
+  vpush: ['Side_Lateral_Raise', null, 'Seated_Dumbbell_Press', null, 'Push_Press', 'One-Arm_Kettlebell_Push_Press'],
+  hpull: ['Leverage_Iso_Row', 'Inverted_Row', 'Dumbbell_Incline_Row', 'Seated_Cable_Rows', 'Bent_Over_Barbell_Row', null],
   vpull: ['Wide-Grip_Lat_Pulldown', 'Band_Assisted_Pull-Up', 'Pullups', 'Chin-Up', 'One_Arm_Lat_Pulldown'],
   knee: ['Leg_Extensions', 'Split_Squat_with_Dumbbells', 'Zercher_Squats', 'Front_Barbell_Squat', 'Barbell_Squat', 'Single-Leg_High_Box_Squat'],
   hip: ['Seated_Leg_Curl', 'Single_Leg_Glute_Bridge', 'Hyperextensions_Back_Extensions', 'Romanian_Deadlift', 'Barbell_Deadlift', 'Kettlebell_One-Legged_Deadlift'],
@@ -62,6 +68,7 @@ const LADDER = {
 };
 const LV = {};
 Object.entries(LADDER).forEach(([k, a]) => a.forEach((id, i) => {
+  if (!id) return;
   if (!E.find(e => e.id === id)) throw new Error('нет в базе: ' + id);
   LV[id] = i + 1;
 }));
@@ -86,8 +93,9 @@ const rows = E.map(e => {
 });
 const out = '/* База упражнений для каталога. Упражнения, описания и фото — free-exercise-db\n' +
   '   (https://github.com/yuhonas/free-exercise-db, Unlicense — общественное достояние).\n' +
-  '   Русские названия, тип движения по плоскостной системе и пометки по книге\n' +
-  '   Д. Смирнова «Фитнес для умных» — свои. Собрано скриптом, руками не править.\n' +
+  '   Русские названия, тип движения по плоскостной системе и пометки по сохранённой\n' +
+  '   выжимке «Фитнес для умных» — свои. Соответствие оригиналу книги не проверено.\n' +
+  '   Собрано скриптом, руками не править.\n' +
   '   Поля: id, название, англ. название, категория, инвентарь, уровень 1–3, односуставное,\n' +
   '   основные мышцы, вспомогательные, тип движения, ступень лесенки, вред, ключ фото приложения,\n' +
   '   шаги техники (англ.), есть ли фото. */\n' +

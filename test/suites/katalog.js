@@ -32,32 +32,35 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   // 2. база грузится и показывается карточками
   await p.evaluate(() => { tab = 'ex'; render(); });
   await p.waitForFunction(() => document.querySelectorAll('#exgrid .lcard').length > 0, null, { timeout: 8000 }).catch(() => {});
-  const t2 = await p.evaluate(() => ({ n: LIB ? LIB.list.length : 0, cards: document.querySelectorAll('#exgrid .lcard').length,
+  const t2 = await p.evaluate(() => ({ n: libList().length, all: LIB ? LIB.list.length : 0, cards: document.querySelectorAll('#exgrid .lcard').length,
     first: (document.querySelector('#exgrid .lcard b') || {}).textContent, cnt: document.getElementById('exact').textContent }));
-  chk(t2.n === 579 && t2.cards === 40 && t2.first === 'Жим лёжа' && /579/.test(t2.cnt), '2. 579 упражнений для зала, первыми — упражнения программы', JSON.stringify(t2));
+  chk(t2.n === 40 && t2.all === 876 && t2.cards === 40 && t2.first === 'Жим лёжа' && /40/.test(t2.cnt), '2. компактная основа из 40 упражнений, все 876 сохранены; первыми — упражнения программы', JSON.stringify(t2));
 
   // 2б. ненужного в зале нет в списке, но по ссылке оно открывается (уже добавленное, избранное)
   const t2b = await p.evaluate(() => {
-    const off = LIB.list.filter(o => !o.own && ('tcgp'.indexOf(o.c) >= 0 || (o.eq && 'krno'.indexOf(o.eq) >= 0)));
+    const off = libList().filter(o => !o.own);
     const st = [...LIB.byId.values()].find(o => o.c === 't');
     const opts = (openLibFilter(), [...document.querySelectorAll('#shB [data-lf]')].map(b => b.dataset.lf)); sheetClose();
     return { off: off.length, всего: LIB.all, ссылка: !!st && !!LIB.byId.get(st.id),
       фильтр: opts.filter(x => /^(cat:[tcgp]|eq:[krno])$/.test(x)) };
   });
-  chk(t2b.off === 0 && t2b.всего === 876 && t2b.ссылка && t2b.фильтр.length === 0,
-    '2б. растяжки, кардио, стронгмена, гирь и резинок нет ни в списке, ни в фильтрах; по ссылке открываются', JSON.stringify(t2b));
+  chk(t2b.off === 0 && t2b.всего === 876 && t2b.ссылка && t2b.фильтр.length === 8,
+    '2б. в основе обычные упражнения приложения; полные фильтры и ссылки остаются доступны', JSON.stringify(t2b));
 
   // 3. поиск по-русски без «ё» и по-английски
   const t3 = await p.evaluate(() => {
     const q = v => { const i = document.getElementById('exs'); i.value = v; i.dispatchEvent(new Event('input')); return [...document.querySelectorAll('#exgrid .lcard b')].map(x => x.textContent); };
-    const a = q('жим лежа'), z = q('зерхер'), en = q('zercher'); q(''); return { a: a.slice(0, 3), z, en };
+    const a = q('жим лежа'), hidden = q('зерхер');
+    document.querySelector('[data-lscope="all"]').click();
+    const z = [...document.querySelectorAll('#exgrid .lcard b')].map(x => x.textContent), en = q('zercher');
+    q(''); LF.scope = 'core'; paintLib(); return { a: a.slice(0, 3), hidden, z, en };
   });
-  chk(t3.a[0] === 'Жим лёжа' && t3.z.indexOf('Присед Зерхера') >= 0 && t3.en.indexOf('Присед Зерхера') >= 0, '3. поиск: «жим лежа» находит «Жим лёжа», зерхер/zercher', JSON.stringify(t3));
+  chk(t3.a[0] === 'Жим лёжа' && t3.hidden.length === 0 && t3.z.indexOf('Присед Зерхера') >= 0 && t3.en.indexOf('Присед Зерхера') >= 0, '3. поиск без «ё»; скрытые варианты находятся после явного перехода во всю базу', JSON.stringify(t3));
 
   // 4. лента мышц: «Грудь» — ровно те, у кого грудь основная, посчитано по самой базе
   const t4 = await p.evaluate(() => {
     document.querySelector('[data-lmu="ch"]').click();
-    const want = window.EXLIB.filter(r => (r[12]||('tcgp'.indexOf(r[3])<0&&(!r[4]||'krno'.indexOf(r[4])<0))) && r[7].split(' ').indexOf('ch') >= 0).length;   // в списке — только упражнения для зала
+    const want = 7; // семь выбранных грудных движений, включая разводку стартовой программы
     const got = parseInt(document.getElementById('exact').textContent, 10);
     const on = document.querySelector('[data-lmu="ch"]').getAttribute('aria-pressed');
     document.querySelector('[data-lmu="ch"]').click();
@@ -67,14 +70,14 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
 
   // 5. фильтр книги: тип движения и «без вредных»
   const t5 = await p.evaluate(() => {
-    LF.pl = 'hpull'; paintLib();
+    LF.scope = 'all'; LF.pl = 'hpull'; paintLib();
     const n1 = parseInt(document.getElementById('exact').textContent, 10);
-    const want = window.EXLIB.filter(r => (r[12]||('tcgp'.indexOf(r[3])<0&&(!r[4]||'krno'.indexOf(r[4])<0))) && r[9] === 'hpull').length;
+    const want = window.EXLIB.filter(r => r[9] === 'hpull').length;
     LF.pl = ''; LF.safe = true; paintLib();
     const n2 = parseInt(document.getElementById('exact').textContent, 10);
-    const safe = window.EXLIB.filter(r => (r[12]||('tcgp'.indexOf(r[3])<0&&(!r[4]||'krno'.indexOf(r[4])<0))) && !r[11]).length;
+    const safe = window.EXLIB.filter(r => !r[11]).length;
     const pill = !!document.querySelector('[data-lclr="safe"]');
-    document.querySelector('[data-lclr="safe"]').click();
+    document.querySelector('[data-lclr="safe"]').click(); LF.scope = 'core'; paintLib();
     return { n1, want, n2, safe, pill, after: LF.safe };
   });
   chk(t5.n1 === t5.want && t5.n2 === t5.safe && t5.pill && t5.after === false, '5. фильтры по книге: тип движения, «без вредных», снимаются крестиком', JSON.stringify(t5));
@@ -92,7 +95,7 @@ const chk = (c, n, d) => c ? ok(n, d) : bad(n, d);
   });
   chk(t6.t === 'УПРАЖНЕНИЕ' && t6.name === 'Жим лёжа' && t6.chest[0] === 'mm3' && t6.tri[0] === 'mm1' && t6.legs[0] === 'mm0',
     '6. страница: грудь — основная, трицепс — вспомогательная, ноги не горят', JSON.stringify({ c: t6.chest, t: t6.tri, l: t6.legs }));
-  chk(t6.plane === 'Горизонтальный жим' && t6.steps.length === 6 && /^5/.test(t6.on || ''), '7. тип движения и лесенка книги: жим лёжа — 5-я ступень из 6', JSON.stringify({ p: t6.plane, on: t6.on }));
+  chk(t6.plane === 'Горизонтальный жим' && t6.steps.length === 5 && /^5/.test(t6.on || ''), '7. тип движения и доступные примеры выжимки: жим лёжа — 5, неподтверждённого одноручного жима нет', JSON.stringify({ p: t6.plane, on: t6.on }));
 
   // 8. вредное по книге — предупреждение с заменой
   const t8 = await p.evaluate(async () => {

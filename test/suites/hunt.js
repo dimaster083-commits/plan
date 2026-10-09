@@ -6,7 +6,17 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
 
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
+  const context=await b.newContext({viewport:{width:390,height:844}});
+  await context.addInitScript(()=>{
+    const add=EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener=function(type,listener,options){
+      if(type==='click'&&this.id==='phCmp') return add.call(this,type,function(...args){
+        window.huntCmpJob=Promise.resolve(listener.apply(this,args));
+      },options);
+      return add.call(this,type,listener,options);
+    };
+  });
+  const p=await context.newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto(APP); await p.waitForTimeout(1500);
   await p.evaluate(()=>{S.setup=1;save();document.getElementById('setup').classList.remove('on');});
@@ -67,9 +77,22 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
           const btn=[...document.querySelectorAll('button')].find(x=>key(x)===k&&x.offsetParent&&!x.disabled);
           if (!btn) continue;
           const active=isActive(btn);
+          // A real pointer/keyboard activation focuses the visible control.
+          // reset() can leave focus on a hidden modal close button; the browser
+          // then blurs it during IndexedDB, correctly cancelling openCmp().
+          btn.focus({preventScroll:true});
+          window.huntCmpJob=null;
           const before=snap();
           try{ btn.click(); }catch(e){ res.push('ПАДАЕТ · '+k.split('|').pop()+' — '+e.message); reset(t); continue; }
-          await tick();
+          if(window.huntCmpJob){
+            let timer;
+            try{
+              await Promise.race([window.huntCmpJob,new Promise((_,reject)=>{
+                timer=setTimeout(()=>reject(new Error('сравнение фото не завершилось')),5000);
+              })]);
+            }catch(e){res.push('ПАДАЕТ · '+k.split('|').pop()+' — '+e.message);reset(t);continue;}
+            finally{clearTimeout(timer);}
+          }else await tick();
           const after=snap();
           if (before===after && !active) res.push('«'+k.split('|').pop()+'» на «'+t+'» ('+k+', день '+sel+')');
           reset(t);
