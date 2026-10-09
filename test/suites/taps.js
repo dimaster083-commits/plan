@@ -6,7 +6,10 @@ const chk = (ok, name, info = '') => { console.log((ok ? '  ✓ ' : '  ✗ ') + 
 (async () => {
   const browser = await chromium.launch(LAUNCH);
   const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
-  await page.goto(APP); await page.waitForTimeout(1200);
+  // Friday's existing bench exercises expose disabled duplicate choices.
+  // Fix the fixture date so this path is covered on Windows and UTC CI.
+  await page.clock.setFixedTime(new Date('2026-10-09T02:00:00Z'));
+  await page.goto(APP); await page.waitForSelector('#setup.on');
   await page.evaluate(() => {
     S.setup = 1; $('setup').classList.remove('on');
     const d = dayOf(today());
@@ -18,7 +21,7 @@ const chk = (ok, name, info = '') => { console.log((ok ? '  ✓ ' : '  ✗ ') + 
   // Два touch-события приходят до следующей перерисовки; программный click
   // повторяет именно этот короткий интервал без ожидания уже закрытой шторки.
   await page.evaluate(() => {
-    const pick = document.querySelector('[data-addex]');
+    const pick = document.querySelector('[data-addex]:not(:disabled)');
     pick.click(); pick.click();
   });
   await page.waitForTimeout(250);
