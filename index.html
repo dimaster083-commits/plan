@@ -3153,7 +3153,7 @@ document.documentElement.dataset.skin = 'sl';
   </div>
 
   <div class="foot"><p id="saveState" class="saveState" data-save-state="saved" role="status" aria-live="polite">Сохранено на устройстве</p>
-    <button class="gh" id="rd">СБРОС ДНЯ</button></div>
+    <button class="gh" id="rd">СБРОС ТРЕНИРОВКИ</button></div>
 </section>
 
 <!-- ================= УПРАЖНЕНИЯ =================
@@ -6988,19 +6988,44 @@ $('addSp').addEventListener('click', () => {
   dayOf(sel).sp.push({ w: '', n: 'Новая добавка', h: '' }); save(); paintSupp();
 });
 
+// В старом журнале одно имя могло встречаться несколько раз. Порядок
+// индексов не равен порядку закрытия: разворачиваем цепочки прибавок по
+// сохранённому новому значению, а не по позиции строки. Каждый шаг — один раз.
+function rollbackTraining(logs) {
+  const pending = logs.flatMap(l => ['bump', 'rbump'].flatMap(field =>
+    (l[field] || []).slice().reverse().map(op => ({ n: l.n, field, op }))));
+  while (pending.length) {
+    const i = pending.findIndex(({ n, field, op }) => {
+      const e = exAt(op[0], op[1], n);
+      if (!e) return false;
+      return field === 'bump' ? op[4] === undefined || num(e.w) === num(op[4])
+        : op[3] === undefined || String(e.r) === String(op[3]);
+    });
+    if (i < 0) break; // позднюю самостоятельную правку программы не откатываем
+    const { n, field, op } = pending.splice(i, 1)[0];
+    unbumpWorking({ n, [field]: [op] });
+  }
+  logs.forEach(l => {
+    delete l.bump; delete l.rbump;
+    rollback(l); l.done = 0;
+  });
+}
 $('rd').addEventListener('click', () => {
-  ask('Очистить отметки за ' + fmt(sel) + '? Планы и веса останутся.', 'ОЧИСТИТЬ').then(ok => {
+  const day = sel; // подтверждение относится к показанной дате, не к sel после ожидания
+  ask('Очистить тренировку за ' + fmt(day) + '? Еда, вес тела, заметки и добавки останутся. Отметки и связанный с ними прогресс будут отменены.', 'ОЧИСТИТЬ').then(ok => {
     if (!ok) return;
-    const snap = snapS(), r = S.rec[sel];
+    const snap = snapS(), r = S.rec[day];
     if (r) {
-      Object.values(r.log || {}).forEach(l => { if (l.done) rollback(l); });
+      rollbackTraining(Object.values(r.log || {}).filter(l => l && l.done));
       if (r.wo) addXp(-XP_WO);
-      delete S.rec[sel];
-      // тип прошедшего дня (снимок смены шаблона) — план, а не отметка: остаётся
-      if (r.dt) S.rec[sel] = { log: {}, sp: {}, wo: 0, dt: r.dt, dn: r.dn };
+      // Удаляем только тренировочную ветку. Остальные поля дня и снимок
+      // исторического расписания принадлежат своим действиям, а не сбросу.
+      r.log = {}; r.wo = 0;
+      delete r.t0; delete r.t1; delete r.skip;
+      if (recBare(r)) delete S.rec[day];
     }
     save(); render();
-    offerUndo(snap, 'Отметки за ' + fmt(sel) + ' очищены');
+    offerUndo(snap, 'Тренировка за ' + fmt(day) + ' очищена');
   });
 });
 
@@ -9277,7 +9302,7 @@ function libCard(o) {
       <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.2L6 21z"/></svg></button>
     ${o.harm ? '<em class="lwarn" title="Книга считает вредным">!</em>' : ''}
     <div class="lcopy"><b>${esc(o.n)}</b><span>${esc(o.custom ? (o.group + ' · своё') : mu || LIB_CAT[o.c] || '')}</span>${used ? '<small class="ex-present-label">Уже в этом дне</small>' : ''}</div>
-    ${libPick ? `<button class="ladd${used ? ' ex-present' : ''}" data-libadd="${esc(o.id)}"${used || rest ? ' disabled' : ''} aria-label="${used ? 'Уже в этом дне: ' : rest ? 'Выбран день отдыха: ' : 'Добавить: '}${esc(o.n)}">${used ? '✓' : '+'}</button>` : ''}
+    ${libPick ? `<button class="ladd${used ? ' ex-present' : ''}" data-libadd="${esc(o.id)}" data-libday="${esc(libPick)}"${used || rest ? ' disabled' : ''} aria-label="${used ? 'Уже в этом дне: ' : rest ? 'Выбран день отдыха: ' : 'Добавить: '}${esc(o.n)}">${used ? '✓' : '+'}</button>` : ''}
   </div>`;
 }
 
@@ -9388,7 +9413,7 @@ function openLib(id) {
       <div class="cph">ТЕХНИКА</div>${text}
       ${rest ? '<p class="lnote lib-rest-note">Выбран день отдыха. В «Неделе» выберите тренировочный тип для этой даты, затем вернитесь к добавлению упражнения.</p>' : ''}
       <div class="lbtns">
-        <button class="lgo${used ? ' ex-present' : ''}" data-libadd="${esc(o.id)}"${used || rest ? ' disabled' : ''}>${rest ? 'День отдыха · ' + esc(fmt(inDay, 1)) : used ? 'Уже в этом дне' : '+ В тренировку · ' + esc(fmt(inDay, 1))}</button>
+        <button class="lgo${used ? ' ex-present' : ''}" data-libadd="${esc(o.id)}" data-libday="${esc(inDay)}"${used || rest ? ' disabled' : ''}>${rest ? 'День отдыха · ' + esc(fmt(inDay, 1)) : used ? 'Уже в этом дне' : '+ В тренировку · ' + esc(fmt(inDay, 1))}</button>
         <button class="lfav2${fav ? ' on' : ''}" data-lfav="${esc(o.id)}" aria-pressed="${fav}">${fav ? 'В избранном' : 'В избранное'}</button>
       </div></div>`, 'ladder');
     shRe = () => openLib(id);
@@ -9491,7 +9516,7 @@ document.addEventListener('click', e => {
   const fv = e.target.closest('[data-lfav]');
   if (fv) { e.stopPropagation(); libToggleFav(fv.dataset.lfav); return; }
   const ad = e.target.closest('[data-libadd]');
-  if (ad) { if (!ad.disabled) libAdd(ad.dataset.libadd, libPick || sel); return; }
+  if (ad) { if (!ad.disabled && ad.dataset.libday) libAdd(ad.dataset.libadd, ad.dataset.libday); return; }
   const mu = e.target.closest('[data-lmu]');
   if (mu) {
     LF.mu = LF.mu === mu.dataset.lmu ? '' : mu.dataset.lmu;
