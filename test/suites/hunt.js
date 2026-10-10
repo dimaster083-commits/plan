@@ -52,6 +52,7 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
     const snap=()=>[JSON.stringify(S), tab, sel, mo, exOpen, pSec, calView, calYear, edit, editPast,
       document.getElementById('sh').className, document.getElementById('ask').className,
       document.getElementById('fp').className, document.getElementById('ov').className,
+      document.getElementById('note').classList.contains('on') ? noteSeq : 0,
       String((document.getElementById('hsh')||{}).hidden), hash(document.body.innerHTML)].join('|');
     const key=btn=>(btn.id||'')+'|'+(typeof btn.className==='string'?btn.className:'')+'|'+
       (btn.dataset.d??btn.dataset.j??btn.dataset.go??btn.dataset.open??btn.dataset.cd??btn.dataset.mo??
@@ -62,6 +63,29 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
     const reset=t=>{try{sheetClose();}catch(e){} try{hintClose();}catch(e){} try{askClose(false);}catch(e){}
       ['fp','ov','setup'].forEach(id=>{const e2=document.getElementById(id); if(e2) e2.classList.remove('on');});
       document.body.style.overflow=''; tab=t; sel=today(); exOpen=null; render();};
+
+    // Повторное видимое пояснение — действие, даже если его DOM не изменился.
+    // Синхронный сценарий исключает случайное изменение часов между снимками.
+    const keep=JSON.stringify(S), keepFinAt=finAt, keepSeq=noteSeq;
+    const keepNote=$('note').className, keepText=$('noteT').textContent;
+    const warning='Закрой хотя бы одно упражнение — или «Отменить начало»';
+    let repeatedFeedback=false;
+    try{
+      sel=today(); tab='wo'; exOpen=null;
+      finAt=Date.now()-3000;
+      S.rec[sel]={wo:0,log:{},t0:finAt}; render(); note(warning);
+      const before=snap(), sequence=noteSeq;
+      $('fin').click();
+      repeatedFeedback=snap()!==before && noteSeq===sequence+1 &&
+        $('note').classList.contains('on') && $('noteT').textContent===warning &&
+        !recOf(sel).wo;
+    }finally{
+      // Capture-phase undo проверяет S отложенно: дать ему увидеть ещё fixture,
+      // чтобы восстановление тестовых данных не стало пользовательским действием.
+      await new Promise(resolve=>setTimeout(resolve,0));
+      clearTimeout(noteTimer); $('note').className=keepNote; $('noteT').textContent=keepText;
+      S=JSON.parse(keep); finAt=keepFinAt; noteSeq=keepSeq; reset('wo');
+    }
 
     for (const t of ['wo','prog','food','photo']) {
       sel=today(); reset(t);
@@ -99,9 +123,11 @@ const out=[]; const bad=(t,d)=>out.push('  ✗ '+t+(d?'   → '+d:'')); const ok
         }
       }
     }
-    return res;
+    return {buttons:res,repeatedFeedback};
   });
-  dead.length ? bad('кнопки без действия ('+dead.length+')', dead.join('\n       ')) : ok('все кнопки что-то делают');
+  dead.repeatedFeedback ? ok('повторное пояснение пустой тренировки считается действием') :
+    bad('снимок не различает повторное пояснение пустой тренировки');
+  dead.buttons.length ? bad('кнопки без действия ('+dead.buttons.length+')', dead.buttons.join('\n       ')) : ok('все кнопки что-то делают');
 
   // 4. крайние случаи, на которых обычно падает
   const edge = await p.evaluate(()=>{
