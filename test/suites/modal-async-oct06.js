@@ -123,6 +123,10 @@ const state = page => page.evaluate(() => ({
         return { old, current };
       }, date);
       await page.locator('#phCmp').click(); await page.waitForSelector('#ov.on');
+      // Monday's fixture date is tomorrow, not the oldest photo. Set both
+      // sides explicitly: this test exercises late reads, not default sorting.
+      await page.locator('#selA').selectOption(date);
+      await page.locator('#selB').selectOption(await page.evaluate(() => today()));
       await page.waitForFunction(src => document.querySelector('#picA img')?.src === src, photos.old);
       await page.evaluate(date => {
         const load = phLoad, paint = paintCmp;

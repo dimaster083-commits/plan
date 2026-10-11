@@ -3514,6 +3514,15 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
    доезжал до счёта и уводил тоннаж вниз: одна опечатка в поле веса —
    и общая цифра за год становилась меньше. */
 const num = v => Math.max(0, parseFloat(String(v ?? '').replace(',', '.')) || 0);
+/* На границе формы проверяем весь ввод, а не исправляем опечатку в 0.
+   num остаётся прежним для старых журналов и расчётов. Пустое поле — 0. */
+function finiteDecimal(v) {
+  const text = String(v ?? '').trim();
+  if (!text) return 0;
+  if (!/^(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(text)) return null;
+  const value = Number(text.replace(',', '.'));
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
 const dec = (v, n) => Number(v).toFixed(n === undefined ? 1 : n).replace('.', ',');
 const rnd = v => Math.round(v);
 const firstRep = v => num(String(v ?? '').split('-')[0]);
@@ -6003,7 +6012,8 @@ $('exl').addEventListener('input', ev => {
   const j = num(card.dataset.j), r = recRW(sel);
   const l = r.log[j] = r.log[j] || {};
   const all = [...card.querySelectorAll('[data-ws]')];
-  const ws = all.map(x => (String(x.value).trim() === '' ? '' : num(x.value)));
+  // Строка — черновик, не число: abc нельзя при перерисовке превратить в 0.
+  const ws = all.map(x => (String(x.value).trim() === '' ? '' : x.value));
   if (ws.some(v => v !== '')) l.ws = ws; else delete l.ws;
   save();
 });
@@ -6217,7 +6227,8 @@ function repBoxes(e, g, sets, prev, keep, repsRaw, wNow) {
     const v = cur && cur[i] !== undefined && cur[i] !== null ? cur[i] : '';
     const k = KIND[kinds[i]] ? kinds[i] : '';
     const hit = top && !k && num(v) >= top ? ' hit' : '';
-    const wv = wsAll[i] !== undefined && wsAll[i] !== null && wsAll[i] !== '' ? kg(num(wsAll[i])) : '';
+    const wv = wsAll[i] !== undefined && wsAll[i] !== null && wsAll[i] !== ''
+      ? (!g.done && typeof wsAll[i] === 'string' ? wsAll[i] : kg(num(wsAll[i]))) : '';
     const on = g.done || ck.indexOf(i) >= 0;
     out += '<div class="srow' + (on ? ' on' : '') + '">' +
       '<button class="snum' + (k ? ' k-' + k : '') + '" data-kindcyc="' + i + '"' + (g.done ? ' disabled' : '') +
@@ -6379,21 +6390,45 @@ function canCompleteEx(j, card, rowIndex = null) {
   }
   const target = String((card ? card.querySelector('[data-f="r"]').value : pick(l.r, repsDefault(p))) ?? '').trim();
   const range = target.match(/^(\d+)\s*(?:-\s*(\d+))?$/);
-  if (target && (!range || +range[1] < 1 || (range[2] && +range[2] < +range[1]))) {
+  if (target && (!range || !Number.isFinite(+range[1]) || +range[1] < 1 ||
+    (range[2] && (!Number.isFinite(+range[2]) || +range[2] < +range[1])))) {
     note('Повторы: целое число или диапазон, например 8-10'); return false;
   }
-  const validWeight = v => !String(v ?? '').trim() || /^(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(String(v).trim());
+  const validWeight = v => finiteDecimal(v) !== null;
   const weight = card ? card.querySelector('[data-f="w"]').value : pick(l.w, p.w);
   if (!validWeight(weight)) { note('Вес: число от нуля, например 60 или 2,5'); return false; }
   const reps = card ? [...card.querySelectorAll('[data-rs]')].map(x => x.value) : (l.rs || []);
   const weights = card ? [...card.querySelectorAll('[data-ws]')].map(x => x.value) : (l.ws || []);
   const indices = rowIndex === null ? Array.from({ length: count }, (_, i) => i) : [rowIndex];
   if (indices.some(i => !validWeight(weights[i]))) { note('Проверь вес в строках подходов'); return false; }
-  if (indices.some(i => String(reps[i] ?? '').trim() && (!/^\d+$/.test(String(reps[i]).trim()) || +reps[i] < 1))) {
+  if (indices.some(i => String(reps[i] ?? '').trim() && (!/^\d+$/.test(String(reps[i]).trim()) ||
+    !Number.isFinite(+reps[i]) || +reps[i] < 1))) {
     note('Повторы в подходе: целое число больше нуля'); return false;
   }
   if (!target && indices.some(i => !String(reps[i] ?? '').trim())) {
     note('Укажи повторы в подходах или цель по повторам'); return false;
+  }
+  // Отдельная галочка проверяет свою строку; завершение — все строки и
+  // их производные ДО изменения журнала/рекордов/опыта/рабочих весов.
+  const commonW = num(pick(weight, card ? p.w : weightFor(p, intOf(sel, dayOf(sel).t))));
+  const kinds = card ? [...card.querySelectorAll('[data-rs]')].map(x => x.dataset.kind || '') : (l.kinds || []);
+  let volume = 0;
+  for (const i of indices) {
+    const w = num(weights[i]) || commonW, rep = num(reps[i]) || firstRep(target);
+    if (!Number.isFinite(w * 10)) { note('Вес слишком велик — проверь число'); return false; }
+    if (kinds[i] === 'w' || kinds[i] === 'd') continue;
+    volume += w * rep;
+    const estimate = rep === 1 ? w : rep <= 12 ? w * (1 + rep / 30) : w;
+    if (!Number.isFinite(volume) || !Number.isFinite(estimate * 10)) {
+      note('Вес или объём слишком велики — проверь числа'); return false;
+    }
+  }
+  if (rowIndex === null && (p.g || l.g)) {
+    volume *= sideMul(p.n || l.n);
+    const total = Object.values(S.vol).reduce((a, v) => a + num(v), 0);
+    if (!Number.isFinite(volume) || !Number.isFinite(total + volume) || !Number.isFinite(dayTon(sel) + volume)) {
+      note('Объём слишком велик — проверь вес и повторы'); return false;
+    }
   }
   return true;
 }
@@ -8637,13 +8672,20 @@ $('setOk').addEventListener('click', async () => {
   if (ageIn && (ageIn < 12 || ageIn > 100)) { note('Возраст — от 12 до 100 лет'); $('anAge').focus(); return; }
   const gIn = num($('anGoal').value);
   if (gIn && (gIn < 30 || gIn > 300)) { note('Цель — от 30 до 300 кг'); $('anGoal').focus(); return; }
+  const a = {};
+  for (const [k] of ANCHORS) {
+    const field = $('an-' + k), value = finiteDecimal(field.value);
+    // Техническая защита от опечатки, не рекомендация рабочего веса.
+    if (value === null || value > 1000) {
+      note('Опорный вес — число от 0 до 1000 кг'); field.focus(); return;
+    }
+    a[k] = value;
+  }
   // цель не вписана — значит «держать как есть»
   if (!num($('anGoal').value)) {
     $('anGoal').value = String(bw);
     $('anGoal').dispatchEvent(new Event('input', { bubbles: true }));
   }
-  const a = {};
-  ANCHORS.forEach(([k]) => { a[k] = num($('an-' + k).value); });
   /* Свои веса не знает — осторожный старт от веса тела: половина на жиме,
      0,6 на приседе и 0,7 на тяге, по сетке 2,5 кг. */
   if (!a.b && !a.s && !a.d) {
@@ -10985,6 +11027,33 @@ function mealSum(m) {
   });
   return { k: k, p: p, f: f, c: c };
 }
+/* Просчитываем кандидат до записи: finite-операнды сами по себе не
+   гарантируют конечные произведения и сумму нескольких продуктов. */
+function finiteFoodTotals(list, replacement = null) {
+  const totals = [0, 0, 0, 0];
+  for (const meal of list || []) {
+    const subtotal = [0, 0, 0, 0];
+    for (const item of meal.items || []) {
+      const fd = replacement && item.p === replacement.name
+        ? replacement.food : findFood(item.p);
+      if (!fd) continue;
+      const grams = num(item.g) / 100;
+      if (!Number.isFinite(grams)) return false;
+      for (let i = 0; i < 4; i++) {
+        const value = fd[i + 1] * grams;
+        subtotal[i] += value;
+        if (!Number.isFinite(value) || !Number.isFinite(subtotal[i])) return false;
+      }
+    }
+    // Тот же порядок сложения, что в mealSum → sumMeals: иначе округление
+    // малых величин рядом с большим числом может скрыть переполнение дня.
+    for (let i = 0; i < 4; i++) {
+      totals[i] += subtotal[i];
+      if (!Number.isFinite(totals[i])) return false;
+    }
+  }
+  return true;
+}
 /* Съеденное принадлежит дате, а не дню недели. Раньше список лежал в шаблоне
    S.days[i].ml — один на все четверги сразу: вчерашний обед переписывал
    позавчерашний, а перестановка расписания уносила еду вместе с днём.
@@ -11108,10 +11177,30 @@ $('mll').addEventListener('click', e => {
 });
 $('mll').addEventListener('input', e => {
   const i = e.target.closest('input'); if (!i) return;
-  const j = +i.closest('[data-ml]').dataset.ml, m = mealsRW(sel)[j];
-  if (i.dataset.mf === 'n') { m.n = i.value; save(); return; }
-  if (i.dataset.g !== undefined) { m.items[+i.dataset.g].g = i.value; save(); paintTotals(); }
+  if (i.dataset.mf === 'n') {
+    mealsRW(sel)[+i.closest('[data-ml]').dataset.ml].n = i.value; save(); return;
+  }
+  if (i.dataset.g !== undefined) commitGrams(i, false);
 });
+$('mll').addEventListener('change', e => {
+  const i = e.target.closest('input[data-g]'); if (i) commitGrams(i, true);
+});
+function commitGrams(i, finished) {
+  // Очищение перед заменой — ещё черновик; окончательно пусто после ухода = 0.
+  if (!finished && !i.value.trim()) return;
+  const value = finiteDecimal(i.value), j = +i.closest('[data-ml]').dataset.ml, q = +i.dataset.g;
+  const list = mealsOf(sel), item = list[j]?.items?.[q]; if (!item) return;
+  const candidate = list.map((m, at) => at !== j ? m : {...m,
+    items: m.items.map((it, idx) => idx !== q ? it : {...it, g: i.value})});
+  if (value === null || !finiteFoodTotals(candidate)) {
+    i.setAttribute('aria-invalid', 'true');
+    if (finished) note('Граммы: конечное число от нуля; проверь величину');
+    return;
+  }
+  i.removeAttribute('aria-invalid');
+  if (item.g === i.value) return;
+  mealsRW(sel)[j].items[q].g = i.value; save(); paintTotals();
+}
 
 /* ---------- копирование рациона ---------- */
 function openRation() {
@@ -11244,7 +11333,14 @@ $('fpAdd').addEventListener('click', () => {
   if (!picked.length) return;
   /* Позиции идут в тот приём и тот день, откуда открыт подбор. Раньше брался
      текущий день: сменил день или убрал приём — и кнопка падала. */
-  const m = mealsRW(pickDs || sel)[pickMeal];
+  const ds = pickDs || sel, list = mealsOf(ds), meal = list[pickMeal];
+  if (!meal) { closePick(); paintFood(); note('Этого приёма пищи уже нет — позиции не добавлены'); return; }
+  const candidate = list.map((m, j) => j !== pickMeal ? m : {...m,
+    items: (m.items || []).concat(picked.map(x => ({p: x.p, g: x.g})))});
+  if (!finiteFoodTotals(candidate)) {
+    note('Сумма выбранных порций слишком велика — проверь продукты'); return;
+  }
+  const m = mealsRW(ds)[pickMeal];
   if (!m) { closePick(); paintFood(); note('Этого приёма пищи уже нет — позиции не добавлены'); return; }
   if (!Array.isArray(m.items)) m.items = [];
   const items = m.items;
@@ -11286,7 +11382,14 @@ $('fpl').addEventListener('click', e => {
   if (e.target.id === 'nfSave') {
     const n = $('nfN').value.trim();
     if (!n) return;
-    const rec = { n: n, k: num($('nfK').value), p: num($('nfP').value), f: num($('nfF').value), c: num($('nfC').value) };
+    const rec = { n: n };
+    for (const key of ['k', 'p', 'f', 'c']) {
+      const field = $('nf' + key.toUpperCase()), value = finiteDecimal(field.value);
+      if (value === null) {
+        note('КБЖУ: конечное число от нуля, например 125 или 12,5'); field.focus(); return;
+      }
+      rec[key] = value;
+    }
     const at = S.myFood.findIndex(f => String(f.n).toLowerCase() === n.toLowerCase());
     // имя — ключ продукта в записях дня, два одинаковых развалят подсчёт
     if (at < 0 && FOOD.concat(REST).some(f => String(f[0]).toLowerCase() === n.toLowerCase())) {
@@ -11296,6 +11399,12 @@ $('fpl').addEventListener('click', e => {
        записи дней и шаблонов переименовываются вслед, иначе продукт выпадал
        из всех записей («нет в базе», итог дня 0). */
     const oldN = at >= 0 ? String(S.myFood[at].n) : null;
+    const replacement = {name: oldN || n, food: [n, rec.k, rec.p, rec.f, rec.c]};
+    const lists = Object.values(S.rec).map(r => r.ml).concat(
+      S.days.map(d => d.ml), (S.tpl || []).map(t => t.ml));
+    if (lists.some(list => !finiteFoodTotals(list, replacement))) {
+      note('КБЖУ слишком велики для записанных порций — проверь числа'); return;
+    }
     if (oldN && oldN !== n) {
       const walk = o => { if (Array.isArray(o)) o.forEach(walk);
         else if (o && typeof o === 'object') { if (o.p === oldN) o.p = n; Object.values(o).forEach(walk); } };
