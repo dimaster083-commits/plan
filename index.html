@@ -4783,14 +4783,30 @@ function offerUndo(snap, text, opt) {
 }
 async function undoNow() {
   const u = undoRec; if (!u) return;
-  undoDrop();
-  if (u.local) { note(u.local() === false ? 'Экран уже перерисован — отменять нечего' : 'Отменено'); return; }
+  if (u.busy) return;
+  if (u.local) { undoDrop(); note(u.local() === false ? 'Экран уже перерисован — отменять нечего' : 'Отменено'); return; }
   let back;
   try { back = JSON.parse(u.s); } catch (e) { return; }
+  // Сначала возвращаем внешний снимок. Отказ не уничтожает его единственную
+  // копию и не откатывает журнал; повтор доступен до исходного срока полоски.
+  if (u.back) {
+    u.busy = true;
+    try { await u.back(); }
+    catch (e) { note('Не удалось отменить действие с фото — попробуй ещё раз'); return; }
+    finally { u.busy = false; }
+    // Новое сохранение или истечение срока уже аннулировало эту отмену.
+    // Фото изменилось, но поздние записи журнала возвращать назад нельзя.
+    if (undoRec !== u) {
+      // Поздний callback мог положить старое фото в кэш уже после нового
+      // снимка/удаления. Показываем реальные данные IDB, не его снимок.
+      PHCACHE.clear(); await phSync();
+      render(); note('Действие с фото отменено; новые записи не изменены'); return;
+    }
+  }
+  undoDrop();
   S = back;
   invalidateFood();
   save(); flush();
-  if (u.back) { try { await u.back(); } catch (e) { /* снимок мог не вернуться — журнал уже вернулся */ } }
   // шторку, открытую самим действием (итоги тренировки), отмена закрывает;
   // шторку, в которой действие сделано («Неделя», рацион), открывает заново
   const wasOpen = $('sh').classList.contains('on');
@@ -8526,6 +8542,8 @@ $('imp').addEventListener('click', () => $('impFile').click());
    его, из-за чего испорченный файл успевал заменить открытый журнал. */
 // фото — только картинка data:, иначе строка из файла копии попадала в разметку
 const safeImg = v => typeof v === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\s]+$/.test(v);
+const photoDayOk = k => typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k)
+  && !isNaN(new Date(k + 'T00:00:00').getTime()) && iso(new Date(k + 'T00:00:00')) === k;
 function importStateOf(copy) {
   const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
   const state = copy && copy.state;
@@ -8548,6 +8566,7 @@ $('impFile').addEventListener('change', e => {
   if (!f) return;
   const fr = new FileReader();
   fr.onload = async () => {
+    let journalRestored = false;
     try {
       const o = JSON.parse(fr.result);
       const next = importStateOf(o);
@@ -8568,18 +8587,29 @@ $('impFile').addEventListener('change', e => {
       storedRaw = localStorage.getItem(KEY); // замена журнала явно подтверждена владельцем
       undoDrop();
       if (!flush()) { note('Копия прочитана, но записать её на устройство не вышло'); render(); return; }
+      journalRestored = true;
       // фото — только после удачного восстановления, только картинки и без замены своих
+      let skipped = 0, failed = 0;
       for (const k of Object.keys(o.photos || {})) {
-        if (!safeImg(o.photos[k])) continue;
-        let own = PHCACHE.get(k);
-        if (!own) { try { own = await phGet(k); } catch (e2) { own = null; } }
-        if (own) continue;                // свой снимок той же даты не заменяем
-        await phPut(k, o.photos[k]); PHCACHE.set(k, o.photos[k]);
+        if (!photoDayOk(k) || !safeImg(o.photos[k])) { skipped++; continue; }
+        try {
+          // Проверка и вставка в одной транзакции: ошибка чтения не означает
+          // отсутствие фото, соседнее окно тоже не может попасть между ними.
+          if (await phAddMissing(k, o.photos[k])) phChanged(k, o.photos[k]);
+        } catch (e2) { failed++; }
       }
-      await phSync();
+      const synced = await phSync();
       sel = today(); mo = sel.slice(0, 7);
-      render(); note('Прогресс восстановлен');
-    } catch (err) { note('Файл не подошёл'); }
+      render();
+      const issues = [];
+      if (skipped) issues.push('Пропущено фото с неверной датой или изображением: ' + skipped);
+      if (failed) issues.push('Не удалось добавить фото: ' + failed);
+      if (!synced) issues.push('Не удалось обновить список фото');
+      note(issues.length ? 'Журнал восстановлен. ' + issues.join('. ') : 'Прогресс восстановлен');
+    } catch (err) {
+      if (journalRestored) { render(); note('Журнал восстановлен, но обработать все фото не удалось'); }
+      else note('Файл не подошёл');
+    }
   };
   fr.readAsText(f);
 });
@@ -11493,16 +11523,34 @@ function idb() {
 }
 function tx(mode, fn) {
   return idb().then(d => new Promise((res, rej) => {
-    const t = d.transaction('ph', mode), st = t.objectStore('ph'), out = fn(st);
+    let t, out;
+    const fail = err => { d.close(); rej(err || new DOMException('Операция с фото прервана', 'AbortError')); };
+    try {
+      t = d.transaction('ph', mode);
+      t.onerror = () => fail(t.error);
+      t.onabort = () => fail(t.error);
     // у запроса без результата (нет такой даты) result === undefined,
     // и старая проверка возвращала наружу сам объект запроса вместо пустоты
-    t.oncomplete = () => res(out && typeof out === 'object' && 'result' in out ? out.result : out);
-    t.onerror = () => rej(t.error);
+      t.oncomplete = () => { d.close(); res(out && typeof out === 'object' && 'result' in out ? out.result : out); };
+      out = fn(t.objectStore('ph'));
+    } catch (err) {
+      if (t) { try { t.abort(); } catch (e) { /* уже завершена */ } }
+      fail(err);
+    }
   }));
 }
 const phPut = (k, v) => tx('readwrite', st => st.put(v, k));
 const phDelete = k => tx('readwrite', st => st.delete(k));
 const phGet = k => tx('readonly', st => st.get(k));
+const phAddMissing = (k, v) => tx('readwrite', st => {
+  const out = { added: false }, r = st.get(k);
+  r.onsuccess = () => {
+    if (r.result !== undefined) return;
+    try { st.add(v, k); out.added = true; }
+    catch (e) { st.transaction.abort(); }
+  };
+  return out;
+}).then(out => out.added);
 const phKeys = () => tx('readonly', st => st.getAllKeys());
 const phAll = () => tx('readonly', st => st.getAll());
 // Ключи и значения читаются в одной транзакции: удаление снимка в другом
@@ -11517,7 +11565,15 @@ const PHCACHE = new Map();
 const PHLIMIT = 12;
 
 async function phSync() {
-  try { PH = ((await phKeys()) || []).map(String).sort(); } catch (e) { PH = []; }
+  try { PH = ((await phKeys()) || []).filter(photoDayOk).sort(); return true; }
+  catch (e) { return false; }          // отказ чтения — не пустой архив
+}
+// Только после успешной транзакции: список/кэш согласованы с записью даже
+// если последующее чтение всего архива временно недоступно.
+function phChanged(day, image) {
+  if (image === undefined) { PHCACHE.delete(day); PH = PH.filter(k => k !== day); }
+  else { PHCACHE.set(day, image); PH = [...new Set([...PH, day])].filter(photoDayOk).sort(); }
+  if (PHCACHE.size > PHLIMIT) PHCACHE.delete(PHCACHE.keys().next().value);
 }
 async function phLoad(d) {
   if (!d) return null;
@@ -11617,11 +11673,10 @@ $('phFile').addEventListener('change', async e => {
     if (phSelections.get(day) !== selection) return;
     /* Новый снимок дня ложится поверх прежнего. Случайно выбранный файл
        стирал старое фото навсегда — держим прежнее в памяти для отмены. */
-    let old = null;
-    try { old = PHCACHE.get(day) || (await phGet(day)) || null; } catch (e2) { old = null; }
+    const old = (await phGet(day)) || null;
     if (phSelections.get(day) !== selection) return;
     await phPut(day, dat);
-    PHCACHE.set(day, dat);
+    phChanged(day, dat);
     await phSync();
     // Пока IndexedDB писала фото, журнал мог измениться или восстановиться.
     // Отмена возвращает фото, но не ту устаревшую копию журнала.
@@ -11630,7 +11685,7 @@ $('phFile').addEventListener('change', async e => {
     if (day === today() && !recOf(day).bw && num(S.bw)) { recRW(day).bw = S.bw; save(); }
     if (sel === day && tab === 'photo') paintPhotoScreen();
     offerUndo(snap, old ? 'Снимок за ' + fmt(day, 1) + ' заменён' : 'Снимок сохранён', { back: async () => {
-      if (old) { await phPut(day, old); PHCACHE.set(day, old); } else { await phDelete(day); PHCACHE.delete(day); }
+      if (old) { await phPut(day, old); phChanged(day, old); } else { await phDelete(day); phChanged(day); }
       await phSync();
     } });
   } catch (err) { note('Не удалось сохранить фото'); }
@@ -11642,16 +11697,17 @@ $('phDel').addEventListener('click', async () => {
   // Отказ в вопросе загрузку не отменяет.
   phSelections.set(day, (phSelections.get(day) || 0) + 1);
   // снимок живёт в IndexedDB, а не в S: для отмены держим его в памяти
-  let dat = null;
-  try { dat = PHCACHE.get(day) || (await phGet(day)) || null; } catch (e) { dat = null; }
-  await phDelete(day);
-  PHCACHE.delete(day);
-  await phSync();
-  const snap = snapS();
-  if (sel === day && tab === 'photo') paintPhotoScreen();
-  if (dat) offerUndo(snap, 'Фото за ' + fmt(day, 1) + ' удалено', { back: async () => {
-    await phPut(day, dat); PHCACHE.set(day, dat); await phSync();
-  } });
+  try {
+    const dat = await phGet(day);
+    await phDelete(day);
+    phChanged(day);
+    await phSync();
+    const snap = snapS();
+    if (sel === day && tab === 'photo') paintPhotoScreen();
+    if (dat) offerUndo(snap, 'Фото за ' + fmt(day, 1) + ' удалено', { back: async () => {
+      await phPut(day, dat); phChanged(day, dat); await phSync();
+    } });
+  } catch (e) { note('Не удалось удалить фото — попробуй ещё раз'); }
 });
 $('phW').addEventListener('input', e => {
   // Вес, вписанный рядом со снимком, — тот же самый вес. Раньше он ложился
