@@ -4797,6 +4797,9 @@ async function undoNow() {
   if (wasOpen) sheetClose();
   if (exOpen !== null && exOpen >= ((dayOf(sel) || {}).ex || []).length) exOpen = null;
   render();
+  // Отмена базы еды должна обновить открытую чистую форму, не стирая
+  // собственный черновик. drawPick согласует его с восстановленной базой.
+  if ($('fp').classList.contains('on')) drawPick($('fq').value);
   // набранные клетки повторов живут только на экране — возвращаем их как были до касания
   if (u.drafts && u.sel === sel) putDrafts(u.drafts);
   if (u.again && wasOpen) u.again();
@@ -4881,7 +4884,8 @@ addEventListener('click', e => {
   const el = e.target.closest('button,[role=button],[data-open],[data-tab]');
   if (!el || el.closest('#undo')) return;
   const k = tapKey(el), now = performance.now();
-  if (k === lastTap.k && now - lastTap.t < UNDO_TAP_MS) {
+  const replacedStart = lastTap.k === 'BUTTON#fin' && el.id === 'woCx';
+  if ((k === lastTap.k || replacedStart) && now - lastTap.t < UNDO_TAP_MS) {
     e.stopImmediatePropagation(); e.preventDefault(); return;
   }
   lastTap = { k, t: now };
@@ -7439,11 +7443,25 @@ function openHistory(name) {
 // одна точка входа для всех кнопок внутри шторки
 $('shB').addEventListener('click', e => {
   const mc = e.target.closest('[data-measch]');
-  if (mc) { measK = mc.dataset.measch; openMeas(); return; }
+  if (mc) {
+    const draft = [...$('shB').querySelectorAll('[data-mk]')].map(i => [i.dataset.mk, i.value]);
+    measK = mc.dataset.measch; openMeas();
+    // defaultValue остаётся сохранённым: × по-прежнему распознаёт грязную
+    // форму, даже если график перерисован несколько раз.
+    draft.forEach(([k, value]) => { const i = $('shB').querySelector('[data-mk="' + k + '"]'); if (i) i.value = value; });
+    return;
+  }
   const ms = e.target.closest('[data-measave]');
   if (ms) {
     const row = {};
-    $('shB').querySelectorAll('[data-mk]').forEach(inp => { const v = num(inp.value); if (v >= 10 && v <= 300) row[inp.dataset.mk] = Math.round(v * 10) / 10; });
+    for (const inp of $('shB').querySelectorAll('[data-mk]')) {
+      if (!inp.value.trim()) continue; // явно «не мерил», а не ошибка
+      const v = finiteDecimal(inp.value);
+      if (v === null || v < 10 || v > 300) {
+        note('Обхват — число от 10 до 300 см, например 82,5'); inp.focus(); return;
+      }
+      row[inp.dataset.mk] = Math.round(v * 10) / 10;
+    }
     if (!Object.keys(row).length) { note('Впиши хотя бы один обхват, в сантиметрах'); return; }
     const snap = snapS();
     S.meas = measAll(); S.meas[today()] = row;
@@ -11246,10 +11264,29 @@ $('cpLast').addEventListener('click', () => {
 
 /* ---------- поиск и добавление продукта ---------- */
 let pickMeal = null, pickDs = null, picked = [], chainFilter = '', pickBack = null;
+// Только на время одного открытия подбора: сырые строки не становятся
+// продуктом в базе и не попадают в журнал/localStorage без «Сохранить».
+const foodDrafts = new Map(), FOOD_FORM_KEYS = ['N', 'K', 'P', 'F', 'C'];
+let foodFormKey = null, pickEpoch = 0;
+const sameFoodForm = (a, b) => a.every((v, i) => v === b[i]);
+function rememberFoodForm() {
+  const draft = foodFormKey !== null && foodDrafts.get(foodFormKey);
+  if (draft && $('nfN')) draft.values = FOOD_FORM_KEYS.map(k => $('nf' + k).value);
+}
+function foodFormsDirty() {
+  rememberFoodForm();
+  return [...foodDrafts.values()].some(d => !sameFoodForm(d.values, d.baseline));
+}
+function clearFoodForms() { foodDrafts.clear(); foodFormKey = null; }
 
-function openPick(j) {
+async function openPick(j) {
+  const ds = sel, epoch = pickEpoch;
+  if ($('fp').classList.contains('on') && (picked.length || foodFormsDirty()) &&
+    !(await ask('Открыть другой подбор? Несохранённые продукты и выбранные позиции пропадут.', 'ОТКРЫТЬ'))) return;
+  if (epoch !== pickEpoch) return;
   if (!$('fp').classList.contains('on')) pickBack = document.activeElement;
-  pickMeal = j; pickDs = sel; picked = []; chainFilter = '';
+  pickEpoch++; clearFoodForms();
+  pickMeal = j; pickDs = ds; picked = []; chainFilter = '';
   $('fq').value = '';
   drawPick('');
   $('fp').classList.add('on');
@@ -11257,6 +11294,7 @@ function openPick(j) {
   $('fq').focus({ preventScroll: true });
 }
 function closePick() {
+  pickEpoch++; clearFoodForms();
   picked = []; paintPickBar();
   $('fp').classList.remove('on');
   syncModalScroll();
@@ -11265,6 +11303,7 @@ function closePick() {
 }
 
 function drawPick(raw) {
+  rememberFoodForm(); foodFormKey = null;
   const q = String(raw ?? '').trim().toLowerCase();
   const typed = String(raw ?? '').trim();     // как человек написал, с заглавными
   let base = allFood();
@@ -11295,13 +11334,24 @@ function drawPick(raw) {
   const my = q ? (S.myFood || []).find(f => String(f.n).toLowerCase() === q) : null;
   if (q && (my || !list.some(f => f[0].toLowerCase() === q))) {
     const v = my || {};
+    const baseline = [String(my ? my.n : typed), ...['k', 'p', 'f', 'c'].map(k => String(v[k] ?? ''))];
+    let draft = foodDrafts.get(q);
+    if (!draft) draft = {values: baseline.slice(), baseline};
+    else {
+      // Undo/правка базы: чистая форма следует базе, грязные сырые строки
+      // остаются. Новая baseline сохраняет честный вопрос при закрытии.
+      if (sameFoodForm(draft.values, draft.baseline)) draft.values = baseline.slice();
+      draft.baseline = baseline;
+    }
+    foodDrafts.set(q, draft); foodFormKey = q;
+    const fv = draft.values;
     h = `<div class="fpn"><p>${my ? 'Свой продукт — можно поправить значения на 100 г.'
         : 'Нет в базе? Добавь свой продукт — значения на 100 г.'}</p>
-      <div class="r"><input id="nfN" placeholder="название" value="${esc(my ? my.n : typed)}" aria-label="Название">
-        <input id="nfK" inputmode="numeric" placeholder="ккал" value="${esc(v.k ?? '')}" aria-label="Калории">
-        <input id="nfP" inputmode="decimal" placeholder="белок" value="${esc(v.p ?? '')}" aria-label="Белок">
-        <input id="nfF" inputmode="decimal" placeholder="жир" value="${esc(v.f ?? '')}" aria-label="Жир">
-        <input id="nfC" inputmode="decimal" placeholder="угл" value="${esc(v.c ?? '')}" aria-label="Углеводы"></div>
+      <div class="r"><input id="nfN" placeholder="название" value="${esc(fv[0])}" aria-label="Название">
+        <input id="nfK" inputmode="numeric" placeholder="ккал" value="${esc(fv[1])}" aria-label="Калории">
+        <input id="nfP" inputmode="decimal" placeholder="белок" value="${esc(fv[2])}" aria-label="Белок">
+        <input id="nfF" inputmode="decimal" placeholder="жир" value="${esc(fv[3])}" aria-label="Жир">
+        <input id="nfC" inputmode="decimal" placeholder="угл" value="${esc(fv[4])}" aria-label="Углеводы"></div>
       <button id="nfSave">${my ? 'ОБНОВИТЬ ПРОДУКТ' : 'СОХРАНИТЬ В БАЗУ'}</button></div>` + h;
   }
 
@@ -11325,12 +11375,18 @@ function paintPickBar() {
 $('fq').addEventListener('input', e => drawPick(e.target.value));
 // выбранные, но не добавленные продукты живут только здесь — × их молча терял
 $('fpX').addEventListener('click', async () => {
-  const n = picked.length;
-  if (n && !(await ask('Закрыть подбор? Выбрано позиций: ' + n + ' — они не добавятся.', 'ЗАКРЫТЬ'))) return;
+  const n = picked.length, dirty = foodFormsDirty(), epoch = pickEpoch;
+  if ((n || dirty) && !(await ask(dirty
+    ? 'Закрыть подбор? Несохранённые правки продуктов пропадут.' + (n ? ' Выбрано позиций: ' + n + ' — они не добавятся.' : '')
+    : 'Закрыть подбор? Выбрано позиций: ' + n + ' — они не добавятся.', 'ЗАКРЫТЬ'))) return;
+  if (epoch !== pickEpoch) return;
   closePick();
 });
-$('fpAdd').addEventListener('click', () => {
+$('fpAdd').addEventListener('click', async () => {
   if (!picked.length) return;
+  const epoch = pickEpoch;
+  if (foodFormsDirty() && !(await ask('Добавить выбранные позиции? Несохранённые правки продуктов пропадут.', 'ДОБАВИТЬ'))) return;
+  if (epoch !== pickEpoch) return;
   /* Позиции идут в тот приём и тот день, откуда открыт подбор. Раньше брался
      текущий день: сменил день или убрал приём — и кнопка падала. */
   const ds = pickDs || sel, list = mealsOf(ds), meal = list[pickMeal];
@@ -11342,11 +11398,13 @@ $('fpAdd').addEventListener('click', () => {
   }
   const m = mealsRW(ds)[pickMeal];
   if (!m) { closePick(); paintFood(); note('Этого приёма пищи уже нет — позиции не добавлены'); return; }
+  const snap = snapS(); // после ожидания подтверждения, до записи позиций
   if (!Array.isArray(m.items)) m.items = [];
   const items = m.items;
   picked.forEach(x => items.push({ p: x.p, g: x.g }));
   const cnt = picked.length;
   save(); closePick(); paintFood(); note('Добавлено позиций: ' + cnt);
+  offerUndo(snap, 'Добавлено позиций: ' + cnt);
 });
 $('fpl').addEventListener('click', e => {
   const ch = e.target.closest('[data-ch]');
@@ -11414,6 +11472,7 @@ $('fpl').addEventListener('click', e => {
     invalidateFood(); save();
     note(at >= 0 ? 'Продукт обновлён' : 'Продукт добавлен в базу');
     $('fq').value = n;
+    foodDrafts.delete(foodFormKey); foodDrafts.delete(n.toLowerCase()); foodFormKey = null;
     drawPick(n); paintFood();
   }
 });
