@@ -10,8 +10,12 @@ const bad=(n,d)=>{fails++;console.log('  ✗ '+n+(d?'   → '+d:''));};
 const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
 (async()=>{
   const b=await chromium.launch(LAUNCH);
-  const p=await(await b.newContext({viewport:{width:390,height:844}})).newPage();
+  const p=await(await b.newContext({viewport:{width:390,height:844},timezoneId:'Asia/Vladivostok'})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  // A month boundary can also finish a quest in the same action. Its toast
+  // must not obscure why the working weight changed. Keep this deterministic.
+  await p.clock.install({time:new Date('2026-10-14T12:00:00+10:00')});
+  await p.clock.resume();
   await p.goto(APP); await p.waitForTimeout(1300);
   await p.evaluate(()=>{S.setup=1;document.getElementById('setup').classList.remove('on');S.sound=0;save();});
 
@@ -62,11 +66,15 @@ const chk=(c,n,d)=>c?ok(n,d):bad(n,d);
     [...card.querySelectorAll('[data-rs]')].slice(0,3).forEach((x,i)=>{x.value=[5,4,4][i];});
     toggleSet(j);
     const e=S.days[wdOf(ds)].ex[j];
-    return {вес:num(e.w), сниж:!!recOf(ds).log[j].down, текст:document.getElementById('noteT').textContent};
+    const xp=S.xp,quest=questDone(today().slice(0,7)).slice();checkQuests();
+    return {вес:num(e.w), сниж:!!recOf(ds).log[j].down, текст:document.getElementById('noteT').textContent,
+      quest,xpSame:S.xp===xp,ton:dayTon(ds)};
   },[prep.имя, prep.даты[2]||prep.даты[1]]);
   chk(!res.err,'4. карточка открылась',res.err||'открылась');
   chk(res.вес===47.5,'5. рабочий вес снижен на шаг сетки','стало '+res.вес+' кг из 50');
   chk(/снижен/.test(res.текст||''),'6. человеку сказали, почему вес упал',res.текст);
+  chk(res.quest.includes('ton')&&res.xpSame,'6a. квест тоже начислен, повтор не удваивает XP',JSON.stringify(res.quest));
+  chk(res.ton===650,'6b. приоритет сообщения не меняет фактический тоннаж',res.ton+' кг');
 
   // 7. снятая отметка возвращает вес обратно
   const undo=await p.evaluate(([имя,ds])=>{

@@ -14,6 +14,13 @@ const chk = (yes, name, detail) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.route('https://cdn.jsdelivr.net/**', r => r.abort());
+  await page.addInitScript(() => {
+    window.catalogPrimary = () => JSON.stringify(Object.fromEntries(Object.entries(S.rec).flatMap(([ds, r]) => {
+      const x = { ...r }; delete x.pe;
+      const empty = Object.keys(x).every(k => k === 'wo' && !x.wo || (k === 'log' || k === 'sp') && !Object.keys(x[k] || {}).length);
+      return empty ? [] : [[ds, x]];
+    })));
+  });
   await page.goto(APP);
   await page.waitForFunction(() => typeof S !== 'undefined' && typeof render === 'function' && !document.getElementById('boot') && document.getElementById('setup').classList.contains('on'));
   await page.evaluate(async () => {
@@ -137,7 +144,7 @@ const chk = (yes, name, detail) => {
     S.myEx[legacy] = 'Спина'; S.libEx[legacy] = [first, 'Спина'];
     dayOf(today()).ex = [{ n: legacy, g: 'Спина', s: 3, r: '8-10', w: 20 }];
     S.rec = { '2026-09-01': { log: { 0: { n: legacy, g: 'Спина', s: 3, r: '8-10', w: 20, rs: [8, 8, 8], done: 1 } } } };
-    const rec = JSON.stringify(S.rec);
+    const rec = catalogPrimary(), oldDates = new Set(Object.keys(S.rec));
     libAdd(second, today());
     const added = dayOf(today()).ex[1];
     const secondId = S.libEx[added.n] && S.libEx[added.n][0];
@@ -146,11 +153,13 @@ const chk = (yes, name, detail) => {
     flush();
     return { old: S.libEx[legacy][0], added: added.n, secondId, oldName: dayOf(today()).ex[0].n,
       count: dayOf(today()).ex.length, repeatUnchanged: JSON.stringify(S) === beforeRepeat,
-      history: JSON.stringify(S.rec) === rec };
+      history: catalogPrimary() === rec,
+      eligibility: Object.values(S.rec).every(r => r.pe === undefined || typeof r.pe === 'boolean'),
+      metadataOnly: Object.entries(S.rec).filter(([ds]) => !oldDates.has(ds)).every(([, r]) => typeof r.pe === 'boolean' && !r.wo && !Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && Object.keys(r).every(k => ['pe', 'wo', 'log', 'sp'].includes(k))) };
   });
   chk(identity.old === 'Bent_Over_One-Arm_Long_Bar_Row' && identity.secondId === 'One-Arm_Long_Bar_Row' &&
     identity.added !== 'Тяга Т-грифа одной рукой' && identity.oldName === 'Тяга Т-грифа одной рукой' &&
-    identity.count === 2 && identity.repeatUnchanged && identity.history,
+    identity.count === 2 && identity.repeatUnchanged && identity.history && identity.eligibility && identity.metadataOnly,
     'другой вариант сохраняет прежнюю личность; повтор прежнего id не добавляет дубликат и не меняет состояние', identity);
 
   await page.waitForTimeout(400); // повторное действие после защиты от двойного тапа

@@ -16,6 +16,11 @@ const chk = (yes, name, detail) => {
   await page.goto(APP);
   await page.waitForFunction(() => typeof S !== 'undefined' && typeof render === 'function' && !document.getElementById('boot'));
   await page.evaluate(async () => {
+    window.catalogPrimary = () => JSON.stringify(Object.fromEntries(Object.entries(S.rec).flatMap(([ds, r]) => {
+      const x = { ...r }; delete x.pe;
+      const empty = Object.keys(x).every(k => k === 'wo' && !x.wo || (k === 'log' || k === 'sp') && !Object.keys(x[k] || {}).length);
+      return empty ? [] : [[ds, x]];
+    })));
     S.setup = 1; S.sound = 0; S.hints = 0;
     document.getElementById('setup').classList.remove('on');
     S.rec = {}; S.once = {}; S.fav = []; S.libEx = {}; S.myEx = {};
@@ -106,14 +111,16 @@ const chk = (yes, name, detail) => {
   // Новое избранное не имеет S.libEx до первого добавления: простой push
   // имени теряет id, мышцу и фотографию, хотя оно видно в обычном выборе.
   const favAdd = await page.evaluate(() => {
-    const history = JSON.stringify(S.rec);
+    const history = catalogPrimary(), oldDates = new Set(Object.keys(S.rec));
     document.querySelector('#shB [data-addex="«Гусеница»"]').click();
     const added = dayOf(today()).ex.find(e => e.n === '«Гусеница»');
     return { added, link: S.libEx['«Гусеница»'], muscle: added && muscleOf(added.n, added.g),
-      image: exPic('«Гусеница»', 0), history: history === JSON.stringify(S.rec) };
+      image: exPic('«Гусеница»', 0), history: history === catalogPrimary(),
+      eligibility: Object.values(S.rec).every(r => r.pe === undefined || typeof r.pe === 'boolean'),
+      metadataOnly: Object.entries(S.rec).filter(([ds]) => !oldDates.has(ds)).every(([, r]) => typeof r.pe === 'boolean' && !r.wo && !Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && Object.keys(r).every(k => ['pe', 'wo', 'log', 'sp'].includes(k))) };
   });
   chk(favAdd.added && favAdd.added.g === 'Ноги' && favAdd.link && favAdd.link[0] === 'Inchworm' &&
-    favAdd.muscle === 'Бицепс бедра' && /\/Inchworm\/0\.jpg$/.test(favAdd.image) && favAdd.history,
+    favAdd.muscle === 'Бицепс бедра' && /\/Inchworm\/0\.jpg$/.test(favAdd.image) && favAdd.history && favAdd.eligibility && favAdd.metadataOnly,
   'избранное из обычного выбора сохраняет id, мышцу и фото без изменения прошлых записей', favAdd);
 
   const picker = await page.evaluate(() => {

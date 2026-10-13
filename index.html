@@ -3166,6 +3166,7 @@ document.documentElement.dataset.skin = 'sl';
     <input id="exs" class="exs" type="search" placeholder="Поиск упражнений" autocomplete="off" aria-label="Поиск упражнений">
     <button type="button" class="hib" data-hint="lib" aria-label="Подсказка: каталог"></button>
     <button class="exfb" id="exf" aria-label="Фильтры"><svg viewBox="0 0 24 24"><path d="M3 6h11a3 3 0 0 1 5.8 0H21v2h-1.2a3 3 0 0 1-5.8 0H3zm13.9 1a1.1 1.1 0 1 0 0 .01zM3 16h2.2a3 3 0 0 1 5.8 0H21v2H11a3 3 0 0 1-5.8 0H3zm5.1 1a1.1 1.1 0 1 0 0 .01z"/></svg></button>
+    <button type="button" class="gear" data-settings aria-label="Настройки">⚙</button>
   </div>
   <div class="exmu" id="exmu" role="toolbar" aria-label="Мышцы"></div>
   <div class="exact" id="exact"></div>
@@ -3214,6 +3215,7 @@ document.documentElement.dataset.skin = 'sl';
     <button data-sec="load">Нагрузка</button>
     <button data-sec="goal">Цель</button>
     <button data-sec="prog">Веса</button>
+    <button type="button" class="gear" data-settings aria-label="Настройки">⚙</button>
   </div>
 
   <div class="psec" data-s="log">
@@ -3384,7 +3386,7 @@ document.documentElement.dataset.skin = 'sl';
 
 <!-- ================= ФОТО ================= -->
 <section class="scr" id="scr-photo">
-  <div class="shead"><h2><span>Фото</span><i></i><button type="button" class="hib" data-hint="photo" aria-label="Подсказка: фото"></button></h2><p id="phDate">снимок за выбранный день</p></div>
+  <div class="shead"><h2><span>Фото</span><i></i><button type="button" class="hib" data-hint="photo" aria-label="Подсказка: фото"></button><button type="button" class="gear" data-settings aria-label="Настройки">⚙</button></h2><p id="phDate">снимок за выбранный день</p></div>
   <div class="win ph" style="margin-top:10px">
     <div class="phbox">
       <div class="phthumb" id="phT"><span>+</span></div>
@@ -4500,6 +4502,7 @@ function scrubKeys() {
     if (r.sp !== undefined && !plain(r.sp)) r.sp = {};
     if (r.dt !== undefined && !TYPES.some(([k]) => k === r.dt)) { delete r.dt; delete r.dn; }
     if (r.dn !== undefined && typeof r.dn !== 'string') delete r.dn;
+    if (r.pe !== undefined && typeof r.pe !== 'boolean') delete r.pe;
     if (r.ml !== undefined) r.ml = meals(r.ml) || [];
   });
 }
@@ -4511,6 +4514,7 @@ let undoSeq = 0, noteSeq = 0, undoQuiet = false, undoSay = '', tapDrafts = null;
 let fieldSnap = null, fieldEl = null;
 let shRe = null;                 // как заново открыть шторку, в которой сделано действие
 let shBack = null;
+let sheetSeq = 0;                // открытие, замена и закрытие — разные окна для поздней отмены
 /* На телефоне один тап иногда приходит дважды до перерисовки. Блокируем
    только повтор одной пишущей операции на короткое время. */
 const pendingActions = new Set();
@@ -4607,6 +4611,31 @@ const dayOf = ds => {
    и прошлые тренировки в журнале и календаре. */
 const dayLook = ds => { const r = S.rec[ds], d = dayOf(ds) || {};
   return r && r.dt ? { t: r.dt, s: r.dn || d.s } : { t: d.t, s: d.s }; };
+// Порог прошлой недели помнит и непустоту плана, а не только тип дня.
+const dayEligible = ds => {
+  const r = S.rec[ds], d = dayOf(ds);
+  return ds < today() && r && typeof r.pe === 'boolean' ? r.pe
+    : dayLook(ds).t !== 'rest' && !!(d && (d.ex || []).length);
+};
+// Порог использует целую неделю старта. Старая отдельная запись не должна
+// расходовать лимит обхода или создавать годы пустого журнала до программы.
+function pastScheduleEach(visit) {
+  const from = mondayOf(planStart()), t = today();
+  const earlier = new Set(Object.keys(S.rec).filter(ds => okDay(ds) && ds < from && ds < t).map(mondayOf));
+  for (const c = at(from); iso(c) < t; c.setDate(c.getDate() + 1)) visit(iso(c));
+  earlier.forEach(mon => {
+    for (let i = 0; i < 7; i++) { const ds = addDays(mon, i); if (ds < from && ds < t) visit(ds); }
+  });
+}
+// Вызывать после снимка Undo, до изменения затронутых шаблонов.
+function freezeSchedule(indices) {
+  const slots = new Set(indices);
+  pastScheduleEach(ds => {
+    if (!slots.has(dayIdx(ds))) return;
+    const eligible = dayEligible(ds), r = recRW(ds);
+    if (typeof r.pe !== 'boolean') r.pe = eligible;
+  });
+}
 const recOf = ds => {                                         // чтение — без создания пустышек
   const r = S.rec[ds];
   if (!r) return EMPTY;
@@ -4784,6 +4813,7 @@ function offerUndo(snap, text, opt) {
 async function undoNow() {
   const u = undoRec; if (!u) return;
   if (u.busy) return;
+  const undoSheet = sheetSeq;
   if (u.local) { undoDrop(); note(u.local() === false ? 'Экран уже перерисован — отменять нечего' : 'Отменено'); return; }
   let back;
   try { back = JSON.parse(u.s); } catch (e) { return; }
@@ -4809,7 +4839,9 @@ async function undoNow() {
   save(); flush();
   // шторку, открытую самим действием (итоги тренировки), отмена закрывает;
   // шторку, в которой действие сделано («Неделя», рацион), открывает заново
-  const wasOpen = $('sh').classList.contains('on');
+  // Пока IDB отвечала, пользователь мог открыть другую форму с черновиком.
+  // Закрывать/строить заново можно только то же окно, что было при нажатии.
+  const wasOpen = sheetSeq === undoSheet && $('sh').classList.contains('on');
   if (wasOpen) sheetClose();
   if (exOpen !== null && exOpen >= ((dayOf(sel) || {}).ex || []).length) exOpen = null;
   render();
@@ -4988,6 +5020,7 @@ $('ask').addEventListener('click', e => { if (e.target.id === 'ask' && $('askI')
 /* ---------- общая шторка ---------- */
 /* Третий аргумент — ключ подсказки (HINTS): у шапки шторки появляется «i». */
 function sheet(title, html, hint) {
+  sheetSeq++;
   if (!$('sh').classList.contains('on')) shBack = document.activeElement;
   shRe = null;                  // шторку, которая умеет открыться заново, отмечает её хозяин
   $('shT').textContent = title;
@@ -4999,6 +5032,7 @@ function sheet(title, html, hint) {
   $('shX').focus({ preventScroll: true });
 }
 function sheetClose() {
+  sheetSeq++;
   $('sh').classList.remove('on'); document.body.style.overflow = '';
   const b = shBack; shBack = null;
   if (b && b.isConnected && b.getClientRects().length) b.focus({ preventScroll: true });
@@ -5144,6 +5178,9 @@ $('toToday').addEventListener('click', () => { sel = today(); mo = sel.slice(0, 
 // а экран настроек был написан, но никуда не привязан — сменить тему
 // было физически нечем.
 $('gear').addEventListener('click', () => { edit = false; openSettings(); });
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-settings]')) { edit = false; openSettings(); }
+});
 $('dnm').addEventListener('input', e => { dayOf(sel).n = e.target.value; save(); });
 /* Тип дня недели во всех неделях. Раньше жил в скрытой панели под
    шестерёнкой рядом с переносом «только эта дата» — вторым, старым способом
@@ -5155,20 +5192,17 @@ async function setDayType(i, nt) {
   const ok = await ask('Поменять ' + d.k + ' во всех неделях плана? Прошедшие тренировки останутся как были. ' +
     'Если нужно только на одной дате — отмени и выбери её в «Эта неделя».', 'ПОМЕНЯТЬ');
   if (!ok) return false;
-  const snap = snapS(), t = today();
+  const snap = snapS();
+  freezeSchedule([i]);
   /* Прошлое без записей — тоже прошлое: отдых прошлых воскресений после
      «воскресенье — тренировка» становился пропущенной тренировкой в
      посещаемости, итогах месяца и «Слабом звене». Снимок типа получают все
-     прошедшие даты этого дня — от старта плана или первой записи, как при
-     обмене дней шаблона (swapWeekdays). */
-  let from = planStart();
-  Object.keys(S.rec).forEach(ds => { if (okDay(ds) && ds < from) from = ds; });
-  for (let c = at(from), g = 0; iso(c) < t && g < 4000; c.setDate(c.getDate() + 1), g++) {
-    const ds = iso(c);
-    if (dayIdx(ds) !== i) continue;
+     прошедшие даты этого дня в плане и недели более ранних записей. */
+  pastScheduleEach(ds => {
+    if (dayIdx(ds) !== i) return;
     const r = recRW(ds);
     if (!r.dt) { r.dt = was; r.dn = d.s; }
-  }
+  });
   d.t = nt;
   // подпись дня идёт следом за типом, иначе «Низ тела» висит над жимом лёжа
   const src = TPL.find(x => x.t === nt);
@@ -5272,6 +5306,7 @@ function swapDates(a, b) {
    приседом. Даты с переносом идут следом за своей тренировкой. */
 function swapWeekdays(i, j) {
   if (i === j || !S.days[i] || !S.days[j]) return false;
+  freezeSchedule([i, j]);
   const t = today(), keep = {}, oldSp = {}, oldEx = {};
   Object.keys(S.rec).forEach(ds => { if (okDay(ds) && S.rec[ds] && S.rec[ds].sp) oldSp[ds] = spOf(ds); });
   Object.keys(S.rec).forEach(ds => { if (okDay(ds)) oldEx[ds] = (dayOf(ds) || {}).ex; });
@@ -5848,6 +5883,7 @@ $('exl').addEventListener('click', e => {
       if (!ok) return;
       const snap = snapS();              // одна отмена вернёт и упражнение, и стёртые записи
       const r = recRW(day), l = r.log[j], di = dayIdx(day);
+      freezeSchedule([di]);
       // У каждой даты свои разовые замены; черновик ещё не хранит имя.
       // Снимки снимаются до изменения общего шаблона, а Proxy не ищется
       // через indexOf среди настоящих объектов S.days.
@@ -5934,7 +5970,7 @@ function purgeExercise(name) {
     });
     // день без единой отметки и без отметки о тренировке больше не нужен
     const r = S.rec[ds];
-    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw && !r.skip && !r.dt) delete S.rec[ds];
+    if (!Object.keys(r.log || {}).length && !Object.keys(r.sp || {}).length && !r.wo && !r.bw && !r.skip && !r.dt && r.pe === undefined) delete S.rec[ds];
   });
   delete S.pr[name];
   recomputeStats(1);
@@ -6626,9 +6662,14 @@ function toggleSet(j) {
   /* Таймера отдыха нет (решение владельца, 30.09.2026): сколько отдыхать,
      человек чувствует сам, а сам собой включавшийся отсчёт только мешал. */
 
+  const weightNoteSeq = noteSeq;
   maybeProgress(l, p, w);
   maybeRegress(l, p, w);
+  const weightNote = noteSeq !== weightNoteSeq ? $('noteT').textContent : '';
+  // Квест считается после прогрессии, как прежде (включая legacy fallback).
+  // Только представление: награда не скрывает причину изменения веса.
   checkQuests();
+  if (weightNote && $('noteT').textContent !== weightNote) note(weightNote);
 }
 
 /* Сколько тренировок подряд, считая эту, низ диапазона не добран на рабочем
@@ -7515,6 +7556,7 @@ $('shB').addEventListener('click', e => {
     const name = n[0].toUpperCase() + n.slice(1);
     if (exAlreadyInDay(sel, name)) return;
     runOnce('myex:' + sel + ':' + name, () => {
+      freezeSchedule([dayIdx(sel)]);
       S.myEx = myEx(); S.myEx[name] = g;
       dayOf(sel).ex.push({ n: name, s: 3, r: '8-10', w: 0, g: g });
       save(); sheetClose(); render(); note('Своё упражнение добавлено: ' + name);
@@ -7530,6 +7572,7 @@ $('shB').addEventListener('click', e => {
     const n = ax.dataset.addex;
     if (exAlreadyInDay(sel, n)) return;
     runOnce('addex:' + sel + ':' + n, () => {
+      freezeSchedule([dayIdx(sel)]);
       dayOf(sel).ex.push({ n: n, s: 3, r: '8-10', w: startWeight(n), g: grpOf(n) });
       save(); sheetClose(); render(); note('Добавлено: ' + n);
     });
@@ -7579,11 +7622,13 @@ $('shB').addEventListener('click', e => {
   if (t) { putRation((S.tpl[+t.dataset.tpl] || {}).ml || [], 'Шаблон применён'); return; }
 
   if (e.target.closest('[data-save]')) {
+    const ds = sel;
     // пустой шаблон сохранять незачем: он потом молча сотрёт живой день
-    if (!daySum(sel).k) { note('В этом дне пока ничего не записано'); return; }
+    if (!daySum(ds).k) { note('В этом дне пока ничего не записано'); return; }
+    const ml = JSON.parse(JSON.stringify(mealsOf(ds)));
     askText('Название шаблона', 'Обычный день').then(n => {
       if (!n) return;
-      S.tpl.push({ n: n, ml: JSON.parse(JSON.stringify(mealsOf(sel))) });
+      S.tpl.push({ n: n, ml: ml });
       save(); openRation(); note('Шаблон сохранён');
     });
   }
@@ -7592,13 +7637,14 @@ $('shB').addEventListener('click', e => {
 /* Рацион кладётся поверх дня целиком. Раньше одно касание молча стирало
    уже записанную еду — теперь, если в дне что-то есть, сначала спрашиваем. */
 async function putRation(ml, msg) {
-  const cur = daySum(sel);
+  const ds = sel, cur = daySum(ds);
+  const ration = JSON.parse(JSON.stringify(ml));
   if (cur.k > 0) {
     const okGo = await ask('В этом дне уже записано ' + rnd(cur.k) + ' ккал. Заменить рацион целиком?', 'ЗАМЕНИТЬ');
     if (!okGo) return;
   }
   const snap = snapS();
-  recRW(sel).ml = JSON.parse(JSON.stringify(ml));
+  recRW(ds).ml = ration;
   save(); sheetClose(); render(); offerUndo(snap, msg);
 }
 
@@ -8271,8 +8317,8 @@ const weekNeed = ds => {
   const mon = mondayOf(ds);
   let n = 0;
   for (let i = 0; i < 7; i++) {
-    const date = addDays(mon, i), d = dayOf(date);
-    if (dayLook(date).t !== 'rest' && d && (d.ex || []).length) n++;
+    const date = addDays(mon, i);
+    if (dayEligible(date)) n++;
   }
   return Math.max(1, n - 1);
 };
@@ -8283,14 +8329,14 @@ function streak() {
     const m = mondayOf(d);
     if (m) cnt[m] = (cnt[m] || 0) + 1;
   });
-  const need = weekNeed(), pz = S.pause || {};
+  const pz = S.pause || {};
   let n = 0;
   const c = at(mondayOf(today()));
-  if ((cnt[iso(c)] || 0) < need) c.setDate(c.getDate() - 7);   // текущую считаем только закрытой
+  if ((cnt[iso(c)] || 0) < weekNeed(iso(c))) c.setDate(c.getDate() - 7);   // текущую считаем только закрытой
   // неделя на паузе (болел, уехал) серию не рвёт и в неё не идёт — её перешагиваем
   for (let g = 0; g < 5200; g++) {
     const k = iso(c);
-    if ((cnt[k] || 0) >= need) n++;
+    if ((cnt[k] || 0) >= weekNeed(k)) n++;
     else if (!pz[k]) break;
     c.setDate(c.getDate() - 7);
   }
@@ -9548,6 +9594,7 @@ function libAdd(id, ds) {
   if (exAlreadyInDay(ds, name, o.custom ? '' : o.id)) return;
   runOnce('libadd:' + ds + ':' + name, () => {
     const snap = snapS();
+    freezeSchedule([dayIdx(ds)]);
     if (!EXDB[name] && !o.custom) {
       S.myEx = myEx(); if (!S.myEx[name]) S.myEx[name] = libGroup(o);
       if (!S.libEx || typeof S.libEx !== 'object') S.libEx = {};
@@ -9738,10 +9785,11 @@ const swapCur = () => (((dayOf(SW.ds) || {}).ex || [])[SW.j]) || null;
 function openSwap(j, pickName) {
   const e = ((dayOf(sel) || {}).ex || [])[j];
   if (!e) return;
-  Object.assign(SW, { ds: sel, j, eq: '', q: '', n: 30, pick: null, all: false, w: '', cands: null, from: e.n });
+  const request = {};
+  Object.assign(SW, { ds: sel, j, eq: '', q: '', n: 30, pick: null, all: false, w: '', cands: null, from: e.n, offline: 0, request });
   sheet('ЗАМЕНА', '<div class="swap" id="swBox"><p class="lmsg">Подбираю аналоги по типу движения…</p></div>');
   const go = () => {
-    if (!$('swBox') || SW.from !== e.n) return;
+    if (SW.request !== request || !$('swBox') || SW.from !== e.n) return;
     if (pickName) {
       const x = SW.cands.find(c => c.o.n === pickName) ||
         (libByName(pickName) ? { o: libByName(pickName), tier: 1 } : swapCandsOffline(e.n, sel).find(c => c.o.n === pickName));
@@ -9749,8 +9797,13 @@ function openSwap(j, pickName) {
     }
     paintSwap();
   };
-  loadLib().then(() => { SW.cands = swapCands(e.n, SW.ds); go(); })
-    .catch(() => { SW.cands = swapCandsOffline(e.n, SW.ds); SW.offline = 1; go(); });
+  loadLib().then(() => {
+    if (SW.request !== request) return;
+    SW.offline = 0; SW.cands = swapCands(e.n, SW.ds); go();
+  }).catch(() => {
+    if (SW.request !== request) return;
+    SW.cands = swapCandsOffline(e.n, SW.ds); SW.offline = 1; go();
+  });
 }
 function swapList() {
   const q = libNorm(SW.q).trim().split(/\s+/).filter(Boolean), eqs = SW_EQS[SW.eq];
@@ -11213,12 +11266,12 @@ $('mll').addEventListener('click', e => {
   }
   const d = e.target.closest('[data-mld]');
   if (d) {
-    const j = +d.dataset.mld;
-    const mn = (mealsOf(sel)[j] || {}).n;
+    const ds = sel, j = +d.dataset.mld;
+    const mn = (mealsOf(ds)[j] || {}).n;
     ask('Убрать «' + mn + '»?').then(ok => {
       if (!ok) return;
       const snap = snapS();
-      mealsRW(sel).splice(j, 1); save(); paintFood();
+      mealsRW(ds).splice(j, 1); save(); paintFood();
       offerUndo(snap, '«' + mn + '» убран');
     });
   }
@@ -11493,10 +11546,11 @@ $('fpl').addEventListener('click', e => {
     if (lists.some(list => !finiteFoodTotals(list, replacement))) {
       note('КБЖУ слишком велики для записанных порций — проверь числа'); return;
     }
+    const renameSnap = oldN && oldN !== n ? snapS() : null;
     if (oldN && oldN !== n) {
       const walk = o => { if (Array.isArray(o)) o.forEach(walk);
         else if (o && typeof o === 'object') { if (o.p === oldN) o.p = n; Object.values(o).forEach(walk); } };
-      walk(S.rec); walk(S.days); walk(S.tpl);
+      walk(S.rec); walk(S.days); walk(S.tpl); walk(picked);
     }
     if (at >= 0) S.myFood[at] = rec; else S.myFood.push(rec);
     invalidateFood(); save();
@@ -11504,6 +11558,9 @@ $('fpl').addEventListener('click', e => {
     $('fq').value = n;
     foodDrafts.delete(foodFormKey); foodDrafts.delete(n.toLowerCase()); foodFormKey = null;
     drawPick(n); paintFood();
+    if (renameSnap) offerUndo(renameSnap, 'Продукт обновлён', { back: () => {
+      picked.forEach(it => { if (it.p === n) it.p = oldN; });
+    } });
   }
 });
 

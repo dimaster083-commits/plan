@@ -68,6 +68,8 @@ h2.sec{padding:8px 0;border:0;border-radius:0;margin:18px 0 8px}
 .dh h3 input{min-height:44px}
 .dh p{font-size:12px;color:var(--ink3);font-weight:500;margin-top:3px}
 .gear{width:44px;height:44px;border-radius:12px;background:var(--s1);border-color:var(--ln);font-size:18px}
+.exhd .gear,.pseg button.gear{flex:0 0 44px;padding:0;font-size:18px}
+#scr-photo .shead .gear{margin-left:auto;flex:0 0 44px}
 .dateline{font-size:9px;letter-spacing:.08em;margin:10px 0 14px;color:var(--ink3)}
 .dateline #wkPlan{font-size:10px;letter-spacing:0;border-radius:10px;padding:0 11px;background:transparent;border-color:var(--ln)}
 /* Квест тренировки: один акцент на цели и тонкая шкала выполнения. */
@@ -202,7 +204,11 @@ body.exopen .exfbar{background:var(--s0);padding:6px 0 10px;align-items:center}
 .shead h2{font-family:var(--f);font-size:28px;letter-spacing:-.03em}
 .pseg{border-radius:12px;padding:4px;background:var(--s1);border:1px solid var(--ln)}
 :root[data-skin="sl"] .pseg button{border-radius:8px;font-family:var(--f);font-size:12px}
+:root[data-skin="sl"] .pseg button.gear{font-size:18px}
 .pseg button.on{background:var(--s3);color:var(--ink);box-shadow:none}
+/* Редакторы сохраняют строки, но получают настоящую область касания. */
+.dpick{min-height:46px} /* 44px для input внутри двух границ по 1px. */
+#spl .row .t input{min-height:44px;height:44px}
 .recn{gap:8px;padding:8px 0}
 .recn b{font-family:var(--f);font-size:22px;letter-spacing:-.02em}
 .recn span{font-family:var(--f);font-size:10px;letter-spacing:0;gap:3px}
