@@ -171,6 +171,17 @@ test добавлена диагностика событий/состояния
 содержит только уточнённые отчёты, release-probe и диагностический test;
 его полный CI проверяется отдельно, без skip-ci или принудительного успеха.
 
+Окончательный опубликованный коммит `dc362a3069c6dfabf8588f9a00d87a74f17c1121`:
+[полный CI](https://github.com/dimaster083-commits/plan/actions/runs/38513665817)
+успешен,162 набора/2205 checks, exit0,766с; reset-date-oct1022/22,70с.
+[Быстрый CI](https://github.com/dimaster083-commits/plan/actions/runs/38513665835)
+и [Pages](https://github.com/dimaster083-commits/plan/actions/runs/38513665369)
+тоже успешны. Повторный published delivery-probe exit0, новые файлы exact,
+worker/controller180activated, журнал/еда/фото сохранены после offline/reload.
+Первый сбой CI не повторился; его причина не установлена и не названа
+исправленной. Runtime-хеши выше неизменны. 14.10 перед новым циклом сверено:
+локальный HEAD и main совпадают, push ответил Everything up-to-date.
+
 ## Границы
 
 Физические телефоны, Safari, системная клавиатура/камера/HEIC, реальные
