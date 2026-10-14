@@ -5,7 +5,24 @@ const assert = require('node:assert/strict');
 const { chromium } = require('playwright-core');
 const { APP, LAUNCH } = require('../env');
 let failures = 0;
-async function tap(p, selector) { await p.click(selector); await p.waitForTimeout(290); }
+async function tap(p, selector) {
+  try {
+    await p.click(selector);
+    // A reset must open its real confirmation. Do not retry a missed click or
+    // continue to an invisible answer button: preserve the first failing step.
+    if (selector === '#rd') await p.waitForSelector('#ask.on');
+    await p.waitForTimeout(290); // intentional actions are outside the 260ms tap guard
+  } catch (e) {
+    const diagnostic = await p.evaluate(() => ({
+      ask: $('ask').className, question: $('askT').textContent, callback: !!askCb,
+      focus: document.activeElement?.id, scroll: scrollY, lastTap,
+      rd: $('rd').getBoundingClientRect().toJSON(), undo: !$('undo').hidden,
+      trace: window.resetTrace
+    })).catch(() => null);
+    console.log('RESET Error diagnostic '+selector+' '+JSON.stringify(diagnostic));
+    throw e;
+  }
+}
 async function seed(p) {
   await p.evaluate(() => {
     window.testDayOffset = 0;
@@ -57,6 +74,13 @@ async function check(name, fn) {
       const ctx = await browser.newContext({viewport:{width,height:width===320?568:844},timezoneId:'Asia/Vladivostok',reducedMotion:'reduce'});
       await ctx.route('https://**/*', route => route.abort());
       await ctx.addInitScript(() => {
+        // Synthetic-context input trace, printed only on failure. Capture before
+        // application handlers so a suppressed click remains diagnosable in CI.
+        window.resetTrace = [];
+        for (const kind of ['pointerdown','pointerup','click']) addEventListener(kind, e => {
+          resetTrace.push({kind, id:e.target.id, t:performance.now(), x:e.clientX, y:e.clientY});
+          if (resetTrace.length > 24) resetTrace.shift();
+        }, true);
         const D = Date, base = new D('2026-10-10T12:00:00+10:00').valueOf(), mark = performance.now();
         window.testDayOffset = 0;
         window.Date = class extends D {

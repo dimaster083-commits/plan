@@ -25,7 +25,18 @@ const tap=async(p,s)=>{await p.locator(s).first().click();await p.waitForTimeout
   try{
     await p.clock.install({time:new Date('2026-10-13T12:00:00+10:00')});await p.clock.resume();
     await p.goto(url);await tap(p,'#setSkip');
-    await p.waitForFunction(async cache=>{const r=await navigator.serviceWorker.getRegistration();return r?.active?.state==='activated'&&!!navigator.serviceWorker.controller&&(await caches.keys()).includes(cache);},cache,{timeout:45000});
+    // waitForFunction treats a returned Promise as truthy before it resolves.
+    // Observe a synchronous readiness flag, set only after awaited storage/ready.
+    await p.evaluate(cache=>{window.deliverySWReady=false;window.deliverySWError='';
+      (async()=>{const r=await navigator.serviceWorker.ready;
+        window.deliverySWWorker=r.active; // ready may resolve while it is still activating
+        const c=await caches.open(cache);
+        if(!(await c.match('./index.html')))throw new Error('shell absent from release cache');
+        window.deliverySWReady=true;
+      })().catch(e=>{window.deliverySWError=e.message;});
+    },cache);
+    await p.waitForFunction(()=>(!!window.deliverySWReady&&window.deliverySWWorker?.state==='activated'&&navigator.serviceWorker.controller?.state==='activated')||!!window.deliverySWError,null,{timeout:60000});
+    assert.equal(await p.evaluate(()=>window.deliverySWError),'');
     await p.evaluate(()=>{S.bw='80';S.sound=0;S.hints=0;S.bkAsk=Date.now();save();flush();undoDrop();render();});
     for(const t of ['wo','ex','prog','food','photo']){
       await tap(p,'[data-tab="'+t+'"]');await p.waitForFunction(()=>!document.body.classList.contains('rd-enter'));
@@ -53,6 +64,9 @@ const tap=async(p,s)=>{await p.locator(s).first().click();await p.waitForTimeout
     console.log('✓ served midnight ration targets original date and Undo');
     const saved=await p.evaluate(async photo=>{await phPut(today(),photo);await phSync();flush();return {s:JSON.stringify(S.rec),ton:dayTon('2026-10-01'),k:daySum('2026-10-13').k};},photo);
     assert.equal(saved.ton,960);assert.equal(saved.k,125);
+    console.log('SW before offline',JSON.stringify(await p.evaluate(async()=>({url:location.href,controller:navigator.serviceWorker.controller?.scriptURL||null,
+      workers:(await navigator.serviceWorker.getRegistrations()).map(r=>({scope:r.scope,active:r.active?.state,installing:r.installing?.state})),
+      caches:await caches.keys(),html:!!await caches.match('./index.html')}))));
     await context.setOffline(true);await p.reload();await p.waitForFunction(()=>PH.includes('2026-10-14'));
     assert.deepEqual(await p.evaluate(async()=>({s:JSON.stringify(S.rec),ton:dayTon('2026-10-01'),k:daySum('2026-10-13').k,photo:await phGet('2026-10-14')})),{...saved,photo});
     assert.deepEqual(errors,[]);console.log('✓ activated '+cache+' offline reload preserves exact journal/photo/food; no JS errors');
