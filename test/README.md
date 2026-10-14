@@ -1,5 +1,21 @@
 # Проверки
 
+`confirmation-priority-oct14`, `food-main-draft-oct14`, `undo-form-origin-oct14`,
+`mobile-grams-oct14` — release1.4.8.8.7: единый resolver открытого вопроса,
+поздний native FileReader, ожидание окна/полных7с Undo для копии; raw граммов
+вне журнала по identity строки/даты, дубли/копии/импорт/первый поздний просмотр;
+нейтральный redraw пустого поля и намеренный Tab с полевой отменой;
+отмена старого действия при уже открытой независимой форме, focus/scroll lock,
+собственные итоги/«Неделя» и native фото; реальное поле граммов≥44px.
+Все четыре входят в `npm test`. Подробные RED→GREEN — в v7/stage-6.md.
+
+Доставка проверяется отдельно после публикации:
+`node test/audits/1.4.8.8.7/delivery.cjs` (не обычный file:// fullsuite).
+По умолчанию проверяет реальные Pages; `GYM_APP_URL` позволяет проверить
+временный localhost. Канонические HTML/CSS/SW, фактически activated worker,
+offline journal/photo/food, новые UI-пути обеих ширин. Только синтетические
+контексты, не профиль владельца. Совпадение кода не заменяет actual UI.
+
 `import-photos-oct13`, `photo-failures-oct13` — частичный импорт без
 перезаписи собственных снимков, календарные ключи, настоящая IndexedDB
 при синтетических get/add/put/delete/getAllKeys/abort отказах, локальная

@@ -3455,6 +3455,7 @@ document.documentElement.dataset.skin = 'sl';
 
 <div class="ask" id="ask"><div class="win askw">
   <p id="askT">—</p>
+  <p id="askStatus" role="status" aria-live="polite" hidden></p>
   <input id="askI" hidden style="width:100%;background:var(--s2);
     border:1px solid var(--ln);color:var(--ink);padding:11px;
     border-radius:var(--r-s);margin-bottom:13px;font-family:var(--f)">
@@ -4510,10 +4511,11 @@ function scrubKeys() {
 let saveTimer = null;
 let undoRec = null, undoTimer = null;   // отмена последнего действия — см. offerUndo
 // страховка от случайного касания — см. ниже у offerUndo
-let undoSeq = 0, noteSeq = 0, undoQuiet = false, undoSay = '', tapDrafts = null;
-let fieldSnap = null, fieldEl = null;
+let undoSeq = 0, noteSeq = 0, undoQuiet = false, undoSay = '', tapDrafts = null, tapFood = null;
+let fieldSnap = null, fieldEl = null, fieldFood = null;
+let foodUiPainting = false;      // замена DOM не является намеренным уходом с поля
 let shRe = null;                 // как заново открыть шторку, в которой сделано действие
-let shBack = null;
+let shBack = null, shFocus = null;
 let sheetSeq = 0;                // открытие, замена и закрытие — разные окна для поздней отмены
 /* На телефоне один тап иногда приходит дважды до перерисовки. Блокируем
    только повтор одной пишущей операции на короткое время. */
@@ -4790,12 +4792,12 @@ function offerUndo(snap, text, opt) {
   opt = opt || {};
   if (!opt.local && (typeof snap !== 'string' || (!opt.back && snap === snapS()))) return;   // ничего не поменялось — отменять нечего
   const rec = { s: snap, back: opt.back || null, again: opt.again || null, local: opt.local || null,
-    drafts: tapDrafts, sel };
+    drafts: tapDrafts, food: opt.food || tapFood || foodUiSnapshot(), sheet: opt.sheet ?? sheetSeq, sel };
   undoDrop();
   undoRec = rec;
   undoSeq++;
   // поле, в которое сейчас пишут, считает свою отмену уже от этого места
-  if (fieldSnap !== null && !opt.field) fieldSnap = snapS();
+  if (fieldSnap !== null && !opt.field) { fieldSnap = snapS(); fieldFood = foodUiSnapshot(); }
   // простое уведомление говорило бы то же самое поверх полоски
   clearTimeout(noteTimer); $('note').classList.remove('on');
   $('noteT').textContent = text;              // последнее сообщение одно, где бы его ни показали
@@ -4813,8 +4815,8 @@ function offerUndo(snap, text, opt) {
 async function undoNow() {
   const u = undoRec; if (!u) return;
   if (u.busy) return;
-  const undoSheet = sheetSeq;
-  if (u.local) { undoDrop(); note(u.local() === false ? 'Экран уже перерисован — отменять нечего' : 'Отменено'); return; }
+  const undoSheet = u.sheet;
+  if (u.local) { undoDrop(); undoSeq++; note(u.local() === false ? 'Экран уже перерисован — отменять нечего' : 'Отменено'); return; }
   let back;
   try { back = JSON.parse(u.s); } catch (e) { return; }
   // Сначала возвращаем внешний снимок. Отказ не уничтожает его единственную
@@ -4833,14 +4835,16 @@ async function undoNow() {
       render(); note('Действие с фото отменено; новые записи не изменены'); return;
     }
   }
-  undoDrop();
+  const keptSheet = sheetSeq, keptFocus = shFocus;
+  undoDrop(); undoSeq++; // отложенный change не должен принять откат за новое изменение поля
   S = back;
+  foodUiRestore(u.food);
   invalidateFood();
   save(); flush();
   // шторку, открытую самим действием (итоги тренировки), отмена закрывает;
   // шторку, в которой действие сделано («Неделя», рацион), открывает заново
-  // Пока IDB отвечала, пользователь мог открыть другую форму с черновиком.
-  // Закрывать/строить заново можно только то же окно, что было при нажатии.
+  // Источник окна фиксируется при исходном действии, не при Undo. Новая
+  // форма независима и до нажатия отмены, и во время ожидания IndexedDB.
   const wasOpen = sheetSeq === undoSheet && $('sh').classList.contains('on');
   if (wasOpen) sheetClose();
   if (exOpen !== null && exOpen >= ((dayOf(sel) || {}).ex || []).length) exOpen = null;
@@ -4851,6 +4855,7 @@ async function undoNow() {
   // набранные клетки повторов живут только на экране — возвращаем их как были до касания
   if (u.drafts && u.sel === sel) putDrafts(u.drafts);
   if (u.again && wasOpen) u.again();
+  if (!wasOpen && sheetSeq === keptSheet && $('sh').classList.contains('on')) returnModalFocus(keptFocus);
   note('Отменено');
 }
 // повторный тап безвреден: копия одна, вторая отмена найдёт пустоту
@@ -4945,17 +4950,17 @@ addEventListener('click', e => {
   // (focusin/change ниже) — иначе цифры, набранные быстрее отложенной проверки,
   // приписывались касанию и полоска вылезала посреди ввода
   if (el.closest('input,textarea,select')) return;
-  const before = snapS(), seq = undoSeq, nseq = noteSeq;
+  const before = snapS(), food = foodUiSnapshot(), seq = undoSeq, nseq = noteSeq;
   const shWas = $('sh').classList.contains('on') ? shRe : null;
-  undoQuiet = false; undoSay = ''; tapDrafts = draftCells();
+  undoQuiet = false; undoSay = ''; tapDrafts = draftCells(); tapFood = food;
   setTimeout(() => {
     const quiet = undoQuiet, say = undoSay;
     undoQuiet = false; undoSay = '';
     if (!quiet && undoSeq === seq && !undoSame(before, snapS())) {
       const nt = noteSeq !== nseq && $('note').classList.contains('on') ? $('noteT').textContent : '';
-      offerUndo(before, nt || say || undoLabel(el), { again: shWas });
+      offerUndo(before, nt || say || undoLabel(el), { again: shWas, food });
     }
-    tapDrafts = null;
+    tapDrafts = null; tapFood = null;
   }, 0);
 }, true);
 /* Поле ввода: копия при входе, решение — при уходе. Клетки повторов и
@@ -4964,27 +4969,38 @@ addEventListener('click', e => {
 const FIELD_QUIET = '[data-rs],[data-ws],[data-f="w"],[data-f="r"],[data-f="s"]';
 document.addEventListener('focusin', e => {
   const f = e.target;
-  if (!f.matches || !f.matches('input,textarea,select') || f.matches(FIELD_QUIET)) { fieldEl = null; fieldSnap = null; return; }
-  fieldEl = f; fieldSnap = snapS();
+  if ($('sh').contains(f)) shFocus = f;
+  if (!f.matches || !f.matches('input,textarea,select') || f.matches(FIELD_QUIET)) { fieldEl = null; fieldSnap = null; fieldFood = null; return; }
+  fieldEl = f; fieldSnap = snapS(); fieldFood = foodUiSnapshot();
 });
 document.addEventListener('change', e => {
+  if (foodUiPainting) return;
   const f = e.target;
   if (f !== fieldEl || fieldSnap === null) return;
-  const before = fieldSnap, seq = undoSeq;
+  const before = fieldSnap, food = fieldFood, seq = undoSeq;
   setTimeout(() => {
     if (undoSeq !== seq || undoSame(before, snapS())) return;
     const nm = (f.getAttribute('aria-label') || f.placeholder || (f.labels && f.labels[0] && f.labels[0].textContent) || '')
       .replace(/\s+/g, ' ').trim().slice(0, 40);
-    offerUndo(before, undoSay || (nm ? 'Поле «' + nm + '» изменено' : 'Запись изменена'), { field: 1, again: $('sh').classList.contains('on') ? shRe : null });
+    offerUndo(before, undoSay || (nm ? 'Поле «' + nm + '» изменено' : 'Запись изменена'), { field: 1, food, again: $('sh').classList.contains('on') ? shRe : null });
     undoSay = '';
     // следующее изменение того же поля без выхода из него считается от этого места
-    if (fieldEl === f) fieldSnap = snapS();
+    if (fieldEl === f) { fieldSnap = snapS(); fieldFood = foodUiSnapshot(); }
   }, 0);
 }, true);
 
 /* ---------- подтверждение ---------- */
 let askCb = null, askBack = null;
+function askBusy() { return !!askCb || $('ask').classList.contains('on'); }
+function askNotice(text) {
+  const status = $('askStatus');
+  status.hidden = false; status.textContent = text;
+}
 function ask(text, yesLabel) {
+  if (askBusy()) {
+    askNotice('Сначала ответь на открытый вопрос, затем повтори действие.');
+    return Promise.resolve(false);
+  }
   askBack = document.activeElement;
   $('askT').textContent = text;
   $('askI').hidden = true;
@@ -4995,6 +5011,10 @@ function ask(text, yesLabel) {
   return new Promise(res => { askCb = res; });
 }
 function askText(text, def) {
+  if (askBusy()) {
+    askNotice('Сначала ответь на открытый вопрос, затем повтори действие.');
+    return Promise.resolve(null);
+  }
   askBack = document.activeElement;
   $('askT').textContent = text;
   const i = $('askI');
@@ -5006,10 +5026,10 @@ function askText(text, def) {
   return new Promise(res => { askCb = v => res(v ? ($('askI').value.trim() || null) : null); });
 }
 function askClose(v) {
+  const cb = askCb, back = askBack; askCb = null; askBack = null;
   $('ask').classList.remove('on');
-  const back = askBack; askBack = null;
+  const status = $('askStatus'); if (status) { status.hidden = true; status.textContent = ''; }
   if (back && back.isConnected && back.getClientRects().length) back.focus({ preventScroll: true });
-  const cb = askCb; askCb = null;
   if (cb) cb(v);
 }
 $('askY').addEventListener('click', () => askClose(true));
@@ -8616,6 +8636,12 @@ $('impFile').addEventListener('change', e => {
     try {
       const o = JSON.parse(fr.result);
       const next = importStateOf(o);
+      // Позднее чтение файла не перебивает чужой вопрос, в том числе две
+      // последовательные ступени полного сброса. Новый выбор — явное намерение.
+      if (askBusy()) {
+        askNotice('Сейчас открыт другой вопрос. После ответа выбери файл копии снова.');
+        return;
+      }
       // про фотографии говорим отдельно: они не стираются, а доливаются к нынешним
       if (!await ask('Журнал, веса и рацион будут заменены на то, что в копии — нынешние пропадут. '
         + 'Фотографии из копии добавятся к уже снятым.', 'ВОССТАНОВИТЬ')) return;
@@ -11184,14 +11210,52 @@ function itemLine(it) {
   return rnd(fd[1] * g) + ' ккал · ' + rnd(fd[2] * g) + ' г белка';
 }
 
+/* Сырой ввод — только представление. Identity объекта отличает одинаковые
+   продукты и новую копию рациона; дата не даёт перенести ввод в другой день.
+   Sidecar Undo возвращает заранее снятые identities, не угадывает их по имени. */
+const foodUiIds = new WeakMap(), foodUiRaw = new Map(), foodUiInputs = new WeakMap();
+let foodUiSeq = 0;
+function foodUiId(o) {
+  if (!foodUiIds.has(o)) foodUiIds.set(o, ++foodUiSeq);
+  return foodUiIds.get(o);
+}
+function foodUiKey(ds, list, meal, item) {
+  return [ds, foodUiId(list), foodUiId(meal), foodUiId(item)].join(':');
+}
+function foodUiSnapshot() {
+  const out = {};
+  Object.entries(S.rec || {}).forEach(([ds, r]) => {
+    const list = r?.ml;
+    if (Array.isArray(list)) out[ds] = { id: foodUiId(list), meals: list.map(m =>
+      ({ id: foodUiId(m), items: (m.items || []).map(foodUiId) })) };
+  });
+  return out;
+}
+function foodUiRestore(snapshot) {
+  Object.entries(snapshot || {}).forEach(([ds, ids]) => {
+    const list = S.rec[ds]?.ml;
+    if (!Array.isArray(list)) return;
+    foodUiIds.set(list, ids.id);
+    list.forEach((m, j) => {
+      const saved = ids.meals[j]; if (!saved) return;
+      foodUiIds.set(m, saved.id);
+      (m.items || []).forEach((it, q) => { if (saved.items[q] !== undefined) foodUiIds.set(it, saved.items[q]); });
+    });
+  });
+}
+function foodUiRemember(i, invalid) {
+  const key = foodUiInputs.get(i); if (!key) return;
+  foodUiRaw.set(key, { raw: i.value, invalid });
+}
 function paintFood() {
+  const focus = foodUiInputs.get(document.activeElement), list = mealsOf(sel);
   const d = normDay(sel), none = !ownBw() && !S.kcManual;
   paintCpLast();
   $('kc').value = none ? '' : d.kc;
   $('pr').value = none ? '' : d.pr;
   $('kc').placeholder = $('pr').placeholder = none ? '—' : '';
   paintKcSrc();
-  $('mll').innerHTML = mealsOf(sel).map((m, j) => {
+  const html = list.map((m, j) => {
     const s = mealSum(m);
     const rows = (m.items || []).map((it, q) =>
       `<div class="it">
@@ -11207,6 +11271,17 @@ function paintFood() {
       ${rows}
       <button class="mladd" data-pick="${j}">+ ПРОДУКТ</button></div>`;
   }).join('');
+  foodUiPainting = true;
+  try {
+    $('mll').innerHTML = html;
+    $('mll').querySelectorAll('[data-ml] input[data-g]').forEach(i => {
+      const j = +i.closest('[data-ml]').dataset.ml, q = +i.dataset.g;
+      const key = foodUiKey(sel, list, list[j], list[j].items[q]), draft = foodUiRaw.get(key);
+      foodUiInputs.set(i, key);
+      if (draft) { i.value = draft.raw; if (draft.invalid) i.setAttribute('aria-invalid', 'true'); }
+      if (key === focus) i.focus({ preventScroll: true });
+    });
+  } finally { foodUiPainting = false; }
   paintTotals();
 }
 
@@ -11286,19 +11361,33 @@ $('mll').addEventListener('input', e => {
 $('mll').addEventListener('change', e => {
   const i = e.target.closest('input[data-g]'); if (i) commitGrams(i, true);
 });
+$('mll').addEventListener('focusout', e => {
+  const i = e.target.closest('input[data-g]');
+  if (!i || foodUiPainting) return;
+  const draft = foodUiRaw.get(foodUiInputs.get(i));
+  // После нейтрального redraw пустое восстановлено до focus: браузер уже
+  // не даст change. Настоящий уход всё равно завершает ввод прежним нулём.
+  if (!draft || draft.raw.trim()) return;
+  const before = snapS(), food = foodUiSnapshot();
+  commitGrams(i, true);
+  offerUndo(before, 'Поле «Граммы» изменено', { field: 1, food });
+});
 function commitGrams(i, finished) {
+  if (foodUiPainting) return;
   // Очищение перед заменой — ещё черновик; окончательно пусто после ухода = 0.
-  if (!finished && !i.value.trim()) return;
+  if (!finished && !i.value.trim()) { foodUiRemember(i, false); return; }
   const value = finiteDecimal(i.value), j = +i.closest('[data-ml]').dataset.ml, q = +i.dataset.g;
   const list = mealsOf(sel), item = list[j]?.items?.[q]; if (!item) return;
   const candidate = list.map((m, at) => at !== j ? m : {...m,
     items: m.items.map((it, idx) => idx !== q ? it : {...it, g: i.value})});
   if (value === null || !finiteFoodTotals(candidate)) {
     i.setAttribute('aria-invalid', 'true');
+    foodUiRemember(i, true);
     if (finished) note('Граммы: конечное число от нуля; проверь величину');
     return;
   }
   i.removeAttribute('aria-invalid');
+  foodUiRaw.delete(foodUiInputs.get(i));
   if (item.g === i.value) return;
   mealsRW(sel)[j].items[q].g = i.value; save(); paintTotals();
 }
@@ -11721,6 +11810,7 @@ const phSelections = new Map();
 $('phFile').addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0];
   const day = sel;
+  const actionSheet = sheetSeq;
   e.target.value = '';
   if (!f) return;
   const selection = (phSelections.get(day) || 0) + 1;
@@ -11741,7 +11831,7 @@ $('phFile').addEventListener('change', async e => {
     // вес подписываем только к сегодняшнему снимку: прошлому дню сегодняшний вес чужой
     if (day === today() && !recOf(day).bw && num(S.bw)) { recRW(day).bw = S.bw; save(); }
     if (sel === day && tab === 'photo') paintPhotoScreen();
-    offerUndo(snap, old ? 'Снимок за ' + fmt(day, 1) + ' заменён' : 'Снимок сохранён', { back: async () => {
+    offerUndo(snap, old ? 'Снимок за ' + fmt(day, 1) + ' заменён' : 'Снимок сохранён', { sheet: actionSheet, back: async () => {
       if (old) { await phPut(day, old); phChanged(day, old); } else { await phDelete(day); phChanged(day); }
       await phSync();
     } });
@@ -11749,6 +11839,7 @@ $('phFile').addEventListener('change', async e => {
 });
 $('phDel').addEventListener('click', async () => {
   const day = sel;
+  const actionSheet = sheetSeq;
   if (!await ask('Удалить фото за ' + fmt(day) + '?')) return;
   // Удаление — более поздняя команда, чем ещё сжимающийся выбор файла.
   // Отказ в вопросе загрузку не отменяет.
@@ -11761,7 +11852,7 @@ $('phDel').addEventListener('click', async () => {
     await phSync();
     const snap = snapS();
     if (sel === day && tab === 'photo') paintPhotoScreen();
-    if (dat) offerUndo(snap, 'Фото за ' + fmt(day, 1) + ' удалено', { back: async () => {
+    if (dat) offerUndo(snap, 'Фото за ' + fmt(day, 1) + ' удалено', { sheet: actionSheet, back: async () => {
       await phPut(day, dat); phChanged(day, dat); await phSync();
     } });
   } catch (e) { note('Не удалось удалить фото — попробуй ещё раз'); }
@@ -12820,16 +12911,25 @@ if (!S.setup) setTimeout(openSetup, navigator.webdriver ? 700 : 1800);
 /* Напоминание о копии. Данные живут только в телефоне, а iOS может их
    стереть. Есть что терять (три тренировки и больше), копии не было три
    недели — предлагаем сохранить одним нажатием, не чаще раза в неделю.
-   Условие проверяется сразу при запуске, а не по таймеру. */
+   После ожидания окна или отмены проверяем условие заново. */
 (function () {
-  const DAY = 864e5, now = Date.now();
-  const wos = Object.values(S.rec || {}).filter(r => r && r.wo).length;
-  if (!S.setup || wos < 3) return;
-  if (now - (S.bkAt || 0) < 21 * DAY || now - (S.bkAsk || 0) < 7 * DAY) return;
-  setTimeout(async () => {
+  const DAY = 864e5;
+  function due() {
+    const now = Date.now(), wos = Object.values(S.rec || {}).filter(r => r && r.wo).length;
+    return S.setup && wos >= 3 && now - (S.bkAt || 0) >= 21 * DAY && now - (S.bkAsk || 0) >= 7 * DAY;
+  }
+  if (!due()) return;
+  async function remind() {
+    // Служебная отметка копии не должна прерывать вопрос, сырой ввод или
+    // семь секунд отмены. Продолжение await откроет вторую ступень до таймера.
+    if (askBusy() || currentModal() || $('setup').classList.contains('on') || undoRec) {
+      setTimeout(remind, 500); return;
+    }
+    if (!due()) return;
     S.bkAsk = Date.now(); save();
     if (await ask('Копии прогресса не было больше трёх недель. Данные живут только в этом телефоне — сохранить копию сейчас?', 'СОХРАНИТЬ')) $('exp').click();
-  }, 2500);
+  }
+  setTimeout(remind, 2500);
 })();
 
 /* Сбой в коде не должен выглядеть как молча сломанное приложение и не

@@ -498,3 +498,5 @@ body.exopen .wobar{position:static;bottom:auto;margin-top:12px;background:none}
 .lib-rest-note{padding:12px;border:1px solid var(--ln2);border-radius:12px;background:var(--field);
   color:var(--ink2);font:500 12px/1.6 var(--f)}
 .mlh input[data-mf="n"]{min-height:44px;height:44px;font:700 16px var(--f)}
+/* Граммы — частый ввод в рационе; зона касания не ниже остальных полей. */
+#scr-food .it input[data-g]{min-height:44px}

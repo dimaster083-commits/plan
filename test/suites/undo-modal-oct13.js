@@ -31,7 +31,10 @@ async function release(p){await p.evaluate(()=>{IDBDatabase.prototype.transactio
         // Closing dirty form should still require an explicit decision.
         if(await p.locator('#sh').evaluate(e=>e.classList.contains('on'))){await p.keyboard.press('Escape');await p.waitForSelector('#ask.on');await p.click('#askN');check(width+' cancel close retains newer raw input',await p.locator('[data-mk="waist"]').inputValue(),'85,5');}
       }
-      if(scenario==='existing-sheet')check(width+' existing sheet still closes as prior Undo behavior',await p.locator('#sh').evaluate(e=>e.classList.contains('on')),false);
+      if(scenario==='existing-sheet'){
+        check(width+' unrelated sheet opened after photo action remains open',await p.locator('#sh').evaluate(e=>e.classList.contains('on')),true);
+        check(width+' unrelated settings keeps modal focus and scroll lock',await p.evaluate(()=>[$('sh').contains(document.activeElement),document.body.style.overflow]),[true,'hidden']);
+      }
       if(scenario==='replaced-sheet')check(width+' pending Undo leaves replacement sheet open',await p.locator('#sh').evaluate(e=>e.classList.contains('on')),true);
       if(scenario==='new-save')check(width+' later saved journal survives Undo',await p.evaluate(()=>[S.exNote.later,JSON.parse(localStorage.getItem(KEY)).exNote.later]),['saved while awaiting photo','saved while awaiting photo']);
       check(width+' '+scenario+' no uncaught errors',errors,[]);
