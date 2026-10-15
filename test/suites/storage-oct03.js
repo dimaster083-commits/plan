@@ -8,6 +8,8 @@ const { APP, LAUNCH } = require('../env');
 const OLD_PHOTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aJ1sAAAAASUVORK5CYII=';
 const NEW_PHOTO = OLD_PHOTO + '\n';
 let failures = 0;
+const noteReady = () => JSON.parse(localStorage.getItem(KEY))?.exNote?.one === 'A saved this';
+const waitForSavedNote = (page, options) => page.waitForFunction(noteReady, null, options);
 function check(name, actual, expected) {
   try { assert.deepStrictEqual(actual, expected); console.log('  ✓ ' + name); }
   catch (error) {
@@ -130,7 +132,7 @@ async function finishPhotoAndUndo(page) {
         const b = await context.newPage(); await b.goto(APP);
         await b.waitForFunction(() => !!S);
         await a.evaluate(() => { S.exNote = { one: 'A saved this' }; save(); flush(); });
-        await b.waitForFunction(() => JSON.parse(localStorage.getItem(KEY)).exNote?.one === 'A saved this');
+        await waitForSavedNote(b);
         // No state changes in B: just the event fired when switching tabs.
         const disk = await b.evaluate(() => {
           document.dispatchEvent(new Event('visibilitychange'));
@@ -148,7 +150,19 @@ async function finishPhotoAndUndo(page) {
         const b = await context.newPage(); await b.goto(APP);
         await b.waitForFunction(() => !!S);
         await a.evaluate(() => { S.exNote = { one: 'A saved this' }; save(); flush(); });
-        await b.waitForFunction(() => JSON.parse(localStorage.getItem(KEY)).exNote?.one === 'A saved this');
+        // A polling predicate must tolerate a not-yet-visible record. Delay
+        // only the first read in B; all writes and subsequent reads stay native.
+        await b.evaluate(() => {
+          window.storageWaitGet = Storage.prototype.getItem; window.storageWaitReads = 0;
+          Storage.prototype.getItem = function (key) {
+            if (key === KEY && ++window.storageWaitReads === 1) return null;
+            return storageWaitGet.call(this, key);
+          };
+        });
+        try { await waitForSavedNote(b); }
+        finally { await b.evaluate(() => { Storage.prototype.getItem = storageWaitGet; }); }
+        check('ожидание соседней вкладки переживает один пустой read',
+          await b.evaluate(() => storageWaitReads >= 2), true);
         const result = await b.evaluate(() => {
           S.exNote = { two: 'B wants to save this' }; save(); flush();
           const warning = document.getElementById('note');
@@ -165,6 +179,16 @@ async function finishPhotoAndUndo(page) {
             disk: { one: 'A saved this' },
             visibleConflict: true
           });
+      } finally { await context.close(); }
+    }
+
+    {
+      const { context, page } = await fresh(browser);
+      try {
+        let outcome = 'resolved';
+        try { await waitForSavedNote(page, { timeout: 300 }); }
+        catch (error) { outcome = error.name; }
+        check('отсутствующая запись не выдаётся за успешное сохранение', outcome, 'TimeoutError');
       } finally { await context.close(); }
     }
 
