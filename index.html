@@ -4772,6 +4772,7 @@ const snapS = () => JSON.stringify(S);
 function undoDrop() {
   clearTimeout(undoTimer); undoTimer = null; undoRec = null;
   const u = $('undo'); if (u) u.hidden = true;
+  foodUiPruneSoon();
 }
 // полоска встаёт над нижними вкладками, а если кнопка тренировки прижата к низу — над ней
 function placeUndo() {
@@ -4961,6 +4962,7 @@ addEventListener('click', e => {
       offerUndo(before, nt || say || undoLabel(el), { again: shWas, food });
     }
     tapDrafts = null; tapFood = null;
+    foodUiPruneSoon(); // ранее поставленная очистка могла ещё удерживать снимок клика
   }, 0);
 }, true);
 /* Поле ввода: копия при входе, решение — при уходе. Клетки повторов и
@@ -11214,7 +11216,7 @@ function itemLine(it) {
    продукты и новую копию рациона; дата не даёт перенести ввод в другой день.
    Sidecar Undo возвращает заранее снятые identities, не угадывает их по имени. */
 const foodUiIds = new WeakMap(), foodUiRaw = new Map(), foodUiInputs = new WeakMap();
-let foodUiSeq = 0;
+let foodUiSeq = 0, foodUiPruneTimer = null;
 function foodUiId(o) {
   if (!foodUiIds.has(o)) foodUiIds.set(o, ++foodUiSeq);
   return foodUiIds.get(o);
@@ -11246,6 +11248,28 @@ function foodUiRestore(snapshot) {
 function foodUiRemember(i, invalid) {
   const key = foodUiInputs.get(i); if (!key) return;
   foodUiRaw.set(key, { raw: i.value, invalid });
+}
+function foodUiPruneSoon() {
+  if (foodUiPruneTimer !== null || !foodUiRaw.size) return;
+  // Не синхронно: offerUndo сначала снимает старую полоску, затем ставит
+  // новую; undoNow сначала снимает её, затем возвращает identities в S.
+  // Таймер захвата клика тоже должен успеть передать снимок новой отмене.
+  foodUiPruneTimer = setTimeout(() => {
+    foodUiPruneTimer = null;
+    if (!foodUiRaw.size) return;
+    const live = new Set(), keep = snapshot => {
+      Object.entries(snapshot || {}).forEach(([ds, list]) => {
+        list.meals.forEach(meal => meal.items.forEach(item =>
+          live.add([ds, list.id, meal.id, item].join(':'))));
+      });
+    };
+    keep(foodUiSnapshot());
+    keep(undoRec?.food); keep(tapFood);
+    // Удалённый DOM-узел может остаться в fieldEl без нового focusin.
+    // Только действительно редактируемое поле удерживает свой baseline.
+    if (fieldSnap !== null && fieldEl?.isConnected && document.activeElement === fieldEl) keep(fieldFood);
+    for (const key of foodUiRaw.keys()) if (!live.has(key)) foodUiRaw.delete(key);
+  }, 0);
 }
 function paintFood() {
   const focus = foodUiInputs.get(document.activeElement), list = mealsOf(sel);
@@ -11283,6 +11307,7 @@ function paintFood() {
     });
   } finally { foodUiPainting = false; }
   paintTotals();
+  foodUiPruneSoon();
 }
 
 function paintTotals() {
