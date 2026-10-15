@@ -73,7 +73,11 @@ async function fresh(browser, width, options) {
   });
   const p = await context.newPage(), errors = [];
   p.setDefaultTimeout(5000); p.on('pageerror', e => errors.push(e.message));
-  await p.clock.install({ time: TIME }); await p.clock.pauseAt(TIME);
+  // Install before the target on the blank page: the clock runs between API
+  // calls, so pausing at the install instant can otherwise be in the past.
+  await p.clock.install({ time: new Date(TIME.getTime() - 86400000) });
+  await p.clock.pauseAt(TIME);
+  assert.equal(await p.evaluate(() => Date.now()), TIME.getTime(), 'exact fixture clock before app load');
   await p.goto(APP); await p.evaluate(seed, options); await p.reload();
   await p.waitForFunction(() => S.setup === 1); await p.evaluate(observe);
   return { context, p, start: await p.evaluate(() => Date.now()), errors };

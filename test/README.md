@@ -1,5 +1,14 @@
 # Проверки
 
+`summary-copy-oct15` — release1.4.8.8.9, BUG-0034/0035: clipboard success,
+missing API и отказ, точный снимок текста, один readonly fallback, повторные
+и перепутанные по времени ответы; закрытое/новое/повторно открытое окно,
+подсказка поверх «Разбора», raw87,5/focus/scroll lock и неизменность S/диска.
+Только внешняя clipboard-граница управляется в синтетических профилях,
+реальный системный буфер пользователя не читается/не меняется.
+`--red-only` или `--case=name` ограничивают выбор сценариев при диагностике.
+Actual Pages/cache/offline и копирование: `test/audits/1.4.8.8.9/delivery.cjs`.
+
 `confirmation-priority-oct14`, `food-main-draft-oct14`, `undo-form-origin-oct14`,
 `mobile-grams-oct14` — release1.4.8.8.7: единый resolver открытого вопроса,
 поздний native FileReader, ожидание окна/полных7с Undo для копии; raw граммов

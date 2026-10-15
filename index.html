@@ -12894,18 +12894,33 @@ function buildSummary() {
   return L.join('\n');
 }
 
+let summaryCopySeq = 0;
 async function copySummary() {
-  const text = buildSummary();
+  const text = buildSummary(), origin = sheetSeq, source = $('anCopy'), request = ++summaryCopySeq;
+  const current = () => request === summaryCopySeq && origin === sheetSeq && source?.isConnected
+    && currentModal() === $('sh');
+  // Уже показанный ручной текст следует новому явному нажатию, не позднему
+  // ответу системы. Обновление не переводит фокус и не меняет журнал.
+  const manual = current() && $('shB').querySelector('[data-summary-copy]');
+  if (manual) manual.value = text;
   try {
     await navigator.clipboard.writeText(text);
-    note('Данные выгружены');
+    if (current()) note('Данные выгружены');
   } catch (e) {
+    // Окно могло закрыться/смениться, сверху открыться подсказка, а более
+    // новое копирование — уже завершиться. Старый отказ не трогает их.
+    if (!current()) return;
     // Safari иногда отказывает буферу обмена — показываем текст, чтобы выделить руками
-    const ta = document.createElement('textarea');
+    let ta = $('shB').querySelector('[data-summary-copy]');
+    if (!ta) {
+      ta = document.createElement('textarea');
+      ta.dataset.summaryCopy = '1'; ta.readOnly = true;
+      ta.setAttribute('aria-label', 'Сводка для ручного копирования');
+      ta.style.cssText = 'width:100%;height:240px;background:var(--s2);color:var(--ink);' +
+        'border:1px solid var(--ln);border-radius:var(--r-s);padding:10px;font-size:12px;margin-top:8px';
+      $('shB').appendChild(ta);
+    }
     ta.value = text;
-    ta.style.cssText = 'width:100%;height:240px;background:var(--s2);color:var(--ink);' +
-      'border:1px solid var(--ln);border-radius:var(--r-s);padding:10px;font-size:12px;margin-top:8px';
-    $('shB').appendChild(ta);
     ta.select();
     note('Выдели и скопируй вручную');
   }

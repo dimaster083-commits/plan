@@ -28,8 +28,10 @@ async function recorded(p){
     const context=await browser.newContext({viewport:{width,height:width===320?568:844},timezoneId:'Asia/Vladivostok',reducedMotion:'reduce'});
     try{
       const p=await context.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
-      await p.clock.install({time:new Date('2026-10-13T12:00:00+10:00')});
+      // Start before the pause target; the clock runs between API calls.
+      await p.clock.install({time:new Date('2026-10-12T12:00:00+10:00')});
       await p.clock.pauseAt(new Date('2026-10-13T12:00:00+10:00'));
+      assert.equal(await p.evaluate(()=>Date.now()),Date.parse('2026-10-13T12:00:00+10:00'));
       await p.goto(url);await p.clock.runFor(800);await tap(p,'#setSkip');
       await p.evaluate(()=>{
         S=build();migrate();S.setup=1;S.sound=0;S.hints=0;S.bw='80';S.start='2026-09-28';
