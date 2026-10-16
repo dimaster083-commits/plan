@@ -1,5 +1,19 @@
 # Проверки
 
+`food-delete-undo-oct16`, `month-report-oct16` — release1.4.8.8.10,
+BUG-0036–0039: выбранная позиция удаления/Undo, относительный порядок,
+поздние toggles и новый picker; реальные веса строк/Р/Д/legacy/0 fallback,
+исторические дни/паузы и прежний горизонт месяца. Native IDB и задержка
+возврата настоящего phLoad проверяют поздние/повторные открытия и новые
+raw-формы с точными memory/disk/photo snapshots на320/390.
+По умолчанию file://; optional `GYM_APP_URL` проверяет ту же suite на
+реальном HTTP/Pages. HTTPS вне origin приложения блокируется, контексты
+синтетические, service workers в этих UI suites заблокированы.
+Активированный worker/байты/offline отдельно проверяет цепочка
+`test/audits/1.4.8.8.10/delivery.cjs`, затем запускает те же новые UI suites.
+`manual-norms.cjs` вне обычного npm test: открытый BUG-0040, ожидаемый RED,
+а не обещание всех зелёных взаимодействий при успешной regression suite.
+
 `summary-copy-oct15` — release1.4.8.8.9, BUG-0034/0035: clipboard success,
 missing API и отказ, точный снимок текста, один readonly fallback, повторные
 и перепутанные по времени ответы; закрытое/новое/повторно открытое окно,

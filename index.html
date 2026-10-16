@@ -8491,7 +8491,12 @@ $('cgrid').addEventListener('click', e => {
 });
 
 /* ---------- итоги месяца ---------- */
+let monthReportRequest = 0;
 async function monthReport(ym) {
+  const request = ++monthReportRequest, origin = sheetSeq, view = tab, day = sel, calendar = mo;
+  const back = document.activeElement, modal = currentModal(), state = S;
+  const current = () => request === monthReportRequest && origin === sheetSeq && S === state &&
+    tab === view && sel === day && mo === calendar && currentModal() === modal && document.activeElement === back;
   const days = Object.keys(S.rec).filter(d => d.startsWith(ym)).sort();
   // те же dayEntries, что и везде: иначе шапка итогов не сходилась с
   // разбивкой по группам прямо под ней
@@ -8504,7 +8509,11 @@ async function monthReport(ym) {
 
   const phDays = PH.filter(p => p.startsWith(ym));
   const a = phDays.length ? await phLoad(phDays[0]) : null;
+  if (!current()) return;
   const b = phDays.length > 1 ? await phLoad(phDays[phDays.length - 1]) : null;
+  // Пока читались фото, могло появиться новое окно, поле, месяц или запрос.
+  // Поздний отчёт не возвращает старую шторку и фокус поверх нового действия.
+  if (!current()) return;
 
   let h = `<div class="monav"><button id="moP" aria-label="Назад">‹</button>
     <b>${MON[m - 1]} ${y}</b><button id="moN" aria-label="Вперёд">›</button></div>
@@ -8528,7 +8537,8 @@ async function monthReport(ym) {
     GROUPS.forEach(([n]) => { gv[n] = 0; gs[n] = 0; });
     days.forEach(d => dayEntries(d).forEach(e => {
       if (e.g && gv[e.g] !== undefined) { gv[e.g] += e.vol; gs[e.g] += (e.rs ? e.rs.length : e.s); }
-      if (e.w > 0 && (!best[e.n] || e.w > best[e.n])) best[e.n] = e.w;
+      const w = e.s > 0 ? topW(e, e.w) : 0;
+      if (w > 0 && (!best[e.n] || w > best[e.n])) best[e.n] = w;
     }));
     const gmx = Math.max(1, ...GROUPS.map(([n]) => gv[n]));
     if (GROUPS.some(([n]) => gv[n] > 0)) {
@@ -8553,7 +8563,7 @@ async function monthReport(ym) {
         if (ds > today()) break;
         // до старта плана тренировок не было, а сегодняшняя ещё впереди, пока не закрыта
         if (ds < planStart() || (ds === today() && !recOf(ds).wo)) continue;
-        const dd = dayOf(ds); if (dd && dd.t !== 'rest') c++;
+        if (!paused(ds) && dayLook(ds).t !== 'rest') c++;
       }
       return c; })();
     h += `<p style="margin:12px 0 0;font-size:12px;color:var(--ink3);line-height:1.5">
@@ -11618,18 +11628,26 @@ $('fpl').addEventListener('click', e => {
 
   const del = e.target.closest('[data-my]');
   if (del) {
-    const nm = del.dataset.my, uses = foodUses(nm);
+    const nm = del.dataset.my, uses = foodUses(nm), epoch = pickEpoch, selection = picked;
     ask('Убрать «' + nm + '» из своей базы?' +
       (uses ? ' Он записан в дни и шаблоны ' + uses + ' ' + plural(uses, 'раз', 'раза', 'раз') +
         ' — там строка останется, но перестанет считаться.' : ''), 'УБРАТЬ').then(okGo => {
-      if (!okGo) return;
+      if (!okGo || epoch !== pickEpoch || selection !== picked) return;
       const snap = snapS();
       S.myFood = S.myFood.filter(f => f.n !== nm);
-      const i2 = picked.findIndex(x => x.p === nm);
-      if (i2 >= 0) picked.splice(i2, 1);
+      const previous = picked.slice(), i2 = picked.findIndex(x => x.p === nm);
+      const removed = i2 >= 0 ? picked.splice(i2, 1)[0] : null;
       invalidateFood(); save();
       drawPick($('fq').value); paintFood();
-      offerUndo(snap, '«' + nm + '» убран из своей базы');
+      offerUndo(snap, '«' + nm + '» убран из своей базы', { back: () => {
+        // Вернуть только снятую позицию в тот же подбор. Поздние касания
+        // других продуктов и новый подбор не откатываются вместе с базой.
+        if (!removed || epoch !== pickEpoch || selection !== picked || picked.some(x => x.p === nm)) return;
+        const next = previous.slice(i2 + 1).find(x => picked.includes(x));
+        const prev = previous.slice(0, i2).reverse().find(x => picked.includes(x));
+        const at = next ? picked.indexOf(next) : prev ? picked.indexOf(prev) + 1 : Math.min(i2, picked.length);
+        picked.splice(at, 0, removed);
+      } });
     });
     return;
   }
